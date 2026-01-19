@@ -79,7 +79,7 @@ const UserProfileRegularPage = ({ sm, updateSm, setProfileName }) => {
           <div className="data-item" >
             <div className="data-col">
               <span className="data-label">Company Name</span>
-              <span className="data-value">KO CHAI</span>
+              <span className="data-value">Retail Pulse</span>
             </div>
             {/* <div className="data-col data-col-end">
               <span className="data-more">

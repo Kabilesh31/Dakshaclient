@@ -116,6 +116,7 @@ import StaffListCompact from "../pages/pre-built/user-manage/StaffListCompact";
 import Transparency from "../pages/app/asssign-packets/Transparency";
 import StaffDetails from "../pages/pre-built/user-manage/StaffDetails";
 import StaffAttendance from "../pages/pre-built/user-manage/StaffAttendance";
+import VehicleListCompact from "../pages/pre-built/user-manage/VehicleListCompact";
 
 
 const Pages = () => {
@@ -191,6 +192,16 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+         <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/vehicle`}
+          render={() => (
+            <UserContextProvider>
+            <VehicleListCompact/>
+            </UserContextProvider>
+          )}
+        ></Route>
+        
           <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff-details/:id`}
@@ -217,7 +228,7 @@ const Pages = () => {
           path={`${process.env.PUBLIC_URL}/reports`}
           render={() => (
             <UserContextProvider>
-            <Transparency/>
+            <BlankPage/>
             </UserContextProvider>
           )}
         ></Route>
@@ -250,7 +261,7 @@ const Pages = () => {
         ></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-list-regular`} component={KycListRegular}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-details-regular/:id`} component={KycDetailsRegular}></Route>
-        <Route exact path={`${process.env.PUBLIC_URL}/billing`} component={BillingLayout}></Route>
+        <Route exact path={`${process.env.PUBLIC_URL}/delivery`} component={BlankPage}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/transaction-crypto`} component={TransListCrypto}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/product-list`} component={ProductList}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>

@@ -63,17 +63,7 @@ const Login = () => {
   }catch(err){
       console.log(err)
   }
-        
-    // const loginName = "info@softnio.com";
-    // const pass = "123456";
-    // if (formData.name === loginName && formData.passcode === pass) {
-      
-    // } else {
-    //   setTimeout(() => {
-    //     setError("Cannot login with credentials");
-    //     setLoading(false);
-    //   }, 2000);
-    // }
+
   };
 
   const { errors, register, handleSubmit } = useForm();
@@ -86,24 +76,24 @@ const Login = () => {
       <Row noGutters>
       <Col lg="5" className="d-none d-lg-block" >
               <div
-  style={{
-    background: "#ffffff",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh", // full page height (optional)
-  }}
->
-  <PageContainer>
-    <img
-      className="logo-dark"
-      src={LogoDark}
-      alt="logo-dark"
-      style={{ width: "400px", height: "400px",display: "flex",justifyContent: "center",
-    alignItems: "center", marginLeft:"55px", marginTop:"170px"}} // adjust size
-    />
-  </PageContainer>
-</div>
+                style={{
+                  background: "#ffffff",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100vh", // full page height (optional)
+                }}
+              >
+                <PageContainer>
+                  {/* <img
+                    className="logo-dark"
+                    src={LogoDark}
+                    alt="logo-dark"
+                    style={{ width: "400px", height: "400px",display: "flex",justifyContent: "center",
+                  alignItems: "center", marginLeft:"55px", marginTop:"170px"}} // adjust size
+                  /> */}
+                </PageContainer>
+              </div>
        </Col>
       <Col lg="7">
             <div style={{ backgroundColor: "white"}}>
@@ -113,7 +103,7 @@ const Login = () => {
           <Link to={process.env.PUBLIC_URL + "/"} className="logo-link">
               {/* <img className="logo-light logo-img logo-img-lg" src={Logo} alt="logo" /> */}
               
-              <h4 style={{ color: "black", fontSize:"30px",marginTop:"10px", marginBottom:"10px",fontFamily: "'Ubuntu', sans-serif" }}>KO CHAI</h4>
+              <h4 style={{ color: "black", fontSize:"30px",marginTop:"10px", marginBottom:"10px",fontFamily: "'Ubuntu', sans-serif" }}>Retail Pulse</h4>
             </Link>
           </div>
 

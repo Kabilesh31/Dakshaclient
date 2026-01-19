@@ -8,7 +8,7 @@ const Logo = () => {
     <Link to={`${process.env.PUBLIC_URL}/`} className="logo-link">
     {/* <img className="logo-light logo-img" src={LogoLight2x} alt="logo" />
     <img className="logo-dark logo-img" src={LogoDark2x} alt="logo" /> */}
-     <h4 style={{ color: "white", marginTop:"5px",fontFamily: "'Ubuntu', sans-serif" }}>KO CHAI</h4>
+     <h4 style={{ color: "white", marginTop:"5px",fontFamily: "'Ubuntu', sans-serif" }}>Retail Pulse</h4>
   </Link>
   );
 };
