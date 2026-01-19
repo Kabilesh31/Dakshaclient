@@ -262,6 +262,7 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-list-regular`} component={KycListRegular}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-details-regular/:id`} component={KycDetailsRegular}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/delivery`} component={BlankPage}></Route>
+         <Route exact path={`${process.env.PUBLIC_URL}/sales`} component={BlankPage}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/transaction-crypto`} component={TransListCrypto}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/product-list`} component={ProductList}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
