@@ -67,6 +67,11 @@ const menu = [
     link: "/delivery",
   },
   {
+    icon: "notes-alt",
+    text: "Sales",
+    link: "/sales",
+  },
+  {
     icon: "property",
     text: "Reports",
     link: "/reports",
