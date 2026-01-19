@@ -102,7 +102,7 @@ const AuthFooter = () => {
           </Col>
           <Col lg="6">
             <div className="nk-block-content text-center text-lg-left">
-              <p className="text-soft">&copy; {year} KO CHAI. All Rights Reserved.</p>
+              <p className="text-soft">&copy; {year} Retail Pulse. All Rights Reserved.</p>
             </div>
           </Col>
         </Row>

@@ -235,7 +235,7 @@ const Homepage = () => {
                 Dashboard
               </BlockTitle>
               <BlockDes className="text-soft">
-                <p>Welcome to KO CHAI</p>
+                <p>Welcome to Retail Pulse</p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>

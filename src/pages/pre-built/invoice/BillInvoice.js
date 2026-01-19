@@ -102,7 +102,7 @@ const selectedProducts = JSON.parse(localStorage.getItem('selectedProducts'))
                 <div className="invoice-head">
 
                 <div className="invoice-desc ">
-                <h3 className="title">KO CHAI</h3>
+                <h3 className="title">Retail Pulse</h3>
                 <ul className="list-plain">
                       <li className="invoice-id">
                         <span>GST Number</span>:<span>54548470sbsy</span>

@@ -4,29 +4,40 @@ const menu = [
     text: "Dashboard",
     link: "/",
   },
-  {
-    icon: "user",
+    {
+    icon: "users",
     text: "Users",
     link: "/user-list-compact",
   },
   {
     icon: "users",
-    text: "Staffs",
-    link: "/staff",
+    text: "Employees List",
+    active: false,
+    subMenu: [
+      {
+        text: "Vehicle",
+        link: "/vehicle",
+      },
+      {
+        text: "Employee",
+        link: "/staff",
+      }
+    ],
   },
-  {
-    icon: "check-circle-cut",
-    text: "Staff Attendance",
-    link: "/blank",
-  },
+
+  // {
+  //   icon: "check-circle-cut",
+  //   text: "Staff Attendance",
+  //   link: "/blank",
+  // },
   {
     icon: "users",
-    text: "Customers",
+    text: "Customers List",
     link: "/customers",
   },
   {
     icon: "coffee",
-    text: "Items",
+    text: "Product List",
     link: "/items",
   },
   
@@ -52,8 +63,8 @@ const menu = [
   // },
   {
     icon: "notes-alt",
-    text: "Billing",
-    link: "/billing",
+    text: "Delivery",
+    link: "/delivery",
   },
   {
     icon: "property",
@@ -93,33 +104,7 @@ const menu = [
 //       },
 //     ],
 //   },
-//   {
-//     icon: "users",
-//     text: "User Manage",
-//     active: false,
-//     subMenu: [
-//       {
-//         text: "User List - Regular",
-//         link: "/user-list-regular",
-//       },
-//       {
-//         text: "User List - Compact",
-//         link: "/user-list-compact",
-//       },
-//       {
-//         text: "User Details - Regular",
-//         link: "/user-details-regular/1",
-//       },
-//       {
-//         text: "User Profile - Regular",
-//         link: "/user-profile-regular",
-//       },
-//       {
-//         text: "User Contact - Card",
-//         link: "/user-contact-card",
-//       },
-//     ],
-//   },
+  
 //   {
 //     icon: "file-docs",
 //     text: "AML / KYCs",
