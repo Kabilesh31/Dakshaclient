@@ -1,0 +1,35 @@
+confirmation-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .confirmation-message {
+    margin: 40px;
+    text-align: center;
+  }
+  
+  .confirmation-buttons {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .confirm-button,
+  .cancel-button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0 10px;
+    cursor: pointer;
+  }
+  
+  .confirm-button {
+    background-color: rgb(0, 128, 102);
+    color: white;
+  }
+  
+  .cancel-button {
+    background-color: rgb(215, 62, 62);
+    color: white;
+  }

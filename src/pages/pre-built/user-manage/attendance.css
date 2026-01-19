@@ -1,0 +1,24 @@
+/* Tooltip styling */
+.tooltip {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  
+  /* Show tooltip on hover */
+  td:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+  
