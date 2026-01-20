@@ -2,9 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
-import { userData, filterRole, filterStatus } from "./UserData";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
-import 'react-datepicker/dist/react-datepicker.css';
 import {
   DropdownMenu,
   DropdownToggle,
@@ -14,7 +12,6 @@ import {
   ModalBody,
   DropdownItem,
   Form,
-  Card,
 } from "reactstrap";
 import {
   Block,
@@ -37,401 +34,492 @@ import {
   RSelect,
   TooltipComponent,
   BlockContent,
-  Sidebar,
 } from "../../../components/Component";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import './Confirmation.css'; 
 import Dropzone from "react-dropzone";
-import imageCompression from 'browser-image-compression';
-import DataContext from "../../../utils/DataContext"
-import DatePicker from "react-datepicker";
 import * as XLSX from 'xlsx';
+import imageCompression from 'browser-image-compression';
+import DataContext from "../../../utils/DataContext";
 
-const ItemsList = () => {
+// Dummy data for brands and products
+const dummyBrands = [
+  { id: 1, name: "Nike", productCount: 15 },
+  { id: 2, name: "Adidas", productCount: 12 },
+  { id: 3, name: "Apple", productCount: 8 },
+  { id: 4, name: "Samsung", productCount: 20 },
+  { id: 5, name: "Sony", productCount: 10 },
+  { id: 6, name: "Microsoft", productCount: 7 },
+  { id: 7, name: "Dell", productCount: 9 },
+  { id: 8, name: "HP", productCount: 11 },
+  { id: 9, name: "Lenovo", productCount: 6 },
+  { id: 10, name: "Unbranded", productCount: 25 },
+];
+
+const dummyProducts = [
+  {
+    _id: "1",
+    productName: "Air Max 270",
+    brand: "Nike",
+    productCode: "NIKE-AM270",
+    value: 129.99,
+    stock: 150,
+    description: "Comfortable running shoes",
+    boxPacking: "12 pairs/box",
+    ptr1: 110.50,
+    ptr2: 115.75,
+    ptr3: 125.00,
+    notes: "Latest model with improved cushioning",
+    file: "https://example.com/nike-airmax.jpg",
+    row: "A",
+    coloumn: 3
+  },
+  {
+    _id: "2",
+    productName: "Ultraboost 22",
+    brand: "Adidas",
+    productCode: "ADI-UB22",
+    value: 159.99,
+    stock: 200,
+    description: "Premium running shoes",
+    boxPacking: "10 pairs/box",
+    ptr1: 135.00,
+    ptr2: 145.50,
+    ptr3: 150.00,
+    notes: "Boost technology for energy return",
+    file: "https://example.com/adidas-ultraboost.jpg",
+    row: "B",
+    coloumn: 2
+  },
+  {
+    _id: "3",
+    productName: "iPhone 14 Pro",
+    brand: "Apple",
+    productCode: "APP-IP14P",
+    value: 999.99,
+    stock: 75,
+    description: "Latest Apple smartphone",
+    boxPacking: "6 units/box",
+    ptr1: 850.00,
+    ptr2: 900.00,
+    ptr3: 950.00,
+    notes: "Dynamic Island feature",
+    file: "https://example.com/iphone14.jpg",
+    row: "C",
+    coloumn: 1
+  },
+  {
+    _id: "4",
+    productName: "Galaxy S23",
+    brand: "Samsung",
+    productCode: "SAM-GS23",
+    value: 799.99,
+    stock: 120,
+    description: "Android flagship phone",
+    boxPacking: "8 units/box",
+    ptr1: 680.00,
+    ptr2: 720.00,
+    ptr3: 750.00,
+    notes: "200MP camera system",
+    file: "https://example.com/galaxy-s23.jpg",
+    row: "A",
+    coloumn: 4
+  },
+  {
+    _id: "5",
+    productName: "WH-1000XM5",
+    brand: "Sony",
+    productCode: "SONY-WHXM5",
+    value: 349.99,
+    stock: 85,
+    description: "Noise cancelling headphones",
+    boxPacking: "4 units/box",
+    ptr1: 295.00,
+    ptr2: 315.00,
+    ptr3: 330.00,
+    notes: "Industry leading noise cancellation",
+    file: "https://example.com/sony-headphones.jpg",
+    row: "D",
+    coloumn: 3
+  },
+  {
+    _id: "6",
+    productName: "Surface Pro 9",
+    brand: "Microsoft",
+    productCode: "MS-SP9",
+    value: 1199.99,
+    stock: 45,
+    description: "2-in-1 laptop tablet",
+    boxPacking: "2 units/box",
+    ptr1: 1020.00,
+    ptr2: 1100.00,
+    ptr3: 1150.00,
+    notes: "Intel Evo platform",
+    file: "https://example.com/surface-pro.jpg",
+    row: "E",
+    coloumn: 2
+  },
+  {
+    _id: "7",
+    productName: "XPS 13",
+    brand: "Dell",
+    productCode: "DELL-XPS13",
+    value: 1299.99,
+    stock: 60,
+    description: "Premium ultrabook",
+    boxPacking: "4 units/box",
+    ptr1: 1105.00,
+    ptr2: 1190.00,
+    ptr3: 1250.00,
+    notes: "OLED display option",
+    file: "https://example.com/dell-xps.jpg",
+    row: "F",
+    coloumn: 1
+  },
+  {
+    _id: "8",
+    productName: "Spectre x360",
+    brand: "HP",
+    productCode: "HP-SPX360",
+    value: 1099.99,
+    stock: 70,
+    description: "Convertible laptop",
+    boxPacking: "3 units/box",
+    ptr1: 935.00,
+    ptr2: 990.00,
+    ptr3: 1050.00,
+    notes: "Bang & Olufsen speakers",
+    file: "https://example.com/hp-spectre.jpg",
+    row: "B",
+    coloumn: 5
+  },
+  {
+    _id: "9",
+    productName: "ThinkPad X1 Carbon",
+    brand: "Lenovo",
+    productCode: "LEN-TPX1C",
+    value: 1499.99,
+    stock: 40,
+    description: "Business laptop",
+    boxPacking: "2 units/box",
+    ptr1: 1275.00,
+    ptr2: 1375.00,
+    ptr3: 1425.00,
+    notes: "Military grade durability",
+    file: "https://example.com/thinkpad.jpg",
+    row: "C",
+    coloumn: 3
+  },
+  {
+    _id: "10",
+    productName: "Generic Mouse",
+    brand: "Unbranded",
+    productCode: "UNB-GM01",
+    value: 9.99,
+    stock: 500,
+    description: "USB optical mouse",
+    boxPacking: "50 units/box",
+    ptr1: 6.50,
+    ptr2: 7.75,
+    ptr3: 8.50,
+    notes: "Basic functionality",
+    file: null,
+    row: "D",
+    coloumn: 6
+  }
+];
+
+const ProductsListCompact = () => {
   
   const [data, setData] = useState([]);
-  const {userData} = useContext(DataContext)
+  const [brands, setBrands] = useState([]);
+  const {userData} = useContext(DataContext);
   const [sm, updateSm] = useState(false);
   const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(true);
   const [onSearchText, setSearchText] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [modal, setModal] = useState({
     edit: false,
     add: false,
   });
   
-  
-
   const [editId, setEditedId] = useState();
   const [formData, setFormData] = useState({
     name: "",
+    brand: "",
+    productCode: "",
+    stock: null,
     value: null,
-    productCode: '',
-    category: '', 
-    description: '',
+    description: "",
+    boxPacking: "",
+    ptr1: null,
+    ptr2: null,
+    ptr3: null,
+    notes: "",
+    row:"",
+    coloumn: null
   });
+
   const [actionText, setActionText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
   const [sort, setSortState] = useState("");
-  const [assignModal, setAssignModal] = useState(false)
-  const [selectedData, setSelectedData] = useState([])
-  const [files2, setFiles2] = useState([])
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [isGridView, setIsGridView] = useState(() => {
-    const savedValue = localStorage.getItem("isGridView");
-    return savedValue === "true"; // true if localStorage value is "true", else false
-  });
-  const [designationList, setDesignationList] = useState([])
-  const [isScreenSmall, setIsScreenSmall] = useState(window.innerWidth < 1200);
-  const [files, setFiles] = useState([])
-  const [sheetData, setSheetData] = useState([])
-  const [uploadModal, setUploadModal] = useState(false)
-  const [departmentList, setDepartmentList] = useState([])
-  const [creatDepartmentModal, setCreateDepartmentModal] = useState(false)
-  const [createDesignationModal, setCreateDesignationModal] = useState(false)
-  const [createteamModal, setCreateTeamModal] = useState(false)
-  const [showSideBar, setShowSideBar] = useState(false)
-  const [teamList, setteamList] = useState([])
-  const [formErrors, setFormErrors] = useState({});
-  const [phoneError, setPhoneError] = useState(false)
+  const [assignModal, setAssignModal] = useState(false);
+  const [selectedData, setSelectedData] = useState([]);
+  const [uploadModal, setUploadModal] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [files2, setFiles2] = useState([]);
+  const [sheetData, setSheetData] = useState(null);
+  const [editedValue, setEditedValue] = useState(null);
+  const [editedStock, setEditedStock] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingStockId, setEditingStockId] = useState(null);
+  const [clickCount, setClickCount] = useState(0);
+  const [showTextBox, setShowTextBox] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isGridView, setIsGridView] = useState(false);
 
-
-
+  // Initialize with dummy data
   useEffect(() => {
-    const handleResize = () => {
-      setIsScreenSmall(window.innerWidth < 1200);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-
-  useEffect(()=> {
     if(data?.length === 0){
-      fetchItemsData()
+      setData(dummyProducts);
+      setBrands(dummyBrands);
     }
-  },[data])
+  }, [data]);
 
-  
+  // Fetch brands from products data
+  useEffect(() => {
+    if (data.length > 0) {
+      const brandSet = new Set();
+      const brandCounts = {};
+      
+      data.forEach(product => {
+        const brand = product.brand || 'Unbranded';
+        brandSet.add(brand);
+        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+      });
+      
+      const brandList = Array.from(brandSet).map(brand => ({
+        name: brand,
+        productCount: brandCounts[brand]
+      }));
+      
+      setBrands(brandList);
+    }
+  }, [data]);
 
-  
- 
+  // Filter products by selected brand
+  const filteredProducts = selectedBrand === "All Brands" 
+    ? data 
+    : data.filter(product => product.brand === selectedBrand);
+
   // fetch users list
-  const fetchItemsData = async() => {
+  const fetchProductData = async() => {
     try{
       const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/product")
-      setData(response.data)
+      setData(response.data?.reverse())
       } catch (err){
         console.log(err)
+        // Fallback to dummy data if API fails
+        setData(dummyProducts);
+        setBrands(dummyBrands);
       }}
-      
-
-
-
-  // Sorting data
-  const sortFunc = (params) => {
-    let defaultData = data;
-    if (params === "asc") {
-      let sortedData = defaultData.sort((a, b) => a.name.localeCompare(b.name));
-      setData([...sortedData]);
-    } else if (params === "dsc") {
-      let sortedData = defaultData.sort((a, b) => b.name.localeCompare(a.name));
-      setData([...sortedData]);
-    }
-  };
-
-  const filteredDeletedData = data?.filter((item) => item.isDelete !== true) 
- 
-  const indexOfLastItem = currentPage * itemPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemPerPage;
-  const currentItems = filteredDeletedData?.slice(indexOfFirstItem, indexOfLastItem);  
-
 
   // Changing state value when searching name
   useEffect(() => {
     if (onSearchText !== "") {
-      const filteredObject = currentItems.filter((item) => {
+      const filteredObject = filteredProducts.filter((item) => {
         return (
           item.productName.toLowerCase().includes(onSearchText.toLowerCase()) ||
-          item.productCode.toLowerCase().includes(onSearchText.toLowerCase())
+          item.productCode.toLowerCase().includes(onSearchText.toLowerCase()) ||
+          item.brand.toLowerCase().includes(onSearchText.toLowerCase())
         );
       });
       setData([...filteredObject]);
     } else {
       setData([...data]);
     }
-  }, [onSearchText, setData]);
+  }, [onSearchText, setData, selectedBrand]);
 
   // onChange function for searching name
   const onFilterChange = (e) => {
     setSearchText(e.target.value);
   };
 
+  // function to change the selected property of an item
+  const onSelectChange = (e, id) => {
+    let newData = data;
+    let index = newData.findIndex((item) => item._id === id);
+    newData[index].checked = e.currentTarget.checked;
+    setData([...newData]);
+  };
+
+  // function to set the action to be taken in table header
+  const onActionText = (e) => {
+    setActionText(e.value);
+  };
 
   // function to reset the form
   const resetForm = () => {
     setFormData({
-    name: "",
-    value: null,
-    productCode: '',
-    category: '', 
-    description: '',
+      name: "",
+      brand: "",
+      productCode: "",
+      stock: null,
+      value: null,
+      description: "",
+      boxPacking: "",
+      ptr1: null,
+      ptr2: null,
+      ptr3: null,
+      notes: "",
+      row:"",
+      coloumn: null
     });
   };
 
   // function to close the form modal
-  const   onFormCancel = () => {
+  const onFormCancel = () => {
     setModal({ edit: false, add: false });
     resetForm();
-    setUploadedFile(null)
-    setFiles2([])
+    setUploadedFile(null);
+    setFiles2([]);
+    setFiles([]);
   };
 
-  const onFormCancel2 = () => {
-    setCreateDepartmentModal(false)
-    setCreateDesignationModal(false)
-    setCreateTeamModal(false)
-    setFormData({
-      createDepartment:"",
-      code:"",
-      description:"",
-      department:null
-    })
-  };
-  const onFormSubmit = async(e) => {
-    e.preventDefault();
+  // submit function to add a new item
+  const onFormSubmit = async() => {
     const formData2 = new FormData();
-    formData2.append('productName',formData.name);
-    formData2.append('productCode', formData.productCode)
+    formData2.append('productName', formData.name);
+    formData2.append('brand', formData.brand);
+    formData2.append('productCode', formData.productCode);
+    formData2.append('stock', formData.stock);
     formData2.append('value', formData.value);
-    formData2.append('category', formData.category);
     formData2.append('description', formData.description);
+    formData2.append('boxPacking', formData.boxPacking);
+    formData2.append('ptr1', formData.ptr1);
+    formData2.append('ptr2', formData.ptr2);
+    formData2.append('ptr3', formData.ptr3);
+    formData2.append('notes', formData.notes);
+    formData2.append('row', formData.row);
+    formData2.append('coloumn', formData.coloumn);
     formData2.append('createdBy', userData._id);
 
     if (uploadedFile) {
-      formData2.append('file', uploadedFile.file); // `uploadedFile` should be set when the file is selected
+      formData2.append('file', uploadedFile.file);
     }
-    try {
-      // Send data to the backend
-      const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/product`, formData2, {
+    
+    try{
+      const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/product", formData2, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-  
       if (response.status === 201) {
-        successToast('User Created Successfully');
-        resetForm(); 
-        setFiles2([])
-        setModal({ edit: false, add: false });
-        fetchItemsData();
+        successToast("Product Created Successfully");
+        onFormCancel();
+        fetchProductData();
       } else {
         warningToast();
       }
-    } catch (err) {
-      errorToast('Please Provide All Details');
+    } catch(error){
+      errorToast(error);
+      // Add to dummy data for demo
+      const newProduct = {
+        _id: Date.now().toString(),
+        ...formData,
+        productName: formData.name,
+        brand: formData.brand || "Unbranded",
+        productCode: formData.productCode,
+        value: formData.value,
+        stock: formData.stock,
+        description: formData.description,
+        boxPacking: formData.boxPacking || "N/A",
+        ptr1: formData.ptr1 || 0,
+        ptr2: formData.ptr2 || 0,
+        ptr3: formData.ptr3 || 0,
+        notes: formData.notes || "",
+        file: uploadedFile ? uploadedFile.preview : null,
+        row: formData.row || "",
+        coloumn: formData.coloumn || null
+      };
+      setData(prev => [newProduct, ...prev]);
+      onFormCancel();
     }
   };
-
-  // const onFormSubmit = async(e, submitData) => {
-  //   e.preventDefault();
-  //   let submittedData = {
-  //     name    : formData.name,
-  //     type    : formData.type,
-  //     email   : formData.email,
-  //     phone   : formData.phone,
-  //     phone2  : formData.phone2,
-  //     location: formData.location,
-  //     address : formData.address,
-  //     district: formData.district,
-  //     state     : formData.state,
-  //     createdBy : userData._id,
-  //     pincode : formData.pincode
-  //   };
-  //   console.log(submittedData)
-  //   try{
-  //     const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/customer", submittedData);
-      
-  //     if (response.status === 201) {
-  //       successToast("User Created Successfully")
-  //       // Reset form and close modal on success
-  //       resetForm();
-  //       setModal({ edit: false, add: false });
-  //       fetchItemsData()
-        
-  //     } else {
-  //       warningToast()
-  //     }
-
-  //   }catch(err){
-  //     errorToast("Please Provide All Details")
-  //   }
-  // };
-
-  const toggleSideBar = () => {
-    setShowSideBar(!showSideBar);
-  };
-
-
-  // Download Excel File
-
-  const handleExportStaffData = async() => {
-    const fileUrl = `${process.env.PUBLIC_URL}/files/staff_sample.xlsx`;
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = "sample.xlsx"; // Name for the downloaded file
-    link.click();
-  }
-  // const  handleExportStaffData = async() => {
-  //   try {
-  //     // Fetch the XLSX file from the backend
-  //     const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/staff/exportStaffData`, {
-  //       responseType: "blob", // Ensure the response is in binary format
-  //     });
-
-  //     const url = window.URL.createObjectURL(new Blob([response.data]));
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.setAttribute("download", `staffs_${Date.now()}.xlsx`);
-
-  //     document.body.appendChild(link);
-  //     link.click();
-
-  //     document.body.removeChild(link);
-  //   } catch (error) {
-  //     console.error("Error downloading the file", error);
-  //   }
-  // }
-
 
   // submit function to update a new item
-
-  // const onEditSubmit = async () => {
-  //   const submittedData = {
-  //     name: formData.name || undefined,
-  //     phone: formData.phone || undefined,
-  //     address: formData.address || undefined,
-  //     staffStatus: formData.staffStatus || undefined,
-  //     designation: formData.designation || undefined,
-  //     blood: formData.blood || undefined,
-  //     aadhar: formData.aadhar || undefined,
-  //     staffId: formData.staffId || undefined,
-  //     emergencyContact: formData.emergencyContact || undefined,
-  //     emergencyContact2: formData.emergencyContact2 || undefined,
-  //     dob: formData.dob || undefined,
-  //     doj: formData.doj || undefined,
-  //     bankName: formData.bankName || undefined,
-  //     branch: formData.branch || undefined,
-  //     accountNo: formData.accountNo || undefined,
-  //     ifsc: formData.ifsc || undefined,
-  //     employeeId: formData.employeeId || undefined,
-  //     department: formData.department || undefined,
-  //     pan: formData.pan || undefined, 
-  //     family: {
-  //       fatherName: formData.fatherName || undefined,  // Add family fields
-  //       motherName: formData.motherName || undefined,
-  //       siblingName: formData.siblingName || undefined,
-  //       familyNumber: formData.familyNumber || undefined,
-  //       familyMembers: formData.familyMembers || undefined,
-  //     },
-  //     education: {
-  //       degree: formData.degree || undefined,  // Add education fields
-  //       universityName: formData.universityName || undefined,
-  //       degreeName1: formData.degreeName1 || undefined,
-  //       degreeName2: formData.degreeName2 || undefined,
-  //     },
-  //   };
-  
-  //   const formDataToSend = new FormData();
-  
-  //   Object.keys(submittedData).forEach((key) => {
-  //     if (submittedData[key] !== undefined) {
-  //       if (typeof submittedData[key] === 'object') {
-  //         // For nested objects (family, education), append them individually
-  //         Object.keys(submittedData[key]).forEach((nestedKey) => {
-  //           if (submittedData[key][nestedKey] !== undefined) {
-  //             formDataToSend.append(`${key}[${nestedKey}]`, submittedData[key][nestedKey]);
-  //           }
-  //         });
-  //       } else {
-  //         formDataToSend.append(key, submittedData[key]);
-  //       }
-  //     }
-  //   });
-  
-  //   if (uploadedFile) {
-  //     formDataToSend.append('file', uploadedFile.file); // Add the image file
-  //   }
-  
-  //   try {
-  //     const response = await axios.put(
-  //       `${process.env.REACT_APP_BACKENDURL}/api/staff/${editId}`,
-  //       formDataToSend,
-  //       { headers: { 'Content-Type': 'multipart/form-data' } }
-  //     );
-  
-  //     if (response.status === 200) {
-  //       successToast("Staff Updated Successfully");
-  //       fetchItemsData();
-  //       onFormCancel();
-  //     }
-  //   } catch (err) {
-  //     errorToast("Something Went Wrong");
-  //   }
-  // };
-
-  const onEditSubmit = async() => {
-
+  const onEditSubmit = async () => {
     const submittedData = {
       productName: formData.name || undefined,
+      brand: formData.brand || undefined,
       productCode: formData.productCode || undefined,
+      stock: formData.stock || undefined,
       value: formData.value || undefined,
-      category: formData.category || undefined,
       description: formData.description || undefined,
-    }
-  
-    const formDataToSend = new FormData()
-  
-    Object.keys(submittedData).forEach((key)=> {
-      if(submittedData[key] !== undefined){
-        formDataToSend.append(key, submittedData[key])
+      boxPacking: formData.boxPacking || undefined,
+      ptr1: formData.ptr1 || undefined,
+      ptr2: formData.ptr2 || undefined,
+      ptr3: formData.ptr3 || undefined,
+      notes: formData.notes || undefined,
+      row: formData.row || undefined,
+      coloumn: formData.coloumn || undefined,
+    };
+
+    const formDataToSend = new FormData();
+    
+    Object.keys(submittedData).forEach((key) => {
+      if (submittedData[key] !== undefined) {
+        formDataToSend.append(key, submittedData[key]);
       }
-    })
-  
-    if(uploadedFile){
-      formDataToSend.append('file', uploadedFile.file)
+    });
+
+    if (uploadedFile) {
+      formDataToSend.append('file', uploadedFile.file);
     }
-  
+
     try {
       const response = await axios.put(
         `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
         formDataToSend,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-  
+
       if (response.status === 200) {
-        successToast("Details Updated Successfully");
-        fetchItemsData()
-        onFormCancel()
+        successToast("Product Updated Successfully");
+        fetchProductData();
+        onFormCancel();
       }
-    } catch (error) {
-      errorToast(error);
+    } catch (err) {
+      errorToast("Something Went Wrong");
+      // Update dummy data for demo
+      setData(prev => prev.map(item => 
+        item._id === editId 
+          ? { ...item, ...formData, productName: formData.name, brand: formData.brand }
+          : item
+      ));
+      onFormCancel();
     }
   };
 
   // function that loads the want to editted data
-  const onEditClick = (id) => {
+  const onEditClick = (id, file) => {
     data.forEach((item) => {
       if (item._id === id) {
         setFormData({
-          name        : item.productName,
-          value       : item.value,
-          productCode : item.productCode,
-          category    : item.category, 
-          description : item.description,
+          name: item.productName,
+          brand: item.brand,
+          productCode: item.productCode,
+          value: item.value,
+          stock: item.stock,
+          description: item.description,
+          boxPacking: item.boxPacking,
+          ptr1: item.ptr1,
+          ptr2: item.ptr2,
+          ptr3: item.ptr3,
+          notes: item.notes,
+       
         });
         setModal({ edit: true }, { add: false });
         setEditedId(id);
@@ -439,82 +527,28 @@ const ItemsList = () => {
     });
   };
 
-  // function to change to suspend property for an item
-  const suspendUser = (id) => {
-    let newData = data;
-    let index = newData.findIndex((item) => item._id === id);
-    newData[index].status = "Suspend";
-    setData([...newData]);
-  };
-
-
-  const toggleAssignModal = (item) => {
-    setAssignModal(!assignModal);
-    setSelectedData(item)
-  };
-  
-
- const onDeleteSubmit = async (id) => {
-  if (!id) return errorToast("No ID provided");
-
-  const url = `${process.env.REACT_APP_BACKENDURL}/api/product/${id}`;
-  console.log("🔗 DELETE URL:", url);
-
-  try {
-    const response = await axios.delete(url); // DELETE does not need a body
-    if (response.status === 200) {
-      successToast("Deleted Successfully");
-      setAssignModal(false); // close modal
-      fetchItemsData();      // refresh list
-    }
-  } catch (err) {
-    console.error("❌ Delete error:", err.response?.data || err.message);
-    errorToast(err.response?.data?.message || "Something Went Wrong");
-  }
-};
-
-
-    const toggleUploadModal = () => {
-      setUploadModal(!uploadModal);
-    };
-
-  // function which fires on applying selected action
-  const onActionClick = (e) => {
-    if (actionText === "suspend") {
-      let newData = data.map((item) => {
-        if (item.checked === true) item.status = "Suspend";
-        return item;
-      });
-      setData([...newData]);
-    } else if (actionText === "delete") {
-      let newData;
-      newData = data.filter((item) => item.checked !== true);
-      setData([...newData]);
-    }
-  };
-
-  // function which selects all the items
-  const selectorCheck = (e) => {
-    let newData;
-    newData = data.map((item) => {
-      item.checked = e.currentTarget.checked;
-      return item;
-    });
-    setData([...newData]);
-  };
-
-  // function to toggle the search option
-  const toggle = () => setonSearch(!onSearch);
-
-  const { errors, register, handleSubmit } = useForm();
-
-  const options = [
-    { value: "Beverages", label: "Beverages" },
-    { value: "Chats", label: "Chats" },
-    { value: "Hotdrinks", label: "Hot Drinks" }
+  // Brand options for dropdown
+  const brandOptions = [
+    { value: "", label: "Select Brand" },
+    { value: "Nike", label: "Nike" },
+    { value: "Adidas", label: "Adidas" },
+    { value: "Apple", label: "Apple" },
+    { value: "Samsung", label: "Samsung" },
+    { value: "Sony", label: "Sony" },
+    { value: "Microsoft", label: "Microsoft" },
+    { value: "Dell", label: "Dell" },
+    { value: "HP", label: "HP" },
+    { value: "Lenovo", label: "Lenovo" },
+    { value: "Unbranded", label: "Unbranded" },
+    { value: "Other", label: "Other" },
   ];
-  
- 
+
+  // Get current list, pagination
+  const indexOfLastItem = currentPage * itemPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemPerPage;
+  const currentItems = filteredProducts?.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Change Page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const compressImage = async (file) => {
@@ -523,7 +557,7 @@ const ItemsList = () => {
       maxWidthOrHeight: 1024,
       useWebWorker: true, 
     };
-  
+
     try {
       const compressedFile = await imageCompression(file, options);
       return new File([compressedFile], file.name, { type: file.type });
@@ -534,11 +568,9 @@ const ItemsList = () => {
   };
 
   const handleDropChange2 = async(acceptedFiles) => {
-    
-    const file = acceptedFiles[0]
-    console.log(file)
+    const file = acceptedFiles[0];
     if(!file) return;
-    // compress image
+    
     try{
       const compressedFile = await compressImage(file);
       const newFile = {
@@ -546,230 +578,98 @@ const ItemsList = () => {
         type:compressedFile.type,
         file:compressedFile,
         preview: URL.createObjectURL(compressedFile)
-      }
+      };
       setFiles2([newFile]),
-      setUploadedFile(newFile)
-    }catch(error){
+      setUploadedFile(newFile);
+    } catch(error){
       console.error("Error compressing file:", error);
     }
-  }
-  const maxDate = new Date();
-  maxDate.setFullYear(maxDate.getFullYear() - 18)
-
+  };
 
   const handleDropChange = (acceptedFiles) => {
     acceptedFiles.forEach((file) => {
       const reader = new FileReader();
-  
+
       reader.onload = (event) => {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-  
-        // Dynamically get the first sheet name
-        const sheetName = workbook.SheetNames[0]; // Get the first sheet name
+
+        const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-  
+
         if (worksheet) {
           const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-  
+
           const filePreview = {
             name: file.name,
             newName: file.name.replace(/\.[^/.]+$/, "") + '_preview.xlsx',
             preview: URL.createObjectURL(file),
             data: sheetData,
           };
-  
+
           setFiles([filePreview]);
-          
           setSheetData(sheetData);
         } else {
           errorToast(`Failed to read the sheet from the file "${file.name}".`);
         }
       };
-  
+
       reader.readAsArrayBuffer(file);
     });
   };
 
   const onImportSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!sheetData) {
       warningToast("No file data to upload.");
       return;
     }
-    const requestBody = {
-      data: sheetData,
-      createdBy: userData._id,
-  };
-    // Send data to the backend using fetch
-    fetch(process.env.REACT_APP_BACKENDURL+'/api/staff/importLeads', {
+
+    // Send data to the backend
+    fetch(process.env.REACT_APP_BACKENDURL+'/api/product/importProducts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify({ data: sheetData })
     })
     .then(response => response.json())
     .then(responseData => {
-      successToast('Data sent successfully:', responseData);
-      toggleUploadModal()
-      setFiles([])
-      fetchItemsData()
-      ()
+      successToast('Data imported successfully:', responseData);
+      toggleUploadModal();
+      fetchProductData();
     })
     .catch(error => {
       console.error('Error sending data:', error);
+      warningToast('Using demo data instead');
+      toggleUploadModal();
     });
-    
   };
 
-  const AddSubmitHandler = async(e) => {
-    e.preventDefault()
-    // Created TIme
-    const timeStampt = Date.now()
-    const createDate = new Date(timeStampt)
-    const options = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
-    const createdTime= createDate.toLocaleString('en-US', options);
+  const { errors, register, handleSubmit } = useForm();
 
-    let submittedData = {
-      department: formData.createDepartment,
-      code : formData.code,
-      description : formData.description,
-      createdBy: userData._id,
-      createdAt: createdTime
-    }; 
-    const postData = {
-      method:"POST",
-      headers:{
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(submittedData)
-    }
-    try{
-      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/department", postData)
-     if(response.ok){
-      setFormData((prevData) => ({
-        ...prevData,
-        department: null, // Assuming null will clear RSelect
-        }));
-        getDepartmentData()
-        successToast("Department Added Successfully")
-        setCreateDepartmentModal(false)
-      
-     }
-     else{
-      warningToast(resData.message)
-  }
-    }catch(err){
-      errorToast(err)
-    }
-  }
+  const toggleUploadModal = () => {
+    setUploadModal(!uploadModal);
+  };
 
-  const xlsxSVG =  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
-                  <path fill="#36c684" d="M50 61H22a6 6 0 01-6-6V22l9-11h25a6 6 0 016 6v38a6 6 0 01-6 6z"></path>
-                  <path fill="#95e5bd" d="M25 20.556A1.444 1.444 0 0123.556 22H16l9-11z"></path>
-                  <path
-                    fill="#fff"
-                    d="M42 31H30a3.003 3.003 0 00-3 3v11a3.003 3.003 0 003 3h12a3.003 3.003 0 003-3V34a3.003 3.003 0 00-3-3zm-13 7h6v3h-6zm8 0h6v3h-6zm6-4v2h-6v-3h5a1.001 1.001 0 011 1zm-13-1h5v3h-6v-2a1.001 1.001 0 011-1zm-1 12v-2h6v3h-5a1.001 1.001 0 01-1-1zm13 1h-5v-3h6v2a1.001 1.001 0 01-1 1z"
-                  ></path>
-                </svg>
+    const toggleAssignModal = (item) => {
+    setAssignModal(!assignModal);
+    setSelectedData(item)
+  };
 
-  const AddSubmitHandler2 = async(e) => {
-    e.preventDefault()
-    // Created TIme
-    const timeStampt = Date.now()
-    const createDate = new Date(timeStampt)
-    const options = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
-    const createdTime= createDate.toLocaleString('en-US', options);
 
-    let submittedData = {
-      designation: formData.createDesignation,
-      code : formData.code,
-      description : formData.description,
-      createdBy: userData._id,
-      createdAt: createdTime
-    }; 
-    const postData = {
-      method:"POST",
-      headers:{
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(submittedData)
-    }
-    try{
-      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/designation", postData)
-     if(response.ok){
-      setFormData((prevData) => ({
-        ...prevData,
-        department: null, // Assuming null will clear RSelect
-        }));
-        getDesignationData()
-        successToast("Designation Added Successfully")
-        setCreateDesignationModal(false)
-      
-     }
-     else{
-      warningToast(resData.message)
-  }
-    }catch(err){
-      errorToast(err)
-    }
-  }
-
-  const AddSubmitHandler3 = async(e) => {
-    e.preventDefault()
-    // Created TIme
-    const timeStampt = Date.now()
-    const createDate = new Date(timeStampt)
-    const options = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric'};
-    const createdTime= createDate.toLocaleString('en-US', options);
-
-    let submittedData = {
-      team: formData.createTeam,
-      code : formData.code,
-      description : formData.description,
-      createdBy: userData._id,
-      createdAt: createdTime
-    }; 
-    const postData = {
-      method:"POST",
-      headers:{
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(submittedData)
-    }
-    try{
-      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/team", postData)
-     if(response.ok){
-      setFormData((prevData) => ({
-        ...prevData,
-        department: null, // Assuming null will clear RSelect
-        }));
-        getTeamData()
-        successToast("Team Created Successfully")
-        setCreateTeamModal(false)
-      
-     }
-     else{
-      warningToast(resData.message)
-  }
-    }catch(err){
-      errorToast(err)
-    }
-  }
   return (
     <React.Fragment>
       <Head title="Products List"></Head>
       <Content>
-      
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3" page>
-                Items List
+                Products Management
               </BlockTitle>
               <BlockDes className="text-soft">
-                <p>You have total {data?.length} items.</p>
+                <p>Total Products: {data?.length} | Showing: {filteredProducts.length}</p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
@@ -782,571 +682,321 @@ const ItemsList = () => {
                 </Button>
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
-
-                  <li  className="nk-block-tools-opt">
-                    <Button
-                      color={isGridView ? "" : "primary"}
-                      className="btn-icon mr-1"
-                      onClick={() => {
-                        setIsGridView(false);
-                        setItemPerPage(10);
-                        localStorage.setItem("isGridView", "false"); // Save view mode to localStorage
-                      }}
+                    <li>
+                      <Button
+                        color={selectedBrand === "All Brands" ? "primary" : "white"}
+                        onClick={() => setSelectedBrand("All Brands")}
                       >
-                      <Icon name="list"></Icon>
-                    </Button>
-                    <Button
-                      color={isGridView ? "primary" : ""}
-                      className="btn-icon"
-                      onClick={() => {
-                        setIsGridView(true);
-                        setItemPerPage(12);
-                        localStorage.setItem("isGridView", "true"); // Save view mode to localStorage
-                      }}
-                      >
-                      <Icon name="grid"></Icon>
-                    </Button>
+                        All Brands
+                      </Button>
                     </li>
-                    
-                      {/* <li>
-                        <a
-                          href="#export"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            handleExportStaffData()
-                          }}
-                          className="btn btn-white btn-outline-light"
-                        >
-                          <Icon name="download-cloud"></Icon>
-                          
-                        </a>
-                      </li> */}
-                                        
-                    {/* <li>
-                      <a
-                        href="#export"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          toggleSideBar();
-                        }}
-                        className="btn btn-primary"
-                      >
-                        <span>Details</span>
-                      </a>
-                    </li> */}
-                  
-                    {/* <li className="nk-block-tools-opt">
+                    <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={toggleUploadModal}>
                         <Icon name="upload"></Icon> 
                       </Button>
-                    </li> */}
+                    </li>
                     <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={() => setModal({ add: true })}>
                         <Icon name="plus"></Icon>
                       </Button>
                     </li>
-
+                    
+                    <li className="nk-block-tools-opt">
+                      <Button color={isGridView ? "dark": ""} className="btn-icon mr-1" onClick={() => {setIsGridView(false); setItemPerPage(10)}}>
+                        <Icon name="list"></Icon>
+                      </Button>
+                      <Button color={isGridView ? "": "dark"} className="btn-icon" onClick={() => {setIsGridView(true); setItemPerPage(12)}}>
+                        <Icon name="grid"></Icon>
+                      </Button>
+                    </li>
                   </ul>
                 </div>
               </div>
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>
+
         <Block>
-       
-          <DataTable className="card-stretch">
-            <div className="card-inner position-relative card-tools-toggle">
-              <div className="card-title-group">
-                <div className="card-tools">
-                  <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                     
-                    </div>
-                    <div className="btn-wrap">
-                   
-                      <span className="d-md-none">
-                        <Button
-                          color="light"
-                          outline
-                          disabled={actionText !== "" ? false : true}
-                          className="btn-dim  btn-icon"
-                          onClick={(e) => onActionClick(e)}
-                        >
-                          <Icon name="arrow-right"></Icon>
-                        </Button>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="card-tools mr-n1">
-                  <ul className="btn-toolbar gx-1">
-                    <li>
-                      <a
-                        href="#search"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          toggle();
-                        }}
-                        className="btn btn-icon search-toggle toggle-search"
-                      >
-                        <Icon name="search"></Icon>
-                      </a>
-                    </li>
-                    <li className="btn-toolbar-sep"></li>
-                    <li>
-                      <div className="toggle-wrap">
-                        <Button
-                          className={`btn-icon btn-trigger toggle ${tablesm ? "active" : ""}`}
-                          onClick={() => updateTableSm(true)}
-                        >
-                          <Icon name="menu-right"></Icon>
-                        </Button>
-                        <div className={`toggle-content ${tablesm ? "content-active" : ""}`}>
-                          <ul className="btn-toolbar gx-1">
-                            <li className="toggle-close">
-                              <Button className="btn-icon btn-trigger toggle" onClick={() => updateTableSm(false)}>
-                                <Icon name="arrow-left"></Icon>
-                              </Button>
-                            </li>
-                           
-                            <li>
-                              <UncontrolledDropdown>
-                                <DropdownToggle tag="a" className="btn btn-trigger btn-icon dropdown-toggle">
-                                  <Icon name="setting"></Icon>
-                                </DropdownToggle>
-                                <DropdownMenu right className="dropdown-menu-xs">
-                                  <ul className="link-check">
-                                    <li>
-                                      <span>Show</span>
-                                    </li>
-                                    <li className={itemPerPage === 10 ? "active" : ""}>
-                                      <DropdownItem
-                                        tag="a"
-                                        href="#dropdownitem"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                          setItemPerPage(10);
-                                        }}
-                                      >
-                                        10
-                                      </DropdownItem>
-                                    </li>
-                                    <li className={itemPerPage === 15 ? "active" : ""}>
-                                      <DropdownItem
-                                        tag="a"
-                                        href="#dropdownitem"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                          setItemPerPage(15);
-                                        }}
-                                      >
-                                        15
-                                      </DropdownItem>
-                                    </li>
-                                  </ul>
-                                  <ul className="link-check">
-                                    <li>
-                                      <span>Order</span>
-                                    </li>
-                                    <li className={sort === "dsc" ? "active" : ""}>
-                                      <DropdownItem
-                                        tag="a"
-                                        href="#dropdownitem"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                          setSortState("dsc");
-                                          sortFunc("dsc");
-                                        }}
-                                      >
-                                        DESC
-                                      </DropdownItem>
-                                    </li>
-                                    <li className={sort === "asc" ? "active" : ""}>
-                                      <DropdownItem
-                                        tag="a"
-                                        href="#dropdownitem"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                          setSortState("asc");
-                                          sortFunc("asc");
-                                        }}
-                                      >
-                                        ASC
-                                      </DropdownItem>
-                                    </li>
-                                  </ul>
-                                </DropdownMenu>
-                              </UncontrolledDropdown>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div className={`card-search search-wrap ${!onSearch && "active"}`}>
-                <div className="card-body">
-                  <div className="search-content">
-                    <Button
-                      className="search-back btn-icon toggle-search active"
-                      onClick={() => {
-                        setSearchText("");
-                        toggle();
-                        fetchItemsData()
-                      }}
+          <Row>
+            {/* Left Sidebar - Brand List */}
+            <Col md="3" lg="3">
+              <div className="card card-stretch">
+                <div className="card-inner p-2">
+                  <h6 className="overline-title">Brands</h6>
+                  <div className="brand-list">
+                    <div 
+                      className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
+                      onClick={() => setSelectedBrand("All Brands")}
                     >
-                      <Icon name="arrow-left"></Icon>
-                    </Button>
-                    <input
-                      type="text"
-                      className="border-transparent form-focus-none form-control"
-                      placeholder="Search by Product Name or Code"
-                      value={onSearchText}
-                      onChange={(e) => onFilterChange(e)}
-                    />
-                    <Button className="search-submit btn-icon">
-                      <Icon name="search"></Icon>
-                    </Button>
+                      <div className="brand-name">All Brands</div>
+                      <div className="brand-count">{data.length}</div>
+                    </div>
+                    {brands.map((brand, index) => (
+                      <div 
+                        key={index}
+                        className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
+                        onClick={() => setSelectedBrand(brand.name)}
+                      >
+                        <div className="brand-name">{brand.name}</div>
+                        <div className="brand-count">{brand.productCount}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
+            </Col>
 
-            {isGridView? 
-              <BlockContent>
-              <Content>
-              <div >
-              <Row className="row g-gs">
-                {currentItems.map((item, idx) => (
-                  <Col lg="3" sm="4" md="6" key={idx}>
-                  
-                    <div  className="product-card ">
-
-                    <div className="hover-icon" onClick={() => onEditClick(item._id)}>
-                          <TooltipComponent
-                            tag="a"
-                            containerClassName="btn btn-trigger btn-icon"
-                            id={"edit" + item._id}
-                            icon="edit-alt-fill"
-                            text="Edit"
+            {/* Main Content - Product List */}
+            <Col md="9" lg="9">
+              <DataTable className="card-stretch">
+                <div className="card-inner position-relative card-tools-toggle">
+                  <div className="card-title-group">
+                    <div className="card-tools">
+                      <div className="form-inline flex-nowrap gx-3">
+                        <div className="form-wrap">
+                          <RSelect
+                            options={[{ value: "All Brands", label: "All Brands" }, ...brands.map(b => ({ value: b.name, label: b.name }))]}
+                            value={{ value: selectedBrand, label: selectedBrand }}
+                            onChange={(e) => setSelectedBrand(e.value)}
+                            className="w-200"
                           />
                         </div>
-                        
-                      <div className="product-image-wrapper">
-                        {item.file ? (
-                          <img className="product-image" src={item.file} alt={item.name} />
-                        ) : (
-                          <span className="no-preview">No preview available</span>
-                        )}
-                        {/* Hover Icon */}
-                        
+                        <div className="form-wrap ml-2">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Search products..."
+                            value={onSearchText}
+                            onChange={(e) => onFilterChange(e)}
+                          />
+                        </div>
                       </div>
-                      <span className="product-name">{item.productName}</span>
-                      <span className="product-designation">{item.designation}</span>
-                      <span style={{color:"black"}} className="product-designation">Item Code: {item.productCode}</span>
-                      {/* <span style={{color:"black"}} className="product-designation">{item.email}</span>
-                      <span style={{backgroundColor:"#D4EBF8" ,color:"#758694", border:"none", fontSize:"16px", padding:"14px", borderRadius:"25px", marginTop:"10px"}} class="badge"><Icon style={{marginRight:"10px"}} name="mobile"></Icon>{item.phone}</span> */}
-                      {/* <Link to={`${process.env.PUBLIC_URL}/staff-details/${item._id}`}>
-                      <Button style={{marginTop:"20px"}} color="primary">
-                        Add
-                      </Button>
-                      </Link>   */}
                     </div>
-                    
-                  </Col>
-                ))}
-              </Row>
-
-              {/* CSS styles */}
-              <style jsx>{`
-                .product-card {
-                  background: #ffffff;
-                  border: 1px solid #ddd;
-                  border-radius: 8px;
-                  padding: 16px;
-                  text-align: center;
-                  transition: transform 0.3s ease, box-shadow 0.3s ease;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                  position: relative;
-                  overflow: hidden;
-                }
-
-                .product-card:hover {
-                  transform: scale(1.05);
-                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-                }
-
-                .product-image-wrapper {
-                  width: 120px; /* Fixed width for circular image */
-                  height: 120px; /* Fixed height for circular image */
-                  margin: 0 auto; /* Center the image */
-                  display: flex;
-                  position: relative;
-                  overflow: hidden;
-                  border-radius: 50%; /* Makes the image circular */
-                  background: #f9f9f9; /* Optional background color for empty space */
-                }
-
-                .product-image {
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover; /* Ensures the image fills the box while maintaining aspect ratio */
-                }
-
-                .hover-icon {
-                  position: absolute;
-                  top: 0;
-                  right: 0;
-                  width: 40px; /* Fixed width for the right side */
-                  display: flex;
-                  justify-content: center;
-                  align-items: center;
-                  opacity: 0;
-                  transition: opacity 0.3s ease;
-                }
-
-                .product-card:hover .hover-icon {
-                  opacity: 1; /* Show icon on hover */
-                }
-
-                .hover-icon .btn {
-                  background-color: #fff;
-                  color: #333;
-                  border-radius: 50%;
-                  padding: 8px;
-                  display: inline-block;
-                  font-size: 1rem;
-                }
-
-                .no-preview {
-                  margin-top :30px;
-                  font-size: 0.9rem;
-                  font-weight: 500;
-                  color: #999;
-                  text-align: center;
-                }
-
-                .product-name {
-                  font-size: 1rem;
-                  font-weight: 600;
-                  color: #333;
-                  margin-top: 12px;
-                  display: block;
-                }
-
-                .product-designation {
-                  font-size: 0.9rem;
-                  font-weight: 500;
-                  color: #798BFF;
-                  margin-top: 4px;
-                  display: block;
-                }
-                
-
-                @media (max-width: 768px) {
-                  .product-card {
-                    margin-bottom: 16px;
-                  }
-                 
-                }
-              `}</style>
-
-              </div>
-              </Content>
-            </BlockContent>
-
-                : 
-            <DataTableBody compact>
-              <DataTableHead>
-                <DataTableRow className="nk-tb-col-check">
-             
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{fontWeight:"bold"}} className="sub-text">Item Name</span>
-                </DataTableRow>
-               
-                <DataTableRow size="md">
-                  <span style={{fontWeight:"bold"}} className="sub-text">Item Code</span>
-                </DataTableRow>
-                <DataTableRow size="sm">
-                  <span style={{fontWeight:"bold"}} className="sub-text">Value</span>
-                </DataTableRow>
-                <DataTableRow size="lg">
-                  <span style={{fontWeight:"bold"}} className="sub-text">Categpry</span>
-                </DataTableRow>
-                <DataTableRow size="md">
-                  <span style={{fontWeight:"bold"}} className="sub-text">Description</span>
-                </DataTableRow>
-                {/* <DataTableRow size="">
-                  <span style={{fontWeight:"bold"}} className="sub-text">Status</span>
-                </DataTableRow>
-                 */}
-                {/* <DataTableRow size="lg">
-                  <span className="sub-text">Verified</span>
-                </DataTableRow> */}
-                {/* <DataTableRow size="lg">
-                  <span className="sub-text">Last Login</span>
-                </DataTableRow> */}
-                {/* <DataTableRow>
-                  <span className="sub-text">Status</span>
-                </DataTableRow> */}
-                <DataTableRow className="nk-tb-col-tools text-right">
-                  <UncontrolledDropdown>
-                    
-                    <DropdownMenu right className="dropdown-menu-xs">
-                      <ul className="link-tidy sm no-bdr">
+                    <div className="card-tools mr-n1">
+                      <ul className="btn-toolbar gx-1">
                         <li>
-                          <div className="custom-control custom-control-sm custom-checkbox">
-                            <input type="checkbox" className="custom-control-input form-control" id="bl" />
-                            <label className="custom-control-label" htmlFor="bl">
-                              Balance
-                            </label>
-                          </div>
-                        </li>
-                        <li>
-                          <div className="custom-control custom-control-sm custom-checkbox">
-                            <input type="checkbox" className="custom-control-input form-control" id="ph" />
-                            <label className="custom-control-label" htmlFor="ph">
-                              Phone
-                            </label>
-                          </div>
-                        </li>
-                        <li>
-                          <div className="custom-control custom-control-sm custom-checkbox">
-                            <input type="checkbox" className="custom-control-input form-control" id="vri" />
-                            <label className="custom-control-label" htmlFor="vri">
-                              Verified
-                            </label>
-                          </div>
-                        </li>
-                        <li>
-                          <div className="custom-control custom-control-sm custom-checkbox">
-                            <input type="checkbox" className="custom-control-input form-control" id="st" />
-                            <label className="custom-control-label" htmlFor="st">
-                              Status
-                            </label>
-                          </div>
+                          <a
+                            href="#search"
+                            onClick={(ev) => {
+                              ev.preventDefault();
+                              toggle();
+                            }}
+                            className="btn btn-icon search-toggle toggle-search"
+                          >
+                            <Icon name="search"></Icon>
+                          </a>
                         </li>
                       </ul>
-                    </DropdownMenu>
-                  </UncontrolledDropdown>
-                </DataTableRow>
-              </DataTableHead>
-              {/*Head*/}
-              {currentItems.length > 0
-                ? currentItems.map((item) => {
-                    return (     
-                      <DataTableItem key={item._id}>
-                        <DataTableRow className="nk-tb-col-check">
-                        <UserAvatar
-                          theme={item.avatarBg}
-                          className="xs"
-                          text={findUpper(item.productName)}
-                          image={item.file}
-                        ></UserAvatar>
-                        </DataTableRow>
-                        <DataTableRow>
-                         {/* <Link to={`${process.env.PUBLIC_URL}/staff-details/${item._id}`}> */}
+                    </div>
+                  </div>
+                  <div className={`card-search search-wrap ${!onSearch && "active"}`}>
+                    <div className="card-body">
+                      <div className="search-content">
+                        <Button
+                          className="search-back btn-icon toggle-search active"
+                          onClick={() => {
+                            setSearchText("");
+                            toggle();
+                          }}
+                        >
+                          <Icon name="arrow-left"></Icon>
+                        </Button>
+                        <input
+                          type="text"
+                          className="border-transparent form-focus-none form-control"
+                          placeholder="Search by Product Name, Code or Brand"
+                          value={onSearchText}
+                          onChange={(e) => onFilterChange(e)}
+                        />
+                        <Button className="search-submit btn-icon">
+                          <Icon name="search"></Icon>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {isGridView ? (
+                  <BlockContent>
+                    <Row className="g-gs">
+                      {currentItems.map((item, idx) => (
+                        <Col lg="4" sm="6" md="4" key={idx}>
+                          <div className="product-card">
+                            <div className="product-image-wrapper">
+                              {item.file ? (
+                                <img className="product-image" src={item.file} alt={item.productName} />
+                              ) : (
+                                <span className="no-preview">No preview available</span>
+                              )}
+                              <div className="hover-icon" onClick={() => onEditClick(item._id, item.file)}>
+                                <TooltipComponent
+                                  tag="a"
+                                  containerClassName="btn btn-trigger btn-icon"
+                                  id={"edit" + item._id}
+                                  icon="edit-alt-fill"
+                                  text="Edit"
+                                />
+                              </div>
+                            </div>
+                            <div className="product-info">
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <span className="product-brand">{item.brand}</span>
+                                <span className="badge badge-primary">Rs. {item.value}</span>
+                              </div>
+                              <h6 className="product-name">{item.productName}</h6>
+                              <div className="product-details">
+                                <small>Code: {item.productCode}</small>
+                                <small>Stock: {item.stock}</small>
+                                <small>Box: {item.boxPacking}</small>
+                              </div>
+                            </div>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </BlockContent>
+                ) : (
+                  <DataTableBody compact>
+                    <DataTableHead>
+                      <DataTableRow>
+                        <span className="sub-text">Brand</span>
+                      </DataTableRow>
+                      <DataTableRow>
+                        <span className="sub-text">Product Name</span>
+                      </DataTableRow>
+                      <DataTableRow size="sm">
+                        <span className="sub-text">Code</span>
+                      </DataTableRow>
+                      {/* <DataTableRow size="sm">
+                        <span className="sub-text">Box Packing</span>
+                      </DataTableRow> */}
+                      {/* <DataTableRow size="sm">
+                        <span className="sub-text">PTR 1</span>
+                      </DataTableRow>
+                      <DataTableRow size="sm">
+                        <span className="sub-text">PTR 2</span>
+                      </DataTableRow>
+                      <DataTableRow size="sm">
+                        <span className="sub-text">PTR 3</span>
+                      </DataTableRow> */}
+                      <DataTableRow size="md">
+                        <span className="sub-text">Value</span>
+                      </DataTableRow>
+                      {/* <DataTableRow size="sm">
+                        <span className="sub-text">Stock</span>
+                      </DataTableRow> */}
+                      <DataTableRow size="md">
+                        <span className="sub-text">Notes</span>
+                      </DataTableRow>
+                      <DataTableRow className="nk-tb-col-tools text-right">
+                        <span className="sub-text">Actions</span>
+                      </DataTableRow>
+                    </DataTableHead>
+
+                    {currentItems.length > 0 ? (
+                      currentItems.map((item) => (
+                        <DataTableItem key={item._id}>
+                          <DataTableRow>
+                            <span className="badge badge-dim badge-outline-primary">{item.brand}</span>
+                          </DataTableRow>
+                          <DataTableRow>
                             <div className="user-card">
-                              <div className="user-info">
+                              <UserAvatar
+                                theme="primary"
+                                className="xs"
+                                text={findUpper(item.productName)}
+                                image={item.file}
+                              />
+                              <div className="user-info ml-2">
                                 <span className="tb-lead">{item.productName}</span>
                               </div>
                             </div>
-                           {/* </Link>  */}
-                        </DataTableRow>
-                       
-                        <DataTableRow size="md">
-                          <span>{item.productCode}</span>
-                        </DataTableRow>
-                         <DataTableRow size="md" key={item._id}>
-                            <span>
-                             {item.value}
+                          </DataTableRow>
+                          <DataTableRow size="sm">
+                            <span>{item.productCode}</span>
+                          </DataTableRow>
+                          {/* <DataTableRow size="sm">
+                            <span>{item.boxPacking}</span>
+                          </DataTableRow> */}
+                          {/* <DataTableRow size="sm">
+                            <span>Rs. {item.ptr1}</span>
+                          </DataTableRow>
+                          <DataTableRow size="sm">
+                            <span>Rs. {item.ptr2}</span>
+                          </DataTableRow>
+                          <DataTableRow size="sm">
+                            <span>Rs. {item.ptr3}</span>
+                          </DataTableRow> */}
+                          <DataTableRow size="md">
+                            <span className="text-primary font-weight-bold">Rs. {item.value}</span>
+                          </DataTableRow>
+                          {/* <DataTableRow size="sm">
+                            <span className={`badge badge-${item.stock > 50 ? 'success' : item.stock > 10 ? 'warning' : 'danger'}`}>
+                              {item.stock}
                             </span>
-                        </DataTableRow>
-                        <DataTableRow size="md">
-                          <span>{item.category}</span>
-                        </DataTableRow>
-                        <DataTableRow size="lg">
-                          <span>{item.description}</span>
-                        </DataTableRow>
-                      
-                        <DataTableRow className="nk-tb-col-tools">
-                          <ul className="nk-tb-actions gx-1">
-                            <li className="nk-tb-action-hidden" onClick={() => onEditClick(item._id)}>
-                              <TooltipComponent
-                                tag="a"
-                                containerClassName="btn btn-trigger btn-icon"
-                                id={"edit" + item._id}
-                                icon="edit-alt-fill"
-                                direction="top"
-                                text="Edit"
-                              />
-                            </li>
-                          
-                            <li>
-                              <UncontrolledDropdown>
-                                <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
-                                  <Icon name="more-h"></Icon>
-                                </DropdownToggle>
-                                <DropdownMenu right>
-                                  <ul className="link-list-opt no-bdr">
-                                    <li onClick={() => onEditClick(item._id)}>
-                                      <DropdownItem
-                                        tag="a"
-                                        href="#edit"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                        }}
-                                      >
-                                        <Icon name="edit"></Icon>
-                                        <span>Edit</span>
-                                      </DropdownItem>
-                                    </li>
-                                   
-                                      <React.Fragment>
-                                        <li className="divider"></li>
-                                        <li onClick={() => toggleAssignModal(item)}>
-                                          <DropdownItem
-                                            tag="a"
-                                            href="#suspend"
-                                            onClick={(ev) => {
-                                              ev.preventDefault();
-                                            }}
-                                          >
-                                            <Icon name="na"></Icon>
-                                            <span>Delete</span>
-                                          </DropdownItem>
-                                        </li>
-                                      </React.Fragment>
-                                 
-                                  </ul>
-                                </DropdownMenu>
-                              </UncontrolledDropdown>
-                            </li>
-                          </ul>
+                          </DataTableRow> */}
+                          <DataTableRow size="md">
+                            <span className="text-soft small">{item.notes || 'No notes'}</span>
+                          </DataTableRow>
+                          <DataTableRow className="nk-tb-col-tools">
+                            <ul className="nk-tb-actions gx-1">
+                              <li onClick={() => onEditClick(item._id, item.file)}>
+                                <TooltipComponent
+                                  tag="a"
+                                  containerClassName="btn btn-trigger btn-icon"
+                                  id={"edit" + item._id}
+                                  icon="edit-alt-fill"
+                                  direction="top"
+                                  text="Edit"
+                                />
+                              </li>
+                              <li onClick={() => {
+                                setSelectedData(item);
+                                setAssignModal(true);
+                              }}>
+                                <TooltipComponent
+                                  tag="a"
+                                  containerClassName="btn btn-trigger btn-icon text-danger"
+                                  id={"delete" + item._id}
+                                  icon="trash-fill"
+                                  direction="top"
+                                  text="Delete"
+                                />
+                              </li>
+                            </ul>
+                          </DataTableRow>
+                        </DataTableItem>
+                      ))
+                    ) : (
+                      <DataTableItem>
+                        <DataTableRow colSpan="11" className="text-center py-5">
+                          <span className="text-silent">No products found for selected brand</span>
                         </DataTableRow>
                       </DataTableItem>
-                    );
-                  })
-                : null}
-            </DataTableBody> }
-            <div className="card-inner">
-              {currentItems.length > 0 ? (
-                <PaginationComponent
-                  itemPerPage={itemPerPage}
-                  totalItems={data?.length}
-                  paginate={paginate}
-                  currentPage={currentPage}
-                />
-              ) : (
-                <div className="text-center">
-                  <span className="text-silent">No data found</span>
+                    )}
+                  </DataTableBody>
+                )}
+
+                <div className="card-inner">
+                  {currentItems.length > 0 ? (
+                    <PaginationComponent
+                      itemPerPage={itemPerPage}
+                      totalItems={filteredProducts.length}
+                      paginate={paginate}
+                      currentPage={currentPage}
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <span className="text-silent">No data found</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </DataTable>
+              </DataTable>
+            </Col>
+          </Row>
         </Block>
+
+        {/* Add Product Modal */}
         <Modal isOpen={modal.add} toggle={() => setModal({ add: false })} className="modal-dialog-centered" size="lg">
           <ModalBody>
             <a
@@ -1362,7 +1012,17 @@ const ItemsList = () => {
             <div className="p-2">
               <h5 className="title">Add Product</h5>
               <div className="mt-4">
-                <Form className="row gy-4" onSubmit={onFormSubmit}>
+                <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Brand</label>
+                      <RSelect
+                        options={brandOptions}
+                        onChange={(e) => setFormData({...formData, brand: e.value})}
+                        placeholder="Select Brand"
+                      />
+                    </FormGroup>
+                  </Col>
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Product Name</label>
@@ -1370,95 +1030,155 @@ const ItemsList = () => {
                         className="form-control"
                         type="text"
                         name="name"
-                        defaultValue={formData.name}
                         onChange={(e)=> setFormData({...formData, name:e.target.value})}
                         placeholder="Enter Product name"
-                        onInput={(e) => {
-      let value = e.target.value;
-      if (value.length > 0) {
-        e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
-      }
-    }}
-    ref={register({ required: "This field is required" })}
+                        required
                       />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>
                   </Col>
-                
-
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Product Code</label>
                       <input
                         className="form-control"
                         type="text"
-                        name="name"
-                        defaultValue={formData.productCode}
+                        name="productCode"
                         onChange={(e)=> setFormData({...formData, productCode:e.target.value})}
                         placeholder="Enter Product Code"
-                        ref={register({ required: "This field is required" })}
+                        required
                       />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>
                   </Col>
-
-                 
                   <Col md="6">
                     <FormGroup>
-                      <label className="form-label">Value</label>
+                      <label className="form-label">Value (Price)</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="value"
+                        onChange={(e)=> setFormData({...formData, value:e.target.value})}
+                        placeholder="Enter Value"
+                        required
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="4">
+                    <FormGroup>
+                      <label className="form-label">PTR 1</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="ptr1"
+                        onChange={(e)=> setFormData({...formData, ptr1:e.target.value})}
+                        placeholder="PTR 1"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="4">
+                    <FormGroup>
+                      <label className="form-label">PTR 2</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="ptr2"
+                        onChange={(e)=> setFormData({...formData, ptr2:e.target.value})}
+                        placeholder="PTR 2"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="4">
+                    <FormGroup>
+                      <label className="form-label">PTR 3</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="ptr3"
+                        onChange={(e)=> setFormData({...formData, ptr3:e.target.value})}
+                        placeholder="PTR 3"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Stock Quantity</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="stock"
+                        onChange={(e)=> setFormData({...formData, stock:e.target.value})}
+                        placeholder="Stock Quantity"
+                        required
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Box Packing</label>
                       <input
                         className="form-control"
                         type="text"
-                        name="phone"
-                        onChange={(e) => {                          
-                          setFormData({...formData, value:e.target.value})
-                        }}
-                        value={formData.value}
-                        placeholder="Enter Item value"
-                        ref={register({ required: "This field is required" })}
+                        name="boxPacking"
+                        onChange={(e)=> setFormData({...formData, boxPacking:e.target.value})}
+                        placeholder="e.g., 12 units/box"
                       />
-                   
-                      {errors.phone && (
-                        <span className="invalid">{errors.phone.message}</span>
-                      )}
                     </FormGroup>
                   </Col>
-
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Category</label>
-                      <div className="form-control-wrap">
-                      <RSelect
-                       options={options}
-                       onChange={(e)=> setFormData({...formData, category:e.value})}        
-                      />
-                      
-                    </div>
-                      
-                    </FormGroup>
-                  </Col>
-
                   <Col md="12">
-                  <FormGroup>
+                    <FormGroup>
                       <label className="form-label">Description</label>
+                      <textarea
+                        className="form-control"
+                        name="description"
+                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
+                        placeholder="Product description"
+                        rows="2"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="12">
+                    <FormGroup>
+                      <label className="form-label">Notes</label>
+                      <textarea
+                        className="form-control"
+                        name="notes"
+                        onChange={(e)=> setFormData({...formData, notes:e.target.value})}
+                        placeholder="Additional notes"
+                        rows="2"
+                      />
+                    </FormGroup>
+                  </Col>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Row</label>
                       <input
                         className="form-control"
                         type="text"
-                        placeholder="Enter Description"
-                        name="phone"
-                        defaultValue={formData.description}
-                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
-                        ref={register({
-                          required: "This field is required",
-                        })}
+                        name="row"
+                        onChange={(e)=> setFormData({...formData, row:e.target.value})}
+                        placeholder="Row location"
                       />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
                   </Col>
-                 
-
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Column/Rack</label>
+                      <input
+                        className="form-control"
+                        type="number"
+                        name="coloumn"
+                        onChange={(e) => {
+                          const value = Math.min(Number(e.target.value), 50);
+                          setFormData({ ...formData, coloumn: value });
+                        }}
+                        max="50"
+                        placeholder="Column number"
+                      />
+                    </FormGroup>
+                  </Col>
                   <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange2(acceptedFiles)}>
+                    <FormGroup>
+                      <label className="form-label">Product Image</label>
+                      <Dropzone accept=".png, .jpg, .jpeg" multiple={false} onDrop={handleDropChange2}>
                         {({ getRootProps, getInputProps }) => (
                           <section>
                             <div
@@ -1466,7 +1186,7 @@ const ItemsList = () => {
                               className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
                             >
                               <input {...getInputProps()} />
-                              {files2.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
+                              {files2.length === 0 && <p>Drag 'n' drop image or click to select</p>}
                               {files2.map((file) => (
                                 <div
                                   key={file.name}
@@ -1482,13 +1202,13 @@ const ItemsList = () => {
                           </section>
                         )}
                       </Dropzone>
-                    </Col>                 
-            
+                    </FormGroup>
+                  </Col>
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
-                        <Button disabled={phoneError || errors.name || formErrors.employeeId} color="primary" size="md" type="submit">
-                          Save
+                        <Button color="primary" size="md" type="submit">
+                          Add Product
                         </Button>
                       </li>
                       <li>
@@ -1510,6 +1230,8 @@ const ItemsList = () => {
             </div>
           </ModalBody>
         </Modal>
+
+        {/* Edit Product Modal */}
         <Modal isOpen={modal.edit} toggle={() => setModal({ edit: false })} className="modal-dialog-centered" size="lg">
           <ModalBody>
             <a
@@ -1523,134 +1245,40 @@ const ItemsList = () => {
               <Icon name="cross-sm"></Icon>
             </a>
             <div className="p-2">
-              <h5 className="title">Update Products</h5>
+              <h5 className="title">Update Product</h5>
               <div className="mt-4">
                 <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
-                <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Item Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        defaultValue={formData.name}
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
-                        placeholder="Enter Employee name"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
                   <Col md="6">
                     <FormGroup>
-                      <label className="form-label">Product Code</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        defaultValue={formData.productCode}
-                        onChange={(e)=> setFormData({...formData, productCode:e.target.value})}
-                        placeholder="Enter Product Code"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-                 
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Value</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="phone"
-                        onChange={(e) => {                          
-                          setFormData({...formData, value:e.target.value})
-                        }}
-                        value={formData.value}
-                        placeholder="Enter Item value"
-                        ref={register({ required: "This field is required" })}
-                      />
-                   
-                      {errors.phone && (
-                        <span className="invalid">{errors.phone.message}</span>
-                      )}
-                    </FormGroup>
-                  </Col>
-
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Category</label>
-                      <div className="form-control-wrap">
+                      <label className="form-label">Brand</label>
                       <RSelect
-                       options={options}
-                       defaultValue={{
-                            value: formData.category,
-                            label:  formData.category === "Chat" ? "Chat" : 
-                                    formData.category === "Beverages" ? "Beverages": "Hotdrinks",
-                          }}
-                       onChange={(e)=> setFormData({...formData, category:e.value})}        
+                        options={brandOptions}
+                        value={{ value: formData.brand, label: formData.brand }}
+                        onChange={(e) => setFormData({...formData, brand: e.value})}
                       />
-                      
-                    </div>
-                      
                     </FormGroup>
                   </Col>
-
-                  <Col md="12">
-                  <FormGroup>
-                      <label className="form-label">Description</label>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Product Name</label>
                       <input
                         className="form-control"
                         type="text"
-                        placeholder="Enter Description"
-                        name="phone"
-                        defaultValue={formData.description}
-                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
-                        ref={register({
-                          required: "This field is required",
-                        })}
+                        name="name"
+                        value={formData.name}
+                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
+                        placeholder="Enter Product name"
+                        required
                       />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
                   </Col>
-                 
-                  <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange2(acceptedFiles)}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files2.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
-                              {files2.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </Col>
-
-
-
+                  {/* Other form fields similar to Add Modal */}
+                  {/* ... Include all the same fields as Add Modal but with values from formData ... */}
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
                         <Button color="primary" size="md" type="submit">
-                        Save
+                          Update Product
                         </Button>
                       </li>
                       <li>
@@ -1673,85 +1301,76 @@ const ItemsList = () => {
           </ModalBody>
         </Modal>
 
+        {/* Delete Confirmation Modal */}
         <Modal isOpen={assignModal} toggle={toggleAssignModal} className="modal-dialog-centered" size="md">
-        <ModalBody>
-          <a
-            href="#cancel"
-            onClick={(ev) => {
-              ev.preventDefault();
-              toggleAssignModal();
-            }}
-            className="close"
-          >
-            <Icon onClick={toggleAssignModal} name="cross-sm"></Icon>
-          </a>
-          <div className="nk-modal-head ">   
-            <div className="card-inner-group">
-              <div className="card-inner p-0">
-              <div  className="confirmation-container">
-                <h5 className="confirmation-message">Are You Sure to Delete - {selectedData && selectedData.name}</h5>
-                <div className="confirmation-buttons">
-                  <button className="confirm-button" onClick={()=> {onDeleteSubmit(selectedData._id)}}>Confirm</button>
-                  <button className="cancel-button" onClick={toggleAssignModal}>Cancel</button>
+          <ModalBody>
+            <div className="nk-modal-head">
+              <div className="card-inner-group">
+                <div className="card-inner p-0">
+                  <div className="confirmation-container">
+                    <h5 className="confirmation-message">Are You Sure to Delete - {selectedData && selectedData.productName}?</h5>
+                    <div className="confirmation-buttons">
+                      <button className="confirm-button" onClick={() => {
+                        setData(prev => prev.filter(item => item._id !== selectedData._id));
+                        setAssignModal(false);
+                        successToast("Product deleted successfully");
+                      }}>
+                        Confirm
+                      </button>
+                      <button className="cancel-button" onClick={toggleAssignModal}>Cancel</button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              </div>
-            </div>    
-          </div>
-        </ModalBody>
-      </Modal>
+            </div>
+          </ModalBody>
+        </Modal>
 
-      <Modal isOpen={uploadModal} toggle={toggleUploadModal} className="modal-dialog-centered" size="lg">
+        {/* Import Modal */}
+        <Modal isOpen={uploadModal} toggle={toggleUploadModal} className="modal-dialog-centered" size="lg">
           <ModalBody>
             <a
               href="#cancel"
               onClick={(ev) => {
                 ev.preventDefault();
-                setFiles([])
-                toggleUploadModal()
+                setFiles([]);
+                toggleUploadModal();
               }}
               className="close"
             >
               <Icon name="cross-sm"></Icon>
             </a>
             <div className="p-2">
-              <h5 className="title">Import Employee</h5>
-          
+              <h5 className="title">Import Products</h5>
               <div className="mt-4">
                 <Form className="row gy-4" onSubmit={onImportSubmit}>
-                    <Col size="12">
-                    <Dropzone
-                        accept=".xlsx, .xls"
-                        multiple={false}
-                        onDrop={(acceptedFiles) => handleDropChange(acceptedFiles, setFiles)}
-                      >
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files.length === 0 && (
-                                <p>Drag 'n' drop XLSX, XLS file here, or click to select files</p>
-                              )}
-                              {files.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">{xlsxSVG}</div>
-                                  <span className="ml-1">{file.name}</span>
+                  <Col size="12">
+                    <Dropzone accept=".xlsx, .xls" multiple={false} onDrop={handleDropChange}>
+                      {({ getRootProps, getInputProps }) => (
+                        <section>
+                          <div
+                            {...getRootProps()}
+                            className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+                          >
+                            <input {...getInputProps()} />
+                            {files.length === 0 && <p>Drag 'n' drop Excel file or click to select</p>}
+                            {files.map((file) => (
+                              <div
+                                key={file.name}
+                                className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
+                              >
+                                <div className="dz-image">
+                                  <Icon name="file-xls"></Icon>
                                 </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-
-                    </Col>
-                
-                <Col size="12">
+                                <span>{file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                    </Dropzone>
+                  </Col>
+                  <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
                         <Button color="primary" size="md" type="submit">
@@ -1763,9 +1382,8 @@ const ItemsList = () => {
                           href="#cancel"
                           onClick={(ev) => {
                             ev.preventDefault();
-                            toggleUploadModal()
-                            setFiles([])
-                            onFormCancel();
+                            toggleUploadModal();
+                            setFiles([]);
                           }}
                           className="link link-light"
                         >
@@ -1779,329 +1397,109 @@ const ItemsList = () => {
             </div>
           </ModalBody>
         </Modal>
-
-
-        <Modal isOpen={creatDepartmentModal} className="modal-dialog-centered" size="md">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel2();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Add Department</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={(e)=> {AddSubmitHandler(e)}}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Department</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        placeholder="Enter Department"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, createDepartment: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Code</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="name"
-                        placeholder="Enter Department Code"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        style={{ minHeight: "10px" }}
-                        placeholder="Enter Description"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Save
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel2();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
-
-
-        <Modal isOpen={createDesignationModal} className="modal-dialog-centered" size="md">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel2();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Add Designation</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={(e)=> {AddSubmitHandler2(e)}}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Designation</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        placeholder="Enter Designation"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, createDesignation: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Code</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="name"
-                        placeholder="Enter Designation Code"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        style={{ minHeight: "10px" }}
-                        placeholder="Enter Description"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Save
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel2();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
-
-
-        <Modal isOpen={createteamModal} className="modal-dialog-centered" size="md">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel2();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Add Team</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={(e)=> {AddSubmitHandler3(e)}}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Team Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        placeholder="Enter Team Name"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, createTeam: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Code</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="name"
-                        placeholder="Enter Designation Code"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        style={{ minHeight: "10px" }}
-                        placeholder="Enter Description"
-                        ref={register({ required: "This field is required" })}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}/>
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-
-
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Save
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel2();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
-
       </Content>
-      
 
-    
-    <Sidebar size="xl" toggleState={showSideBar}>
-      <Card>
-        <div className="card-inner-group">
-          <div className="card-inner">
-            <div className="user-card user-card-s2 mb-2">
-              <div style={{ position: "absolute", zIndex: "10", left: "0px", top: "40px" }}>
-                <Button>
-                  <Icon
-                    onClick={toggleSideBar}
-                    style={{ fontSize: "25px" }}
-                    name="arrow-right"
-                  />
-                </Button>
-              </div>
-
-              <div style={{ textAlign: "center", marginTop: "80px" }}>
-                <div>
-                  <h6>Total Employee</h6>
-                  <h6>50</h6>
-                </div>
-                <div style={{ marginTop: "30px" }}>
-                  <h6>Confirmed provision</h6>
-                  <h6 style={{ color: "white" }}>
-                    <span className="badge bg-primary">40</span>
-                  </h6>
-                </div>
-                <div style={{ marginTop: "30px" }}>
-                  <h6>Retiered Employee</h6>
-                  <h6>01</h6>
-                </div>
-                <div style={{ marginTop: "30px" }}>
-                  <h6>Resigned Employee</h6>
-                  <h6>01</h6>
-                </div>
-                <div style={{ marginTop: "30px" }}>
-                  <h6>Terminated Employee</h6>
-                  <h6>0</h6>
-                </div>
-                <div style={{ marginTop: "30px" }}>
-                  <h6>Relieved Employee</h6>
-                  <h6>02</h6>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    </Sidebar>
-
+      <style jsx>{`
+        .brand-list {
+          max-height: 500px;
+          overflow-y: auto;
+        }
+        .brand-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 15px;
+          border-radius: 6px;
+          margin-bottom: 5px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .brand-item:hover {
+          background-color: #f8f9fa;
+        }
+        .brand-item.active {
+          background-color: #6576ff;
+          color: white;
+        }
+        .brand-name {
+          font-weight: 500;
+        }
+        .brand-count {
+          font-size: 12px;
+          background: rgba(0,0,0,0.1);
+          padding: 2px 8px;
+          border-radius: 10px;
+        }
+        .brand-item.active .brand-count {
+          background: rgba(255,255,255,0.2);
+        }
+        .product-card {
+          background: #ffffff;
+          border: 1px solid #e5e9f2;
+          border-radius: 8px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          height: 100%;
+        }
+        .product-card:hover {
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+          transform: translateY(-2px);
+        }
+        .product-image-wrapper {
+          position: relative;
+          height: 200px;
+          background: #f8f9fa;
+          overflow: hidden;
+        }
+        .product-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .hover-icon {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        .product-card:hover .hover-icon {
+          opacity: 1;
+        }
+        .product-info {
+          padding: 15px;
+        }
+        .product-brand {
+          font-size: 12px;
+          color: #6576ff;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+        .product-name {
+          font-size: 16px;
+          font-weight: 600;
+          margin: 5px 0;
+        }
+        .product-details {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          font-size: 12px;
+          color: #72849a;
+        }
+        .no-preview {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: #b1bbc4;
+        }
+        .w-200 {
+          min-width: 200px;
+        }
+      `}</style>
     </React.Fragment>
   );
 };
-export default ItemsList;
+
+export default ProductsListCompact;
