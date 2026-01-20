@@ -32,6 +32,7 @@ import DatePicker from "react-datepicker";
 import axios from "axios";
 import DataContext from "../../../utils/DataContext";
 import { successToast, errorToast } from "../../../utils/toaster";
+import { Link } from "react-router-dom/cjs/react-router-dom.min";
 
 const VehicleListCompact = () => {
   const { userData } = useContext(DataContext);
@@ -303,7 +304,8 @@ const VehicleListCompact = () => {
             {/* TABLE */}
             <DataTableBody compact>
               <DataTableHead>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Vehicle No</span></DataTableRow>
+                
+                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Vehicle Number</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Type</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Year</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Insurance Expiry</span></DataTableRow>
@@ -314,7 +316,28 @@ const VehicleListCompact = () => {
 
               {currentItems.map(item => (
                 <DataTableItem key={item._id}>
-                  <DataTableRow>{item.vehicleNumber}</DataTableRow>
+                    <DataTableRow>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <img
+                      src={item.img}
+                      alt="vehicle"
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "50%",
+                        objectFit: "cover"
+                      }}
+                    />
+                    <Link
+                      className="tb-lead"
+                      to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}
+                    >
+                      {item.vehicleNumber}
+                    </Link>
+                  </div>
+                </DataTableRow>
+
+                  
                   <DataTableRow>{item.vehicleType}</DataTableRow>
                   <DataTableRow>{item.makeYear}</DataTableRow>
                   <DataTableRow>{item.insuranceExpiry ? new Date(item.insuranceExpiry).toLocaleDateString() : "--"}</DataTableRow>
@@ -389,18 +412,18 @@ const VehicleListCompact = () => {
                 <FormGroup>
                   <label className="form-label">* Vehicle Number</label>
                  <input
-  className="form-control"
-  type="text"
-  placeholder="Enter Vehicle Number"
-  value={formData.vehicleNumber}
-  onChange={e =>
-    setFormData({
-      ...formData,
-      vehicleNumber: e.target.value.toUpperCase(), // convert to uppercase
-    })
-  }
-  required
-/>
+                    className="form-control"
+                    type="text"
+                    placeholder="Enter Vehicle Number"
+                    value={formData.vehicleNumber}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        vehicleNumber: e.target.value.toUpperCase(), // convert to uppercase
+                      })
+                    }
+                    required
+                  />
 
                 </FormGroup>
               </Col>
