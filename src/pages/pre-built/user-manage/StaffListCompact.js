@@ -1706,7 +1706,7 @@ const StaffListCompact = () => {
                 <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
                   <Col md="6">
                     <FormGroup>
-                      <label className="form-label">* Staff Name</label>
+                      <label className="form-label">* Staff Namse</label>
                       <input
                         className="form-control"
                         type="text"
