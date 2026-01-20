@@ -17,7 +17,7 @@ import { useHistory } from "react-router";
 import axios from "axios";
 import DetailsList from "../../components/forms/DetailsList";
 import BillList from "../../components/forms/BillList";
-
+import "./vehicle-details.css";
 const VehicleDetails = ({ match }) => {
 
   const [user, setUser] = useState();
@@ -93,103 +93,85 @@ const fetchVehicleData = async() => {
             <Row className="g-gs">
               <Col lg="3">
               <PreviewCard>
-              <div className="p-2">
-                {user.img ? (
-                  <img
-                    style={{
-                      height: "250px",
-                      width: "250px", // Ensure consistent dimensions
-                      borderRadius: "50%", // Circular image
-                      objectFit: "cover",
-                    }}
-                    className="product-image"
-                    src={user.img}
-                    alt={user.name}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      height: "250px",
-                      width: "200px",
-                      borderRadius: "50%",
-                      backgroundColor: "#ddd",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      color: "#999",
-                      fontSize: "1rem",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Preview Not Available
-                  </div>
-                )}
-              </div> 
-                      {/* <div className="profile-ud wider  mt-3">
-                        <span className="profile-ud-label">Staff ID</span>
-                        <span 
-                        className={` profile-ud-value `}
-                      >
-                        {user.staffId}
-                      </span>
-                      </div> */}
+  <div
+    style={{
+      minHeight: "540px", // 🔒 fixed height
+      display: "flex",
+      flexDirection: "column",
+    }}
+  >
+    {/* Vehicle Image */}
+    <div className="p-2 text-center">
+      {user.img ? (
+        <img
+          src={user.img}
+          alt={user.vehicleNumber}
+          style={{
+            height: "220px",
+            width: "220px",
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            height: "220px",
+            width: "220px",
+            borderRadius: "50%",
+            backgroundColor: "#eee",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#999",
+          }}
+        >
+          No Image
+        </div>
+      )}
+    </div>
 
+    {/* Vehicle Number */}
+    <div className="profile-ud wider mt-3">
+      <span className="profile-ud-label">Vehicle Number</span>
+      <span className="profile-ud-value fw-bold">
+        {user.vehicleNumber || "-"}
+      </span>
+    </div>
 
-                      <div className="profile-ud wider">
-                          <span className="profile-ud-label">Type</span>
-                          <span 
-                          className={`  `}
-                        >
-                          type
-                        </span>
-                        </div>
+    {/* Vehicle Type */}
+    <div className="profile-ud wider">
+      <span className="profile-ud-label">Vehicle Type</span>
+      <span className="profile-ud-value text-capitalize">
+        {user.vehicleType || "-"}
+      </span>
+    </div>
 
+    {/* FC Upto */}
+    <div className="profile-ud wider">
+      <span className="profile-ud-label">FC Upto</span>
+      <span className="profile-ud-value">
+        {user.fcUpto
+          ? new Date(user.fcUpto).toLocaleDateString()
+          : "Not Available"}
+      </span>
+    </div>
 
-                      <div className="profile-ud wider">
-                        <span className="profile-ud-label">Status</span>
-                        <span 
-                        className={`  tb-status text-${
-                          user.status === true ? "success" :  "danger"
-                        }`}
-                      >
-                        {user.status === true ? "Active" : "Deactive"}
-                      </span>
-                      </div>
+    {/* Status */}
+    <div className="profile-ud wider">
+      <span className="profile-ud-label">Status</span>
+      <span
+        className={`tb-status text-${
+          user.status ? "success" : "danger"
+        }`}
+        style={{ marginLeft: "60px" }}   
+      >
+        {user.status ? "Active" : "Deactive"}
+      </span>
+    </div>
+  </div>
+</PreviewCard>
 
-                  
-
-                      <div className="profile-ud wider">
-                        <span className="profile-ud-label">Created Date</span>
-                        <span   className="">{user.doj && !isNaN(new Date(user.doj).getTime())
-                      ? new Date(user.doj).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                        
-                        })
-                      : "Not Available"}</span>
-                      </div>
-
-                      
-                      
-                        <div className="profile-ud wider">
-                          <span className="profile-ud-label">Contact 1</span>
-                          <span 
-                          className={`  `}
-                        >
-                          {user.phone || "Not Available"}
-                        </span>
-                        </div>
-
-                        <div className="profile-ud wider">
-                          <span className="profile-ud-label">Contact 2</span>
-                          <span 
-                          
-                        >
-                          {user.phone2|| "Not Available"}
-                        </span>
-                      </div>
-
-                  </PreviewCard>
               </Col>
 
                   <Col lg="9">
@@ -225,7 +207,7 @@ const fetchVehicleData = async() => {
                         }}
                       >
                         <Icon name="user-circle"></Icon>
-                        <span>Company Information</span>
+                        <span>Vehicle Information</span>
                       </a>
                     </li>
                    
@@ -267,73 +249,57 @@ const fetchVehicleData = async() => {
                   <div  className="p-4">
                     <Block>
                       <BlockHead>
-                        <BlockTitle className="mt-1" tag="h5">Company Information</BlockTitle>
+                        <BlockTitle className="mt-1" tag="h5">Vehicle Information</BlockTitle>
                       
                       </BlockHead>
-                      <div className="profile-ud-list mt-2">
-                       
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Compnay Name</span>
-                            <span className="profile-ud-value">{user.name || "Not Available"}</span>
-                          </div>
-                        </div>
+                    <div className="profile-ud-list mt-4 single-row">
+  <div className="profile-ud-item">
+    <span className="profile-ud-label">Vehicle Number</span>
+    <span className="profile-ud-value fw-bold">
+      {user.vehicleNumber || "Not Available"}
+    </span>
+  </div>
 
-                        <div className="profile-ud-item">
-                       
-                       </div>
+  <div className="profile-ud-item">
+    <span className="profile-ud-label">Vehicle Type</span>
+    <span className="profile-ud-value text-capitalize">
+      {user.vehicleType || "Not Available"}
+    </span>
+  </div>
 
-                       <div className="profile-ud-item">
-                         <div className="profile-ud wider">
-                           <span className="profile-ud-label">Mobile</span>
-                           <span className="profile-ud-value">{user.phone || "Not Available"}</span>
-                         </div>
-                       </div>
+  <div className="profile-ud-item">
+    <span className="profile-ud-label">Make Year</span>
+    <span className="profile-ud-value">
+      {user.makeYear || "Not Available"}
+    </span>
+  </div>
 
+  <div className="profile-ud-item">
+    <span className="profile-ud-label">Insurance Expiry</span>
+    <span className="profile-ud-value">
+      {user.insuranceExpiry
+        ? new Date(user.insuranceExpiry).toLocaleDateString()
+        : "Not Available"}
+    </span>
+  </div>
 
-                      
+  <div className="profile-ud-item">
+    <span className="profile-ud-label">FC Upto</span>
+    <span className="profile-ud-value">
+      {user.fcUpto
+        ? new Date(user.fcUpto).toLocaleDateString()
+        : "Not Available"}
+    </span>
+  </div>
 
-                        
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Surname</span>
-                            <span className="profile-ud-value">{user.name.split(" ")[1]}</span>
-                          </div> */}
-                        </div>
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Pincode</span>
-                            <span className="profile-ud-value">{user.pincode || "Not Available" }</span>
-                          </div>
-                        </div>
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Email Address</span>
-                            <span className="profile-ud-value">{user.email}</span>
-                          </div> */}
-                        </div>
+  {/* <div className="profile-ud-item status-item">
+    <span className="profile-ud-label">Status</span>
+    <span className={`tb-status text-${user.status ? "success" : "danger"}`}>
+      {user.status ? "Active" : "Deactive"}
+    </span>
+  </div> */}
+</div>
 
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Address</span>
-                            <span className="profile-ud-value">{user.address+ ", " + user.district || "Not Available" }</span>
-                          </div>
-                        </div>
-                      
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Surname</span>
-                            <span className="profile-ud-value">{user.name.split(" ")[1]}</span>
-                          </div> */}
-                        </div>
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">State</span>
-                            <span className="profile-ud-value">{user.state || "Not Available" }</span>
-                          </div>
-                        </div>
-                      
-                      </div>
                     </Block>
 
                     <Block>

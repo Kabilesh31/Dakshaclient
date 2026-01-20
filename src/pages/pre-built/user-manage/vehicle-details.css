@@ -1,0 +1,31 @@
+/* Key - Value vertical list (right aligned value) */
+.profile-ud-list.single-row {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+}
+
+/* Each row */
+.profile-ud-list.single-row .profile-ud-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Label */
+.profile-ud-label {
+  font-weight: 500;
+  color: #8094ae;
+}
+
+/* Value */
+.profile-ud-value {
+  font-weight: 600;
+  color: #364a63;
+  text-align: right;
+}
+
+/* Status spacing */
+.profile-ud-item .tb-status {
+  margin-left: 20px;
+}
