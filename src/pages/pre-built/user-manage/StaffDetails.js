@@ -284,49 +284,7 @@ const fetchStaffData = async() => {
                         <span>Personal</span>
                       </a>
                     </li>
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "5" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("5")
-                        }}
-                      >
-                        <Icon name="money"></Icon>
-                        <span>Education</span>
-                      </a>
-                    </li>
-                   
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "6" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("6")
-                        }}
-                      >
-                        <Icon name="money"></Icon>
-                        <span>Family</span>
-                      </a>
-                    </li>
-                   
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "2" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("2")
-                        }}
-                      >
-                        <Icon name="money"></Icon>
-                        <span>Bank Details</span>
-                      </a>
-                    </li>
-                   
-
+                    
                     <li className="nav-item">
                       <a
                          className={`nav-link ${activeTab === "3" &&  "active"}`}
@@ -341,20 +299,7 @@ const fetchStaffData = async() => {
                       </a>
                     </li>
 
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "4" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("4")
-                        }}
-                      >
-                        <Icon name="file-pdf"></Icon>
-                        <span>Payroll</span>
-                      </a>
-                    </li>
-
+                  
                     {/* <li className="nav-item">
                       <a
                          className={`nav-link ${activeTab === "4" &&  "active"}`}

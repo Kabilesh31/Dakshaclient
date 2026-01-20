@@ -18,6 +18,7 @@ import axios from "axios";
 import DetailsList from "../../components/forms/DetailsList";
 import BillList from "../../components/forms/BillList";
 import "./vehicle-details.css";
+import FilesStaff from "./FilesStaff";
 const VehicleDetails = ({ match }) => {
 
   const [user, setUser] = useState();
@@ -93,84 +94,84 @@ const fetchVehicleData = async() => {
             <Row className="g-gs">
               <Col lg="3">
               <PreviewCard>
-  <div
-    style={{
-      minHeight: "540px", // 🔒 fixed height
-      display: "flex",
-      flexDirection: "column",
-    }}
-  >
-    {/* Vehicle Image */}
-    <div className="p-2 text-center">
-      {user.img ? (
-        <img
-          src={user.img}
-          alt={user.vehicleNumber}
-          style={{
-            height: "220px",
-            width: "220px",
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
-        />
-      ) : (
-        <div
-          style={{
-            height: "220px",
-            width: "220px",
-            borderRadius: "50%",
-            backgroundColor: "#eee",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#999",
-          }}
-        >
-          No Image
-        </div>
-      )}
-    </div>
+                <div
+                  style={{
+                    minHeight: "540px", // 🔒 fixed height
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {/* Vehicle Image */}
+                  <div className="p-2 text-center">
+                    {user.img ? (
+                      <img
+                        src={user.img}
+                        alt={user.vehicleNumber}
+                        style={{
+                          height: "220px",
+                          width: "220px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          height: "220px",
+                          width: "220px",
+                          borderRadius: "50%",
+                          backgroundColor: "#eee",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#999",
+                        }}
+                      >
+                        No Image
+                      </div>
+                    )}
+                  </div>
 
-    {/* Vehicle Number */}
-    <div className="profile-ud wider mt-3">
-      <span className="profile-ud-label">Vehicle Number</span>
-      <span className="profile-ud-value fw-bold">
-        {user.vehicleNumber || "-"}
-      </span>
-    </div>
+                  {/* Vehicle Number */}
+                  <div className="profile-ud wider mt-3">
+                    <span className="profile-ud-label">Vehicle Number</span>
+                    <span className="profile-ud-value fw-bold">
+                      {user.vehicleNumber || "-"}
+                    </span>
+                  </div>
 
-    {/* Vehicle Type */}
-    <div className="profile-ud wider">
-      <span className="profile-ud-label">Vehicle Type</span>
-      <span className="profile-ud-value text-capitalize">
-        {user.vehicleType || "-"}
-      </span>
-    </div>
+                  {/* Vehicle Type */}
+                  <div className="profile-ud wider">
+                    <span className="profile-ud-label">Vehicle Type</span>
+                    <span className="profile-ud-value text-capitalize">
+                      {user.vehicleType || "-"}
+                    </span>
+                  </div>
 
-    {/* FC Upto */}
-    <div className="profile-ud wider">
-      <span className="profile-ud-label">FC Upto</span>
-      <span className="profile-ud-value">
-        {user.fcUpto
-          ? new Date(user.fcUpto).toLocaleDateString()
-          : "Not Available"}
-      </span>
-    </div>
+                  {/* FC Upto */}
+                  <div className="profile-ud wider">
+                    <span className="profile-ud-label">FC Upto</span>
+                    <span className="profile-ud-value">
+                      {user.fcUpto
+                        ? new Date(user.fcUpto).toLocaleDateString()
+                        : "Not Available"}
+                    </span>
+                  </div>
 
-    {/* Status */}
-    <div className="profile-ud wider">
-      <span className="profile-ud-label">Status</span>
-      <span
-        className={`tb-status text-${
-          user.status ? "success" : "danger"
-        }`}
-        style={{ marginLeft: "60px" }}   
-      >
-        {user.status ? "Active" : "Deactive"}
-      </span>
-    </div>
-  </div>
-</PreviewCard>
+                  {/* Status */}
+                  <div className="profile-ud wider">
+                    <span className="profile-ud-label">Status</span>
+                    <span
+                      className={`tb-status text-${
+                        user.status ? "success" : "danger"
+                      }`}
+                      style={{ marginLeft: "60px" }}   
+                    >
+                      {user.status ? "Active" : "Deactive"}
+                    </span>
+                  </div>
+                </div>
+              </PreviewCard>
 
               </Col>
 
@@ -213,7 +214,7 @@ const fetchVehicleData = async() => {
                    
                     <li className="nav-item">
                       <a
-                         className={`nav-link ${activeTab === "2" &&  "active"}`}
+                         className={`nav-link ${activeTab === "3" &&  "active"}`}
                         href="#transactions"
                         onClick={(ev) => {
                           ev.preventDefault();
@@ -221,25 +222,10 @@ const fetchVehicleData = async() => {
                         }}
                       >
                         <Icon name="file"></Icon>
-                        <span>Details</span>
+                        <span>Documents</span>
                       </a>
                     </li>
                     
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "3" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("3")
-                        }}
-                      >
-                        <Icon name="file"></Icon>
-                        <span>Bills</span>
-                      </a>
-                    </li>
-
-                
 
 
                   </ul>
@@ -253,52 +239,52 @@ const fetchVehicleData = async() => {
                       
                       </BlockHead>
                     <div className="profile-ud-list mt-4 single-row">
-  <div className="profile-ud-item">
-    <span className="profile-ud-label">Vehicle Number</span>
-    <span className="profile-ud-value fw-bold">
-      {user.vehicleNumber || "Not Available"}
-    </span>
-  </div>
+                      <div className="profile-ud-item">
+                        <span className="profile-ud-label">Vehicle Number</span>
+                        <span className="profile-ud-value fw-bold">
+                          {user.vehicleNumber || "Not Available"}
+                        </span>
+                      </div>
 
-  <div className="profile-ud-item">
-    <span className="profile-ud-label">Vehicle Type</span>
-    <span className="profile-ud-value text-capitalize">
-      {user.vehicleType || "Not Available"}
-    </span>
-  </div>
+                      <div className="profile-ud-item">
+                        <span className="profile-ud-label">Vehicle Type</span>
+                        <span className="profile-ud-value text-capitalize">
+                          {user.vehicleType || "Not Available"}
+                        </span>
+                      </div>
 
-  <div className="profile-ud-item">
-    <span className="profile-ud-label">Make Year</span>
-    <span className="profile-ud-value">
-      {user.makeYear || "Not Available"}
-    </span>
-  </div>
+                      <div className="profile-ud-item">
+                        <span className="profile-ud-label">Make Year</span>
+                        <span className="profile-ud-value">
+                          {user.makeYear || "Not Available"}
+                        </span>
+                      </div>
 
-  <div className="profile-ud-item">
-    <span className="profile-ud-label">Insurance Expiry</span>
-    <span className="profile-ud-value">
-      {user.insuranceExpiry
-        ? new Date(user.insuranceExpiry).toLocaleDateString()
-        : "Not Available"}
-    </span>
-  </div>
+                      <div className="profile-ud-item">
+                        <span className="profile-ud-label">Insurance Expiry</span>
+                        <span className="profile-ud-value">
+                          {user.insuranceExpiry
+                            ? new Date(user.insuranceExpiry).toLocaleDateString()
+                            : "Not Available"}
+                        </span>
+                      </div>
 
-  <div className="profile-ud-item">
-    <span className="profile-ud-label">FC Upto</span>
-    <span className="profile-ud-value">
-      {user.fcUpto
-        ? new Date(user.fcUpto).toLocaleDateString()
-        : "Not Available"}
-    </span>
-  </div>
+                      <div className="profile-ud-item">
+                        <span className="profile-ud-label">FC Upto</span>
+                        <span className="profile-ud-value">
+                          {user.fcUpto
+                            ? new Date(user.fcUpto).toLocaleDateString()
+                            : "Not Available"}
+                        </span>
+                      </div>
 
-  {/* <div className="profile-ud-item status-item">
-    <span className="profile-ud-label">Status</span>
-    <span className={`tb-status text-${user.status ? "success" : "danger"}`}>
-      {user.status ? "Active" : "Deactive"}
-    </span>
-  </div> */}
-</div>
+                      {/* <div className="profile-ud-item status-item">
+                        <span className="profile-ud-label">Status</span>
+                        <span className={`tb-status text-${user.status ? "success" : "danger"}`}>
+                          {user.status ? "Active" : "Deactive"}
+                        </span>
+                      </div> */}
+                    </div>
 
                     </Block>
 
@@ -329,24 +315,15 @@ const fetchVehicleData = async() => {
                     </Block>   
                   </div>) 
                     }
-                    
-                  
-                    {activeTab === "2" && (
-                  <div  className="p-4">
-                    <Block>
-                     <DetailsList id = {user._id} isSelected={true} />
-                     
-                    </Block>
-                  </div>
-                    )}
+
                     
                  
 
-                    {activeTab === "3" && (
+                     {activeTab === "3" && (
                   <div  className="p-4">
                     <Block>
                      
-                      <BillList isSelected={true} phone={user.phone}/>
+                      <FilesStaff/>
                     </Block>
                   </div>
                     )}
