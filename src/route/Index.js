@@ -117,6 +117,7 @@ import Transparency from "../pages/app/asssign-packets/Transparency";
 import StaffDetails from "../pages/pre-built/user-manage/StaffDetails";
 import StaffAttendance from "../pages/pre-built/user-manage/StaffAttendance";
 import VehicleListCompact from "../pages/pre-built/user-manage/VehicleListCompact";
+import VehicleDetails from "../pages/pre-built/user-manage/VehicleDetails";
 
 
 const Pages = () => {
@@ -201,7 +202,7 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
-        
+
           <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff-details/:id`}
@@ -266,6 +267,7 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/transaction-crypto`} component={TransListCrypto}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/product-list`} component={ProductList}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
+        <Route exact path={`${process.env.PUBLIC_URL}/vehicle/:id`} component={VehicleDetails}></Route>
         <Route // context api added
           exact
           path={`${process.env.PUBLIC_URL}/product-card`}
