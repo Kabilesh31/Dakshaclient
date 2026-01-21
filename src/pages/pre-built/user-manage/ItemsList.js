@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext,useRef  } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
@@ -56,8 +56,9 @@ const ProductsListCompact = () => {
   const {userData} = useContext(DataContext);
   const [sm, updateSm] = useState(false);
   const [tablesm, updateTableSm] = useState(false);
-  const [onSearch, setonSearch] = useState(true);
+ const [onSearch, setonSearch] = useState(false);
   const [onSearchText, setSearchText] = useState("");
+    const [brandSearch, setBrandSearch] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [modal, setModal] = useState({
     edit: false,
@@ -80,8 +81,12 @@ const [formData, setFormData] = useState({
 
 
   const [actionText, setActionText] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+const [deleteItem, setDeleteItem] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
+  
   const [sort, setSortState] = useState("");
   const [assignModal, setAssignModal] = useState(false);
   const [selectedData, setSelectedData] = useState([]);
@@ -97,7 +102,7 @@ const [formData, setFormData] = useState({
   const [showTextBox, setShowTextBox] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
-
+const searchRef = useRef(null);
 
 useEffect(() => {
   fetchProductData();
@@ -123,30 +128,76 @@ useEffect(() => {
     }
   }, [data]);
 
-  // Filter products by selected brand
-  const filteredProducts = selectedBrand === "All Brands" 
-    ? data 
-    : data.filter(product => product.brand === selectedBrand);
+ const filteredProducts = data.filter((product) => {
+  const matchesBrand =
+    selectedBrand === "All Brands" || product.brand === selectedBrand;
+
+  const searchText = onSearchText.toLowerCase();
+
+  const matchesSearch =
+    product.productName?.toLowerCase().includes(searchText) ||
+    product.productCode?.toLowerCase().includes(searchText) ||
+    product.brand?.toLowerCase().includes(searchText);
+
+  return matchesBrand && matchesSearch;
+});
+
 
 const fetchProductData = async () => {
   try {
-    const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product`);
-    setData(response.data || []); // only real products
-    // Generate brands from fetched data
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/product`
+    );
+
+    // ✅ remove soft-deleted products
+    const activeProducts = (response.data || []).filter(
+      (product) => product.isDeleted !== true
+    );
+
+    // ✅ set only active products
+    setData(activeProducts);
+
+    // ✅ Generate brands ONLY from active products
     const brandSet = new Set();
     const brandCounts = {};
-    response.data.forEach(product => {
+
+    activeProducts.forEach((product) => {
       const brand = product.brand || "Unbranded";
       brandSet.add(brand);
       brandCounts[brand] = (brandCounts[brand] || 0) + 1;
     });
-    setBrands(Array.from(brandSet).map(b => ({ name: b, productCount: brandCounts[b] })));
+
+    setBrands(
+      Array.from(brandSet).map((b) => ({
+        name: b,
+        productCount: brandCounts[b],
+      }))
+    );
   } catch (err) {
     console.log("Failed to fetch products:", err);
-    setData([]); // show empty if API fails
+    setData([]);
     setBrands([]);
   }
 };
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      searchRef.current &&
+      !searchRef.current.contains(event.target)
+    ) {
+      setonSearch(false);
+    }
+  };
+
+  if (onSearch) {
+    document.addEventListener("mousedown", handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [onSearch]);
 
   
 const brandOptions = brands.map((brand) => ({
@@ -300,6 +351,21 @@ const brandOptions = brands.map((brand) => ({
   }
 };
 
+const handleDelete = async () => {
+  if (!deleteItem) return;
+
+  try {
+    await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/product/${deleteItem._id}`);
+    setData(prev => prev.filter(p => p._id !== deleteItem._id)); // remove from UI
+    successToast("Product deleted successfully");
+  } catch (err) {
+    errorToast("Failed to delete product");
+  } finally {
+    setDeleteModal(false);
+    setDeleteItem(null);
+  }
+};
+
 
   
   // Get current list, pagination
@@ -421,8 +487,16 @@ const brandOptions = brands.map((brand) => ({
     <React.Fragment>
       <Head title="Products List"></Head>
       <Content>
+        <div
+    style={{  margin:"-15px", }}
+  ></div>
+           
         <BlockHead size="sm">
+          
           <BlockBetween>
+            <div
+    style={{  margin:"-385px", }}
+  ></div>
             <BlockHeadContent>
               <BlockTitle tag="h3" page>
                 Products Management
@@ -442,12 +516,7 @@ const brandOptions = brands.map((brand) => ({
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
                     <li>
-                      <Button
-                        color={selectedBrand === "All Brands" ? "primary" : "white"}
-                        onClick={() => setSelectedBrand("All Brands")}
-                      >
-                        All Brands
-                      </Button>
+                      
                     </li>
                     {/* <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={toggleUploadModal}>
@@ -461,10 +530,10 @@ const brandOptions = brands.map((brand) => ({
                     </li>
                     
                     <li className="nk-block-tools-opt">
-                      <Button color={isGridView ? "dark": ""} className="btn-icon mr-1" onClick={() => {setIsGridView(false); setItemPerPage(10)}}>
+                      <Button color={isGridView ? "": "dark"} className="btn-icon mr-1" onClick={() => {setIsGridView(false); setItemPerPage(10)}}>
                         <Icon name="list"></Icon>
                       </Button>
-                      <Button color={isGridView ? "": "dark"} className="btn-icon" onClick={() => {setIsGridView(true); setItemPerPage(12)}}>
+                      <Button color={isGridView ? "dark": ""} className="btn-icon" onClick={() => {setIsGridView(true); setItemPerPage(12)}}>
                         <Icon name="grid"></Icon>
                       </Button>
                     </li>
@@ -476,70 +545,90 @@ const brandOptions = brands.map((brand) => ({
         </BlockHead>
 
         <Block>
-          <Row>
+          
+          <Row >
+            
             {/* Left Sidebar - Brand List */}
             <Col md="3" lg="3">
-              <div className="card card-stretch">
-                <div className="card-inner p-2">
-                  <h6 className="overline-title">Brands</h6>
-                  <div className="brand-list">
-                    <div 
-                      className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
-                      onClick={() => setSelectedBrand("All Brands")}
-                    >
-                      <div className="brand-name">All Brands</div>
-                      <div className="brand-count">{data.length}</div>
-                    </div>
-                    {brands.map((brand, index) => (
-                      <div 
-                        key={index}
-                        className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
-                        onClick={() => setSelectedBrand(brand.name)}
-                      >
-                        <div className="brand-name">{brand.name}</div>
-                        <div className="brand-count">{brand.productCount}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Col>
+  <div className="card card-stretch" style={{ margin: "-11px", marginTop: "-4px", padding: "4px" }}>
+    <div className="card-inner p-2">
+      
+
+      {/* Brand Search Box */}
+      <input
+        type="text"
+        placeholder="Search Brand..."
+        className="form-control mb-2"
+        value={brandSearch}
+        onChange={(e) => setBrandSearch(e.target.value)}
+      />
+
+      <div className="brand-list">
+        {/* All Brands */}
+        <div
+          className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
+          onClick={() => setSelectedBrand("All Brands")}
+        >
+          <div className="brand-name">All Brands</div>
+          <div className="brand-count">{data.length}</div>
+        </div>
+
+        {/* Filtered Brands */}
+        {brands
+          .filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
+          .map((brand, index) => (
+            <div
+              key={index}
+              className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
+              onClick={() => setSelectedBrand(brand.name)}
+            >
+              <div className="brand-name">{brand.name}</div>
+              <div className="brand-count">{brand.productCount}</div>
+            </div>
+          ))}
+      </div>
+    </div>
+  </div>
+</Col>
+
 
             {/* Main Content - Product List */}
-            <Col md="9" lg="9">
-              <DataTable className="card-stretch">
+            <Col md="9" lg="9" >
+            <div style={{ margin: "10px", marginTop:"-16px", marginRight:"15px" }}></div>
+              <DataTable className="card-stretch" >
                 <div className="card-inner position-relative card-tools-toggle">
                   <div className="card-title-group">
-                    <div className="card-tools">
-                      <div className="form-inline flex-nowrap gx-3">
-                        <div className="form-wrap">
-                          <RSelect
-                            options={[{ value: "All Brands", label: "All Brands" }, ...brands.map(b => ({ value: b.name, label: b.name }))]}
-                            value={{ value: selectedBrand, label: selectedBrand }}
-                            onChange={(e) => setSelectedBrand(e.value)}
-                            className="w-200"
-                          />
-                        </div>
-                        <div className="form-wrap ml-2">
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Search products..."
-                            value={onSearchText}
-                            onChange={(e) => onFilterChange(e)}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                   <div className="card-tools">
+  <div className="form-inline flex-nowrap gx-3">
+
+    {/* Selected Brand Display */}
+    <div className="form-wrap">
+      <div
+        className="form-control d-flex align-items-center"
+        style={{
+          minWidth: "200px",
+          background: "#f5f6fa",
+          fontWeight: 600
+        }}
+      >
+        {selectedBrand || "All Brands"}
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
                     <div className="card-tools mr-n1">
                       <ul className="btn-toolbar gx-1">
                         <li>
                           <a
                             href="#search"
                             onClick={(ev) => {
-                              ev.preventDefault();
-                              toggle();
-                            }}
+  ev.preventDefault();
+  setonSearch(true);   // open only
+}}
+
                             className="btn btn-icon search-toggle toggle-search"
                           >
                             <Icon name="search"></Icon>
@@ -548,25 +637,34 @@ const brandOptions = brands.map((brand) => ({
                       </ul>
                     </div>
                   </div>
-                  <div className={`card-search search-wrap ${!onSearch && "active"}`}>
+                  <div
+  ref={searchRef}
+  className={`card-search search-wrap ${onSearch ? "active" : ""}`}
+>
+
+
                     <div className="card-body">
                       <div className="search-content">
                         <Button
                           className="search-back btn-icon toggle-search active"
                           onClick={() => {
-                            setSearchText("");
-                            toggle();
-                          }}
+  setSearchText("");
+  setonSearch(false);
+}}
+
                         >
                           <Icon name="arrow-left"></Icon>
                         </Button>
                         <input
-                          type="text"
-                          className="border-transparent form-focus-none form-control"
-                          placeholder="Search by Product Name, Code or Brand"
-                          value={onSearchText}
-                          onChange={(e) => onFilterChange(e)}
-                        />
+  autoFocus={onSearch}
+  type="text"
+  className="border-transparent form-focus-none form-control"
+  placeholder="Search by Product Name, Code or Brand"
+  value={onSearchText}
+  onChange={onFilterChange}
+  onClick={(e) => e.stopPropagation()}
+/>
+
                         <Button className="search-submit btn-icon">
                           <Icon name="search"></Icon>
                         </Button>
@@ -577,9 +675,10 @@ const brandOptions = brands.map((brand) => ({
 
                 {isGridView ? (
                   <BlockContent>
-                    <Row className="g-gs">
+                    <Row className="g-1">
                       {currentItems.map((item, idx) => (
-                        <Col lg="4" sm="6" md="4" key={idx}>
+                       <Col lg="3" md="4" sm="6">
+
                           <div className="product-card">
                             <div className="product-image-wrapper">
                               {item.file ? (
@@ -709,19 +808,23 @@ const brandOptions = brands.map((brand) => ({
                                   text="Edit"
                                 />
                               </li>
-                              <li onClick={() => {
-                                setSelectedData(item);
-                                setAssignModal(true);
-                              }}>
-                                <TooltipComponent
-                                  tag="a"
-                                  containerClassName="btn btn-trigger btn-icon text-danger"
-                                  id={"delete" + item._id}
-                                  icon="trash-fill"
-                                  direction="top"
-                                  text="Delete"
-                                />
-                              </li>
+                             <li
+  onClick={() => {
+    setDeleteItem(item);   // store the product to delete
+    setDeleteModal(true);  // show modal
+  }}
+>
+  <TooltipComponent
+    tag="a"
+    containerClassName="btn btn-trigger btn-icon text-danger"
+    id={"delete" + item._id}
+    icon="trash-fill"
+    direction="top"
+    text="Delete"
+  />
+</li>
+
+
                             </ul>
                           </DataTableRow>
                         </DataTableItem>
@@ -853,7 +956,7 @@ const brandOptions = brands.map((brand) => ({
           </Col>
 
           {/* Box Packing */}
-          <Col md="6">
+          <Col md="9">
             <FormGroup check>
               <label className="form-label">
                 <input
@@ -1086,7 +1189,7 @@ const brandOptions = brands.map((brand) => ({
           </Col>
 
           {/* Box Packing */}
-          <Col md="6">
+          <Col md="9">
             <FormGroup check>
               <label className="form-label">
                 <input
@@ -1225,6 +1328,35 @@ const brandOptions = brands.map((brand) => ({
     </div>
   </ModalBody>
 </Modal>
+<Modal
+  isOpen={deleteModal}
+  toggle={() => setDeleteModal(false)}
+  className="modal-dialog-centered"
+>
+  <div className="modal-header">
+    <h5 className="modal-title">Confirm Delete</h5>
+    <button
+      type="button"
+      className="close"
+      onClick={() => setDeleteModal(false)}
+    >
+      <span>&times;</span>
+    </button>
+  </div>
+  <div className="modal-body">
+    Are you sure you want to delete <strong>{deleteItem?.productName}</strong>?
+  </div>
+  <div className="modal-footer">
+    <Button color="secondary" onClick={() => setDeleteModal(false)}>
+      Cancel
+    </Button>
+    <Button color="danger" onClick={handleDelete}>
+      Delete
+    </Button>
+  </div>
+</Modal>
+
+
 
       </Content>
 
@@ -1233,6 +1365,7 @@ const brandOptions = brands.map((brand) => ({
           max-height: 500px;
           overflow-y: auto;
         }
+          
         .brand-item {
           display: flex;
           justify-content: space-between;
@@ -1268,7 +1401,9 @@ const brandOptions = brands.map((brand) => ({
           border-radius: 8px;
           overflow: hidden;
           transition: all 0.3s ease;
-          height: 100%;
+          height: 90%;
+          margin: 8px ;
+          padding:5px;
         }
         .product-card:hover {
           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
@@ -1276,7 +1411,7 @@ const brandOptions = brands.map((brand) => ({
         }
         .product-image-wrapper {
           position: relative;
-          height: 200px;
+          height: 160px;
           background: #f8f9fa;
           overflow: hidden;
         }
@@ -1285,6 +1420,7 @@ const brandOptions = brands.map((brand) => ({
           height: 100%;
           object-fit: cover;
         }
+          
         .hover-icon {
           position: absolute;
           top: 10px;
@@ -1296,8 +1432,16 @@ const brandOptions = brands.map((brand) => ({
           opacity: 1;
         }
         .product-info {
-          padding: 15px;
+          padding: 10px;
         }
+          .no-page-padding {
+  padding: 0 !important;
+}
+
+.no-page-padding > .container-fluid {
+  padding: 0 !important;
+}
+
         .product-brand {
           font-size: 12px;
           color: #6576ff;
@@ -1305,14 +1449,14 @@ const brandOptions = brands.map((brand) => ({
           text-transform: uppercase;
         }
         .product-name {
-          font-size: 16px;
-          font-weight: 600;
-          margin: 5px 0;
+          font-size: 14px;
+          font-weight: 900;
+          margin: 0;
         }
         .product-details {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 1px;
           font-size: 12px;
           color: #72849a;
         }
@@ -1322,7 +1466,48 @@ const brandOptions = brands.map((brand) => ({
           justify-content: center;
           height: 100%;
           color: #b1bbc4;
-        }
+        }.confirm-body {
+  padding: 30px 20px;
+}
+
+.confirm-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc3545;
+  font-size: 26px;
+}
+
+.confirm-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.confirm-text {
+  font-size: 14px;
+  color: #72849a;
+  margin-bottom: 25px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-cancel {
+  min-width: 100px;
+}
+
+.btn-confirm {
+  min-width: 120px;
+}
+
         .w-200 {
           min-width: 200px;
         }
