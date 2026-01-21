@@ -449,11 +449,11 @@ const brandOptions = brands.map((brand) => ({
                         All Brands
                       </Button>
                     </li>
-                    <li className="nk-block-tools-opt">
+                    {/* <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={toggleUploadModal}>
                         <Icon name="upload"></Icon> 
                       </Button>
-                    </li>
+                    </li> */}
                     <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={() => setModal({ add: true })}>
                         <Icon name="plus"></Icon>

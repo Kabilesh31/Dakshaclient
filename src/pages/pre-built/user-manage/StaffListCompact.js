@@ -211,7 +211,7 @@ const StaffListCompact = () => {
               <BlockTitle tag="h3">Staff List</BlockTitle>
             </BlockHeadContent>
             <Button color="primary" onClick={openAddModal}>
-              <Icon name="plus" /> Add Staff
+              <Icon name="plus" /> 
             </Button>
           </BlockBetween>
         </BlockHead>

@@ -72,8 +72,10 @@ const VehicleListCompact = () => {
   };
 
   useEffect(() => {
-    fetchVehicles();
-  }, []);
+    if(data.length === 0){
+       fetchVehicles();
+    }
+  }, [data]);
 
   /* ================= PAGINATION ================= */
   useEffect(() => {
@@ -225,7 +227,7 @@ const VehicleListCompact = () => {
               <BlockTitle tag="h3">Vehicle List</BlockTitle>
             </BlockHeadContent>
             <Button color="primary" onClick={openAddModal}>
-              <Icon name="plus" /> Add Vehicle
+              <Icon name="plus" />
             </Button>
           </BlockBetween>
         </BlockHead>
