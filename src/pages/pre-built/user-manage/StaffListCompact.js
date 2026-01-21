@@ -388,17 +388,23 @@ const StaffListCompact = () => {
       <h5 className="title">Add Staff</h5>
       <Form className="row gy-4" onSubmit={onAddSubmit}>
         <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Name</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Name"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </FormGroup>
+         <FormGroup>
+  <label className="form-label">* Name</label>
+  <input
+    type="text"
+    className="form-control"
+    placeholder="Enter Name"
+    value={formData.name}
+    onChange={(e) => {
+      const value = e.target.value;
+      const capitalized =
+        value.charAt(0).toUpperCase() + value.slice(1);
+      setFormData({ ...formData, name: capitalized });
+    }}
+    required
+  />
+</FormGroup>
+
         </Col>
 
         <Col md="6">

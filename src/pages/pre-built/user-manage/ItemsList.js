@@ -43,193 +43,11 @@ import Dropzone from "react-dropzone";
 import * as XLSX from 'xlsx';
 import imageCompression from 'browser-image-compression';
 import DataContext from "../../../utils/DataContext";
+import CreatableSelect from "react-select/creatable";
 
 // Dummy data for brands and products
-const dummyBrands = [
-  { id: 1, name: "Nike", productCount: 15 },
-  { id: 2, name: "Adidas", productCount: 12 },
-  { id: 3, name: "Apple", productCount: 8 },
-  { id: 4, name: "Samsung", productCount: 20 },
-  { id: 5, name: "Sony", productCount: 10 },
-  { id: 6, name: "Microsoft", productCount: 7 },
-  { id: 7, name: "Dell", productCount: 9 },
-  { id: 8, name: "HP", productCount: 11 },
-  { id: 9, name: "Lenovo", productCount: 6 },
-  { id: 10, name: "Unbranded", productCount: 25 },
-];
 
-const dummyProducts = [
-  {
-    _id: "1",
-    productName: "Air Max 270",
-    brand: "Nike",
-    productCode: "NIKE-AM270",
-    value: 129.99,
-    stock: 150,
-    description: "Comfortable running shoes",
-    boxPacking: "12 pairs/box",
-    ptr1: 110.50,
-    ptr2: 115.75,
-    ptr3: 125.00,
-    notes: "Latest model with improved cushioning",
-    file: "https://example.com/nike-airmax.jpg",
-    row: "A",
-    coloumn: 3
-  },
-  {
-    _id: "2",
-    productName: "Ultraboost 22",
-    brand: "Adidas",
-    productCode: "ADI-UB22",
-    value: 159.99,
-    stock: 200,
-    description: "Premium running shoes",
-    boxPacking: "10 pairs/box",
-    ptr1: 135.00,
-    ptr2: 145.50,
-    ptr3: 150.00,
-    notes: "Boost technology for energy return",
-    file: "https://example.com/adidas-ultraboost.jpg",
-    row: "B",
-    coloumn: 2
-  },
-  {
-    _id: "3",
-    productName: "iPhone 14 Pro",
-    brand: "Apple",
-    productCode: "APP-IP14P",
-    value: 999.99,
-    stock: 75,
-    description: "Latest Apple smartphone",
-    boxPacking: "6 units/box",
-    ptr1: 850.00,
-    ptr2: 900.00,
-    ptr3: 950.00,
-    notes: "Dynamic Island feature",
-    file: "https://example.com/iphone14.jpg",
-    row: "C",
-    coloumn: 1
-  },
-  {
-    _id: "4",
-    productName: "Galaxy S23",
-    brand: "Samsung",
-    productCode: "SAM-GS23",
-    value: 799.99,
-    stock: 120,
-    description: "Android flagship phone",
-    boxPacking: "8 units/box",
-    ptr1: 680.00,
-    ptr2: 720.00,
-    ptr3: 750.00,
-    notes: "200MP camera system",
-    file: "https://example.com/galaxy-s23.jpg",
-    row: "A",
-    coloumn: 4
-  },
-  {
-    _id: "5",
-    productName: "WH-1000XM5",
-    brand: "Sony",
-    productCode: "SONY-WHXM5",
-    value: 349.99,
-    stock: 85,
-    description: "Noise cancelling headphones",
-    boxPacking: "4 units/box",
-    ptr1: 295.00,
-    ptr2: 315.00,
-    ptr3: 330.00,
-    notes: "Industry leading noise cancellation",
-    file: "https://example.com/sony-headphones.jpg",
-    row: "D",
-    coloumn: 3
-  },
-  {
-    _id: "6",
-    productName: "Surface Pro 9",
-    brand: "Microsoft",
-    productCode: "MS-SP9",
-    value: 1199.99,
-    stock: 45,
-    description: "2-in-1 laptop tablet",
-    boxPacking: "2 units/box",
-    ptr1: 1020.00,
-    ptr2: 1100.00,
-    ptr3: 1150.00,
-    notes: "Intel Evo platform",
-    file: "https://example.com/surface-pro.jpg",
-    row: "E",
-    coloumn: 2
-  },
-  {
-    _id: "7",
-    productName: "XPS 13",
-    brand: "Dell",
-    productCode: "DELL-XPS13",
-    value: 1299.99,
-    stock: 60,
-    description: "Premium ultrabook",
-    boxPacking: "4 units/box",
-    ptr1: 1105.00,
-    ptr2: 1190.00,
-    ptr3: 1250.00,
-    notes: "OLED display option",
-    file: "https://example.com/dell-xps.jpg",
-    row: "F",
-    coloumn: 1
-  },
-  {
-    _id: "8",
-    productName: "Spectre x360",
-    brand: "HP",
-    productCode: "HP-SPX360",
-    value: 1099.99,
-    stock: 70,
-    description: "Convertible laptop",
-    boxPacking: "3 units/box",
-    ptr1: 935.00,
-    ptr2: 990.00,
-    ptr3: 1050.00,
-    notes: "Bang & Olufsen speakers",
-    file: "https://example.com/hp-spectre.jpg",
-    row: "B",
-    coloumn: 5
-  },
-  {
-    _id: "9",
-    productName: "ThinkPad X1 Carbon",
-    brand: "Lenovo",
-    productCode: "LEN-TPX1C",
-    value: 1499.99,
-    stock: 40,
-    description: "Business laptop",
-    boxPacking: "2 units/box",
-    ptr1: 1275.00,
-    ptr2: 1375.00,
-    ptr3: 1425.00,
-    notes: "Military grade durability",
-    file: "https://example.com/thinkpad.jpg",
-    row: "C",
-    coloumn: 3
-  },
-  {
-    _id: "10",
-    productName: "Generic Mouse",
-    brand: "Unbranded",
-    productCode: "UNB-GM01",
-    value: 9.99,
-    stock: 500,
-    description: "USB optical mouse",
-    boxPacking: "50 units/box",
-    ptr1: 6.50,
-    ptr2: 7.75,
-    ptr3: 8.50,
-    notes: "Basic functionality",
-    file: null,
-    row: "D",
-    coloumn: 6
-  }
-];
+
 
 const ProductsListCompact = () => {
   
@@ -247,21 +65,19 @@ const ProductsListCompact = () => {
   });
   
   const [editId, setEditedId] = useState();
-  const [formData, setFormData] = useState({
-    name: "",
-    brand: "",
-    productCode: "",
-    stock: null,
-    value: null,
-    description: "",
-    boxPacking: "",
-    ptr1: null,
-    ptr2: null,
-    ptr3: null,
-    notes: "",
-    row:"",
-    coloumn: null
-  });
+const [formData, setFormData] = useState({
+  productName: "",   // Product name
+  brand: "",         // Brand
+  productCode: "",   // Product code
+  value: null,       // Value / Price
+  boxPacking: false, // Boolean
+  ptr1: null,        // PTR 1
+  ptr2: null,        // PTR 2
+  ptr3: null,        // PTR 3
+  notes: "",         // Notes
+  img: ""            // Image URL or preview
+});
+
 
   const [actionText, setActionText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -282,14 +98,10 @@ const ProductsListCompact = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
 
-  // Initialize with dummy data
-  useEffect(() => {
-    if(data?.length === 0){
-      setData(dummyProducts);
-      setBrands(dummyBrands);
-    }
-  }, [data]);
 
+useEffect(() => {
+  fetchProductData();
+}, []);
   // Fetch brands from products data
   useEffect(() => {
     if (data.length > 0) {
@@ -316,34 +128,31 @@ const ProductsListCompact = () => {
     ? data 
     : data.filter(product => product.brand === selectedBrand);
 
-  // fetch users list
-  const fetchProductData = async() => {
-    try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/product")
-      setData(response.data?.reverse())
-      } catch (err){
-        console.log(err)
-        // Fallback to dummy data if API fails
-        setData(dummyProducts);
-        setBrands(dummyBrands);
-      }}
+const fetchProductData = async () => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product`);
+    setData(response.data || []); // only real products
+    // Generate brands from fetched data
+    const brandSet = new Set();
+    const brandCounts = {};
+    response.data.forEach(product => {
+      const brand = product.brand || "Unbranded";
+      brandSet.add(brand);
+      brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+    });
+    setBrands(Array.from(brandSet).map(b => ({ name: b, productCount: brandCounts[b] })));
+  } catch (err) {
+    console.log("Failed to fetch products:", err);
+    setData([]); // show empty if API fails
+    setBrands([]);
+  }
+};
 
-  // Changing state value when searching name
-  useEffect(() => {
-    if (onSearchText !== "") {
-      const filteredObject = filteredProducts.filter((item) => {
-        return (
-          item.productName.toLowerCase().includes(onSearchText.toLowerCase()) ||
-          item.productCode.toLowerCase().includes(onSearchText.toLowerCase()) ||
-          item.brand.toLowerCase().includes(onSearchText.toLowerCase())
-        );
-      });
-      setData([...filteredObject]);
-    } else {
-      setData([...data]);
-    }
-  }, [onSearchText, setData, selectedBrand]);
-
+  
+const brandOptions = brands.map((brand) => ({
+  label: brand.name,
+  value: brand.name,
+}));
   // onChange function for searching name
   const onFilterChange = (e) => {
     setSearchText(e.target.value);
@@ -364,22 +173,20 @@ const ProductsListCompact = () => {
 
   // function to reset the form
   const resetForm = () => {
-    setFormData({
-      name: "",
-      brand: "",
-      productCode: "",
-      stock: null,
-      value: null,
-      description: "",
-      boxPacking: "",
-      ptr1: null,
-      ptr2: null,
-      ptr3: null,
-      notes: "",
-      row:"",
-      coloumn: null
-    });
-  };
+  setFormData({
+    productName: "",
+    brand: "",
+    productCode: "",
+    value: null,
+    boxPacking: false,
+    ptr1: null,
+    ptr2: null,
+    ptr3: null,
+    notes: "",
+    img: ""
+  });
+};
+
 
   // function to close the form modal
   const onFormCancel = () => {
@@ -391,158 +198,110 @@ const ProductsListCompact = () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async() => {
-    const formData2 = new FormData();
-    formData2.append('productName', formData.name);
-    formData2.append('brand', formData.brand);
-    formData2.append('productCode', formData.productCode);
-    formData2.append('stock', formData.stock);
-    formData2.append('value', formData.value);
-    formData2.append('description', formData.description);
-    formData2.append('boxPacking', formData.boxPacking);
-    formData2.append('ptr1', formData.ptr1);
-    formData2.append('ptr2', formData.ptr2);
-    formData2.append('ptr3', formData.ptr3);
-    formData2.append('notes', formData.notes);
-    formData2.append('row', formData.row);
-    formData2.append('coloumn', formData.coloumn);
-    formData2.append('createdBy', userData._id);
+  const onFormSubmit = async () => {
+  try {
+    const payload = {
+      productName: formData.productName,
+      brand: formData.brand,
+      productCode: formData.productCode,
+      value: formData.value ? Number(formData.value) : 0,
+      boxPacking: formData.boxPacking || false,
+      ptr1: formData.ptr1 ? Number(formData.ptr1) : 0,
+      ptr2: formData.ptr2 ? Number(formData.ptr2) : 0,
+      ptr3: formData.ptr3 ? Number(formData.ptr3) : 0,
+      notes: formData.notes || "",
+      img: uploadedFile ? uploadedFile.preview : formData.img || "",
+      createdBy: userData._id
+    };
 
-    if (uploadedFile) {
-      formData2.append('file', uploadedFile.file);
-    }
-    
-    try{
-      const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/product", formData2, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (response.status === 201) {
-        successToast("Product Created Successfully");
-        onFormCancel();
-        fetchProductData();
-      } else {
-        warningToast();
-      }
-    } catch(error){
-      errorToast(error);
-      // Add to dummy data for demo
-      const newProduct = {
-        _id: Date.now().toString(),
-        ...formData,
-        productName: formData.name,
-        brand: formData.brand || "Unbranded",
-        productCode: formData.productCode,
-        value: formData.value,
-        stock: formData.stock,
-        description: formData.description,
-        boxPacking: formData.boxPacking || "N/A",
-        ptr1: formData.ptr1 || 0,
-        ptr2: formData.ptr2 || 0,
-        ptr3: formData.ptr3 || 0,
-        notes: formData.notes || "",
-        file: uploadedFile ? uploadedFile.preview : null,
-        row: formData.row || "",
-        coloumn: formData.coloumn || null
-      };
-      setData(prev => [newProduct, ...prev]);
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/product`,
+      payload
+    );
+
+    if (response.status === 201) {
+      successToast("Product Created Successfully");
       onFormCancel();
+      fetchProductData();
+    } else {
+      warningToast("Failed to create product");
     }
-  };
+  } catch (error) {
+    errorToast(error.response?.data?.message || "Something went wrong");
+
+    // Optional: Add dummy product to UI for demo
+    const newProduct = {
+      _id: Date.now().toString(),
+      ...payload
+    };
+    setData(prev => [newProduct, ...prev]);
+    onFormCancel();
+  }
+};
 
   // submit function to update a new item
   const onEditSubmit = async () => {
-    const submittedData = {
-      productName: formData.name || undefined,
-      brand: formData.brand || undefined,
-      productCode: formData.productCode || undefined,
-      stock: formData.stock || undefined,
-      value: formData.value || undefined,
-      description: formData.description || undefined,
-      boxPacking: formData.boxPacking || undefined,
-      ptr1: formData.ptr1 || undefined,
-      ptr2: formData.ptr2 || undefined,
-      ptr3: formData.ptr3 || undefined,
-      notes: formData.notes || undefined,
-      row: formData.row || undefined,
-      coloumn: formData.coloumn || undefined,
+  try {
+    const payload = {
+      productName: formData.productName,
+      brand: formData.brand,
+      productCode: formData.productCode,
+      value: formData.value ? Number(formData.value) : 0,
+      boxPacking: formData.boxPacking || false,
+      ptr1: formData.ptr1 ? Number(formData.ptr1) : 0,
+      ptr2: formData.ptr2 ? Number(formData.ptr2) : 0,
+      ptr3: formData.ptr3 ? Number(formData.ptr3) : 0,
+      notes: formData.notes || "",
+      img: uploadedFile ? uploadedFile.preview : formData.img || ""
     };
 
-    const formDataToSend = new FormData();
-    
-    Object.keys(submittedData).forEach((key) => {
-      if (submittedData[key] !== undefined) {
-        formDataToSend.append(key, submittedData[key]);
-      }
-    });
+    const response = await axios.put(
+      `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
+      payload
+    );
 
-    if (uploadedFile) {
-      formDataToSend.append('file', uploadedFile.file);
-    }
-
-    try {
-      const response = await axios.put(
-        `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
-        formDataToSend,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-
-      if (response.status === 200) {
-        successToast("Product Updated Successfully");
-        fetchProductData();
-        onFormCancel();
-      }
-    } catch (err) {
-      errorToast("Something Went Wrong");
-      // Update dummy data for demo
-      setData(prev => prev.map(item => 
-        item._id === editId 
-          ? { ...item, ...formData, productName: formData.name, brand: formData.brand }
-          : item
-      ));
+    if (response.status === 200) {
+      successToast("Product Updated Successfully");
+      fetchProductData();
       onFormCancel();
     }
-  };
+  } catch (err) {
+    errorToast(err.response?.data?.message || "Something Went Wrong");
+
+    // Optional: Update dummy data locally for demo
+    setData(prev =>
+      prev.map(item =>
+        item._id === editId ? { ...item, ...payload } : item
+      )
+    );
+    onFormCancel();
+  }
+};
+
 
   // function that loads the want to editted data
-  const onEditClick = (id, file) => {
-    data.forEach((item) => {
-      if (item._id === id) {
-        setFormData({
-          name: item.productName,
-          brand: item.brand,
-          productCode: item.productCode,
-          value: item.value,
-          stock: item.stock,
-          description: item.description,
-          boxPacking: item.boxPacking,
-          ptr1: item.ptr1,
-          ptr2: item.ptr2,
-          ptr3: item.ptr3,
-          notes: item.notes,
-       
-        });
-        setModal({ edit: true }, { add: false });
-        setEditedId(id);
-      }
+  const onEditClick = (id) => {
+  const item = data.find(item => item._id === id);
+  if (item) {
+    setFormData({
+      productName: item.productName,
+      brand: item.brand,
+      productCode: item.productCode,
+      value: item.value,
+      boxPacking: item.boxPacking,
+      ptr1: item.ptr1,
+      ptr2: item.ptr2,
+      ptr3: item.ptr3,
+      notes: item.notes,
+      img: item.img || ""
     });
-  };
+    setModal({ edit: true, add: false });
+    setEditedId(id);
+  }
+};
 
-  // Brand options for dropdown
-  const brandOptions = [
-    { value: "", label: "Select Brand" },
-    { value: "Nike", label: "Nike" },
-    { value: "Adidas", label: "Adidas" },
-    { value: "Apple", label: "Apple" },
-    { value: "Samsung", label: "Samsung" },
-    { value: "Sony", label: "Sony" },
-    { value: "Microsoft", label: "Microsoft" },
-    { value: "Dell", label: "Dell" },
-    { value: "HP", label: "HP" },
-    { value: "Lenovo", label: "Lenovo" },
-    { value: "Unbranded", label: "Unbranded" },
-    { value: "Other", label: "Other" },
-  ];
 
+  
   // Get current list, pagination
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
@@ -905,7 +664,7 @@ const ProductsListCompact = () => {
                                 theme="primary"
                                 className="xs"
                                 text={findUpper(item.productName)}
-                                image={item.file}
+                                image={item.img}
                               />
                               <div className="user-info ml-2">
                                 <span className="tb-lead">{item.productName}</span>
@@ -997,406 +756,476 @@ const ProductsListCompact = () => {
         </Block>
 
         {/* Add Product Modal */}
-        <Modal isOpen={modal.add} toggle={() => setModal({ add: false })} className="modal-dialog-centered" size="lg">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Add Product</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Brand</label>
-                      <RSelect
-                        options={brandOptions}
-                        onChange={(e) => setFormData({...formData, brand: e.value})}
-                        placeholder="Select Brand"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
-                        placeholder="Enter Product name"
-                        required
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Code</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="productCode"
-                        onChange={(e)=> setFormData({...formData, productCode:e.target.value})}
-                        placeholder="Enter Product Code"
-                        required
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Value (Price)</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="value"
-                        onChange={(e)=> setFormData({...formData, value:e.target.value})}
-                        placeholder="Enter Value"
-                        required
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="4">
-                    <FormGroup>
-                      <label className="form-label">PTR 1</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="ptr1"
-                        onChange={(e)=> setFormData({...formData, ptr1:e.target.value})}
-                        placeholder="PTR 1"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="4">
-                    <FormGroup>
-                      <label className="form-label">PTR 2</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="ptr2"
-                        onChange={(e)=> setFormData({...formData, ptr2:e.target.value})}
-                        placeholder="PTR 2"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="4">
-                    <FormGroup>
-                      <label className="form-label">PTR 3</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="ptr3"
-                        onChange={(e)=> setFormData({...formData, ptr3:e.target.value})}
-                        placeholder="PTR 3"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Stock Quantity</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="stock"
-                        onChange={(e)=> setFormData({...formData, stock:e.target.value})}
-                        placeholder="Stock Quantity"
-                        required
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Box Packing</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="boxPacking"
-                        onChange={(e)=> setFormData({...formData, boxPacking:e.target.value})}
-                        placeholder="e.g., 12 units/box"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-control"
-                        name="description"
-                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
-                        placeholder="Product description"
-                        rows="2"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Notes</label>
-                      <textarea
-                        className="form-control"
-                        name="notes"
-                        onChange={(e)=> setFormData({...formData, notes:e.target.value})}
-                        placeholder="Additional notes"
-                        rows="2"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Row</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="row"
-                        onChange={(e)=> setFormData({...formData, row:e.target.value})}
-                        placeholder="Row location"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Column/Rack</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="coloumn"
-                        onChange={(e) => {
-                          const value = Math.min(Number(e.target.value), 50);
-                          setFormData({ ...formData, coloumn: value });
-                        }}
-                        max="50"
-                        placeholder="Column number"
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col size="12">
-                    <FormGroup>
-                      <label className="form-label">Product Image</label>
-                      <Dropzone accept=".png, .jpg, .jpeg" multiple={false} onDrop={handleDropChange2}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files2.length === 0 && <p>Drag 'n' drop image or click to select</p>}
-                              {files2.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </FormGroup>
-                  </Col>
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Add Product
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
+       <Modal
+  isOpen={modal.add}
+  toggle={() => setModal({ add: false })}
+  className="modal-dialog-centered"
+  size="lg"
+>
+  <ModalBody>
+    <a
+      href="#cancel"
+      onClick={(ev) => {
+        ev.preventDefault();
+        onFormCancel();
+      }}
+      className="close"
+    >
+      <Icon name="cross-sm" />
+    </a>
+
+    <div className="p-2">
+      <h5 className="title">Add Product</h5>
+      <div className="mt-4">
+        <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
+
+          {/* Brand */}
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">Brand</label>
+
+    <CreatableSelect
+      options={brandOptions}
+      value={
+        formData.brand
+          ? { label: formData.brand, value: formData.brand }
+          : null
+      }
+      onChange={(selected) => {
+        setFormData({ ...formData, brand: selected.value });
+      }}
+      placeholder="Select or create brand"
+      isClearable
+    />
+  </FormGroup>
+</Col>
+
+
+          {/* Product Name */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Name</label>
+              <input
+                className="form-control"
+                type="text"
+                value={formData.productName || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, productName: e.target.value })
+                }
+                placeholder="Enter Product Name"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Product Code */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Code</label>
+              <input
+                className="form-control"
+                type="text"
+                value={formData.productCode || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, productCode: e.target.value })
+                }
+                placeholder="Enter Product Code"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Value */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Value</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.value || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, value: e.target.value })
+                }
+                placeholder="Enter Value"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Box Packing */}
+          <Col md="6">
+            <FormGroup check>
+              <label className="form-label">
+                <input
+                  type="checkbox"
+                  checked={formData.boxPacking || false}
+                  onChange={(e) =>
+                    setFormData({ ...formData, boxPacking: e.target.checked })
+                  }
+                  className="form-check-input"
+                />
+                Box Packing Available
+              </label>
+            </FormGroup>
+          </Col>
+
+          {/* PTR 1 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 1</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr1 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr1: e.target.value })
+                }
+                placeholder="PTR 1"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 2 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 2</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr2 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr2: e.target.value })
+                }
+                placeholder="PTR 2"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 3 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 3</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr3 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr3: e.target.value })
+                }
+                placeholder="PTR 3"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Notes */}
+          <Col md="12">
+            <FormGroup>
+              <label className="form-label">Notes</label>
+              <textarea
+                className="form-control"
+                rows="2"
+                value={formData.notes || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="Additional notes"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Product Image */}
+          <Col md="12">
+            <FormGroup>
+              <label className="form-label">Product Image</label>
+              <Dropzone
+                accept=".png, .jpg, .jpeg"
+                multiple={false}
+                onDrop={(acceptedFiles) =>
+                  handleImageUpload(acceptedFiles, setFormData)
+                }
+              >
+                {({ getRootProps, getInputProps }) => (
+                  <div
+                    {...getRootProps()}
+                    className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+                  >
+                    <input {...getInputProps()} />
+                    {!formData.img && (
+                      <p>Drag & drop image or click to select</p>
+                    )}
+                    {formData.img && (
+                      <div className="dz-preview dz-image-preview">
+                        <div className="dz-image">
+                          <img src={formData.img} alt="preview" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Dropzone>
+            </FormGroup>
+          </Col>
+
+          {/* Submit + Cancel */}
+          <Col md="12">
+            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
+              <li>
+                <Button color="primary" size="md" type="submit">
+                  Add Product
+                </Button>
+              </li>
+              <li>
+                <a
+                  href="#cancel"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    onFormCancel();
+                  }}
+                  className="link link-light"
+                >
+                  Cancel
+                </a>
+              </li>
+            </ul>
+          </Col>
+
+        </Form>
+      </div>
+    </div>
+  </ModalBody>
+</Modal>
+
 
         {/* Edit Product Modal */}
-        <Modal isOpen={modal.edit} toggle={() => setModal({ edit: false })} className="modal-dialog-centered" size="lg">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Update Product</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Brand</label>
-                      <RSelect
-                        options={brandOptions}
-                        value={{ value: formData.brand, label: formData.brand }}
-                        onChange={(e) => setFormData({...formData, brand: e.value})}
-                      />
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
-                        placeholder="Enter Product name"
-                        required
-                      />
-                    </FormGroup>
-                  </Col>
-                  {/* Other form fields similar to Add Modal */}
-                  {/* ... Include all the same fields as Add Modal but with values from formData ... */}
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Update Product
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
+        <Modal
+  isOpen={modal.edit}
+  toggle={() => setModal({ edit: false })}
+  className="modal-dialog-centered"
+  size="lg"
+>
+  <ModalBody>
+    <a
+      href="#cancel"
+      onClick={(ev) => {
+        ev.preventDefault();
+        onFormCancel();
+      }}
+      className="close"
+    >
+      <Icon name="cross-sm" />
+    </a>
 
-        {/* Delete Confirmation Modal */}
-        <Modal isOpen={assignModal} toggle={toggleAssignModal} className="modal-dialog-centered" size="md">
-          <ModalBody>
-            <div className="nk-modal-head">
-              <div className="card-inner-group">
-                <div className="card-inner p-0">
-                  <div className="confirmation-container">
-                    <h5 className="confirmation-message">Are You Sure to Delete - {selectedData && selectedData.productName}?</h5>
-                    <div className="confirmation-buttons">
-                      <button className="confirm-button" onClick={() => {
-                        setData(prev => prev.filter(item => item._id !== selectedData._id));
-                        setAssignModal(false);
-                        successToast("Product deleted successfully");
-                      }}>
-                        Confirm
-                      </button>
-                      <button className="cancel-button" onClick={toggleAssignModal}>Cancel</button>
-                    </div>
+    <div className="p-2">
+      <h5 className="title">Update Product</h5>
+      <div className="mt-4">
+        <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
+
+          {/* Brand */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Brand</label>
+              <RSelect
+                options={brandOptions}
+                value={{ value: formData.brand, label: formData.brand }}
+                onChange={(e) =>
+                  setFormData({ ...formData, brand: e.value })
+                }
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Product Name */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Name</label>
+              <input
+                className="form-control"
+                type="text"
+                value={formData.productName || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, productName: e.target.value })
+                }
+                placeholder="Enter Product Name"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Product Code */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Code</label>
+              <input
+                className="form-control"
+                type="text"
+                value={formData.productCode || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, productCode: e.target.value })
+                }
+                placeholder="Enter Product Code"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Value */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Value</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.value || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, value: e.target.value })
+                }
+                placeholder="Enter Value"
+                required
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Box Packing */}
+          <Col md="6">
+            <FormGroup check>
+              <label className="form-label">
+                <input
+                  type="checkbox"
+                  checked={formData.boxPacking || false}
+                  onChange={(e) =>
+                    setFormData({ ...formData, boxPacking: e.target.checked })
+                  }
+                  className="form-check-input"
+                />
+                Box Packing Available
+              </label>
+            </FormGroup>
+          </Col>
+
+          {/* PTR 1 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 1</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr1 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr1: e.target.value })
+                }
+                placeholder="PTR 1"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 2 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 2</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr2 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr2: e.target.value })
+                }
+                placeholder="PTR 2"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 3 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 3</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr3 || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr3: e.target.value })
+                }
+                placeholder="PTR 3"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Notes */}
+          <Col md="12">
+            <FormGroup>
+              <label className="form-label">Notes</label>
+              <textarea
+                className="form-control"
+                rows="2"
+                value={formData.notes || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="Additional notes"
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Product Image */}
+          <Col md="12">
+            <FormGroup>
+              <label className="form-label">Product Image</label>
+              <Dropzone
+                accept=".png, .jpg, .jpeg"
+                multiple={false}
+                onDrop={(acceptedFiles) =>
+                  handleImageUpload(acceptedFiles, setFormData)
+                }
+              >
+                {({ getRootProps, getInputProps }) => (
+                  <div
+                    {...getRootProps()}
+                    className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+                  >
+                    <input {...getInputProps()} />
+                    {!formData.img && <p>Drag & drop image or click to select</p>}
+                    {formData.img && (
+                      <div className="dz-preview dz-image-preview">
+                        <div className="dz-image">
+                          <img src={formData.img} alt="preview" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
+                )}
+              </Dropzone>
+            </FormGroup>
+          </Col>
 
-        {/* Import Modal */}
-        <Modal isOpen={uploadModal} toggle={toggleUploadModal} className="modal-dialog-centered" size="lg">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                setFiles([]);
-                toggleUploadModal();
-              }}
-              className="close"
-            >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Import Products</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={onImportSubmit}>
-                  <Col size="12">
-                    <Dropzone accept=".xlsx, .xls" multiple={false} onDrop={handleDropChange}>
-                      {({ getRootProps, getInputProps }) => (
-                        <section>
-                          <div
-                            {...getRootProps()}
-                            className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                          >
-                            <input {...getInputProps()} />
-                            {files.length === 0 && <p>Drag 'n' drop Excel file or click to select</p>}
-                            {files.map((file) => (
-                              <div
-                                key={file.name}
-                                className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                              >
-                                <div className="dz-image">
-                                  <Icon name="file-xls"></Icon>
-                                </div>
-                                <span>{file.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </section>
-                      )}
-                    </Dropzone>
-                  </Col>
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                          Import
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            toggleUploadModal();
-                            setFiles([]);
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
+          {/* Submit + Cancel */}
+          <Col md="12">
+            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
+              <li>
+                <Button color="primary" size="md" type="submit">
+                  Update Product
+                </Button>
+              </li>
+              <li>
+                <a
+                  href="#cancel"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    onFormCancel();
+                  }}
+                  className="link link-light"
+                >
+                  Cancel
+                </a>
+              </li>
+            </ul>
+          </Col>
+
+        </Form>
+      </div>
+    </div>
+  </ModalBody>
+</Modal>
+
       </Content>
 
       <style jsx>{`

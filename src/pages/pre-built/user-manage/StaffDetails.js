@@ -26,7 +26,7 @@ import FilesStaff from "./FilesStaff";
 import PayRollFiles from "./PayRollFiles";
 import EducationDetails from "./EducationDetails";
 import FamilyDetails from "./FamilyDetails";
-
+import "./staff.css";
 
 
 const StaffDetails = ({ match }) => {
@@ -140,112 +140,89 @@ const fetchStaffData = async() => {
                 <Row className="g-gs">
                   <Col lg="3">
                   <PreviewCard>
-                  <div className="p-2">
-                    {user.file ? (
-                      <img
-                        style={{
-                          height: "250px",
-                          width: "250px", // Ensure consistent dimensions
-                          borderRadius: "50%", // Circular image
-                          objectFit: "cover",
-                        }}
-                        className="product-image"
-                        src={user.file}
-                        alt={user.name}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          height: "250px",
-                          width: "200px",
-                          borderRadius: "50%",
-                          backgroundColor: "#ddd",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          color: "#999",
-                          fontSize: "1rem",
-                          fontWeight: "500",
-                        }}
-                      >
-                        Preview Not Available
-                      </div>
-                    )}
-                  </div> 
-                          {/* <div className="profile-ud wider  mt-3">
-                            <span className="profile-ud-label">Staff ID</span>
-                            <span 
-                            className={` profile-ud-value `}
-                          >
-                            {user.staffId}
-                          </span>
-                          </div> */}
+  <div
+    style={{
+      minHeight: "280px",   // ⬅️ reduced from 370px
+      display: "flex",
+      alignItems: "center", // ⬅️ centers image vertically
+      justifyContent: "center",
+    }}
+  >
 
+    {/* Profile Image */}
+    {user.img ? (
+      <img
+        style={{
+          height: "250px",
+          width: "250px",
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+        src={user.img}
+        alt={user.name}
+      />
+    ) : (
+      <div
+        style={{
+          height: "250px",
+          width: "250px",
+          borderRadius: "50%",
+          backgroundColor: "#ddd",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "#999",
+          fontSize: "1rem",
+          fontWeight: "500",
+        }}
+      >
+        Image Not Available
+      </div>
+    )}
 
-                          <div className="profile-ud wider">
-                              <span className="profile-ud-label">Employee ID</span>
-                              <span 
-                              className={`  `}
-                            >
-                              {user.employeeId}
-                            </span>
-                            </div>
+  </div>
 
+  {/* Staff Code */}
+  <div className="profile-ud wider mt-0">
+    <span className="profile-ud-label">Staff Name</span>
+    <span className="profile-ud-value">
+      {user.name || "Not Available"}
+    </span>
+  </div>
 
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Status</span>
-                            <span 
-                            className={`  tb-status text-${
-                              user.staffStatus === "active" ? "success" : user.staffStatus === "suspend" ? "warning" : "danger"
-                            }`}
-                          >
-                            {user.staffStatus === "active" ? "Active" : "Deactive"}
-                          </span>
-                          </div>
+  {/* Staff Type */}
+  <div className="profile-ud wider">
+    <span className="profile-ud-label">Staff Type</span>
+    <span className="profile-ud-value">
+      {user.type || "Not Available"}
+    </span>
+  </div>
 
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Blood Group</span>
-                            <span 
-                            // profile-ud-value
-                            className={`  tb-status text-${
-                              user.staffStatus !== "active" ? "success" : user.staffStatus === "suspend" ? "warning" : "danger"
-                            }`}
-                          >
-                            {user.blood || "Not Available"}
-                          </span>
-                          </div>
+  {/* Status */}
+  <div className="profile-ud wider">
+    <span className="profile-ud-label">Status</span>
+    <span className={`profile-ud-value text-${user.staffStatus === "active" ? "success" : "danger"} margin-bottom-20`}>
+      {user.staffStatus
+        ? user.staffStatus.charAt(0).toUpperCase() + user.staffStatus.slice(1)
+        : "Not Available"}
+    </span>
+  </div>
 
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">D.O.J</span>
-                            <span   className="">{user.doj && !isNaN(new Date(user.doj).getTime())
-                          ? new Date(user.doj).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                            
-                            })
-                          : "Not Available"}</span>
-                          </div>
+  {/* Created Date */}
+  {/* <div className="profile-ud wider">
+    <span className="profile-ud-label">Joined On</span>
+    <span className="profile-ud-value">
+      {user.createdAt
+        ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : "Not Available"}
+    </span>
+  </div> */}
+</PreviewCard>
 
-                          
-                         
-                            <div className="profile-ud wider">
-                              <span className="profile-ud-label">Emergency No</span>
-                              <span 
-                              className={`  `}
-                            >
-                              {user.emergencyContact || "Not Available"}
-                            </span>
-                            </div>
-
-                            <div className="profile-ud wider">
-                              <span className="profile-ud-label">Emergency No 2</span>
-                              <span 
-                              
-                            >
-                              {user.emergencyContact2 || "Not Available"}
-                            </span>
-                            </div>
-                  </PreviewCard>
               </Col>
 
                   <Col lg="9">
@@ -347,122 +324,74 @@ const fetchStaffData = async() => {
                     </div>
 
                     {activeTab === "1" && (
-                  <div  className="p-4">
-                    <Block>
-                      <BlockHead>
-                        <BlockTitle className="mt-1" tag="h5">Personal Information</BlockTitle>
-                      
-                      </BlockHead>
-                      <div className="profile-ud-list mt-2">
-                       
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Full Name</span>
-                            <span className="profile-ud-value">{user.name || "Not Available"}</span>
-                          </div>
-                        </div>
+  <div className="p-4">
+    <Block>
+      <BlockHead>
+        <BlockTitle className="mt-1" tag="h5">
+          Personal Information
+        </BlockTitle>
+      </BlockHead>
 
-                        <div className="profile-ud-item">
-                       
-                       </div>
+      <div className="profile-ud-list mt-2">
 
-                       <div className="profile-ud-item">
-                         <div className="profile-ud wider">
-                           <span className="profile-ud-label">Mobile</span>
-                           <span className="profile-ud-value">{user.phone || "Not Available"}</span>
-                         </div>
-                       </div>
+        <div className="profile-ud-item">
+          <span className="profile-ud-label">Full Name</span>
+          <span className="profile-ud-value">
+            {user.name || "Not Available"}
+          </span>
+        </div>
+
+        <div className="profile-ud-item">
+          <span className="profile-ud-label">Staff Code</span>
+          <span className="profile-ud-value">
+            {user.staffCode || "Not Available"}
+          </span>
+        </div>
+
+        <div className="profile-ud-item">
+          <span className="profile-ud-label">Staff Type</span>
+          <span className="profile-ud-value">
+            {user.type || "Not Available"}
+          </span>
+        </div>
+
+        <div className="profile-ud-item">
+          <span className="profile-ud-label">Email Address</span>
+          <span className="profile-ud-value">
+            {user.email || "Not Available"}
+          </span>
+        </div>
+
+        {/* <div className="profile-ud-item">
+          <span className="profile-ud-label">Status</span>
+          <span
+            className={`profile-ud-value text-${
+              user.staffStatus === "active" ? "success" : "danger"
+            }`}
+          >
+            {user.staffStatus || "Not Available"}
+          </span>
+        </div> */}
+
+        <div className="profile-ud-item">
+          <span className="profile-ud-label">Created On</span>
+          <span className="profile-ud-value">
+            {user.createdAt
+              ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "Not Available"}
+          </span>
+        </div>
+
+      </div>
+    </Block>
+  </div>
+)}
 
 
-                        <div className="profile-ud-item">
-                       
-                        </div>
-
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Email Address</span>
-                            <span className="profile-ud-value">{user.email || "Not Available"}</span>
-                          </div>
-                        </div>
-
-                        
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Surname</span>
-                            <span className="profile-ud-value">{user.name.split(" ")[1]}</span>
-                          </div> */}
-                        </div>
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Aadhar No</span>
-                            <span className="profile-ud-value">{user.aadhar || "Not Available" }</span>
-                          </div>
-                        </div>
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Email Address</span>
-                            <span className="profile-ud-value">{user.email}</span>
-                          </div> */}
-                        </div>
-
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Date of Birth</span>
-                            <span className="profile-ud-value">
-                            {user.dob && !isNaN(new Date(user.dob).getTime())
-                              ? new Date(user.dob).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })
-                              : "Not Available"}
-                          </span>
-                          </div>
-                        </div>
-                      
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Surname</span>
-                            <span className="profile-ud-value">{user.name.split(" ")[1]}</span>
-                          </div> */}
-                        </div>
-                        <div className="profile-ud-item">
-                          <div className="profile-ud wider">
-                            <span className="profile-ud-label">Address</span>
-                            <span className="profile-ud-value">{user.address || "Not Available" }</span>
-                          </div>
-                        </div>
-                      
-                      </div>
-                    </Block>
-
-                    <Block>
-                      {/* <BlockHead className="nk-block-head-line">
-                        <BlockTitle tag="h6" className="overline-title text-base">
-                          Additional Information
-                        </BlockTitle>
-                      </BlockHead> */}
-                      <div className="profile-ud-list">
-                        <div className="profile-ud-item">
-                         
-                        </div>
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Reg Method</span>
-                            <span className="profile-ud-value">Email</span>
-                          </div> */}
-                        </div>
-                       
-                        <div className="profile-ud-item">
-                          {/* <div className="profile-ud wider">
-                            <span className="profile-ud-label">Nationality</span>
-                            <span className="profile-ud-value">{user.country}</span>
-                          </div> */}
-                        </div>
-                      </div>
-                    </Block>   
-                  </div>) 
-                    }
                     
                     {activeTab === "5" && <EducationDetails user={user}/>}
 
