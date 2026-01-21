@@ -61,15 +61,18 @@ const ProductsListCompact = () => {
   });
   
   const [editId, setEditedId] = useState();
-  const [formData, setFormData] = useState({
-    name: "",
-    productCode: "",
-    stock: null,
-    value: null,
-    description: "",
-    row:"",
-    coloumn:null
-  });
+ const [formData, setFormData] = useState({
+  productName: "",
+  productCode: "",
+  brand: "",
+  value: "",
+  boxPacking: false,
+  ptr1: "",
+  ptr2: "",
+  ptr3: "",
+  notes: "",
+  img: ""
+});
 
   const [actionText, setActionText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -152,17 +155,23 @@ const ProductsListCompact = () => {
   };
 
   // function to reset the form
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      productCode: "",
-      stock: null,
-      value: null,
-      description: "",
-      row:"",
-      coloumn:null
-    });
-  };
+const resetForm = () => {
+  setFormData({
+    productName: "",
+    productCode: "",
+    brand: "",
+    value: "",
+    boxPacking: false,
+    ptr1: "",
+    ptr2: "",
+    ptr3: "",
+    notes: "",
+    img: ""
+  });
+
+  setFiles2([]); // clear image preview
+};
+
 
   // function to close the form modal
   const onFormCancel = () => {
@@ -174,80 +183,69 @@ const ProductsListCompact = () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async() => {
-  
-    const formData2 = new FormData();
-    formData2.append('productName', formData.name)
-    formData2.append('productCode', formData.productCode)
-    formData2.append('stock', formData.stock)
-    formData2.append('value', formData.value)
-    formData2.append('description', formData.description)
-    formData2.append('row', formData.row)
-    formData2.append('coloumn', formData.coloumn)
-    formData2.append('createdBy', userData._id)
-
-    if (uploadedFile) {
-      formData2.append('file', uploadedFile.file); // `uploadedFile` should be set when the file is selected
-    }
-    try{
-      const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/product",formData2, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (response.status === 201) {
-        successToast("Product Created Successfully")
-        onFormCancel()
-        fetchProductData()
-      } else {
-        warningToast()
-      }
-    }catch(error){
-      errorToast(error)
-    }
+  const onFormSubmit = async () => {
+  const payload = {
+    productName: formData.productName,
+    productCode: formData.productCode,
+    brand: formData.brand,
+    value: Number(formData.value),
+    boxPacking: formData.boxPacking,
+    ptr1: formData.ptr1 ? Number(formData.ptr1) : undefined,
+    ptr2: formData.ptr2 ? Number(formData.ptr2) : undefined,
+    ptr3: formData.ptr3 ? Number(formData.ptr3) : undefined,
+    notes: formData.notes,
+    img: formData.img, // Cloudinary URL
+    createdBy: userData._id
   };
+
+  try {
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/product`,
+      payload
+    );
+
+    if (response.status === 201) {
+      successToast("Product Created Successfully");
+      onFormCancel();
+      fetchProductData();
+    }
+  } catch (error) {
+    errorToast(error.response?.data?.message || "Product creation failed");
+  }
+};
 
   // submit function to update a new item
 
   const onEditSubmit = async () => {
-    const submittedData = {
-      productName: formData.name || undefined,
-      productCode: formData.productCode || undefined,
-      stock: formData.stock || undefined,
-      value: formData.value || undefined,
-      description: formData.description || undefined,
-      row: formData.row || undefined,
-      coloumn: formData.coloumn || undefined,
-    };
-  
-  
-    const formDataToSend = new FormData();
-    
-    Object.keys(submittedData).forEach((key) => {
-      if (submittedData[key] !== undefined) {
-        formDataToSend.append(key, submittedData[key]);
-      }
-    });
-  
-    if (uploadedFile) {
-      formDataToSend.append('file', uploadedFile.file); // Add the image file
-    }
-  
-    try {
-      const response = await axios.put(
-        `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
-        formDataToSend,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-  
-      if (response.status === 200) {
-        successToast("Product Updated Successfully");
-        fetchProductData();
-        onFormCancel()
-      }
-    } catch (err) {
-      errorToast("Something Went Wrong");
-    }
+  const payload = {
+    productName: formData.productName || undefined,
+    productCode: formData.productCode || undefined,
+    brand: formData.brand || undefined,
+    value: formData.value ? Number(formData.value) : undefined,
+    boxPacking: formData.boxPacking,
+    ptr1: formData.ptr1 ? Number(formData.ptr1) : undefined,
+    ptr2: formData.ptr2 ? Number(formData.ptr2) : undefined,
+    ptr3: formData.ptr3 ? Number(formData.ptr3) : undefined,
+    notes: formData.notes || undefined,
+    img: formData.img || undefined,
   };
-  
+
+  try {
+    const response = await axios.put(
+      `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
+      payload
+    );
+
+    if (response.status === 200) {
+      successToast("Product Updated Successfully");
+      fetchProductData(); // refresh list
+      onFormCancel();     // reset form & close modal
+    }
+  } catch (err) {
+    errorToast(err.response?.data?.message || "Something Went Wrong");
+  }
+};
+
   // const onEditSubmit = async() => {
   //   let submittedData;
   //   let newitems = data;
@@ -277,23 +275,26 @@ const ProductsListCompact = () => {
   // };
 
   // function that loads the want to editted data
-  const onEditClick = (id, file) => {
-    data.forEach((item) => {
-      if (item._id === id) {
-        setFormData({
-          name: item.productName,
-          productCode: item.productCode,
-          value: item.value,
-          stock: item.stock,
-          description: item.description,
-          row:item.row,
-          coloumn:item.coloumn
-        });
-        setModal({ edit: true }, { add: false });
-        setEditedId(id);
-      }
-    });
-  };
+  const onEditClick = (id) => {
+  const product = data.find((item) => item._id === id);
+  if (!product) return;
+
+  setFormData({
+    productName: product.productName,
+    productCode: product.productCode,
+    brand: product.brand,
+    value: product.value,
+    boxPacking: product.boxPacking || false,
+    ptr1: product.ptr1 || "",
+    ptr2: product.ptr2 || "",
+    ptr3: product.ptr3 || "",
+    notes: product.notes || "",
+    img: product.img || ""
+  });
+
+  setEditedId(id);
+  setModal({ edit: true, add: false });
+};
 
   // function to change to suspend property for an item
   const suspendUser = (id) => {
@@ -1274,162 +1275,163 @@ const ProductsListCompact = () => {
               <div className="mt-4">
                 <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
                   <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        defaultValue={formData.name}
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
-                        placeholder="Enter Product name"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup>
+    <label className="form-label">Product Name</label>
+    <input
+      className="form-control"
+      type="text"
+      name="productName"
+      placeholder="Enter product name"
+      value={formData.productName}
+      onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+      ref={register({ required: "Product name is required" })}
+    />
+    {errors.productName && <span className="invalid">{errors.productName.message}</span>}
+  </FormGroup>
+</Col>
+
                   <Col md="6">
-                    {/* <FormGroup>
-                      <label className="form-label">Product Code</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="email"
-                        defaultValue={formData.email}
-                        placeholder="Enter Product Code"
-                        ref={register({
-                          required: "This field is required",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: "invalid email address",
-                          },
-                        })}
-                      />
-                      {errors.email && <span className="invalid">{errors.email.message}</span>}
-                    </FormGroup> */}
-                    <FormGroup>
-                      <label className="form-label">Product Code</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        onChange={(e)=> setFormData({...formData, productCode:e.target.value})}
-                        defaultValue={formData.productCode}
-                        placeholder="Enter Product name"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup>
+    <label className="form-label">Product Code</label>
+    <input
+      className="form-control"
+      type="text"
+      name="productCode"
+      placeholder="Enter product code"
+      value={formData.productCode}
+      onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+      ref={register({ required: "Product code is required" })}
+    />
+    {errors.productCode && <span className="invalid">{errors.productCode.message}</span>}
+  </FormGroup>
+</Col>
+
                   <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Value</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="balance"
-                        onChange={(e)=> setFormData({...formData, value:e.target.value})}
-                        defaultValue={formData.value}
-                        placeholder="Enter Value"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup>
+    <label className="form-label">Brand</label>
+    <input
+      className="form-control"
+      type="text"
+      name="brand"
+      placeholder="Enter brand"
+      value={formData.brand}
+      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+      ref={register({ required: "Brand is required" })}
+    />
+    {errors.brand && <span className="invalid">{errors.brand.message}</span>}
+  </FormGroup>
+</Col>
+
                   <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Stock</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="phone"
-                        onChange={(e)=> setFormData({...formData, stock:e.target.value})}
-                        defaultValue={formData.stock}
-                        ref={register({
-                          required: "This field is required",
-                        })}
-                      />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup>
+    <label className="form-label">Value</label>
+    <input
+      className="form-control"
+      type="number"
+      name="value"
+      placeholder="Enter value"
+      value={formData.value}
+      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+      ref={register({ required: "Value is required" })}
+    />
+    {errors.value && <span className="invalid">{errors.value.message}</span>}
+  </FormGroup>
+</Col>
+
                   <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Product Row</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={productRow}
-                        // defaultValue={{ value: "admin", label: "Admin" }}
-                        onChange={(e) => {
-                          setFormData({ ...formData, row: e.value });
-                        }}
-                      />
-                    </div>
-                  </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Coloumn Rack</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="phone"
-                        placeholder="Enter Product Rack"
-                        onChange={(e) => {
-                        const value = Math.min(Number(e.target.value), 50); // Convert to number and limit to 50
-                        setFormData({ ...formData, coloumn: value });
-                      }}
-                        value={formData.coloumn || ''} 
-                        ref={register({
-                          required: "This field is required",
-                        })}
-                      />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup check>
+    <label className="form-label">
+      <input
+        type="checkbox"
+        className="form-check-input"
+        checked={formData.boxPacking}
+        onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
+      />
+      Box Packing Available
+    </label>
+  </FormGroup>
+</Col>
+
+                  <Col md="4">
+  <FormGroup>
+    <label className="form-label">PTR 1</label>
+    <input
+      className="form-control"
+      type="number"
+      value={formData.ptr1}
+      onChange={(e) => setFormData({ ...formData, ptr1: e.target.value })}
+    />
+  </FormGroup>
+</Col>
+
+<Col md="4">
+  <FormGroup>
+    <label className="form-label">PTR 2</label>
+    <input
+      className="form-control"
+      type="number"
+      value={formData.ptr2}
+      onChange={(e) => setFormData({ ...formData, ptr2: e.target.value })}
+    />
+  </FormGroup>
+</Col>
+
+<Col md="4">
+  <FormGroup>
+    <label className="form-label">PTR 3</label>
+    <input
+      className="form-control"
+      type="number"
+      value={formData.ptr3}
+      onChange={(e) => setFormData({ ...formData, ptr3: e.target.value })}
+    />
+  </FormGroup>
+</Col>
+
                   <Col md="12">
-                  <FormGroup>
-                      <label className="form-label">Description</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        placeholder="Enter Product Description"
-                        name="phone"
-                        defaultValue={formData.description}
-                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
-                        ref={register({
-                          required: "This field is required",
-                        })}
-                      />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-                    </FormGroup>
-                  </Col>
+  <FormGroup>
+    <label className="form-label">Notes</label>
+    <textarea
+      className="form-control"
+      rows="3"
+      placeholder="Additional notes"
+      value={formData.notes}
+      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+    />
+  </FormGroup>
+</Col>
+
 
                   <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange2(acceptedFiles, setFiles)}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files2.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
-                              {files2.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </Col>
+  <Dropzone
+    accept={{ "image/png": [], "image/jpeg": [] }}
+    multiple={false}
+    onDrop={(acceptedFiles) => handleImageUpload(acceptedFiles)}
+  >
+    {({ getRootProps, getInputProps }) => (
+      <div
+        {...getRootProps()}
+        className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+      >
+        <input {...getInputProps()} />
+
+        {files2.length === 0 && (
+          <p>Drag & drop PNG/JPG file or click to select</p>
+        )}
+
+        {files2.map((file) => (
+          <div key={file.name} className="dz-preview dz-image-preview">
+            <div className="dz-image">
+              <img src={file.preview} alt="preview" />
+            </div>
+            <span>{file.name}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </Dropzone>
+</Col>
+
 
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
@@ -1457,202 +1459,250 @@ const ProductsListCompact = () => {
             </div>
           </ModalBody>
         </Modal>
-        <Modal isOpen={modal.edit} toggle={() => setModal({ edit: false })} className="modal-dialog-centered" size="lg">
-          <ModalBody>
-            <a
-              href="#cancel"
-              onClick={(ev) => {
-                ev.preventDefault();
-                onFormCancel();
-              }}
-              className="close"
+        <Modal
+  isOpen={modal.edit}
+  toggle={() => setModal({ edit: false })}
+  className="modal-dialog-centered"
+  size="lg"
+>
+  <ModalBody>
+    <a
+      href="#cancel"
+      onClick={(ev) => {
+        ev.preventDefault();
+        onFormCancel();
+      }}
+      className="close"
+    >
+      <Icon name="cross-sm" />
+    </a>
+
+    <div className="p-2">
+      <h5 className="title">Update Product</h5>
+      <div className="mt-4">
+        <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
+
+          {/* Product Name */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Name</label>
+              <input
+                className="form-control"
+                type="text"
+                name="productName"
+                placeholder="Enter product name"
+                value={formData.productName}
+                onChange={(e) =>
+                  setFormData({ ...formData, productName: e.target.value })
+                }
+                ref={register({ required: "Product Name is required" })}
+              />
+              {errors.productName && (
+                <span className="invalid">{errors.productName.message}</span>
+              )}
+            </FormGroup>
+          </Col>
+
+          {/* Product Code */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Product Code</label>
+              <input
+                className="form-control"
+                type="text"
+                name="productCode"
+                placeholder="Enter product code"
+                value={formData.productCode}
+                onChange={(e) =>
+                  setFormData({ ...formData, productCode: e.target.value })
+                }
+                ref={register({ required: "Product Code is required" })}
+              />
+              {errors.productCode && (
+                <span className="invalid">{errors.productCode.message}</span>
+              )}
+            </FormGroup>
+          </Col>
+
+          {/* Brand */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Brand</label>
+              <input
+                className="form-control"
+                type="text"
+                name="brand"
+                placeholder="Enter brand"
+                value={formData.brand}
+                onChange={(e) =>
+                  setFormData({ ...formData, brand: e.target.value })
+                }
+                ref={register({ required: "Brand is required" })}
+              />
+              {errors.brand && (
+                <span className="invalid">{errors.brand.message}</span>
+              )}
+            </FormGroup>
+          </Col>
+
+          {/* Value */}
+          <Col md="6">
+            <FormGroup>
+              <label className="form-label">Value</label>
+              <input
+                className="form-control"
+                type="number"
+                name="value"
+                placeholder="Enter value"
+                value={formData.value}
+                onChange={(e) =>
+                  setFormData({ ...formData, value: e.target.value })
+                }
+                ref={register({ required: "Value is required" })}
+              />
+              {errors.value && (
+                <span className="invalid">{errors.value.message}</span>
+              )}
+            </FormGroup>
+          </Col>
+
+          {/* Box Packing */}
+          <Col md="6">
+            <FormGroup check>
+              <label className="form-label">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={formData.boxPacking}
+                  onChange={(e) =>
+                    setFormData({ ...formData, boxPacking: e.target.checked })
+                  }
+                />
+                Box Packing Available
+              </label>
+            </FormGroup>
+          </Col>
+
+          {/* PTR 1 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 1</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr1}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr1: e.target.value })
+                }
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 2 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 2</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr2}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr2: e.target.value })
+                }
+              />
+            </FormGroup>
+          </Col>
+
+          {/* PTR 3 */}
+          <Col md="4">
+            <FormGroup>
+              <label className="form-label">PTR 3</label>
+              <input
+                className="form-control"
+                type="number"
+                value={formData.ptr3}
+                onChange={(e) =>
+                  setFormData({ ...formData, ptr3: e.target.value })
+                }
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Notes */}
+          <Col md="12">
+            <FormGroup>
+              <label className="form-label">Notes</label>
+              <textarea
+                className="form-control"
+                rows="3"
+                placeholder="Additional notes"
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+              />
+            </FormGroup>
+          </Col>
+
+          {/* Image Upload */}
+          <Col md="12">
+            <Dropzone
+              accept=".png, .jpg"
+              multiple={false}
+              onDrop={(acceptedFiles) =>
+                handleImageUpload(acceptedFiles, setFormData)
+              }
             >
-              <Icon name="cross-sm"></Icon>
-            </a>
-            <div className="p-2">
-              <h5 className="title">Update Product</h5>
-              <div className="mt-4">
-                <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        defaultValue={formData.name}
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
-                        placeholder="Enter name"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.name && <span className="invalid">{errors.name.message}</span>}
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    {/* <FormGroup>
-                      <label className="form-label">Email </label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="email"
-                        defaultValue={formData.email}
-                        placeholder="Enter email"
-                        ref={register({
-                          required: "This field is required",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: "invalid email address",
-                          },
-                        })}
-                      />
-                      {errors.email && <span className="invalid">{errors.email.message}</span>}
-                    </FormGroup> */}
-                    <FormGroup>
-                      <label className="form-label">Product Code</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="balance"
-                        defaultValue={formData.productCode}
-                        onChange={(e)=> setFormData({...formData, productCode:e.target.value})}
-                        placeholder=""
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Value</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="balance"
-                        onChange={(e)=> setFormData({...formData, value:e.target.value})}
-                        defaultValue={formData.value}
-                        placeholder="Balance"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Stock</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="phone"
-                        onChange={(e)=> setFormData({...formData, stock:e.target.value})}
-                        defaultValue={Number(formData.stock)}
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Product Row</label>
-                      <div className="form-control-wrap">
-                        <RSelect
-                          options={productRow}
-                          disabled
-                          defaultValue={{
-                            value: formData.row,
-                            label: formData.row,
-                          }}
-                          onChange={(e) => setFormData({ ...formData, row: e.value })}
-                        />
+              {({ getRootProps, getInputProps }) => (
+                <div
+                  {...getRootProps()}
+                  className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+                >
+                  <input {...getInputProps()} />
+                  {!formData.img && (
+                    <p>Drag & drop PNG/JPG file or click to select</p>
+                  )}
+                  {formData.img && (
+                    <div className="dz-preview dz-image-preview">
+                      <div className="dz-image">
+                        <img src={formData.img} alt="preview" />
                       </div>
-                    </FormGroup>
-                  </Col>
-                  <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Product Column</label>
-                    <input
-                      className="form-control"
-                      type="number"
-                      name="phone"
-                      onChange={(e) => {
-                        const value = Math.min(Number(e.target.value), 50); 
-                        setFormData({ ...formData, coloumn: value });
-                      }}
-                      value={formData.coloumn || ''} // Use value for controlled input
-                      ref={register({ required: "This field is required" })}
-                      max="50" // Max value for the input
-                    />
-                    {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-                  </FormGroup>
-                </Col>
-                  <Col md="12">
-                    <FormGroup>
-                      <label className="form-label">Description</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="balance"
-                        onChange={(e)=> setFormData({...formData, description:e.target.value})}
-                        defaultValue={formData.description}
-                        placeholder="Balance"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup>
-                  </Col>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Dropzone>
+          </Col>
 
-                  <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange2(acceptedFiles, setFiles)}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files2.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
-                              {files2.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </Col>
+          {/* Submit + Cancel Buttons */}
+          <Col md="12">
+            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
+              <li>
+                <Button color="primary" size="md" type="submit">
+                  Update Product
+                </Button>
+              </li>
+              <li>
+                <a
+                  href="#cancel"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    onFormCancel();
+                  }}
+                  className="link link-light"
+                >
+                  Cancel
+                </a>
+              </li>
+            </ul>
+          </Col>
 
-                  <Col size="12">
-                    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                      <li>
-                        <Button color="primary" size="md" type="submit">
-                        Update Product
-                        </Button>
-                      </li>
-                      <li>
-                        <a
-                          href="#cancel"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            onFormCancel();
-                          }}
-                          className="link link-light"
-                        >
-                          Cancel
-                        </a>
-                      </li>
-                    </ul>
-                  </Col>
-                </Form>
-              </div>
-            </div>
-          </ModalBody>
-        </Modal>
+        </Form>
+      </div>
+    </div>
+  </ModalBody>
+</Modal>
+
 
 
         <Modal isOpen={assignModal} toggle={toggleAssignModal} className="modal-dialog-centered" size="md">

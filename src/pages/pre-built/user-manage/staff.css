@@ -1,0 +1,23 @@
+.profile-ud-list {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5px;
+  gap: 32px;
+}
+
+.profile-ud-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.profile-ud-label {
+  width: 160px;      /* fixed key width */
+  font-weight: 500;
+  color: #8094ae;
+}
+
+.profile-ud-value {
+  font-weight: 500;
+  color: #364a63;
+}
