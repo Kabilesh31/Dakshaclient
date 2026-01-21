@@ -43,7 +43,7 @@
 
         @if($dark_option==true) {
             &.is-dark{
-                background: $sidebar-bg-dark-color;
+                background: $sidebar-bg-dark-gradient;
                 @if($rtl==false){
                     border-right-color: $sidebar-border-dark-color;
                 }
@@ -150,7 +150,7 @@
             }
             @if($dark_option==true) {
                 .is-dark &{
-                    background-color: $sidebar-bg-dark-color;
+                    background-color: $sidebar-bg-dark-gradient;
                 }
             }
             @if($dark_theme_option==true) {

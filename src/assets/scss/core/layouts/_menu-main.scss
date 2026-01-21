@@ -150,7 +150,7 @@ $menu-main-sub-toggle-icon-rtl: $ni-chevron-left !default;
                 letter-spacing: $menu-sub-link-ls;
                 text-transform: $menu-sub-link-case;
                 line-height: $menu-sub-link-lh;
-                color: $menu-link-color-sub;
+                color: #ffffff;
             }
         }
         &.is-disable{
@@ -327,7 +327,7 @@ $menu-main-sub-toggle-icon-rtl: $ni-chevron-left !default;
         }
         .nk-menu-link {
             &:hover{
-                color: $accent-color;
+                color: #F8E1B7;
                 @if($menu_dark_theme_option==true) {
                     .is-theme &{
                         color: $white;
@@ -336,7 +336,7 @@ $menu-main-sub-toggle-icon-rtl: $ni-chevron-left !default;
             }
         }
         .active > .nk-menu-link {
-            color: $accent-color;
+            color: #F8E1B7;
             @if($menu_dark_theme_option==true) {
                 .is-theme &{
                     color: $white;

@@ -57,7 +57,7 @@ $accent-300:  		#c4cefe;
 $accent-400:  		#9cabff;
 $accent-500:  		#798bff;
 
-$accent-color:  	#6576ff;
+$accent-color:  	#656fff;
 $accent-light:  	$accent-300;
 $accent-dark:  		#2c3782;
 $accent-dim:  	    #e3e7fe;
@@ -748,6 +748,13 @@ $sidebar-bg-color:					$lighter;
 $sidebar-border-color:              $light-200;
 
 $sidebar-bg-dark-color:			    #004B93;
+$sidebar-bg-dark-gradient: linear-gradient(
+  180deg,
+  #a55cd6 0%,
+  
+  #9b6fd6 65%,
+  #6f86e9 100%
+);
 $sidebar-border-dark-color:         lighten($sidebar-bg-dark-color, 10%);
 //@i-v120 -s-
 $sidebar-bg-theme-color:			darken($accent-dark,2%);
