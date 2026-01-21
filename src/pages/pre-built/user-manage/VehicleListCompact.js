@@ -15,6 +15,7 @@ import {
   DataTableRow,
   DataTableItem,
   PaginationComponent,
+  BlockDes,
 } from "../../../components/Component";
 import {
   Modal,
@@ -43,7 +44,7 @@ const VehicleListCompact = () => {
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [sort, setSortState] = useState("dsc");
-
+  const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
@@ -221,16 +222,50 @@ const VehicleListCompact = () => {
     <React.Fragment>
       <Head title="Vehicle List" />
       <Content>
-        <BlockHead size="sm">
-          <BlockBetween>
-            <BlockHeadContent>
-              <BlockTitle tag="h3">Vehicle List</BlockTitle>
-            </BlockHeadContent>
-            <Button color="primary" onClick={openAddModal}>
-              <Icon name="plus" />
-            </Button>
-          </BlockBetween>
-        </BlockHead>
+       <BlockHead size="sm">
+        <BlockBetween>
+          <BlockHeadContent>
+            <BlockTitle tag="h3" page>
+              Vehicle List
+            </BlockTitle>
+            <BlockDes className="text-soft">
+              <p>You have total {data?.length} Vehicles.</p>
+            </BlockDes>
+          </BlockHeadContent>
+          <BlockHeadContent>
+            <div className="toggle-wrap nk-block-tools-toggle">
+              <Button
+                className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
+                onClick={() => updateSm(!sm)}
+              >
+                <Icon name="menu-alt-r"></Icon>
+              </Button>
+              <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
+                <ul className="nk-block-tools g-3">
+                  <li>
+                    <a
+                      href="#export"
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                      
+                      }}
+                      className="btn btn-white btn-outline-light"
+                    >
+                      <Icon name="download-cloud"></Icon>
+                      <span>Export</span>
+                    </a>
+                  </li>
+                  <li className="nk-block-tools-opt">
+                    <Button color="primary" className="btn-icon" onClick={openAddModal}>
+                      <Icon name="plus"></Icon>
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </BlockHeadContent>
+        </BlockBetween>
+      </BlockHead>
 
         <Block>
           <DataTable className="card-stretch">
