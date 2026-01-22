@@ -750,10 +750,9 @@ $sidebar-border-color:              $light-200;
 $sidebar-bg-dark-color:			    #004B93;
 $sidebar-bg-dark-gradient: linear-gradient(
   180deg,
-  #a55cd6 0%,
-  
-  #9b6fd6 65%,
-  #6f86e9 100%
+  #6f86e9 0%,
+   #bc6fe9 50%,
+   #9b6fd6 100% 
 );
 $sidebar-border-dark-color:         lighten($sidebar-bg-dark-color, 10%);
 //@i-v120 -s-
