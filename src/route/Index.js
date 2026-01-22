@@ -269,6 +269,7 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/vehicle/:id`} component={VehicleDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/staff/:id`} component={StaffDetails}></Route>
+        <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
         <Route // context api added
           exact
           path={`${process.env.PUBLIC_URL}/product-card`}

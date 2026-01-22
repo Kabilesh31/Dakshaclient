@@ -39,20 +39,20 @@ const Homepage = () => {
 
     localStorage.setItem("isGridView", false);
 
-    useEffect(() => {
-      if (customerData.length === 0) {
-        getTransparencyList();
-      }
-    }, [customerData]);
+    // useEffect(() => {
+    //   if (customerData?.length === 0) {
+    //     getTransparencyList();
+    //   }
+    // }, [customerData]);
   
     useEffect(() => {
-      if (staffData.length === 0) {
+      if (staffData?.length === 0) {
         fetchStaffData();
       }
     }, [staffData]);
   
     useEffect(() => { 
-      if (billData.length === 0) {
+      if (billData?.length === 0) {
         getBillData();
       }
     }, []);
@@ -93,24 +93,24 @@ const Homepage = () => {
       }
     };
 
-    const filteredBill = billData.filter((item, index, self) => 
+    const filteredBill = billData?.filter((item, index, self) => 
       index === self.findIndex((t) => t.invoiceNo === item.invoiceNo)
     )
     
-    const getTransparencyList = async () => {
-      try {
-        const response = await fetch(process.env.REACT_APP_BACKENDURL + "/api/customer");
-        const resData = await response.json();
-        if (response.ok) {
-          setCustomerData(resData.data);
-          setFilterCustomerType(resData.data); // Set default to show all customers
-        } else {
-          console.log("Error fetching customer data");
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
+    // const getTransparencyList = async () => {
+    //   try {
+    //     const response = await fetch(process.env.REACT_APP_BACKENDURL + "/api/customer");
+    //     const resData = await response.json();
+    //     if (response.ok) {
+    //       setCustomerData(resData.data);
+    //       setFilterCustomerType(resData.data); // Set default to show all customers
+    //     } else {
+    //       console.log("Error fetching customer data");
+    //     }
+    //   } catch (err) {
+    //     console.log(err);
+    //   }
+    // };
   
     const handleStaffSelection = (staff) => {
       if (staff === null) {
@@ -124,7 +124,7 @@ const Homepage = () => {
    
       const filteredByStaff = staff === null
         ? customerData 
-        : customerData.filter((item) => item.staff === staff._id);
+        : customerData?.filter((item) => item.staff === staff._id);
     
         setFilterCustomerType(filteredByStaff);
       };
@@ -143,12 +143,12 @@ const Homepage = () => {
     const currentYear = new Date().getFullYear()
     const currentMonth = new Date().getMonth()
 
-    const currentYearCutomers = customerData.filter(customer => {
+    const currentYearCutomers = customerData?.filter(customer => {
       const createdAt = new Date(customer.createdAt);
       return createdAt.getFullYear() === currentYear;
     });
 
-    const currentMonthCustomers = customerData.filter(customer => {
+    const currentMonthCustomers = customerData?.filter(customer => {
       const createdAt = new Date(customer.createdAt);
       return createdAt.getFullYear() === currentYear && createdAt.getMonth() === currentMonth;
   });
@@ -166,7 +166,7 @@ const Homepage = () => {
     endOfWeek.setHours(23, 59, 59, 999);
 
 
-    const currentWeekCustomers = customerData.filter(customer => { 
+    const currentWeekCustomers = customerData?.filter(customer => { 
       const createdAt = new Date(customer.createdAt);
       return createdAt >= startOfWeek && createdAt <= endOfWeek;
     });
@@ -199,7 +199,7 @@ const Homepage = () => {
         const from = new Date(selectedFromDate); // yyyy-mm-dd
         const to = new Date(selectedToDate);
         to.setHours(23, 59, 59, 999); // include entire "to" day
-        return data.filter(item => {
+        return data?.filter(item => {
           const createdAt = new Date(item.createdAt);
           return createdAt >= from && createdAt <= to;
         });
@@ -216,11 +216,11 @@ const Homepage = () => {
   );
 
   const paidTotalAmount = filteredAmount
-    .filter(amt => amt.isPaid === true)
+    ?.filter(amt => amt.isPaid === true)
     .reduce((acc, amt) => acc + (amt.totalAmount || 0), 0);
 
   const unpaidTotalAmount = filteredAmount
-    .filter(amt => amt.isPaid === false)
+    ?.filter(amt => amt.isPaid === false)
     .reduce((acc, amt) => acc + (amt.totalAmount || 0), 0);
   
 
@@ -305,61 +305,61 @@ const Homepage = () => {
                          <ul className="link-list-opt no-bdr">
 
                           <li>
-  <DropdownItem
-    tag="a"
-    href="#!"
-    onClick={(ev) => {
-      ev.preventDefault();
-      setSelectedDays("All");
-      setCustomSelected(false); // reset
-    }}
-  >
-    <span>All</span>
-  </DropdownItem>
-</li>
+                            <DropdownItem
+                              tag="a"
+                              href="#!"
+                              onClick={(ev) => {
+                                ev.preventDefault();
+                                setSelectedDays("All");
+                                setCustomSelected(false); // reset
+                              }}
+                            >
+                              <span>All</span>
+                            </DropdownItem>
+                          </li>
 
-<li>
-  <DropdownItem
-    tag="a"
-    href="#!"
-    onClick={(ev) => {
-      ev.preventDefault();
-      setSelectedDays("7 Days");
-      setCustomSelected(false); // reset
-    }}
-  >
-    <span>Last 7 days</span>
-  </DropdownItem>
-</li>
+                          <li>
+                            <DropdownItem
+                              tag="a"
+                              href="#!"
+                              onClick={(ev) => {
+                                ev.preventDefault();
+                                setSelectedDays("7 Days");
+                                setCustomSelected(false); // reset
+                              }}
+                            >
+                              <span>Last 7 days</span>
+                            </DropdownItem>
+                          </li>
 
-<li>
-  <DropdownItem
-    tag="a"
-    href="#!"
-    onClick={(ev) => {
-      ev.preventDefault();
-      setSelectedDays("30 Days");
-      setCustomSelected(false); // reset
-    }}
-  >
-    <span>Last 30 days</span>
-  </DropdownItem>
-</li>
+                          <li>
+                            <DropdownItem
+                              tag="a"
+                              href="#!"
+                              onClick={(ev) => {
+                                ev.preventDefault();
+                                setSelectedDays("30 Days");
+                                setCustomSelected(false); // reset
+                              }}
+                            >
+                              <span>Last 30 days</span>
+                            </DropdownItem>
+                          </li>
 
-<li>
-  <DropdownItem
-    tag="a"
-    href="#!"
-    onClick={(ev) => {
-      ev.preventDefault();
-      setSelectedDays("Custom");
-      setCustomSelected(true); // only here it's true
-      setModal(true);
-    }}
-  >
-    <span>Custom</span>
-  </DropdownItem>
-</li>
+                          <li>
+                            <DropdownItem
+                              tag="a"
+                              href="#!"
+                              onClick={(ev) => {
+                                ev.preventDefault();
+                                setSelectedDays("Custom");
+                                setCustomSelected(true); // only here it's true
+                                setModal(true);
+                              }}
+                            >
+                              <span>Custom</span>
+                            </DropdownItem>
+                          </li>
 
                           </ul>
                           
@@ -461,7 +461,7 @@ const Homepage = () => {
 
             <Col xxl="8">
               <Card className="card-bordered card-full">
-                <TransactionTable />
+                {/* <TransactionTable /> */}
               </Card>
             </Col>
 

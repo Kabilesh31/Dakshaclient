@@ -15,6 +15,7 @@ import {
   DataTableRow,
   DataTableItem,
   PaginationComponent,
+  BlockDes,
 } from "../../../components/Component";
 import {
   Modal,
@@ -31,6 +32,7 @@ import Dropzone from "react-dropzone";
 import axios from "axios";
 import DataContext from "../../../utils/DataContext";
 import { successToast, errorToast } from "../../../utils/toaster";
+import { Link } from "react-router-dom/cjs/react-router-dom.min";
 
 const CustomerListCompact = () => {
   const { userData } = useContext(DataContext);
@@ -41,7 +43,7 @@ const CustomerListCompact = () => {
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [sort, setSort] = useState("dsc");
-
+  const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
@@ -219,15 +221,50 @@ const CustomerListCompact = () => {
       <Head title="Customer List" />
       <Content>
         <BlockHead size="sm">
-          <BlockBetween>
-            <BlockHeadContent>
-              <BlockTitle tag="h3">Customer List</BlockTitle>
-            </BlockHeadContent>
-            <Button color="primary" onClick={() => setModalAdd(true)}>
-              <Icon name="plus" />
-            </Button>
-          </BlockBetween>
-        </BlockHead>
+               <BlockBetween>
+                 <BlockHeadContent>
+                   <BlockTitle tag="h3" page>
+                     Customer List
+                   </BlockTitle>
+                   <BlockDes className="text-soft">
+                     <p>You have total {data?.length} Customers.</p>
+                   </BlockDes>
+                 </BlockHeadContent>
+                 <BlockHeadContent>
+                   <div className="toggle-wrap nk-block-tools-toggle">
+                     <Button
+                       className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
+                       onClick={() => updateSm(!sm)}
+                     >
+                       <Icon name="menu-alt-r"></Icon>
+                     </Button>
+                     <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
+                       <ul className="nk-block-tools g-3">
+                         <li>
+                           <a
+                             href="#export"
+                             onClick={(ev) => {
+                               ev.preventDefault();
+                             
+                             }}
+                             className="btn btn-white btn-outline-light"
+                           >
+                             <Icon name="download-cloud"></Icon>
+                             <span>Export</span>
+                           </a>
+                         </li>
+                         <li className="nk-block-tools-opt">
+                           <Button color="primary" className="btn-icon" onClick={()=> {setModalAdd(true)}}>
+                             <Icon name="plus"></Icon>
+                           </Button>
+                         </li>
+                       </ul>
+                     </div>
+                   </div>
+                 </BlockHeadContent>
+               </BlockBetween>
+             </BlockHead>
+            
 
         <Block>
           
@@ -300,86 +337,89 @@ const CustomerListCompact = () => {
                             </div>
                           </div>
                         </div>
-            <DataTableBody compact>
-              <DataTableHead>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Name</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Phone</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Route</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Category</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Status</span></DataTableRow>
-                <DataTableRow />
-              </DataTableHead>
+                        <DataTableBody compact>
+                          <DataTableHead>
+                            <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Name</span></DataTableRow>
+                            <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Phone</span></DataTableRow>
+                            <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Route</span></DataTableRow>
+                            <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Category</span></DataTableRow>
+                            <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Status</span></DataTableRow>
+                            <DataTableRow />
+                          </DataTableHead>
 
-              {currentItems.map(item => (
-  <DataTableItem key={item._id}>
-    {/* Name with image and link */}
-    <DataTableRow>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        {item.img && (
-          <img
-            src={item.img}
-            alt={item.name}
-            style={{
-              width: "30px",
-              height: "30px",
-              borderRadius: "50%",
-              objectFit: "cover"
-            }}
-          />
-        )}
-        
-          <span className="tb-lead">{item.name}</span>
-        
-      </div>
-    </DataTableRow>
+                          {currentItems.map(item => (
+                            <DataTableItem key={item._id}>
+                              {/* Name with image and link */}
+                            <DataTableRow>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                  {item.img && (
+                                    <img
+                                      src={item.img}
+                                      alt={item.name}
+                                      style={{
+                                        width: "30px",
+                                        height: "30px",
+                                        borderRadius: "50%",
+                                        objectFit: "cover"
+                                      }}
+                                    />
+                                  )}
+                                    <Link
+                                  className="tb-lead"
+                                  to={`${process.env.PUBLIC_URL}/customer/${item._id}`}
+                                >
+                                  {item.name}
+                            </Link>
+                        </div>
+                    </DataTableRow>
 
-    <DataTableRow>{item.phone}</DataTableRow>
-    <DataTableRow>{item.routeName || "--"}</DataTableRow>
-    <DataTableRow>{item.category || "--"}</DataTableRow>
-    <DataTableRow>
-      <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
-        {item.status ? "Active" : "Inactive"}
-      </span>
-    </DataTableRow>
+                  <DataTableRow>{item.phone}</DataTableRow>
+                  <DataTableRow>{item.routeName || "--"}</DataTableRow>
+                  <DataTableRow>{item.category || "--"}</DataTableRow>
+                  <DataTableRow>
+                    <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
+                      {item.status ? "Active" : "Inactive"}
+                    </span>
+                  </DataTableRow>
 
-    {/* Actions */}
-    <DataTableRow className="nk-tb-col-tools">
-      <ul className="nk-tb-actions gx-1">
-        <li>
-          <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
-            <Icon name="edit-alt-fill" />
-          </Button>
-        </li>
-        <li>
-          <UncontrolledDropdown>
-            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-              <Icon name="more-h" />
-            </DropdownToggle>
-            <DropdownMenu right>
-              <ul className="link-list-opt no-bdr">
-                <li>
-                  <DropdownItem onClick={() => onEditClick(item)}>
-                    <Icon name="edit" /> <span>Edit</span>
-                  </DropdownItem>
-                </li>
-                <li>
-                  <DropdownItem
-                    onClick={() => {
-                      setSelectedId(item._id);
-                      setModalDelete(true);
-                    }}
-                  >
-                    <Icon name="trash" /> <span>Delete</span>
-                  </DropdownItem>
-                </li>
-              </ul>
-            </DropdownMenu>
-          </UncontrolledDropdown>
-        </li>
-      </ul>
-    </DataTableRow>
-  </DataTableItem>
-))}
+                  {/* Actions */}
+                  <DataTableRow className="nk-tb-col-tools">
+                    <ul className="nk-tb-actions gx-1">
+                      <li>
+                        <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
+                          <Icon name="edit-alt-fill" />
+                        </Button>
+                      </li>
+                      <li>
+                        <UncontrolledDropdown>
+                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                            <Icon name="more-h" />
+                          </DropdownToggle>
+                          <DropdownMenu right>
+                            <ul className="link-list-opt no-bdr">
+                              <li>
+                                <DropdownItem onClick={() => onEditClick(item)}>
+                                  <Icon name="edit" /> <span>Edit</span>
+                                </DropdownItem>
+                              </li>
+                              <li>
+                                <DropdownItem
+                                  onClick={() => {
+                                    setSelectedId(item._id);
+                                    setModalDelete(true);
+                                  }}
+                                >
+                                  <Icon name="trash" /> <span>Delete</span>
+                                </DropdownItem>
+                              </li>
+                            </ul>
+                          </DropdownMenu>
+                        </UncontrolledDropdown>
+                      </li>
+                    </ul>
+                  </DataTableRow>
+                </DataTableItem>
+              ))}
 
             </DataTableBody>
 
@@ -395,153 +435,153 @@ const CustomerListCompact = () => {
         </Block>
       </Content>
       <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
-  <ModalBody>
-    <a href="#cancel" className="close" onClick={(e)=>{e.preventDefault(); setModalAdd(false);}}>
-      <Icon name="cross-sm" />
-    </a>
+        <ModalBody>
+          <a href="#cancel" className="close" onClick={(e)=>{e.preventDefault(); setModalAdd(false);}}>
+            <Icon name="cross-sm" />
+          </a>
 
-    <h5 className="title mb-3">Add Customer</h5>
+          <h5 className="title mb-3">Add Customer</h5>
 
-    <Form className="row gy-3" onSubmit={onAddSubmit}>
-      
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Customer Name *</label>
-          <input className="form-control" required
-            value={formData.name}
-            onChange={e=>setFormData({...formData, name:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+          <Form className="row gy-3" onSubmit={onAddSubmit}>
+            
+            <Col md="6">
+              <FormGroup>
+                <label className="form-label">Customer Name *</label>
+                <input className="form-control" required
+                  value={formData.name}
+                  onChange={e=>setFormData({...formData, name:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="3">
-        <FormGroup>
-          <label className="form-label">Phone *</label>
-          <input type="number" className="form-control" required
-            value={formData.phone}
-            onChange={e=>setFormData({...formData, phone:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="3">
+              <FormGroup>
+                <label className="form-label">Phone *</label>
+                <input type="number" className="form-control" required
+                  value={formData.phone}
+                  onChange={e=>setFormData({...formData, phone:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="3">
-        <FormGroup>
-          <label className="form-label">Alternate Phone</label>
-          <input type="number" className="form-control"
-            value={formData.phone2}
-            onChange={e=>setFormData({...formData, phone2:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="3">
+              <FormGroup>
+                <label className="form-label">Alternate Phone</label>
+                <input type="number" className="form-control"
+                  value={formData.phone2}
+                  onChange={e=>setFormData({...formData, phone2:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="12">
-        <FormGroup>
-          <label className="form-label">Address *</label>
-          <textarea className="form-control" rows="2" required
-            value={formData.address}
-            onChange={e=>setFormData({...formData, address:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="12">
+              <FormGroup>
+                <label className="form-label">Address *</label>
+                <textarea className="form-control" rows="2" required
+                  value={formData.address}
+                  onChange={e=>setFormData({...formData, address:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Route Name</label>
-          <input className="form-control"
-            value={formData.routeName}
-            onChange={e=>setFormData({...formData, routeName:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Route Name</label>
+                <input className="form-control"
+                  value={formData.routeName}
+                  onChange={e=>setFormData({...formData, routeName:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Route ID</label>
-          <input className="form-control"
-            value={formData.routeId}
-            onChange={e=>setFormData({...formData, routeId:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Route ID</label>
+                <input className="form-control"
+                  value={formData.routeId}
+                  onChange={e=>setFormData({...formData, routeId:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Line No</label>
-          <input type="number" className="form-control"
-            value={formData.lineNo}
-            onChange={e=>setFormData({...formData, lineNo:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Line No</label>
+                <input type="number" className="form-control"
+                  value={formData.lineNo}
+                  onChange={e=>setFormData({...formData, lineNo:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Credit Days</label>
-          <input type="number" className="form-control"
-            value={formData.creditDays}
-            onChange={e=>setFormData({...formData, creditDays:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Credit Days</label>
+                <input type="number" className="form-control"
+                  value={formData.creditDays}
+                  onChange={e=>setFormData({...formData, creditDays:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Pincode</label>
-          <input type="number" className="form-control"
-            value={formData.pincode}
-            onChange={e=>setFormData({...formData, pincode:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Pincode</label>
+                <input type="number" className="form-control"
+                  value={formData.pincode}
+                  onChange={e=>setFormData({...formData, pincode:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="4">
-        <FormGroup>
-          <label className="form-label">Category</label>
-          <input className="form-control"
-            value={formData.category}
-            onChange={e=>setFormData({...formData, category:e.target.value})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Category</label>
+                <input className="form-control"
+                  value={formData.category}
+                  onChange={e=>setFormData({...formData, category:e.target.value})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Latitude</label>
-          <input className="form-control"
-            value={formData.geoLocation?.lat}
-            onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, lat:e.target.value}})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="6">
+              <FormGroup>
+                <label className="form-label">Latitude</label>
+                <input className="form-control"
+                  value={formData.geoLocation?.lat}
+                  onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, lat:e.target.value}})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Longitude</label>
-          <input className="form-control"
-            value={formData.geoLocation?.long}
-            onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, long:e.target.value}})}
-          />
-        </FormGroup>
-      </Col>
+            <Col md="6">
+              <FormGroup>
+                <label className="form-label">Longitude</label>
+                <input className="form-control"
+                  value={formData.geoLocation?.long}
+                  onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, long:e.target.value}})}
+                />
+              </FormGroup>
+            </Col>
 
-      <Col md="12">
-        <Dropzone multiple={false} onDrop={files => setUploadedFile(files[0])}>
-          {({getRootProps, getInputProps}) => (
-            <div {...getRootProps()} className="dropzone upload-zone small bg-lighter">
-              <input {...getInputProps()} />
-              {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
-            </div>
-          )}
-        </Dropzone>
-      </Col>
+            <Col md="12">
+              <Dropzone multiple={false} onDrop={files => setUploadedFile(files[0])}>
+                {({getRootProps, getInputProps}) => (
+                  <div {...getRootProps()} className="dropzone upload-zone small bg-lighter">
+                    <input {...getInputProps()} />
+                    {uploadedFile ? uploadedFile.name : "Upload Shop Image"}
+                  </div>
+                )}
+              </Dropzone>
+            </Col>
 
-      <Col md="12" className="text-end">
-        <Button color="primary" type="submit">Save Customer</Button>
-      </Col>
+            <Col md="12" className="text-end">
+              <Button color="primary" type="submit">Save Customer</Button>
+            </Col>
 
-    </Form>
-  </ModalBody>
-</Modal>
+          </Form>
+        </ModalBody>
+      </Modal>
       <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
         <ModalBody>
     <a href="#cancel" className="close" onClick={(e)=>{e.preventDefault(); setModalEdit(false);}}>

@@ -1,28 +1,55 @@
 const menu = [
   {
-    icon: "dashlite",
+    icon: "dashboard",     // ni ni-dashboard
     text: "Dashboard",
     link: "/",
   },
-    {
-    icon: "users",
+  {
+    icon: "users",         // ni ni-users
     text: "Users",
     link: "/user-list-compact",
   },
   {
-    icon: "users",
+    icon: "user-list",     // ni ni-user-list
     text: "Employees List",
     active: false,
     subMenu: [
       {
+        icon: "truck",     // ni ni-truck
         text: "Vehicle",
         link: "/vehicle",
       },
       {
+        icon: "user",      // ni ni-user
         text: "Employee",
         link: "/staff",
       }
     ],
+  },
+  {
+    icon: "user-alt",      // ni ni-user-alt
+    text: "Customers List",
+    link: "/customers",
+  },
+  {
+    icon: "cart",          // ni ni-cart
+    text: "Product List",
+    link: "/items",
+  },
+  {
+    icon: "truck",         // ni ni-truck
+    text: "Delivery",
+    link: "/delivery",
+  },
+  {
+    icon: "growth",        // ni ni-growth
+    text: "Sales",
+    link: "/sales",
+  },
+  {
+    icon: "reports",       // ni ni-reports
+    text: "Reports",
+    link: "/reports",
   },
 
   // {
@@ -30,18 +57,8 @@ const menu = [
   //   text: "Staff Attendance",
   //   link: "/blank",
   // },
-  {
-    icon: "users",
-    text: "Customers List",
-    link: "/customers",
-  },
-  {
-    icon: "coffee",
-    text: "Product List",
-    link: "/items",
-  },
-  
-  // {
+
+   // {
   //   icon: "search",
   //   text: "Search",
   //   link: "/search",
@@ -61,21 +78,6 @@ const menu = [
   //   text: "Details",
   //   link: "/details",
   // },
-  {
-    icon: "notes-alt",
-    text: "Delivery",
-    link: "/delivery",
-  },
-  {
-    icon: "notes-alt",
-    text: "Sales",
-    link: "/sales",
-  },
-  {
-    icon: "property",
-    text: "Reports",
-    link: "/reports",
-  },
   // {
   //   icon: "bitcoin-cash",
   //   text: "Crypto Dashboard",
