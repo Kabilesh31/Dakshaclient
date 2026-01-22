@@ -59,6 +59,7 @@ const StaffListCompact = () => {
     staffStatus: "active",
     staffCode: "",
     img: null,
+     bloodGroup: "",
     documents: [],
   });
 
@@ -113,6 +114,7 @@ const StaffListCompact = () => {
       staffStatus: "active",
       staffCode: "",
       img: null,
+       bloodGroup: "",
       documents: [],
     });
     setSelectedId(null);
@@ -159,6 +161,7 @@ const StaffListCompact = () => {
       email: item.email,
       staffStatus: item.staffStatus,
       staffCode: item.staffCode,
+      bloodGroup: item.bloodGroup || "", 
       img: item.img || null,
       documents: [], // new docs can be added
     });
@@ -497,6 +500,25 @@ const StaffListCompact = () => {
             </select>
           </FormGroup>
         </Col>
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">Blood Group</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Blood Group (eg: O+, A-)"
+      value={formData.bloodGroup}
+      onChange={(e) =>
+  setFormData({
+    ...formData,
+    bloodGroup: e.target.value.toUpperCase()
+  })
+}
+
+    />
+  </FormGroup>
+</Col>
+
 
         {/* Profile Image Upload */}
         <Col md="12">
@@ -619,6 +641,25 @@ const StaffListCompact = () => {
             </select>
           </FormGroup>
         </Col>
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">Blood Group</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Blood Group (eg: O+, A-)"
+      value={formData.bloodGroup}
+      onChange={(e) =>
+  setFormData({
+    ...formData,
+    bloodGroup: e.target.value.toUpperCase()
+  })
+}
+
+    />
+  </FormGroup>
+</Col>
+
 
         {/* Profile Image Upload */}
         <Col md="12">
