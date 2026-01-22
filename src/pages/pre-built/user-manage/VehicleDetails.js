@@ -214,7 +214,7 @@ const fetchVehicleData = async() => {
                    
                     <li className="nav-item">
                       <a
-                         className={`nav-link ${activeTab === "3" &&  "active"}`}
+                         className={`nav-link ${activeTab === "2" &&  "active"}`}
                         href="#transactions"
                         onClick={(ev) => {
                           ev.preventDefault();
@@ -319,7 +319,7 @@ const fetchVehicleData = async() => {
                     
                  
 
-                     {activeTab === "3" && (
+                     {activeTab === "2" && (
                   <div  className="p-4">
                     <Block>
                      
