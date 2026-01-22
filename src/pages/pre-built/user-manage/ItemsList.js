@@ -681,8 +681,8 @@ const handleDelete = async () => {
 
                           <div className="product-card">
                             <div className="product-image-wrapper">
-                              {item.file ? (
-                                <img className="product-image" src={item.file} alt={item.productName} />
+                              {item.img ? (
+                                <img className="product-image" src={item.img} alt={item.productName} />
                               ) : (
                                 <span className="no-preview">No preview available</span>
                               )}
@@ -704,8 +704,7 @@ const handleDelete = async () => {
                               <h6 className="product-name">{item.productName}</h6>
                               <div className="product-details">
                                 <small>Code: {item.productCode}</small>
-                                <small>Stock: {item.stock}</small>
-                                <small>Box: {item.boxPacking}</small>
+                                <small>Box: {item.boxPacking ? "Yes" : "No"}</small>
                               </div>
                             </div>
                           </div>

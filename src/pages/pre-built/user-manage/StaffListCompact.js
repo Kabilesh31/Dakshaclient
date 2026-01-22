@@ -428,21 +428,21 @@ const StaffListCompact = () => {
       <Form className="row gy-4" onSubmit={onAddSubmit}>
         <Col md="6">
          <FormGroup>
-  <label className="form-label">* Name</label>
-  <input
-    type="text"
-    className="form-control"
-    placeholder="Enter Name"
-    value={formData.name}
-    onChange={(e) => {
-      const value = e.target.value;
-      const capitalized =
-        value.charAt(0).toUpperCase() + value.slice(1);
-      setFormData({ ...formData, name: capitalized });
-    }}
-    required
-  />
-</FormGroup>
+            <label className="form-label">* Name</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter Name"
+              value={formData.name}
+              onChange={(e) => {
+                const value = e.target.value;
+                const capitalized =
+                  value.charAt(0).toUpperCase() + value.slice(1);
+                setFormData({ ...formData, name: capitalized });
+              }}
+              required
+            />
+          </FormGroup>
 
         </Col>
 
@@ -501,23 +501,22 @@ const StaffListCompact = () => {
           </FormGroup>
         </Col>
         <Col md="6">
-  <FormGroup>
-    <label className="form-label">Blood Group</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Blood Group (eg: O+, A-)"
-      value={formData.bloodGroup}
-      onChange={(e) =>
-  setFormData({
-    ...formData,
-    bloodGroup: e.target.value.toUpperCase()
-  })
-}
-
-    />
-  </FormGroup>
-</Col>
+          <FormGroup>
+            <label className="form-label">Blood Group</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter Blood Group (eg: O+, A-)"
+              value={formData.bloodGroup}
+              onChange={(e) =>
+          setFormData({
+            ...formData,
+            bloodGroup: e.target.value.toUpperCase()
+          })
+        }
+      />
+    </FormGroup>
+  </Col>
 
 
         {/* Profile Image Upload */}

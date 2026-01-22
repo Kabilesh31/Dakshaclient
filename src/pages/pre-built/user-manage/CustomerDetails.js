@@ -53,7 +53,7 @@ const CustomerDetails = ({ match }) => {
 const fetchStaffData = async() => {
   try{
     const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/customer")
-    setData(response.data.data)
+    setData(response.data)
     } catch (err){
       console.log(err)
     }}
@@ -182,7 +182,7 @@ const fetchStaffData = async() => {
                           <span 
                           className={`  `}
                         >
-                          {user.type.charAt(0).toUpperCase() + user.type.slice(1)}
+                          {/* {user.type.charAt(0).toUpperCase() + user.type.slice(1)} */}
                         </span>
                         </div>
 
@@ -271,7 +271,7 @@ const fetchStaffData = async() => {
                       </a>
                     </li>
                    
-                    <li className="nav-item">
+                    {/* <li className="nav-item">
                       <a
                          className={`nav-link ${activeTab === "2" &&  "active"}`}
                         href="#transactions"
@@ -297,7 +297,7 @@ const fetchStaffData = async() => {
                         <Icon name="file"></Icon>
                         <span>Bills</span>
                       </a>
-                    </li>
+                    </li> */}
 
                 
 
