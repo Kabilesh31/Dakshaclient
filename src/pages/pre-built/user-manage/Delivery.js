@@ -2,6 +2,7 @@ import { Alert, Badge, DropdownItem, DropdownMenu, FormGroup, Input, Modal, Moda
 import React, { useState, useEffect } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
+import axios from "axios";
 import { 
   Block, 
   BlockHead, 
@@ -24,27 +25,12 @@ import "./Delivery.css";
 
 const Delivery = () => {
   const [activeTab, setActiveTab] = useState("route");
-  const [deliveryStaff, setDeliveryStaff] = useState([
-    { id: "1", name: "John Smith", email: "john@example.com", phone: "+1 234-567-8901", type: "Delivery", status: "active" },
-    { id: "2", name: "Sarah Johnson", email: "sarah@example.com", phone: "+1 234-567-8902", type: "Delivery", status: "active" },
-    { id: "3", name: "Michael Chen", email: "michael@example.com", phone: "+1 234-567-8903", type: "Delivery", status: "active" },
-    { id: "4", name: "Emma Wilson", email: "emma@example.com", phone: "+1 234-567-8904", type: "Delivery", status: "active" },
-    { id: "5", name: "Robert Davis", email: "robert@example.com", phone: "+1 234-567-8905", type: "Delivery", status: "active" },
-    { id: "6", name: "Lisa Brown", email: "lisa@example.com", phone: "+1 234-567-8906", type: "Office", status: "active" }, // Non-delivery
-  ]);
-  const [routes, setRoutes] = useState([
-    { id: "R001", name: "Downtown Loop", description: "City center delivery route", stops: 8, estimatedTime: "3 hours" },
-    { id: "R002", name: "North Suburbs", description: "Residential area deliveries", stops: 12, estimatedTime: "4 hours" },
-    { id: "R003", name: "Eastside District", description: "Commercial district route", stops: 6, estimatedTime: "2.5 hours" },
-    { id: "R004", name: "West Industrial", description: "Industrial zone deliveries", stops: 10, estimatedTime: "3.5 hours" },
-    { id: "R005", name: "South Park", description: "Park area and surroundings", stops: 7, estimatedTime: "3 hours" },
-    { id: "R006", name: "Uptown Express", description: "Quick delivery route", stops: 5, estimatedTime: "2 hours" },
-  ]);
-  const [routeAssignments, setRouteAssignments] = useState([
-    { _id: "1", date: "2024-01-22", staffId: "1", routeId: "R001", routeName: "Downtown Loop", status: "ASSIGNED", createdAt: "2024-01-22T09:00:00Z" },
-    { _id: "2", date: "2024-01-22", staffId: "2", routeId: "R002", routeName: "North Suburbs", status: "IN_PROGRESS", createdAt: "2024-01-22T09:15:00Z" },
-    { _id: "3", date: "2024-01-22", staffId: "3", routeId: "R003", routeName: "Eastside District", status: "COMPLETED", createdAt: "2024-01-22T08:30:00Z" },
-  ]);
+  const [deliveryStaff, setDeliveryStaff] = useState([]);
+const [routes, setRoutes] = useState([]);
+ const [routeAssignments, setRouteAssignments] = useState([]);
+const [confirmModal, setConfirmModal] = useState(false);
+const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+
   
   // Customer data
   const [customers, setCustomers] = useState([
@@ -141,6 +127,7 @@ const Delivery = () => {
   ]);
   
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [assignModal, setAssignModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -148,27 +135,143 @@ const Delivery = () => {
   const [success, setSuccess] = useState(null);
   const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("R001");
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
+const [assignedRoutes, setAssignedRoutes] = useState([]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
-  // Filter delivery staff only
-  const filteredDeliveryStaff = deliveryStaff.filter(staff => staff.type === "Delivery");
+  
+useEffect(() => {
+  fetchStaff();   // your staff fetch
+  fetchRoutes();  // load routes
+}, []);
+useEffect(() => {
+  fetchAssignmentsByDate(selectedDate);
+}, [selectedDate]);
+
+const fetchStaff = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, 
+        },
+      }
+    );
+
+    console.log("STAFF API RESPONSE 👉", res.data);
+
+    // Your API returns ARRAY directly
+    setDeliveryStaff(res.data);
+
+  } catch (err) {
+    console.error("STAFF FETCH ERROR 👉", err);
+    setError("Failed to load staff");
+  } finally {
+    setLoading(false);
+  }
+};
+const fetchAssignmentsByDate = async (date) => {
+  try {
+    setLoading(true);
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment?date=${date}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    setRouteAssignments(res.data || []);
+  } catch (err) {
+    console.error(err);
+    setError("Failed to load route assignments");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const fetchRoutes = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+
+    console.log("ROUTES API RESPONSE 👉", res.data);
+
+    // Assuming API returns array in data field
+    setRoutes(res.data.data || []);
+  } catch (err) {
+    console.error("ROUTES FETCH ERROR 👉", err);
+    setError("Failed to load routes");
+  } finally {
+    setLoading(false);
+  }
+};
+const fetchAssignedRoutes = async () => {
+  try {
+    const resAssigned = await axios.get(`/api/routeassign?date=${selectedDate}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+
+    // Filter only assignments that have a staffId
+    const assignedToStaff = resAssigned.data.filter(a => a.staffId);
+
+    setRouteAssignments(assignedToStaff); // or setAssignedRoutes if you keep that state
+  } catch (err) {
+    console.error("Failed to fetch assigned routes:", err);
+  }
+};
+
+useEffect(() => {
+  const fetchRoutes = async () => {
+    try {
+      const resAll = await axios.get("/api/routes"); // all routes
+      setRoutes(resAll.data);
+
+      const resAssigned = await axios.get(`/api/routeassign?date=${selectedDate}`);
+      setAssignedRoutes(resAssigned.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  fetchRoutes();
+}, [selectedDate]);
+const filteredDeliveryStaff = deliveryStaff.filter(
+  staff =>
+    staff.type?.toLowerCase() === "delivery" &&
+    staff.staffStatus === "active" &&
+    staff.isDeleted === false
+);
+
 
   // Get routes already assigned to a specific staff member on selected date
-  const getStaffAssignedRoutes = (staffId) => {
-    return routeAssignments.filter(assignment => 
-      assignment.staffId === staffId && assignment.date === selectedDate
-    );
-  };
+const getStaffAssignedRoutes = (staffId) => {
+  return routeAssignments.filter(
+    assignment =>
+      assignment.staffId?._id?.toString() === staffId?.toString() &&
+      assignment.date === selectedDate
+  );
+};
+
 
   // Get available routes (not assigned to anyone on selected date)
   const getAvailableRoutes = () => {
-    const assignedRouteIds = routeAssignments
-      .filter(assignment => assignment.date === selectedDate)
-      .map(assignment => assignment.routeId);
-    
-    return routes.filter(route => !assignedRouteIds.includes(route.id));
-  };
+  const assignedRouteIds = routeAssignments
+    .filter(a => a.date === selectedDate) // keep your date format check
+    .map(a => String(a.routeId)); // <- ensure string
+
+  return routes.filter(route => !assignedRouteIds.includes(String(route._id)));
+};
+
 
   // Check if staff can be assigned more routes (max 2)
   const canAssignMoreRoutes = (staffId) => {
@@ -188,7 +291,7 @@ const Delivery = () => {
 
   // Handle staff selection for assignment
   const handleAssignRoute = (staff) => {
-    if (!canAssignMoreRoutes(staff.id)) {
+    if (!canAssignMoreRoutes(staff._id)) {
       setError(`Cannot assign more routes to ${staff.name}. Maximum 2 routes per day.`);
       setTimeout(() => setError(null), 3000);
       return;
@@ -199,66 +302,82 @@ const Delivery = () => {
   };
 
   // Handle route assignment submission
-  const onSubmitAssignment = async (data) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const route = routes.find(r => r.id === data.routeId);
+const onSubmitAssignment = async (data) => {
+  try {
+    setLoading(true);
+    setError(null);
 
-      // Check if route is already assigned for this date
-      const isRouteAlreadyAssigned = routeAssignments.some(
-        assignment => assignment.routeId === data.routeId && assignment.date === selectedDate
-      );
+    const route = routes.find(r => (r.id || r._id) === data.routeId);
 
-      if (isRouteAlreadyAssigned) {
-        setError('This route is already assigned for the selected date');
-        setTimeout(() => setError(null), 3000);
-        return;
+    const isRouteAlreadyAssigned = routeAssignments.some(
+      assignment => assignment.routeId === data.routeId && assignment.date === selectedDate
+    );
+
+    if (isRouteAlreadyAssigned) {
+      setError('This route is already assigned for the selected date');
+      return;
+    }
+
+    const newAssignment = {
+      _id: Date.now().toString(),
+      date: selectedDate,
+      staffId: selectedStaff._id,
+      routeId: data.routeId,
+      routeName: route.name,
+      status: "ASSIGNED",
+      createdAt: new Date().toISOString()
+    };
+
+    setRouteAssignments(prev => [...prev, newAssignment]);
+    setSuccess(`Route "${route.name}" assigned to ${selectedStaff.name} successfully!`);
+    setAssignModal(false);
+    reset();
+  } catch (err) {
+    console.error(err);
+    setError("Failed to assign route");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleUnassignRoute = async () => {
+  if (!selectedAssignmentId) return;
+
+  try {
+    setLoading(true);
+
+    await axios.delete(
+      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedAssignmentId}`,
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       }
+    );
 
-      // Create new assignment
-      const newAssignment = {
-        _id: Date.now().toString(),
-        date: selectedDate,
-        staffId: selectedStaff.id,
-        routeId: data.routeId,
-        routeName: route.name,
-        status: "ASSIGNED",
-        createdAt: new Date().toISOString()
-      };
+    // ✅ Remove from state (your logic preserved)
+    setRouteAssignments(prev =>
+      prev.filter(a => a._id !== selectedAssignmentId)
+    );
 
-      // Add to assignments
-      setRouteAssignments(prev => [...prev, newAssignment]);
-      setSuccess(`Route "${route.name}" assigned to ${selectedStaff.name} successfully!`);
-      setTimeout(() => setSuccess(null), 3000);
-      setAssignModal(false);
-      reset();
+    setSuccess("Route unassigned successfully");
+    setTimeout(() => setSuccess(null), 3000);
 
-    } catch (error) {
-      console.error('Error assigning route:', error);
-      setError('Failed to assign route');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setConfirmOpen(false);
+    setSelectedAssignmentId(null);
+  } catch (err) {
+    console.error("Unassign Error:", err.response?.data || err.message);
+    setError("Failed to unassign route");
+    setTimeout(() => setError(null), 3000);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  // Handle route unassignment
-  const handleUnassignRoute = async (assignmentId) => {
-    if (!window.confirm('Are you sure you want to unassign this route?')) return;
 
-    try {
-      setRouteAssignments(prev => prev.filter(assignment => assignment._id !== assignmentId));
-      setSuccess('Route unassigned successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error('Error unassigning route:', error);
-      setError('Failed to unassign route');
-      setTimeout(() => setError(null), 3000);
-    }
-  };
 
+const openUnassignConfirm = (assignmentId) => {
+  setSelectedAssignmentId(assignmentId);
+  setConfirmOpen(true);
+};
   // Update route status
   const handleUpdateStatus = async (assignmentId, newStatus) => {
     try {
@@ -395,15 +514,21 @@ const Delivery = () => {
               </thead>
               <tbody>
                 {filteredDeliveryStaff.map((staff) => {
-                  const staffAssignments = getStaffAssignedRoutes(staff.id);
+                  const staffAssignments = getStaffAssignedRoutes(staff._id);
                   const canAssign = canAssignMoreRoutes(staff.id);
                   
                   return (
-                    <tr key={staff.id}>
+                    <tr key={staff._id}>
                       <td>
                         <div className="d-flex align-items-center">
                           <div className="user-avatar bg-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
-                            <span style={{ color: 'white', fontWeight: 'bold' }}>{staff.name.charAt(0)}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <img
+                        src={staff.img}
+                        alt="profile"
+                        style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                      />
+                    </div>
                           </div>
                           <div>
                             <div className="fw-bold">{staff.name}</div>
@@ -412,77 +537,126 @@ const Delivery = () => {
                         </div>
                       </td>
                       <td>
-                        {staffAssignments.length > 0 ? (
-                          <div>
-                            {staffAssignments.map((assignment) => (
-                              <div key={assignment._id} className="d-flex align-items-center justify-content-between mb-1">
-                                <div>
-                                  <span className="fw-medium">{assignment.routeName}</span>
-                                  <Badge className="ms-2" color={getStatusBadge(assignment.status)}>
-                                    {assignment.status.replace('_', ' ')}
-                                  </Badge>
-                                </div>
-                                <Button 
-                                  size="xs" 
-                                  color="danger" 
-                                  className="btn-dim" 
-                                  onClick={() => handleUnassignRoute(assignment._id)}
-                                >
-                                  <Icon name="cross"></Icon>
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-muted">No routes assigned</span>
-                        )}
-                      </td>
+  {staffAssignments.length > 0 ? (
+    <div>
+      {staffAssignments.map((assignment) => (
+        <div
+          key={assignment._id}
+          className="d-flex align-items-center justify-content-between mb-1"
+        >
+          <div>
+            <span className="fw-medium">
+  {assignment.routeId?.routeName}
+</span>
+
+            <Badge className="m-1" color={getStatusBadge(assignment.status)}>
+              {assignment.status.replace('_', ' ')}
+            </Badge>
+          </div>
+          <Button
+            size="xs"
+            color="danger"
+            className="btn-dim"
+            onClick={() => openUnassignConfirm(assignment._id)}
+          >
+            <Icon name="cross"></Icon>
+          </Button>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <span className="text-muted">No routes assigned</span>
+  )}
+</td>
+
                       <td>
-                        <Badge color={staffAssignments.length === 0 ? "light" : "primary"}>
-                          {staffAssignments.length}/2 Routes
-                        </Badge>
-                      </td>
+                        <span></span>
+  <Badge
+    color={staffAssignments.length === 0 ? "light" : "primary"}
+    className="mt-1"
+  >
+    {staffAssignments.length}/2 Routes
+  </Badge>
+</td>
+
                       <td>
-                        <div className="d-flex gap-2">
-                          <Button
-                            style={{padding : "16px"}}
-                            color="primary"
-                            size="md"
-                            onClick={() => handleAssignRoute(staff)}
-                            disabled={!canAssign || loading}
-                          >
-                             Assign Route
-                          </Button>
-                          {staffAssignments.length > 0 && (
-                            <DropdownMenu
-                              title={<Icon name="more-h"></Icon>}
-                              className="btn-dim btn-outline-light"
-                            >
-                              {staffAssignments.map((assignment) => (
-                                <React.Fragment key={assignment._id}>
-                                  <li className="dropdown-header">{assignment.routeName}</li>
-                                  {assignment.status !== 'ASSIGNED' && (
-                                    <DropdownItem onClick={() => handleUpdateStatus(assignment._id, 'ASSIGNED')}>
-                                      <Icon name="clock"></Icon> Mark as Assigned
-                                    </DropdownItem>
-                                  )}
-                                  {assignment.status !== 'IN_PROGRESS' && (
-                                    <DropdownItem onClick={() => handleUpdateStatus(assignment._id, 'IN_PROGRESS')}>
-                                      <Icon name="play"></Icon> Mark as In Progress
-                                    </DropdownItem>
-                                  )}
-                                  {assignment.status !== 'COMPLETED' && (
-                                    <DropdownItem onClick={() => handleUpdateStatus(assignment._id, 'COMPLETED')}>
-                                      <Icon name="check"></Icon> Mark as Completed
-                                    </DropdownItem>
-                                  )}
-                                  <div className="dropdown-divider"></div>
-                                </React.Fragment>
-                              ))}
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </td>
+  <div className="d-flex gap-5 align-items-center">
+    {/* Route Select Dropdown */}
+    <div className="form-group mt-4 mr-2" style={{ minWidth: '200px' }}>
+      <select
+        className="form-control"
+        value={staff.selectedRoute || ""}
+        onChange={(e) => {
+          // store selected route per staff
+          setDeliveryStaff(prev =>
+            prev.map(s =>
+              s._id === staff._id ? { ...s, selectedRoute: e.target.value } : s
+            )
+          );
+        }}
+      >
+        <option value="">Select Route</option>
+        {getAvailableRoutes().map(route => (
+          <option key={route._id} value={route._id}>
+            {route.routeName}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Assign Button */}
+    <Button
+  color="primary"
+  size="md"
+  disabled={!staff.selectedRoute || !canAssignMoreRoutes(staff._id) || loading}
+  onClick={async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const route = routes.find(r => r._id === staff.selectedRoute);
+      if (!route) return;
+
+      await axios.post(
+        `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
+        {
+          date: selectedDate,
+          staffId: staff._id,
+          routeId: route._id,
+          routeName: route.routeName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
+      setTimeout(() => setSuccess(null), 3000);
+
+      // 🔥 reload assignments from DB
+      fetchAssignmentsByDate(selectedDate);
+
+      // reset dropdown
+      setDeliveryStaff(prev =>
+        prev.map(s =>
+          s._id === staff._id ? { ...s, selectedRoute: "" } : s
+        )
+      );
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to assign route");
+    } finally {
+      setLoading(false);
+    }
+  }}
+>
+  Assign
+</Button>
+
+  </div>
+</td>
+
                     </tr>
                   );
                 })}
@@ -493,36 +667,48 @@ const Delivery = () => {
       </div>
 
       {/* Available Routes & Statistics */}
-      <div className="col-lg-12">
-        <PreviewAltCard className="h-100">
-          <h5 className="title">Available Routes for {formatDisplayDate(selectedDate)}</h5>
-          <div className="mt-4">
-            {getAvailableRoutes().length > 0 ? (
-              <div className="list-group">
-                {getAvailableRoutes().map((route) => (
-                  <div key={route.id} className="list-group-item list-group-item-action">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <h6 className="mb-1">{route.name}</h6>
-                        <p className="mb-1 text-muted small">{route.description}</p>
-                        <small className="text-muted">
-                          <Icon name="map-pin"></Icon> {route.stops} stops • {route.estimatedTime}
-                        </small>
-                      </div>
-                      <Badge color="light">Available</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-5">
-                <Icon name="package" className="icon-xl text-light mb-3"></Icon>
-                <p className="text-muted">All routes are assigned for this date</p>
-              </div>
-            )}
-          </div>
-        </PreviewAltCard>
-      </div>
+   <div className="col-lg-12">
+  <PreviewAltCard className="h-100">
+    <h5 className="title">Assigned Routes for {formatDisplayDate(selectedDate)}</h5>
+    <div className="mt-4">
+      {routeAssignments.length > 0 ? (
+        <div className="list-group">
+         {routeAssignments.map((assignment) => (
+  <div
+    key={assignment._id}
+    className="list-group-item d-flex justify-content-between align-items-center"
+  >
+    <div>
+      <h6 className="mb-1">{assignment.routeId?.routeName}</h6>
+      <p className="mb-0 small text-primary">
+        Assigned to: {assignment.staffId?.name || assignment.staffId}
+      </p>
+    </div>
+
+   <Badge
+  color="danger"
+  pill
+  className="cursor-pointer ms-2"
+  style={{ cursor: "pointer" }}
+  onClick={() => openUnassignConfirm(assignment._id)}
+>
+  Unassign
+</Badge>
+
+  </div>
+))}
+
+        </div>
+      ) : (
+        <div className="text-center py-5">
+          <Icon name="package" className="icon-xl text-light mb-3" />
+          <p className="text-muted">No routes are assigned to staff for this date</p>
+        </div>
+      )}
+    </div>
+  </PreviewAltCard>
+</div>
+
 
     </div>
   );
@@ -1119,13 +1305,13 @@ const renderLiveTrack = () => {
 
         
               <li>
-                <button
+                {/* <button
                   className={`tab-btn ${activeTab === "alignment" ? "active" : ""}`}
                   onClick={() => setActiveTab("alignment")}
                 >
                   <Icon name="layers" />
                   <span>Customer Alignment</span>
-                </button>
+                </button> */}
               </li>
             </ul>
           </div>
@@ -1146,61 +1332,77 @@ const renderLiveTrack = () => {
 
           {/* Assign Route Modal */}
           <Modal isOpen={assignModal} toggle={() => setAssignModal(false)}>
-            <ModalHeader toggle={() => setAssignModal(false)}>
-              Assign Route to {selectedStaff?.name}
-            </ModalHeader>
-            <ModalBody>
-              <form onSubmit={handleSubmit(onSubmitAssignment)}>
-                <FormGroup>
-                  <label className="form-label">Select Date</label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="form-control"
-                    required
-                  />
-                </FormGroup>
+  <ModalHeader toggle={() => setAssignModal(false)}>Assign Route</ModalHeader>
+  <ModalBody>
+    <FormGroup>
+      <label className="form-label">Select Route</label>
+      <Input
+        type="select"
+        {...register("routeId", { required: true })}
+        defaultValue=""
+      >
+        <option value="" disabled>Select a route</option>
+        {getAvailableRoutes().map(route => (
+          <option key={route.id || route._id} value={route.id || route._id}>
+            {route.name}
+          </option>
+        ))}
+      </Input>
+      {errors.routeId && <span className="text-danger">Route is required</span>}
+    </FormGroup>
 
-                <FormGroup>
-                  <label className="form-label">Select Route</label>
-                  <select
-                    className="form-control"
-                    {...register("routeId", { required: "Please select a route" })}
-                  >
-                    <option value="">Select a route</option>
-                    {getAvailableRoutes().map((route) => (
-                      <option key={route.id} value={route.id}>
-                        {route.name} - {route.description} ({route.stops} stops)
-                      </option>
-                    ))}
-                  </select>
-                  {errors.routeId && (
-                    <span className="text-danger small">{errors.routeId.message}</span>
-                  )}
-                </FormGroup>
+    <Button color="primary" onClick={handleSubmit(onSubmitAssignment)} disabled={loading}>
+      Assign
+    </Button>
+  </ModalBody>
+</Modal>
+<Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered size="md">
+  <ModalBody className="p-5 text-center">
 
-                <div className="d-flex justify-content-end gap-2 mt-4">
-                  <Button
-                    color="light"
-                    onClick={() => {
-                      setAssignModal(false);
-                      reset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    color="primary"
-                    disabled={loading}
-                  >
-                    {loading ? "Assigning..." : "Assign Route"}
-                  </Button>
-                </div>
-              </form>
-            </ModalBody>
-          </Modal>
+    {/* Icon */}
+    <Icon
+      name="alert-circle"
+      className="text-danger mb-3"
+      size="xl"
+    />
+
+    {/* Title */}
+    <h4 className="mb-2 fw-bold">Unassign Route?</h4>
+
+    {/* Message */}
+    <p className="text-muted mb-4">
+      This action will remove the route from the staff for this day.
+      <br />
+      Are you sure you want to continue?
+    </p>
+
+    {/* BIG ACTION BUTTONS */}
+    <div className="d-flex justify-content-center gap-3">
+      <Button
+        color="light"
+        size="lg"
+        className="px-5"
+        onClick={() => setConfirmOpen(false)}
+        disabled={loading}
+      >
+        Cancel
+      </Button>
+
+      <Button
+        color="danger"
+        size="lg"
+        className="px-5"
+        onClick={handleUnassignRoute}
+        disabled={loading}
+      >
+        {loading ? "Unassigning..." : "Unassign Route"}
+      </Button>
+    </div>
+
+  </ModalBody>
+</Modal>
+
+
         </Block>
       </Content>
     </>
