@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
+import Select from "react-select";  
+import CreatableSelect from "react-select/creatable";
 import {
   Block,
   BlockBetween,
@@ -35,17 +37,20 @@ import { successToast, errorToast } from "../../../utils/toaster";
 const CustomerListCompact = () => {
   const { userData } = useContext(DataContext);
 
-  /* ================= STATE ================= */
+  /*  ========== STATE ================= */
   const [data, setData] = useState([]);
   const [currentItems, setCurrentItems] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [sort, setSort] = useState("dsc");
+  const [routes, setRoutes] = useState([]);
+const [loadingRoutes, setLoadingRoutes] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
   const [modalAdd, setModalAdd] = useState(false);
+  
   const [modalEdit, setModalEdit] = useState(false);
   const [modalDelete, setModalDelete] = useState(false);
 
@@ -81,6 +86,55 @@ const CustomerListCompact = () => {
   useEffect(() => {
     fetchCustomers();
   }, []);
+const fetchRoutes = async () => {
+  try {
+    setLoadingRoutes(true);
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/route`
+    );
+
+    const options = res.data.data.map(r => ({
+      value: r._id,
+      label: r.routeName
+    }));
+
+    setRoutes(options);
+  } catch (err) {
+    errorToast("Failed to load routes");
+  } finally {
+    setLoadingRoutes(false);
+  }
+};
+
+useEffect(() => {
+  fetchRoutes();
+}, []);
+const createRoute = async (routeName) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/route`,
+      { routeName }
+    );
+
+    const newRoute = {
+      value: res.data.data._id,
+      label: res.data.data.routeName
+    };
+
+    setRoutes(prev => [...prev, newRoute]);
+
+    // auto select newly created route
+    setFormData(prev => ({
+      ...prev,
+      routeId: newRoute.value,
+      routeName: newRoute.label
+    }));
+
+    successToast("Route created");
+  } catch (err) {
+    errorToast("Route creation failed");
+  }
+};
 
   /* ================= PAGINATION ================= */
   useEffect(() => {
@@ -163,17 +217,17 @@ const CustomerListCompact = () => {
   };
 
   /* ================= EDIT ================= */
-  const onEditClick = (item) => {
-    setSelectedId(item._id);
-    setFormData({
-      ...item,
-      routeId: item.routeId || "",
+ const onEditClick = (item) => {
+  setSelectedId(item._id);
+  setFormData({
+    ...item,
+    routeId: item.routeId?._id || item.routeId,
     routeName: item.routeName || "",
-      geoLocation: item.geoLocation || { lat: "", long: "" },
-    });
-    setUploadedFile(null);
-    setModalEdit(true);
-  };
+    geoLocation: item.geoLocation || { lat: "", long: "" }
+  });
+  setModalEdit(true);
+};
+
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
@@ -450,33 +504,44 @@ const routeDatas = [
         </FormGroup>
       </Col>
 
-    <Col md="4">
+   <Col md="4">
   <FormGroup>
-    <label className="form-label">Route Name</label>
-    <select
-      className="form-control"
-      value={formData.routeId}
-      onChange={(e) => {
-        const selectedRoute = routeDatas.find(
-          (r) => r._id.toString() === e.target.value
-        );
+    <label className="form-label">Route</label>
 
-        setFormData({
-          ...formData,
-          routeId: selectedRoute?._id || "",
-          routeName: selectedRoute?.name || "",
-        });
+    <CreatableSelect
+      isClearable
+      isLoading={loadingRoutes}
+      options={routes}
+      placeholder="Select or create route"
+      formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
+      value={
+        formData.routeId
+          ? routes.find(r => r.value === formData.routeId)
+          : null
+      }
+      onChange={(selected) => {
+        if (selected) {
+          setFormData({
+            ...formData,
+            routeId: selected.value,
+            routeName: selected.label,
+          });
+        } else {
+          setFormData({
+            ...formData,
+            routeId: "",
+            routeName: "",
+          });
+        }
       }}
-    >
-      <option value="">Select Route</option>
-      {routeDatas.map((route) => (
-        <option key={route._id} value={route._id}>
-          {route.name}
-        </option>
-      ))}
-    </select>
+      onCreateOption={(inputValue) => {
+        createRoute(inputValue);
+      }}
+    />
   </FormGroup>
 </Col>
+
+
 
 
       
@@ -627,33 +692,43 @@ const routeDatas = [
         </FormGroup>
       </Col>
 
-      <Col md="4">
+     <Col md="4">
   <FormGroup>
-    <label className="form-label">Route Name</label>
-    <select
-      className="form-control"
-      value={formData.routeId}
-      onChange={(e) => {
-        const selectedRoute = routeDatas.find(
-          (r) => r._id.toString() === e.target.value
-        );
+    <label className="form-label">Route</label>
 
-        setFormData({
-          ...formData,
-          routeId: selectedRoute?._id || "",
-          routeName: selectedRoute?.name || "",
-        });
+    <CreatableSelect
+      isClearable
+      isLoading={loadingRoutes}
+      options={routes}
+      placeholder="Select or create route"
+      formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
+      value={
+        formData.routeId
+          ? routes.find(r => r.value === formData.routeId)
+          : null
+      }
+      onChange={(selected) => {
+        if (selected) {
+          setFormData({
+            ...formData,
+            routeId: selected.value,
+            routeName: selected.label,
+          });
+        } else {
+          setFormData({
+            ...formData,
+            routeId: "",
+            routeName: "",
+          });
+        }
       }}
-    >
-      <option value="">Select Route</option>
-      {routeDatas.map((route) => (
-        <option key={route._id} value={route._id}>
-          {route.name}
-        </option>
-      ))}
-    </select>
+      onCreateOption={(inputValue) => {
+        createRoute(inputValue);
+      }}
+    />
   </FormGroup>
 </Col>
+
 
 
 
