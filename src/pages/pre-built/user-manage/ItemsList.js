@@ -1360,6 +1360,13 @@ const handleDelete = async () => {
       </Content>
 
       <style jsx>{`
+      html {
+  overflow-y: scroll;
+}
+body {
+  overflow-x: hidden;
+}
+
         .brand-list {
           max-height: 500px;
           overflow-y: auto;
