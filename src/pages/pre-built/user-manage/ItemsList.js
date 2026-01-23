@@ -549,25 +549,34 @@ const handleDelete = async () => {
           <Row >
             
             {/* Left Sidebar - Brand List */}
-            <Col md="3" lg="3">
-  <div className="card card-stretch" style={{ margin: "-11px", marginTop: "-4px", padding: "4px" }}>
-    <div className="card-inner p-2">
-      
+           <Col md="3" lg="3">
+  <div className="card card-stretch" style={{ margin: "-6px", padding: "1px" }}>
+    <div className="card-inner p-1">
 
       {/* Brand Search Box */}
       <input
         type="text"
         placeholder="Search Brand..."
-        className="form-control mb-2"
         value={brandSearch}
         onChange={(e) => setBrandSearch(e.target.value)}
+        className="form-control"
+        style={{
+          fontSize: "0.75rem",       // smaller font
+          padding: "0.50rem 0.40rem",  // smaller padding
+          height: "35px",            // shorter input
+        }}
       />
 
-      <div className="brand-list">
+      <div className="brand-list" style={{ maxHeight: "100%", overflowY: "auto" }}>
         {/* All Brands */}
         <div
           className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
           onClick={() => setSelectedBrand("All Brands")}
+          style={{
+            marginTop:"5px",
+            padding: "10px 5px",       // tighter spacing
+            fontSize: "1rem",      // smaller text
+          }}
         >
           <div className="brand-name">All Brands</div>
           <div className="brand-count">{data.length}</div>
@@ -575,12 +584,18 @@ const handleDelete = async () => {
 
         {/* Filtered Brands */}
         {brands
-          .filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
+          .filter((brand) =>
+            brand.name.toLowerCase().includes(brandSearch.toLowerCase())
+          )
           .map((brand, index) => (
             <div
               key={index}
               className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
               onClick={() => setSelectedBrand(brand.name)}
+              style={{
+                padding: "2px 5px",
+                fontSize: "0.5rem",
+              }}
             >
               <div className="brand-name">{brand.name}</div>
               <div className="brand-count">{brand.productCount}</div>
@@ -1367,50 +1382,65 @@ body {
   overflow-x: hidden;
 }
 
-        .brand-list {
-          max-height: 500px;
-          overflow-y: auto;
-        }
-          
-        .brand-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 10px 15px;
-          border-radius: 6px;
-          margin-bottom: 5px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .brand-item:hover {
-          background-color: #f8f9fa;
-        }
-        .brand-item.active {
-          background-color: #6576ff;
-          color: white;
-        }
-        .brand-name {
-          font-weight: 500;
-        }
-        .brand-count {
-          font-size: 12px;
-          background: rgba(0,0,0,0.1);
-          padding: 2px 8px;
-          border-radius: 10px;
-        }
-        .brand-item.active .brand-count {
-          background: rgba(255,255,255,0.2);
-        }
-        .product-card {
-          background: #ffffff;
-          border: 1px solid #e5e9f2;
-          border-radius: 8px;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          height: 90%;
-          margin: 8px ;
-          padding:5px;
-        }
+       .brand-list {
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.brand-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  color: #6c757d;          /* ✅ visible gray */
+}
+
+.brand-item:hover {
+  background-color: #f8f9fa;
+  color: #495057;          /* darker gray on hover */
+}
+
+.brand-item.active {
+  background-color: #6576ff;
+  color: #ffffff;          /* white only when active */
+}
+
+.brand-name {
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: inherit;          /* follow parent color */
+}
+
+.brand-count {
+  font-size: 11px;
+  background: rgba(0,0,0,0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: #495057;          /* readable count */
+}
+
+.brand-item.active .brand-count {
+  background: rgba(255,255,255,0.2);
+  color: #ffffff;
+}
+
+
+.product-card {
+  background: #ffffff;
+  border: 1px solid #e5e9f2;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 90%;
+  margin: 8px;
+  padding: 5px;
+}
+
         .product-card:hover {
           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
           transform: translateY(-2px);
@@ -1505,7 +1535,7 @@ body {
   justify-content: center;
   gap: 12px;
 }
-
+        
 .btn-cancel {
   min-width: 100px;
 }
