@@ -60,6 +60,7 @@ const StaffListCompact = () => {
     staffCode: "",
     img: null,
      bloodGroup: "",
+     dutyStatus: "active",
     documents: [],
   });
 
@@ -115,6 +116,7 @@ const StaffListCompact = () => {
       staffCode: "",
       img: null,
        bloodGroup: "",
+       dutyStatus: "active",
       documents: [],
     });
     setSelectedId(null);
@@ -127,30 +129,33 @@ const StaffListCompact = () => {
   };
 
   const onAddSubmit = async (e) => {
-    e.preventDefault();
-    const fd = new FormData();
+  e.preventDefault();
+  const fd = new FormData();
 
-    Object.keys(formData).forEach(k => {
-      if (k === "documents" && formData.documents.length > 0) {
-        formData.documents.forEach(file => fd.append("documents", file));
-      } else if (formData[k]) {
-        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
-      }
-    });
-
-    fd.append("createdBy", userData._id);
-
-    try {
-      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/staff`, fd);
-      successToast("Staff added successfully");
-      setModalAdd(false);
-      resetForm();
-      fetchStaff();
-    } catch (err) {
-      console.error(err);
-      errorToast("Add staff failed");
+  Object.keys(formData).forEach((k) => {
+    if (k === "documents" && formData.documents.length > 0) {
+      formData.documents.forEach((file) => fd.append("documents", file));
+    } else if (formData[k] !== undefined && formData[k] !== null) {
+      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
     }
-  };
+  });
+
+  fd.append("createdBy", userData._id);
+
+  try {
+    await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+      fd
+    );
+    successToast("Staff added successfully");
+    setModalAdd(false);
+    resetForm();
+    fetchStaff();
+  } catch (err) {
+    console.error(err);
+    errorToast("Add staff failed");
+  }
+};
 
   // ================= EDIT STAFF =================
   const onEditClick = (item) => {
@@ -160,6 +165,7 @@ const StaffListCompact = () => {
       type: item.type,
       email: item.email,
       staffStatus: item.staffStatus,
+      dutyStatus: item.dutyStatus,
       staffCode: item.staffCode,
       bloodGroup: item.bloodGroup || "", 
       img: item.img || null,
@@ -213,7 +219,7 @@ const StaffListCompact = () => {
                 <BlockBetween>
                   <BlockHeadContent>
                     <BlockTitle tag="h3" page>
-                      Staff List
+                      Staff Listssss
                     </BlockTitle>
                     
                     <BlockDes className="text-soft">
@@ -332,6 +338,11 @@ const StaffListCompact = () => {
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Profile</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Name</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Email</span></DataTableRow>
+                <DataTableRow>
+  <span style={{ fontWeight: "bold" }} className="sub-text">
+    Duty
+  </span>
+</DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Type</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Code</span></DataTableRow>
                 <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Status</span></DataTableRow>
@@ -357,6 +368,16 @@ const StaffListCompact = () => {
                   </DataTableRow>
 
                   <DataTableRow>{item.email}</DataTableRow>
+                  <DataTableRow>
+  <span
+    className={`tb-status text-${
+      item.dutyStatus === "active" ? "success" : "danger"
+    }`}
+  >
+    {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
+  </span>
+</DataTableRow>
+
                   <DataTableRow>{item.type}</DataTableRow>
                   <DataTableRow>{item.staffCode || "--"}</DataTableRow>
                   <DataTableRow>
@@ -501,6 +522,22 @@ const StaffListCompact = () => {
           </FormGroup>
         </Col>
         <Col md="6">
+  <FormGroup>
+    <label className="form-label">Duty Status</label>
+    <select
+      className="form-control"
+      value={formData.dutyStatus}
+      onChange={(e) =>
+        setFormData({ ...formData, dutyStatus: e.target.value })
+      }
+    >
+      <option value="active">active</option>
+      <option value="inactive">inactive</option>
+    </select>
+  </FormGroup>
+</Col>
+
+        <Col md="6">
           <FormGroup>
             <label className="form-label">Blood Group</label>
             <input
@@ -640,6 +677,22 @@ const StaffListCompact = () => {
             </select>
           </FormGroup>
         </Col>
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">Duty Status</label>
+    <select
+      className="form-control"
+      value={formData.dutyStatus}
+      onChange={(e) =>
+        setFormData({ ...formData, dutyStatus: e.target.value })
+      }
+    >
+      <option value="active">active</option>
+      <option value="inactive">inactive</option>
+    </select>
+  </FormGroup>
+</Col>
+
         <Col md="6">
   <FormGroup>
     <label className="form-label">Blood Group</label>

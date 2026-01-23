@@ -284,12 +284,15 @@ const Delivery = () => {
     }
   };
 
-  const filteredDeliveryStaff = Array.isArray(deliveryStaff) ? deliveryStaff?.filter(
-    staff =>
-      staff.type?.toLowerCase() === "delivery" &&
-      staff.staffStatus === "active" &&
-      staff.isDeleted === false
-  ) : [];
+ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
+  ? deliveryStaff.filter(
+      (staff) =>
+        staff.staffStatus === "active" &&
+        staff.dutyStatus === "active" &&   // 👈 IMPORTANT
+        staff.isDeleted === false
+    )
+  : [];
+
 
   // Get routes already assigned to a specific staff member on selected date
   const getStaffAssignedRoutes = (staffId) => {
@@ -854,7 +857,7 @@ const Delivery = () => {
 
             <div className="row">
               {/* Left Side - Staff Selection */}
-              <div className="col-lg-4">
+              <div className="col-lg-2">
                 <div className="card card-bordered h-100">
                   <div className="card-inner">
                     <div className="d-flex justify-content-between align-items-center mb-3">
@@ -862,17 +865,16 @@ const Delivery = () => {
                     </div>
                     
                     <div className="mb-3">
-                      <div className="input-group">
-                        <span className="input-group-text">
-                          <Icon name="search"></Icon>
-                        </span>
-                        <Input
-                          type="text"
-                          placeholder="Search staff..."
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
+  <div className="input-group input-group-sm">
+    
+    <Input
+      type="text"
+      placeholder="Search staff..."
+      className="form-control form-control-sm"
+    />
+  </div>
+</div>
+
 
                     <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                       {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
@@ -881,65 +883,76 @@ const Delivery = () => {
                         
                         return (
                           <div 
-                            key={staff.id}
-                            className={`staff-card mb-3 p-3 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
-                            onClick={() => setSelectedTrackStaff(staff)}
-                            style={{ 
-                              cursor: 'pointer',
-                              borderColor: isSelected ? '#6576ff' : '#e5e9f2',
-                              backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.05)' : 'white'
-                            }}
-                          >
-                            <div className="d-flex align-items-center justify-content-between">
-                              <div className="d-flex align-items-center">
-                                <div className="avatar avatar-sm bg-primary me-3 mr-2">
-                                  <span>{staff.name?.charAt(0) || 'S'}</span>
-                                </div>
-                                <div>
-                                  <h6 className="mb-0">{staff.name}</h6>
-                                  <small className="text-muted">{staff.phone}</small>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {staffDelivery && (
-                              <div className="mt-3">
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <small className="text-muted">Current Route:</small>
-                                    <div className="fw-medium">{staffDelivery.routeName}</div>
-                                  </div>
-                                  <div className="text-end">
-                                    <small className="text-muted">Status:</small>
-                                    <div>
-                                      <Badge color={getStatusBadge(staffDelivery.status)}>
-                                        {staffDelivery.status?.replace('_', ' ') || 'UNKNOWN'}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {staffLocations[staff.id] && (
-                                  <div className="mt-2">
-                                    <div className="d-flex align-items-center text-muted small">
-                                      <Icon name="map-pin" className="me-1"></Icon>
-                                      <span>{staffLocations[staff.id].address}</span>
-                                    </div>
-                                    <div className="d-flex justify-content-between mt-1">
-                                      <small className="text-muted">
-                                        <Icon name="clock" className="me-1"></Icon>
-                                        {staffLocations[staff.id].lastUpdated}
-                                      </small>
-                                      <small className="text-muted">
-                                        <Icon name="speed" className="me-1"></Icon>
-                                        {staffLocations[staff.id].speed}
-                                      </small>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+  key={staff.id}
+  className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
+  onClick={() => setSelectedTrackStaff(staff)}
+  style={{ 
+    cursor: 'pointer',
+    borderColor: isSelected ? '#6576ff' : '#e5e9f2',
+    backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.04)' : '#fff'
+  }}
+>
+  {/* Top Row */}
+  <div className="d-flex align-items-center justify-content-between">
+    <div className="d-flex align-items-center">
+      <div className="avatar avatar-xxs mr-1 bg-primary me-2 d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '50%' }}>
+  <span>{staff.name?.charAt(0) || 'S'}</span>
+</div>
+
+
+      <div className="lh-1">
+        <div className="fw-medium fs-13">{staff.name}</div>
+        <div className="text-muted fs-11">{staff.phone}</div>
+      </div>
+    </div>
+
+    {staffDelivery && (
+      <Badge
+        size="sm"
+        color={getStatusBadge(staffDelivery.status)}
+        className="fs-10"
+      >
+        {staffDelivery.status?.replace('_', ' ')}
+      </Badge>
+    )}
+  </div>
+
+  {/* Route Info */}
+  {staffDelivery && (
+    <div className="mt-1">
+      <small className="text-muted fs-11">
+        Route:
+        <span className="fw-medium text-dark ms-1">
+          {staffDelivery.routeName}
+        </span>
+      </small>
+    </div>
+  )}
+
+  {/* Location Info */}
+  {staffLocations[staff.id] && (
+    <div className="mt-1 fs-11 text-muted">
+      <div className="d-flex align-items-center">
+        <Icon name="map-pin" className="me-1" />
+        <span className="text-truncate">
+          {staffLocations[staff.id].address}
+        </span>
+      </div>
+
+      <div className="d-flex justify-content-between mt-1">
+        <span>
+          <Icon name="clock" className="me-1" />
+          {staffLocations[staff.id].lastUpdated}
+        </span>
+        <span>
+          <Icon name="speed" className="me-1" />
+          {staffLocations[staff.id].speed}
+        </span>
+      </div>
+    </div>
+  )}
+</div>
+
                         );
                       })}
                       
@@ -962,7 +975,7 @@ const Delivery = () => {
               </div>
 
               {/* Right Side - Map View */}
-              <div className="col-lg-8">
+              <div className="col-lg-6">
                 <div className="card card-bordered h-100">
                   <div className="card-inner">
                     <div className="d-flex justify-content-between align-items-center mb-3">
@@ -997,11 +1010,162 @@ const Delivery = () => {
                           <p className="text-muted small">Google Maps or similar service integration required</p>
                         </div>
                       </div> */}
+                      
                     </div>
+                    
                   </div>
+                  
                 </div>
+                
               </div>
+                       
+              <div className="col-lg-4">
+  <div className="card card-bordered h-100">
+    <div className="card-inner">
+
+      {/* HEADER */}
+      <div className="mb-3">
+        <h6 className="title mb-1">
+          🚚 Delivery Van – Route #DL-204
+          <Badge color="success" className="ms-2">Running</Badge>
+        </h6>
+        <small className="text-muted">
+          Started 08:30 • ETA 12:30 • 65 km
+        </small>
+      </div>
+
+      {/* RAIL STATUS */}
+      <div className="rail-status">
+
+        {/* START */}
+        <div className="rail-row completed">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Central Warehouse</strong>
+              <span className="time">08:30</span>
             </div>
+            <small className="text-muted">
+              Trip Started • 0 km
+            </small>
+          </div>
+        </div>
+
+        {/* STOP 1 */}
+        <div className="rail-row completed">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Sri Lakshmi Stores</strong>
+              <span className="time">09:12</span>
+            </div>
+            <small className="text-success">
+              Delivered • Halt 5 min • 12 km
+            </small>
+          </div>
+        </div>
+
+        {/* STOP 2 */}
+        <div className="rail-row completed">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Kannan Wholesale</strong>
+              <span className="time">09:45</span>
+            </div>
+            <small className="text-success">
+              Delivered • Halt 7 min • 21 km
+            </small>
+          </div>
+        </div>
+
+        {/* CURRENT */}
+        <div className="rail-row current">
+          <div className="rail-left">
+            <div className="rail-dot pulse"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Ganesh Super Mart</strong>
+              <span className="time text-primary">10:18</span>
+            </div>
+            <small className="text-primary">
+              Arriving • On Time • 34 km
+            </small>
+          </div>
+        </div>
+
+        {/* UPCOMING */}
+        <div className="rail-row upcoming">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Vijaya Provisions</strong>
+              <span className="time">11:05</span>
+            </div>
+            <small className="text-muted">
+              Expected • 46 km
+            </small>
+          </div>
+        </div>
+
+        {/* UPCOMING */}
+        <div className="rail-row upcoming">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+            <div className="rail-line"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Shree Traders</strong>
+              <span className="time">11:40</span>
+            </div>
+            <small className="text-muted">
+              Expected • 58 km
+            </small>
+          </div>
+        </div>
+
+        {/* END */}
+        <div className="rail-row upcoming">
+          <div className="rail-left">
+            <div className="rail-dot"></div>
+          </div>
+          <div className="rail-content">
+            <div className="d-flex justify-content-between">
+              <strong>Route End (Warehouse)</strong>
+              <span className="time">12:30</span>
+            </div>
+            <small className="text-muted">
+              Trip Completion • 65 km
+            </small>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+              
+            </div>
+   
+            
+
             
             {/* Delivery Details Table */}
             {selectedTrackStaff && (
