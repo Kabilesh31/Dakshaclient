@@ -86,7 +86,7 @@ const Login = () => {
                     Retail<span className="hero-highlight">Pulse</span>
                   </h1>
                 </div>
-                <h2 className="hero-subtitle">
+                {/* <h2 className="hero-subtitle">
                   Where Data Meets Retail Excellence
                 </h2>
                 <p className="hero-description">
@@ -107,7 +107,7 @@ const Login = () => {
                     <div className="stat-number">24/7</div>
                     <div className="stat-label">Support</div>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="hero-features">
                   <div className="feature-card">
