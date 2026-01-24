@@ -243,7 +243,7 @@
 .feature-icon {
   width: 50px;
   height: 50px;
-  background: linear-gradient(45deg, #00d4ff, #0099ff);
+  background: linear-gradient(45deg, #ffed86, #dacc55);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -302,7 +302,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #00d4ff, #0099ff, #0066ff);
+  background: linear-gradient(90deg, #ff0077, #7bff00, #ffe600);
 }
 
 .form-header {
@@ -321,7 +321,7 @@
 .brand-logo {
   width: 40px;
   height: 40px;
-  background: linear-gradient(45deg, #00d4ff, #0099ff);
+  background: linear-gradient(45deg, #cb79fa, #4c8bd3);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -406,14 +406,14 @@
 }
 
 .forgot-link {
-  color: #00d4ff;
+  color: #da7cff;
   font-size: 0.85rem;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .forgot-link:hover {
-  color: #0099ff;
+  color: #e29aff;
   text-decoration: underline;
 }
 
@@ -546,7 +546,7 @@
 .submit-btn {
   width: 100%;
   padding: 1.1rem;
-  background: linear-gradient(45deg, #00d4ff, #0099ff);
+  background: linear-gradient(45deg, #cb79fa, #4c8bd3);
   border: none;
   border-radius: 12px;
   color: white;
@@ -733,7 +733,7 @@
 }
 
 .footer-link:hover {
-  color: #00d4ff;
+  color: #e087fc;
 }
 
 /* Responsive Design */
