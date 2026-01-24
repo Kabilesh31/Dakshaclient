@@ -35,12 +35,41 @@ const Login = () => {
   }, []);
 
   const onFormSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // Your existing API call logic here
-    const loginUser = { email, password };
-    // ... rest of your submit logic
+     setLoading(true);
+    const loginUser = {
+      email: email,
+      password:password
+    }
+    const postUser = {
+      method: "POST",
+      headers: { "content-type" : "application/json"},
+      body: JSON.stringify(loginUser)
+    }
+
+    try{
+      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/user/login", postUser)
+      const resData = await response.json();
+      const token = resData.token;
+      
+      if(!response.ok){
+        setLoading(false);
+        errorToast(resData.message)
+      }
+      else {
+        successToast("Success")
+        localStorage.setItem("accessToken", token);
+      setTimeout(() => {
+        window.history.pushState(
+          `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`,
+          "auth-login",
+          `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`
+        );
+        window.location.reload();
+      }, 2000);
+    }
+  }catch(err){
+      console.log(err)
+  }
   };
 
   const { errors, register, handleSubmit } = useForm();
