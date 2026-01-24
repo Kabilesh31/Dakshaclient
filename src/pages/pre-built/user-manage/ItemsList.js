@@ -4,8 +4,6 @@ import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
 import {
-  DropdownMenu,
-  DropdownToggle,
   FormGroup,
   UncontrolledDropdown,
   Modal,
@@ -66,18 +64,18 @@ const ProductsListCompact = () => {
   });
   
   const [editId, setEditedId] = useState();
-const [formData, setFormData] = useState({
-  productName: "",   // Product name
-  brand: "",         // Brand
-  productCode: "",   // Product code
-  value: null,       // Value / Price
-  boxPacking: false, // Boolean
-  ptr1: null,        // PTR 1
-  ptr2: null,        // PTR 2
-  ptr3: null,        // PTR 3
-  notes: "",         // Notes
-  img: ""            // Image URL or preview
-});
+  const [formData, setFormData] = useState({
+    productName: "",   // Product name
+    brand: "",         // Brand
+    productCode: "",   // Product code
+    value: null,       // Value / Price
+    boxPacking: false, // Boolean
+    ptr1: null,        // PTR 1
+    ptr2: null,        // PTR 2
+    ptr3: null,        // PTR 3
+    notes: "",         // Notes
+    img: ""            // Image URL or preview
+  });
 
 
   const [actionText, setActionText] = useState("");
@@ -180,30 +178,30 @@ const fetchProductData = async () => {
   }
 };
 
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (
-      searchRef.current &&
-      !searchRef.current.contains(event.target)
-    ) {
-      setonSearch(false);
-    }
-  };
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (
+          searchRef.current &&
+          !searchRef.current.contains(event.target)
+        ) {
+          setonSearch(false);
+        }
+      };
 
-  if (onSearch) {
-    document.addEventListener("mousedown", handleClickOutside);
-  }
+      if (onSearch) {
+        document.addEventListener("mousedown", handleClickOutside);
+      }
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [onSearch]);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [onSearch]);
 
   
-const brandOptions = brands.map((brand) => ({
-  label: brand.name,
-  value: brand.name,
-}));
+  const brandOptions = brands.map((brand) => ({
+    label: brand.name,
+    value: brand.name,
+  }));
   // onChange function for searching name
   const onFilterChange = (e) => {
     setSearchText(e.target.value);
@@ -351,23 +349,23 @@ const brandOptions = brands.map((brand) => ({
   }
 };
 
-const handleDelete = async () => {
-  if (!deleteItem) return;
+  const handleDelete = async () => {
+    if (!deleteItem) return;
 
-  try {
-    await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/product/${deleteItem._id}`);
-    setData(prev => prev.filter(p => p._id !== deleteItem._id)); // remove from UI
-    successToast("Product deleted successfully");
-  } catch (err) {
-    errorToast("Failed to delete product");
-  } finally {
-    setDeleteModal(false);
-    setDeleteItem(null);
-  }
-};
+    try {
+      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/product/${deleteItem._id}`);
+      setData(prev => prev.filter(p => p._id !== deleteItem._id)); // remove from UI
+      successToast("Product deleted successfully");
+    } catch (err) {
+      errorToast("Failed to delete product");
+    } finally {
+      setDeleteModal(false);
+      setDeleteItem(null);
+    }
+  };
 
 
-  
+    
   // Get current list, pagination
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
@@ -392,95 +390,10 @@ const handleDelete = async () => {
     }
   };
 
-  const handleDropChange2 = async(acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if(!file) return;
-    
-    try{
-      const compressedFile = await compressImage(file);
-      const newFile = {
-        name:compressedFile.name,
-        type:compressedFile.type,
-        file:compressedFile,
-        preview: URL.createObjectURL(compressedFile)
-      };
-      setFiles2([newFile]),
-      setUploadedFile(newFile);
-    } catch(error){
-      console.error("Error compressing file:", error);
-    }
-  };
 
-  const handleDropChange = (acceptedFiles) => {
-    acceptedFiles.forEach((file) => {
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-
-        if (worksheet) {
-          const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          const filePreview = {
-            name: file.name,
-            newName: file.name.replace(/\.[^/.]+$/, "") + '_preview.xlsx',
-            preview: URL.createObjectURL(file),
-            data: sheetData,
-          };
-
-          setFiles([filePreview]);
-          setSheetData(sheetData);
-        } else {
-          errorToast(`Failed to read the sheet from the file "${file.name}".`);
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const onImportSubmit = (e) => {
-    e.preventDefault();
-    if (!sheetData) {
-      warningToast("No file data to upload.");
-      return;
-    }
-
-    // Send data to the backend
-    fetch(process.env.REACT_APP_BACKENDURL+'/api/product/importProducts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ data: sheetData })
-    })
-    .then(response => response.json())
-    .then(responseData => {
-      successToast('Data imported successfully:', responseData);
-      toggleUploadModal();
-      fetchProductData();
-    })
-    .catch(error => {
-      console.error('Error sending data:', error);
-      warningToast('Using demo data instead');
-      toggleUploadModal();
-    });
-  };
 
   const { errors, register, handleSubmit } = useForm();
 
-  const toggleUploadModal = () => {
-    setUploadModal(!uploadModal);
-  };
-
-    const toggleAssignModal = (item) => {
-    setAssignModal(!assignModal);
-    setSelectedData(item)
-  };
 
 
   return (
@@ -488,15 +401,15 @@ const handleDelete = async () => {
       <Head title="Products List"></Head>
       <Content>
         <div
-    style={{  margin:"-15px", }}
-  ></div>
-           
-        <BlockHead size="sm">
-          
-          <BlockBetween>
-            <div
-    style={{  margin:"-385px", }}
-  ></div>
+          style={{  margin:"-15px", }}>
+        </div>
+                
+              <BlockHead size="sm">
+                
+                <BlockBetween>
+                  <div
+          style={{  margin:"-385px", }}
+        ></div>
             <BlockHeadContent>
               <BlockTitle tag="h3" page>
                 Products Management
@@ -549,90 +462,90 @@ const handleDelete = async () => {
           <Row >
             
             {/* Left Sidebar - Brand List */}
-           <Col md="3" lg="3">
-  <div className="card card-stretch" style={{ margin: "-6px", padding: "1px" }}>
-    <div className="card-inner p-1">
+           <Col md="3" lg="2">
+                        <div className="card card-stretch" style={{ margin: "-6px", padding: "5px" }}>
+                          <div className="card-inner p-1">
 
-      {/* Brand Search Box */}
-      <input
-        type="text"
-        placeholder="Search Brand..."
-        value={brandSearch}
-        onChange={(e) => setBrandSearch(e.target.value)}
-        className="form-control"
-        style={{
-          fontSize: "0.75rem",       // smaller font
-          padding: "0.50rem 0.40rem",  // smaller padding
-          height: "35px",            // shorter input
-        }}
-      />
+                            {/* Brand Search Box */}
+                            <input
+                              type="text"
+                              placeholder="Search Brand..."
+                              value={brandSearch}
+                              onChange={(e) => setBrandSearch(e.target.value)}
+                              className="form-control"
+                              style={{
+                                fontSize: "0.75rem",       // smaller font
+                                padding: "0.50rem 0.40rem",  // smaller padding
+                                height: "35px",            // shorter input
+                              }}
+                            />
 
-      <div className="brand-list" style={{ maxHeight: "100%", overflowY: "auto" }}>
-        {/* All Brands */}
-        <div
-          className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
-          onClick={() => setSelectedBrand("All Brands")}
-          style={{
-            marginTop:"5px",
-            padding: "10px 5px",       // tighter spacing
-            fontSize: "1rem",      // smaller text
-          }}
-        >
-          <div className="brand-name">All Brands</div>
-          <div className="brand-count">{data.length}</div>
-        </div>
+                            <div className="brand-list" style={{ maxHeight: "100%", overflowY: "auto" }}>
+                              {/* All Brands */}
+                              <div
+                                className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
+                                onClick={() => setSelectedBrand("All Brands")}
+                                style={{
+                                  marginTop:"5px",
+                                  padding: "10px 5px",       // tighter spacing
+                                  fontSize: "1rem",      // smaller text
+                                }}
+                              >
+                                <div className="brand-name">All Brands</div>
+                                <div className="brand-count">{data.length}</div>
+                              </div>
 
-        {/* Filtered Brands */}
-        {brands
-          .filter((brand) =>
-            brand.name.toLowerCase().includes(brandSearch.toLowerCase())
-          )
-          .map((brand, index) => (
-            <div
-              key={index}
-              className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
-              onClick={() => setSelectedBrand(brand.name)}
-              style={{
-                padding: "2px 5px",
-                fontSize: "0.5rem",
-              }}
-            >
-              <div className="brand-name">{brand.name}</div>
-              <div className="brand-count">{brand.productCount}</div>
-            </div>
-          ))}
-      </div>
-    </div>
-  </div>
-</Col>
-
-
-            {/* Main Content - Product List */}
-            <Col md="9" lg="9" >
-            <div style={{ margin: "10px", marginTop:"-16px", marginRight:"15px" }}></div>
-              <DataTable className="card-stretch" >
-                <div className="card-inner position-relative card-tools-toggle">
-                  <div className="card-title-group">
-                   <div className="card-tools">
-  <div className="form-inline flex-nowrap gx-3">
-
-    {/* Selected Brand Display */}
-    <div className="form-wrap">
-      <div
-        className="form-control d-flex align-items-center"
-        style={{
-          minWidth: "200px",
-          background: "#f5f6fa",
-          fontWeight: 600
-        }}
-      >
-        {selectedBrand || "All Brands"}
-      </div>
-    </div>
+                              {/* Filtered Brands */}
+                              {brands
+                                .filter((brand) =>
+                                  brand.name.toLowerCase().includes(brandSearch.toLowerCase())
+                                )
+                                .map((brand, index) => (
+                                  <div
+                                    key={index}
+                                    className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
+                                    onClick={() => setSelectedBrand(brand.name)}
+                                    style={{
+                                      padding: "10px 5px",
+                                      fontSize: "0.5rem",
+                                    }}
+                                  >
+                                    <div className="brand-name">{brand.name}</div>
+                                    <div className="brand-count">{brand.productCount}</div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      </Col>
 
 
-  </div>
-</div>
+                                  {/* Main Content - Product List */}
+                  <Col md="9" lg="10" >
+                  <div style={{ margin: "10px", marginTop:"-16px", marginRight:"15px" }}></div>
+                    <DataTable className="card-stretch" >
+                      <div className="card-inner position-relative card-tools-toggle">
+                        <div className="card-title-group">
+                        <div className="card-tools">
+                        <div className="form-inline flex-nowrap gx-3">
+
+                          {/* Selected Brand Display */}
+                          <div className="form-wrap">
+                            <div
+                              className="form-control d-flex align-items-center"
+                              style={{
+                                minWidth: "200px",
+                                background: "#f5f6fa",
+                                fontWeight: 600
+                              }}
+                            >
+                              {selectedBrand || "All Brands"}
+                            </div>
+                          </div>
+
+
+                        </div>
+                      </div>
 
                     <div className="card-tools mr-n1">
                       <ul className="btn-toolbar gx-1">
@@ -640,9 +553,9 @@ const handleDelete = async () => {
                           <a
                             href="#search"
                             onClick={(ev) => {
-  ev.preventDefault();
-  setonSearch(true);   // open only
-}}
+                              ev.preventDefault();
+                              setonSearch(true);   // open only
+                            }}
 
                             className="btn btn-icon search-toggle toggle-search"
                           >
@@ -653,9 +566,9 @@ const handleDelete = async () => {
                     </div>
                   </div>
                   <div
-  ref={searchRef}
-  className={`card-search search-wrap ${onSearch ? "active" : ""}`}
->
+                    ref={searchRef}
+                    className={`card-search search-wrap ${onSearch ? "active" : ""}`}
+                  >
 
 
                     <div className="card-body">
@@ -663,22 +576,22 @@ const handleDelete = async () => {
                         <Button
                           className="search-back btn-icon toggle-search active"
                           onClick={() => {
-  setSearchText("");
-  setonSearch(false);
-}}
+                          setSearchText("");
+                          setonSearch(false);
+                        }}
 
                         >
                           <Icon name="arrow-left"></Icon>
                         </Button>
                         <input
-  autoFocus={onSearch}
-  type="text"
-  className="border-transparent form-focus-none form-control"
-  placeholder="Search by Product Name, Code or Brand"
-  value={onSearchText}
-  onChange={onFilterChange}
-  onClick={(e) => e.stopPropagation()}
-/>
+                          autoFocus={onSearch}
+                          type="text"
+                          className="border-transparent form-focus-none form-control"
+                          placeholder="Search by Product Name, Code or Brand"
+                          value={onSearchText}
+                          onChange={onFilterChange}
+                          onClick={(e) => e.stopPropagation()}
+                        />
 
                         <Button className="search-submit btn-icon">
                           <Icon name="search"></Icon>
@@ -823,20 +736,20 @@ const handleDelete = async () => {
                                 />
                               </li>
                              <li
-  onClick={() => {
-    setDeleteItem(item);   // store the product to delete
-    setDeleteModal(true);  // show modal
-  }}
->
-  <TooltipComponent
-    tag="a"
-    containerClassName="btn btn-trigger btn-icon text-danger"
-    id={"delete" + item._id}
-    icon="trash-fill"
-    direction="top"
-    text="Delete"
-  />
-</li>
+                              onClick={() => {
+                                setDeleteItem(item);   // store the product to delete
+                                setDeleteModal(true);  // show modal
+                              }}
+                            >
+                              <TooltipComponent
+                                tag="a"
+                                containerClassName="btn btn-trigger btn-icon text-danger"
+                                id={"delete" + item._id}
+                                icon="trash-fill"
+                                direction="top"
+                                text="Delete"
+                              />
+                            </li>
 
 
                             </ul>
@@ -874,48 +787,48 @@ const handleDelete = async () => {
 
         {/* Add Product Modal */}
        <Modal
-  isOpen={modal.add}
-  toggle={() => setModal({ add: false })}
-  className="modal-dialog-centered"
-  size="lg"
->
-  <ModalBody>
-    <a
-      href="#cancel"
-      onClick={(ev) => {
-        ev.preventDefault();
-        onFormCancel();
-      }}
-      className="close"
-    >
-      <Icon name="cross-sm" />
-    </a>
+              isOpen={modal.add}
+              toggle={() => setModal({ add: false })}
+              className="modal-dialog-centered"
+              size="lg"
+            >
+              <ModalBody>
+                <a
+                  href="#cancel"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    onFormCancel();
+                  }}
+                  className="close"
+                >
+                  <Icon name="cross-sm" />
+                </a>
 
-    <div className="p-2">
-      <h5 className="title">Add Product</h5>
-      <div className="mt-4">
-        <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
+                <div className="p-2">
+                  <h5 className="title">Add Product</h5>
+                  <div className="mt-4">
+                    <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
 
-          {/* Brand */}
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">Brand</label>
+                      {/* Brand */}
+                    <Col md="6">
+              <FormGroup>
+                <label className="form-label">Brand</label>
 
-    <CreatableSelect
-      options={brandOptions}
-      value={
-        formData.brand
-          ? { label: formData.brand, value: formData.brand }
-          : null
-      }
-      onChange={(selected) => {
-        setFormData({ ...formData, brand: selected.value });
-      }}
-      placeholder="Select or create brand"
-      isClearable
-    />
-  </FormGroup>
-</Col>
+                <CreatableSelect
+                  options={brandOptions}
+                  value={
+                    formData.brand
+                      ? { label: formData.brand, value: formData.brand }
+                      : null
+                  }
+                  onChange={(selected) => {
+                    setFormData({ ...formData, brand: selected.value });
+                  }}
+                  placeholder="Select or create brand"
+                  isClearable
+                />
+              </FormGroup>
+            </Col>
 
 
           {/* Product Name */}
@@ -1115,331 +1028,331 @@ const handleDelete = async () => {
 
         {/* Edit Product Modal */}
         <Modal
-  isOpen={modal.edit}
-  toggle={() => setModal({ edit: false })}
-  className="modal-dialog-centered"
-  size="lg"
->
-  <ModalBody>
-    <a
-      href="#cancel"
-      onClick={(ev) => {
-        ev.preventDefault();
-        onFormCancel();
-      }}
-      className="close"
-    >
-      <Icon name="cross-sm" />
-    </a>
-
-    <div className="p-2">
-      <h5 className="title">Update Product</h5>
-      <div className="mt-4">
-        <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
-
-          {/* Brand */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Brand</label>
-              <RSelect
-                options={brandOptions}
-                value={{ value: formData.brand, label: formData.brand }}
-                onChange={(e) =>
-                  setFormData({ ...formData, brand: e.value })
-                }
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Product Name */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Product Name</label>
-              <input
-                className="form-control"
-                type="text"
-                value={formData.productName || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, productName: e.target.value })
-                }
-                placeholder="Enter Product Name"
-                required
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Product Code */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Product Code</label>
-              <input
-                className="form-control"
-                type="text"
-                value={formData.productCode || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, productCode: e.target.value })
-                }
-                placeholder="Enter Product Code"
-                required
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Value */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Value</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.value || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, value: e.target.value })
-                }
-                placeholder="Enter Value"
-                required
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Box Packing */}
-          <Col md="9">
-            <FormGroup check>
-              <label className="form-label">
-                <input
-                  type="checkbox"
-                  checked={formData.boxPacking || false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, boxPacking: e.target.checked })
-                  }
-                  className="form-check-input"
-                />
-                Box Packing Available
-              </label>
-            </FormGroup>
-          </Col>
-
-          {/* PTR 1 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 1</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr1 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr1: e.target.value })
-                }
-                placeholder="PTR 1"
-              />
-            </FormGroup>
-          </Col>
-
-          {/* PTR 2 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 2</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr2 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr2: e.target.value })
-                }
-                placeholder="PTR 2"
-              />
-            </FormGroup>
-          </Col>
-
-          {/* PTR 3 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 3</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr3 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr3: e.target.value })
-                }
-                placeholder="PTR 3"
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Notes */}
-          <Col md="12">
-            <FormGroup>
-              <label className="form-label">Notes</label>
-              <textarea
-                className="form-control"
-                rows="2"
-                value={formData.notes || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                placeholder="Additional notes"
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Product Image */}
-          <Col md="12">
-            <FormGroup>
-              <label className="form-label">Product Image</label>
-              <Dropzone
-                accept=".png, .jpg, .jpeg"
-                multiple={false}
-                onDrop={(acceptedFiles) =>
-                  handleImageUpload(acceptedFiles, setFormData)
-                }
+            isOpen={modal.edit}
+            toggle={() => setModal({ edit: false })}
+            className="modal-dialog-centered"
+            size="lg"
+          >
+            <ModalBody>
+              <a
+                href="#cancel"
+                onClick={(ev) => {
+                  ev.preventDefault();
+                  onFormCancel();
+                }}
+                className="close"
               >
-                {({ getRootProps, getInputProps }) => (
-                  <div
-                    {...getRootProps()}
-                    className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                  >
-                    <input {...getInputProps()} />
-                    {!formData.img && <p>Drag & drop image or click to select</p>}
-                    {formData.img && (
-                      <div className="dz-preview dz-image-preview">
-                        <div className="dz-image">
-                          <img src={formData.img} alt="preview" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Dropzone>
-            </FormGroup>
-          </Col>
+                <Icon name="cross-sm" />
+              </a>
 
-          {/* Submit + Cancel */}
-          <Col md="12">
-            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-              <li>
-                <Button color="primary" size="md" type="submit">
-                  Update Product
-                </Button>
-              </li>
-              <li>
-                <a
-                  href="#cancel"
-                  onClick={(ev) => {
-                    ev.preventDefault();
-                    onFormCancel();
-                  }}
-                  className="link link-light"
-                >
-                  Cancel
-                </a>
-              </li>
-            </ul>
-          </Col>
+              <div className="p-2">
+                <h5 className="title">Update Product</h5>
+                <div className="mt-4">
+                  <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
 
-        </Form>
-      </div>
-    </div>
-  </ModalBody>
-</Modal>
-<Modal
-  isOpen={deleteModal}
-  toggle={() => setDeleteModal(false)}
-  className="modal-dialog-centered"
->
-  <div className="modal-header">
-    <h5 className="modal-title">Confirm Delete</h5>
-    <button
-      type="button"
-      className="close"
-      onClick={() => setDeleteModal(false)}
-    >
-      <span>&times;</span>
-    </button>
-  </div>
-  <div className="modal-body">
-    Are you sure you want to delete <strong>{deleteItem?.productName}</strong>?
-  </div>
-  <div className="modal-footer">
-    <Button color="secondary" onClick={() => setDeleteModal(false)}>
-      Cancel
-    </Button>
-    <Button color="danger" onClick={handleDelete}>
-      Delete
-    </Button>
-  </div>
-</Modal>
+                    {/* Brand */}
+                    <Col md="6">
+                      <FormGroup>
+                        <label className="form-label">Brand</label>
+                        <RSelect
+                          options={brandOptions}
+                          value={{ value: formData.brand, label: formData.brand }}
+                          onChange={(e) =>
+                            setFormData({ ...formData, brand: e.value })
+                          }
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Product Name */}
+                    <Col md="6">
+                      <FormGroup>
+                        <label className="form-label">Product Name</label>
+                        <input
+                          className="form-control"
+                          type="text"
+                          value={formData.productName || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, productName: e.target.value })
+                          }
+                          placeholder="Enter Product Name"
+                          required
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Product Code */}
+                    <Col md="6">
+                      <FormGroup>
+                        <label className="form-label">Product Code</label>
+                        <input
+                          className="form-control"
+                          type="text"
+                          value={formData.productCode || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, productCode: e.target.value })
+                          }
+                          placeholder="Enter Product Code"
+                          required
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Value */}
+                    <Col md="6">
+                      <FormGroup>
+                        <label className="form-label">Value</label>
+                        <input
+                          className="form-control"
+                          type="number"
+                          value={formData.value || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, value: e.target.value })
+                          }
+                          placeholder="Enter Value"
+                          required
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Box Packing */}
+                    <Col md="9">
+                      <FormGroup check>
+                        <label className="form-label">
+                          <input
+                            type="checkbox"
+                            checked={formData.boxPacking || false}
+                            onChange={(e) =>
+                              setFormData({ ...formData, boxPacking: e.target.checked })
+                            }
+                            className="form-check-input"
+                          />
+                          Box Packing Available
+                        </label>
+                      </FormGroup>
+                    </Col>
+
+                    {/* PTR 1 */}
+                    <Col md="4">
+                      <FormGroup>
+                        <label className="form-label">PTR 1</label>
+                        <input
+                          className="form-control"
+                          type="number"
+                          value={formData.ptr1 || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, ptr1: e.target.value })
+                          }
+                          placeholder="PTR 1"
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* PTR 2 */}
+                    <Col md="4">
+                      <FormGroup>
+                        <label className="form-label">PTR 2</label>
+                        <input
+                          className="form-control"
+                          type="number"
+                          value={formData.ptr2 || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, ptr2: e.target.value })
+                          }
+                          placeholder="PTR 2"
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* PTR 3 */}
+                    <Col md="4">
+                      <FormGroup>
+                        <label className="form-label">PTR 3</label>
+                        <input
+                          className="form-control"
+                          type="number"
+                          value={formData.ptr3 || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, ptr3: e.target.value })
+                          }
+                          placeholder="PTR 3"
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Notes */}
+                    <Col md="12">
+                      <FormGroup>
+                        <label className="form-label">Notes</label>
+                        <textarea
+                          className="form-control"
+                          rows="2"
+                          value={formData.notes || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, notes: e.target.value })
+                          }
+                          placeholder="Additional notes"
+                        />
+                      </FormGroup>
+                    </Col>
+
+                    {/* Product Image */}
+                    <Col md="12">
+                      <FormGroup>
+                        <label className="form-label">Product Image</label>
+                        <Dropzone
+                          accept=".png, .jpg, .jpeg"
+                          multiple={false}
+                          onDrop={(acceptedFiles) =>
+                            handleImageUpload(acceptedFiles, setFormData)
+                          }
+                        >
+                          {({ getRootProps, getInputProps }) => (
+                            <div
+                              {...getRootProps()}
+                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
+                            >
+                              <input {...getInputProps()} />
+                              {!formData.img && <p>Drag & drop image or click to select</p>}
+                              {formData.img && (
+                                <div className="dz-preview dz-image-preview">
+                                  <div className="dz-image">
+                                    <img src={formData.img} alt="preview" />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Dropzone>
+                      </FormGroup>
+                    </Col>
+
+                    {/* Submit + Cancel */}
+                    <Col md="12">
+                      <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
+                        <li>
+                          <Button color="primary" size="md" type="submit">
+                            Update Product
+                          </Button>
+                        </li>
+                        <li>
+                          <a
+                            href="#cancel"
+                            onClick={(ev) => {
+                              ev.preventDefault();
+                              onFormCancel();
+                            }}
+                            className="link link-light"
+                          >
+                            Cancel
+                          </a>
+                        </li>
+                      </ul>
+                    </Col>
+
+                  </Form>
+                </div>
+              </div>
+            </ModalBody>
+          </Modal>
+          <Modal
+            isOpen={deleteModal}
+            toggle={() => setDeleteModal(false)}
+            className="modal-dialog-centered"
+          >
+            <div className="modal-header">
+              <h5 className="modal-title">Confirm Delete</h5>
+              <button
+                type="button"
+                className="close"
+                onClick={() => setDeleteModal(false)}
+              >
+                <span>&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              Are you sure you want to delete <strong>{deleteItem?.productName}</strong>?
+            </div>
+            <div className="modal-footer">
+              <Button color="secondary" onClick={() => setDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button color="danger" onClick={handleDelete}>
+                Delete
+              </Button>
+            </div>
+          </Modal>
 
 
 
-      </Content>
+                </Content>
 
-      <style jsx>{`
-      html {
-  overflow-y: scroll;
-}
-body {
-  overflow-x: hidden;
-}
+                <style jsx>{`
+                html {
+            overflow-y: scroll;
+          }
+          body {
+            overflow-x: hidden;
+          }
 
-       .brand-list {
-  max-height: 700px;
-  overflow-y: auto;
-}
+                .brand-list {
+            max-height: 700px;
+            overflow-y: auto;
+          }
 
-.brand-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-  color: #6c757d;          /* ✅ visible gray */
-}
+          .brand-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            color: #6c757d;          /* ✅ visible gray */
+          }
 
-.brand-item:hover {
-  background-color: #f8f9fa;
-  color: #495057;          /* darker gray on hover */
-}
+          .brand-item:hover {
+            background-color: #f8f9fa;
+            color: #495057;          /* darker gray on hover */
+          }
 
-.brand-item.active {
-  background-color: #6576ff;
-  color: #ffffff;          /* white only when active */
-}
+          .brand-item.active {
+            background-color: #6576ff;
+            color: #ffffff;          /* white only when active */
+          }
 
-.brand-name {
-  font-weight: 400;
-  font-size: 0.95rem;
-  color: inherit;          /* follow parent color */
-}
+          .brand-name {
+            font-weight: 400;
+            font-size: 0.8rem;
+            color: inherit;          /* follow parent color */
+          }
 
-.brand-count {
-  font-size: 11px;
-  background: rgba(0,0,0,0.1);
-  padding: 2px 6px;
-  border-radius: 10px;
-  color: #495057;          /* readable count */
-}
+          .brand-count {
+            font-size: 11px;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: #495057;          /* readable count */
+          }
 
-.brand-item.active .brand-count {
-  background: rgba(255,255,255,0.2);
-  color: #ffffff;
-}
+          .brand-item.active .brand-count {
+            background: rgba(255,255,255,0.2);
+            color: #ffffff;
+          }
 
 
-.product-card {
-  background: #ffffff;
-  border: 1px solid #e5e9f2;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  height: 90%;
-  margin: 8px;
-  padding: 5px;
-}
+          .product-card {
+            background: #ffffff;
+            border: 1px solid #e5e9f2;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 90%;
+            margin: 8px;
+            padding: 5px;
+          }
 
         .product-card:hover {
           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
@@ -1471,12 +1384,12 @@ body {
           padding: 10px;
         }
           .no-page-padding {
-  padding: 0 !important;
-}
+          padding: 0 !important;
+        }
 
-.no-page-padding > .container-fluid {
-  padding: 0 !important;
-}
+        .no-page-padding > .container-fluid {
+          padding: 0 !important;
+        }
 
         .product-brand {
           font-size: 12px;
@@ -1503,46 +1416,46 @@ body {
           height: 100%;
           color: #b1bbc4;
         }.confirm-body {
-  padding: 30px 20px;
-}
+          padding: 30px 20px;
+        }
 
-.confirm-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 15px;
-  border-radius: 50%;
-  background: rgba(220, 53, 69, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #dc3545;
-  font-size: 26px;
-}
+        .confirm-icon {
+          width: 60px;
+          height: 60px;
+          margin: 0 auto 15px;
+          border-radius: 50%;
+          background: rgba(220, 53, 69, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #dc3545;
+          font-size: 26px;
+        }
 
-.confirm-title {
-  font-weight: 600;
-  margin-bottom: 10px;
-}
+        .confirm-title {
+          font-weight: 600;
+          margin-bottom: 10px;
+        }
 
-.confirm-text {
-  font-size: 14px;
-  color: #72849a;
-  margin-bottom: 25px;
-}
+        .confirm-text {
+          font-size: 14px;
+          color: #72849a;
+          margin-bottom: 25px;
+        }
 
-.confirm-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-}
-        
-.btn-cancel {
-  min-width: 100px;
-}
+        .confirm-actions {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+        }
+                
+        .btn-cancel {
+          min-width: 100px;
+        }
 
-.btn-confirm {
-  min-width: 120px;
-}
+        .btn-confirm {
+          min-width: 120px;
+        }
 
         .w-200 {
           min-width: 200px;
