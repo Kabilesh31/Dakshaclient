@@ -498,6 +498,7 @@ const VehicleListCompact = () => {
                     className="form-control"
                     onChange={d=>setFormData({...formData, insuranceExpiry:d})}
                     placeholderText="Insurance Expiry"
+                    required
                   />
                 </FormGroup>
               </Col>
@@ -509,6 +510,7 @@ const VehicleListCompact = () => {
                     className="form-control"
                     onChange={d=>setFormData({...formData, fcUpto:d})}
                     placeholderText="FC Upto"
+                    required
                   />
                 </FormGroup>
               </Col>
@@ -516,7 +518,7 @@ const VehicleListCompact = () => {
                <Dropzone multiple={false} onDrop={(acceptedFiles) => setUploadedFile(acceptedFiles[0])}>
   {({ getRootProps, getInputProps }) => (
     <div {...getRootProps()} className="dropzone mt-2">
-      <input {...getInputProps()} />
+      <input {...getInputProps()} required />
       {uploadedFile ? <p>{uploadedFile.name}</p> : <p>Drag & drop an image or click to select</p>}
     </div>
   )}
@@ -587,6 +589,7 @@ const VehicleListCompact = () => {
                     className="form-control"
                     onChange={d=>setFormData({...formData, insuranceExpiry:d})}
                     placeholderText="Insurance Expiry"
+                    required
                   />
                 </FormGroup>
               </Col>
@@ -598,6 +601,7 @@ const VehicleListCompact = () => {
                     className="form-control"
                     onChange={d=>setFormData({...formData, fcUpto:d})}
                     placeholderText="FC Upto"
+                    required
                   />
                 </FormGroup>
               </Col>
@@ -606,7 +610,7 @@ const VehicleListCompact = () => {
 <Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
   {({ getRootProps, getInputProps }) => (
     <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
-      <input {...getInputProps()} />
+      <input {...getInputProps()}  required/>
       
       {/* Show preview if file selected */}
       {uploadedFile ? (

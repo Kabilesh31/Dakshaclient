@@ -3,6 +3,7 @@ import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
+
 import {
   FormGroup,
   UncontrolledDropdown,
@@ -64,18 +65,22 @@ const ProductsListCompact = () => {
   });
   
   const [editId, setEditedId] = useState();
-  const [formData, setFormData] = useState({
-    productName: "",   // Product name
-    brand: "",         // Brand
-    productCode: "",   // Product code
-    value: null,       // Value / Price
-    boxPacking: false, // Boolean
-    ptr1: null,        // PTR 1
-    ptr2: null,        // PTR 2
-    ptr3: null,        // PTR 3
-    notes: "",         // Notes
-    img: ""            // Image URL or preview
-  });
+const [modalAdd, setModalAdd] = useState(false);
+const [modalEdit, setModalEdit] = useState(false);
+const [selectedId, setSelectedId] = useState(null);
+
+const [formData, setFormData] = useState({
+  brand: "",
+  productName: "",
+  productCode: "",
+  value: "",
+  boxPacking: false,
+  ptr1: "",
+  ptr2: "",
+  ptr3: "",
+  notes: "",
+  img: null,
+});
 
 
   const [actionText, setActionText] = useState("");
@@ -101,6 +106,7 @@ const [deleteItem, setDeleteItem] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
 const searchRef = useRef(null);
+
 
 useEffect(() => {
   fetchProductData();
@@ -223,17 +229,18 @@ const fetchProductData = async () => {
   // function to reset the form
   const resetForm = () => {
   setFormData({
-    productName: "",
     brand: "",
+    productName: "",
     productCode: "",
-    value: null,
+    value: "",
     boxPacking: false,
-    ptr1: null,
-    ptr2: null,
-    ptr3: null,
+    ptr1: "",
+    ptr2: "",
+    ptr3: "",
     notes: "",
-    img: ""
+    img: null,
   });
+  setSelectedId(null);
 };
 
 
@@ -247,106 +254,114 @@ const fetchProductData = async () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async () => {
-  try {
-    const payload = {
-      productName: formData.productName,
-      brand: formData.brand,
-      productCode: formData.productCode,
-      value: formData.value ? Number(formData.value) : 0,
-      boxPacking: formData.boxPacking || false,
-      ptr1: formData.ptr1 ? Number(formData.ptr1) : 0,
-      ptr2: formData.ptr2 ? Number(formData.ptr2) : 0,
-      ptr3: formData.ptr3 ? Number(formData.ptr3) : 0,
-      notes: formData.notes || "",
-      img: uploadedFile ? uploadedFile.preview : formData.img || "",
-      createdBy: userData._id
-    };
+const onAddSubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData();
 
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/product`,
-      payload
-    );
-
-    if (response.status === 201) {
-      successToast("Product Created Successfully");
-      onFormCancel();
-      fetchProductData();
-    } else {
-      warningToast("Failed to create product");
+  Object.keys(formData).forEach(key => {
+    if (formData[key] !== "" && formData[key] !== null) {
+      fd.append(key, formData[key]);
     }
-  } catch (error) {
-    errorToast(error.response?.data?.message || "Something went wrong");
+  });
+  fd.append("createdBy", userData._id);
 
-    // Optional: Add dummy product to UI for demo
-    const newProduct = {
-      _id: Date.now().toString(),
-      ...payload
-    };
-    setData(prev => [newProduct, ...prev]);
-    onFormCancel();
-  }
-};
-
-  // submit function to update a new item
-  const onEditSubmit = async () => {
   try {
-    const payload = {
-      productName: formData.productName,
-      brand: formData.brand,
-      productCode: formData.productCode,
-      value: formData.value ? Number(formData.value) : 0,
-      boxPacking: formData.boxPacking || false,
-      ptr1: formData.ptr1 ? Number(formData.ptr1) : 0,
-      ptr2: formData.ptr2 ? Number(formData.ptr2) : 0,
-      ptr3: formData.ptr3 ? Number(formData.ptr3) : 0,
-      notes: formData.notes || "",
-      img: uploadedFile ? uploadedFile.preview : formData.img || ""
-    };
+    const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/product`, fd);
+    
+    successToast("Product added successfully");
 
-    const response = await axios.put(
-      `${process.env.REACT_APP_BACKENDURL}/api/product/${editId}`,
-      payload
-    );
+    setModalAdd(false);
+    resetForm();
 
-    if (response.status === 200) {
-      successToast("Product Updated Successfully");
-      fetchProductData();
-      onFormCancel();
-    }
+    // ✅ Add new product to state
+    setData(prev => {
+      const updated = [...prev, res.data];
+
+      // ✅ Update brands immediately
+      const brandSet = new Set(updated.map(p => p.brand || 'Unbranded'));
+      const brandCounts = {};
+      updated.forEach(p => {
+        const b = p.brand || 'Unbranded';
+        brandCounts[b] = (brandCounts[b] || 0) + 1;
+      });
+      setBrands(Array.from(brandSet).map(b => ({ name: b, productCount: brandCounts[b] })));
+
+      return updated;
+    });
+
+    // ✅ Reset pagination to page 1
+    setCurrentPage(1);
+
+    // ✅ Optional: auto-select "All Brands" to show new product
+    setSelectedBrand("All Brands");
+
   } catch (err) {
-    errorToast(err.response?.data?.message || "Something Went Wrong");
-
-    // Optional: Update dummy data locally for demo
-    setData(prev =>
-      prev.map(item =>
-        item._id === editId ? { ...item, ...payload } : item
-      )
-    );
-    onFormCancel();
+    console.error(err);
+    errorToast("Add product failed");
   }
 };
+
+const onEditSubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData();
+
+  Object.keys(formData).forEach(key => {
+    if (formData[key] !== "" && formData[key] !== null) {
+      fd.append(key, formData[key]);
+    }
+  });
+
+  try {
+    const res = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/product/${selectedId}`, fd);
+
+    successToast("Product updated successfully");
+
+    setModalEdit(false);
+    resetForm();
+
+    // ✅ Update product in state
+    setData(prev => {
+      const updated = prev.map(p => p._id === selectedId ? res.data : p);
+
+      // ✅ Update brands immediately
+      const brandSet = new Set(updated.map(p => p.brand || 'Unbranded'));
+      const brandCounts = {};
+      updated.forEach(p => {
+        const b = p.brand || 'Unbranded';
+        brandCounts[b] = (brandCounts[b] || 0) + 1;
+      });
+      setBrands(Array.from(brandSet).map(b => ({ name: b, productCount: brandCounts[b] })));
+
+      return updated;
+    });
+
+    setCurrentPage(1);
+    setSelectedBrand("All Brands");
+
+  } catch (err) {
+    console.error(err);
+    errorToast("Update failed");
+  }
+};
+
 
 
   // function that loads the want to editted data
-  const onEditClick = (id) => {
-  const item = data.find(item => item._id === id);
-  if (item) {
-    setFormData({
-      productName: item.productName,
-      brand: item.brand,
-      productCode: item.productCode,
-      value: item.value,
-      boxPacking: item.boxPacking,
-      ptr1: item.ptr1,
-      ptr2: item.ptr2,
-      ptr3: item.ptr3,
-      notes: item.notes,
-      img: item.img || ""
-    });
-    setModal({ edit: true, add: false });
-    setEditedId(id);
-  }
+  const onEditClick = (item) => {
+  setSelectedId(item._id);
+  setFormData({
+    brand: item.brand,
+    productName: item.productName,
+    productCode: item.productCode,
+    value: item.value,
+    boxPacking: item.boxPacking,
+    ptr1: item.ptr1,
+    ptr2: item.ptr2,
+    ptr3: item.ptr3,
+    notes: item.notes,
+    img: item.img, // URL from backend
+  });
+  setModalEdit(true);
 };
 
   const handleDelete = async () => {
@@ -436,11 +451,20 @@ const fetchProductData = async () => {
                         <Icon name="upload"></Icon> 
                       </Button>
                     </li> */}
-                    <li className="nk-block-tools-opt">
-                      <Button color="primary" className="btn-icon" onClick={() => setModal({ add: true })}>
-                        <Icon name="plus"></Icon>
-                      </Button>
-                    </li>
+                 <li className="nk-block-tools-opt">
+  <Button
+    color="primary"
+    className="btn-icon"
+    onClick={() => {
+      resetForm(); // optional: clear previous form data
+      setModalAdd(true); // open the modal
+    }}
+  >
+    <Icon name="plus" />
+  </Button>
+</li>
+
+
                     
                     <li className="nk-block-tools-opt">
                       <Button color={isGridView ? "": "dark"} className="btn-icon mr-1" onClick={() => {setIsGridView(false); setItemPerPage(10)}}>
@@ -614,7 +638,8 @@ const fetchProductData = async () => {
                               ) : (
                                 <span className="no-preview">No preview available</span>
                               )}
-                              <div className="hover-icon" onClick={() => onEditClick(item._id, item.file)}>
+                             <div className="hover-icon" onClick={() => onEditClick(item)}>
+
                                 <TooltipComponent
                                   tag="a"
                                   containerClassName="btn btn-trigger btn-icon"
@@ -725,7 +750,8 @@ const fetchProductData = async () => {
                           </DataTableRow>
                           <DataTableRow className="nk-tb-col-tools">
                             <ul className="nk-tb-actions gx-1">
-                              <li onClick={() => onEditClick(item._id, item.file)}>
+                              <li onClick={() => onEditClick(item)}>
+
                                 <TooltipComponent
                                   tag="a"
                                   containerClassName="btn btn-trigger btn-icon"
@@ -786,475 +812,211 @@ const fetchProductData = async () => {
         </Block>
 
         {/* Add Product Modal */}
-       <Modal
-              isOpen={modal.add}
-              toggle={() => setModal({ add: false })}
-              className="modal-dialog-centered"
-              size="lg"
-            >
-              <ModalBody>
-                <a
-                  href="#cancel"
-                  onClick={(ev) => {
-                    ev.preventDefault();
-                    onFormCancel();
-                  }}
-                  className="close"
-                >
-                  <Icon name="cross-sm" />
-                </a>
+      <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
+  <ModalBody>
+    <a href="#close" className="close" onClick={(e) => { e.preventDefault(); setModalAdd(false); }}>
+      <Icon name="cross-sm" />
+    </a>
 
-                <div className="p-2">
-                  <h5 className="title">Add Product</h5>
-                  <div className="mt-4">
-                    <Form className="row gy-4" onSubmit={handleSubmit(onFormSubmit)}>
+    <h5 className="title mb-3">Add Product</h5>
 
-                      {/* Brand */}
-                    <Col md="6">
-              <FormGroup>
-                <label className="form-label">Brand</label>
+    <Form className="row gy-3" onSubmit={onAddSubmit}>
 
-                <CreatableSelect
-                  options={brandOptions}
-                  value={
-                    formData.brand
-                      ? { label: formData.brand, value: formData.brand }
-                      : null
-                  }
-                  onChange={(selected) => {
-                    setFormData({ ...formData, brand: selected.value });
-                  }}
-                  placeholder="Select or create brand"
-                  isClearable
-                />
-              </FormGroup>
-            </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Brand</label>
+          <CreatableSelect
+            options={brandOptions}
+            value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
+            onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
+            required
+            isClearable
+          />
+        </FormGroup>
+      </Col>
 
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Name</label>
+          <input className="form-control" value={formData.productName}
+            onChange={e => setFormData({ ...formData, productName: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-          {/* Product Name */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Product Name</label>
-              <input
-                className="form-control"
-                type="text"
-                value={formData.productName || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, productName: e.target.value })
-                }
-                placeholder="Enter Product Name"
-                required
-              />
-            </FormGroup>
-          </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Code</label>
+          <input className="form-control" value={formData.productCode}
+            onChange={e => setFormData({ ...formData, productCode: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-          {/* Product Code */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Product Code</label>
-              <input
-                className="form-control"
-                type="text"
-                value={formData.productCode || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, productCode: e.target.value })
-                }
-                placeholder="Enter Product Code"
-                required
-              />
-            </FormGroup>
-          </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Value</label>
+          <input type="number" className="form-control" value={formData.value}
+            onChange={e => setFormData({ ...formData, value: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-          {/* Value */}
-          <Col md="6">
-            <FormGroup>
-              <label className="form-label">Value</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.value || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, value: e.target.value })
-                }
-                placeholder="Enter Value"
-                required
-              />
-            </FormGroup>
-          </Col>
+      <Col md="12">
+        <FormGroup check>
+          <input type="checkbox" className="form-check-input"
+            checked={formData.boxPacking}
+            onChange={e => setFormData({ ...formData, boxPacking: e.target.checked })} 
+            required/>
+          <label className="form-label ms-2">Box Packing Available</label>
+        </FormGroup>
+      </Col>
 
-          {/* Box Packing */}
-          <Col md="9">
-            <FormGroup check>
-              <label className="form-label">
-                <input
-                  type="checkbox"
-                  checked={formData.boxPacking || false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, boxPacking: e.target.checked })
-                  }
-                  className="form-check-input"
-                />
-                Box Packing Available
-              </label>
-            </FormGroup>
-          </Col>
+      {[1, 2, 3].map(n => (
+        <Col md="4" key={n}>
+          <FormGroup>
+            <label className="form-label">PTR {n}</label>
+            <input className="form-control"
+              value={formData[`ptr${n}`]}
+              onChange={e => setFormData({ ...formData, [`ptr${n}`]: e.target.value })} 
+              required/>
+          </FormGroup>
+        </Col>
+      ))}
 
-          {/* PTR 1 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 1</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr1 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr1: e.target.value })
-                }
-                placeholder="PTR 1"
-              />
-            </FormGroup>
-          </Col>
+      <Col md="12">
+        <FormGroup>
+          <label className="form-label">Notes</label>
+          <textarea className="form-control" rows="2"
+            value={formData.notes}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })} 
+            required/>
+        </FormGroup>
+      </Col>
 
-          {/* PTR 2 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 2</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr2 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr2: e.target.value })
-                }
-                placeholder="PTR 2"
-              />
-            </FormGroup>
-          </Col>
+      <Col md="12">
+        <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+          {({ getRootProps, getInputProps }) => (
+            <div {...getRootProps()} className="dropzone">
+              <input {...getInputProps()} required />
+              {formData.img ? <p>{formData.img.name}</p> : <p>Upload Product Image</p>}
+            </div>
+          )}
+        </Dropzone>
+      </Col>
 
-          {/* PTR 3 */}
-          <Col md="4">
-            <FormGroup>
-              <label className="form-label">PTR 3</label>
-              <input
-                className="form-control"
-                type="number"
-                value={formData.ptr3 || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ptr3: e.target.value })
-                }
-                placeholder="PTR 3"
-              />
-            </FormGroup>
-          </Col>
+      <Col md="12">
+        <Button color="primary" type="submit">Save Product</Button>
+      </Col>
 
-          {/* Notes */}
-          <Col md="12">
-            <FormGroup>
-              <label className="form-label">Notes</label>
-              <textarea
-                className="form-control"
-                rows="2"
-                value={formData.notes || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                placeholder="Additional notes"
-              />
-            </FormGroup>
-          </Col>
-
-          {/* Product Image */}
-          <Col md="12">
-            <FormGroup>
-              <label className="form-label">Product Image</label>
-              <Dropzone
-                accept=".png, .jpg, .jpeg"
-                multiple={false}
-                onDrop={(acceptedFiles) =>
-                  handleImageUpload(acceptedFiles, setFormData)
-                }
-              >
-                {({ getRootProps, getInputProps }) => (
-                  <div
-                    {...getRootProps()}
-                    className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                  >
-                    <input {...getInputProps()} />
-                    {!formData.img && (
-                      <p>Drag & drop image or click to select</p>
-                    )}
-                    {formData.img && (
-                      <div className="dz-preview dz-image-preview">
-                        <div className="dz-image">
-                          <img src={formData.img} alt="preview" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Dropzone>
-            </FormGroup>
-          </Col>
-
-          {/* Submit + Cancel */}
-          <Col md="12">
-            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-              <li>
-                <Button color="primary" size="md" type="submit">
-                  Add Product
-                </Button>
-              </li>
-              <li>
-                <a
-                  href="#cancel"
-                  onClick={(ev) => {
-                    ev.preventDefault();
-                    onFormCancel();
-                  }}
-                  className="link link-light"
-                >
-                  Cancel
-                </a>
-              </li>
-            </ul>
-          </Col>
-
-        </Form>
-      </div>
-    </div>
+    </Form>
   </ModalBody>
 </Modal>
 
 
+
         {/* Edit Product Modal */}
-        <Modal
-            isOpen={modal.edit}
-            toggle={() => setModal({ edit: false })}
-            className="modal-dialog-centered"
-            size="lg"
-          >
-            <ModalBody>
-              <a
-                href="#cancel"
-                onClick={(ev) => {
-                  ev.preventDefault();
-                  onFormCancel();
-                }}
-                className="close"
-              >
-                <Icon name="cross-sm" />
-              </a>
+        <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
+  <ModalBody>
+    <a href="#close" className="close" onClick={(e) => { e.preventDefault(); setModalEdit(false); }}>
+      <Icon name="cross-sm" />
+    </a>
 
-              <div className="p-2">
-                <h5 className="title">Update Product</h5>
-                <div className="mt-4">
-                  <Form className="row gy-4" onSubmit={handleSubmit(onEditSubmit)}>
+    <h5 className="title mb-3">Edit Product</h5>
 
-                    {/* Brand */}
-                    <Col md="6">
-                      <FormGroup>
-                        <label className="form-label">Brand</label>
-                        <RSelect
-                          options={brandOptions}
-                          value={{ value: formData.brand, label: formData.brand }}
-                          onChange={(e) =>
-                            setFormData({ ...formData, brand: e.value })
-                          }
-                        />
-                      </FormGroup>
-                    </Col>
+    <Form className="row gy-3" onSubmit={onEditSubmit}>
 
-                    {/* Product Name */}
-                    <Col md="6">
-                      <FormGroup>
-                        <label className="form-label">Product Name</label>
-                        <input
-                          className="form-control"
-                          type="text"
-                          value={formData.productName || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, productName: e.target.value })
-                          }
-                          placeholder="Enter Product Name"
-                          required
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Brand</label>
+          <CreatableSelect
+            options={brandOptions}
+            value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
+            onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
+            isClearable
+          />
+        </FormGroup>
+      </Col>
 
-                    {/* Product Code */}
-                    <Col md="6">
-                      <FormGroup>
-                        <label className="form-label">Product Code</label>
-                        <input
-                          className="form-control"
-                          type="text"
-                          value={formData.productCode || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, productCode: e.target.value })
-                          }
-                          placeholder="Enter Product Code"
-                          required
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Name</label>
+          <input className="form-control" value={formData.productName}
+            onChange={e => setFormData({ ...formData, productName: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-                    {/* Value */}
-                    <Col md="6">
-                      <FormGroup>
-                        <label className="form-label">Value</label>
-                        <input
-                          className="form-control"
-                          type="number"
-                          value={formData.value || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, value: e.target.value })
-                          }
-                          placeholder="Enter Value"
-                          required
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Code</label>
+          <input className="form-control" value={formData.productCode}
+            onChange={e => setFormData({ ...formData, productCode: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-                    {/* Box Packing */}
-                    <Col md="9">
-                      <FormGroup check>
-                        <label className="form-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.boxPacking || false}
-                            onChange={(e) =>
-                              setFormData({ ...formData, boxPacking: e.target.checked })
-                            }
-                            className="form-check-input"
-                          />
-                          Box Packing Available
-                        </label>
-                      </FormGroup>
-                    </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Value</label>
+          <input type="number" className="form-control" value={formData.value}
+            onChange={e => setFormData({ ...formData, value: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-                    {/* PTR 1 */}
-                    <Col md="4">
-                      <FormGroup>
-                        <label className="form-label">PTR 1</label>
-                        <input
-                          className="form-control"
-                          type="number"
-                          value={formData.ptr1 || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, ptr1: e.target.value })
-                          }
-                          placeholder="PTR 1"
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="12">
+        <FormGroup check>
+          <input type="checkbox" className="form-check-input"
+            checked={formData.boxPacking}
+            onChange={e => setFormData({ ...formData, boxPacking: e.target.checked })} />
+          <label className="form-label ms-2">Box Packing Available</label>
+        </FormGroup>
+      </Col>
 
-                    {/* PTR 2 */}
-                    <Col md="4">
-                      <FormGroup>
-                        <label className="form-label">PTR 2</label>
-                        <input
-                          className="form-control"
-                          type="number"
-                          value={formData.ptr2 || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, ptr2: e.target.value })
-                          }
-                          placeholder="PTR 2"
-                        />
-                      </FormGroup>
-                    </Col>
+      {[1, 2, 3].map(n => (
+        <Col md="4" key={n}>
+          <FormGroup>
+            <label className="form-label">PTR {n}</label>
+            <input className="form-control"
+              value={formData[`ptr${n}`]}
+              onChange={e => setFormData({ ...formData, [`ptr${n}`]: e.target.value })} />
+          </FormGroup>
+        </Col>
+      ))}
 
-                    {/* PTR 3 */}
-                    <Col md="4">
-                      <FormGroup>
-                        <label className="form-label">PTR 3</label>
-                        <input
-                          className="form-control"
-                          type="number"
-                          value={formData.ptr3 || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, ptr3: e.target.value })
-                          }
-                          placeholder="PTR 3"
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="12">
+        <FormGroup>
+          <label className="form-label">Notes</label>
+          <textarea className="form-control" rows="2"
+            value={formData.notes}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+            required />
+        </FormGroup>
+      </Col>
 
-                    {/* Notes */}
-                    <Col md="12">
-                      <FormGroup>
-                        <label className="form-label">Notes</label>
-                        <textarea
-                          className="form-control"
-                          rows="2"
-                          value={formData.notes || ""}
-                          onChange={(e) =>
-                            setFormData({ ...formData, notes: e.target.value })
-                          }
-                          placeholder="Additional notes"
-                        />
-                      </FormGroup>
-                    </Col>
+      <Col md="12">
+        <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+          {({ getRootProps, getInputProps }) => (
+            <div {...getRootProps()} className="dropzone">
+              <input {...getInputProps()}  />
+              {formData.img ? (
+                <img src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
+                     style={{ width: 80 }} />
+              ) : <p>Upload Image</p>}
+            </div>
+          )}
+        </Dropzone>
+      </Col>
 
-                    {/* Product Image */}
-                    <Col md="12">
-                      <FormGroup>
-                        <label className="form-label">Product Image</label>
-                        <Dropzone
-                          accept=".png, .jpg, .jpeg"
-                          multiple={false}
-                          onDrop={(acceptedFiles) =>
-                            handleImageUpload(acceptedFiles, setFormData)
-                          }
-                        >
-                          {({ getRootProps, getInputProps }) => (
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {!formData.img && <p>Drag & drop image or click to select</p>}
-                              {formData.img && (
-                                <div className="dz-preview dz-image-preview">
-                                  <div className="dz-image">
-                                    <img src={formData.img} alt="preview" />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </Dropzone>
-                      </FormGroup>
-                    </Col>
+      <Col md="12">
+        <Button color="primary" type="submit">Update Product</Button>
+      </Col>
 
-                    {/* Submit + Cancel */}
-                    <Col md="12">
-                      <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
-                        <li>
-                          <Button color="primary" size="md" type="submit">
-                            Update Product
-                          </Button>
-                        </li>
-                        <li>
-                          <a
-                            href="#cancel"
-                            onClick={(ev) => {
-                              ev.preventDefault();
-                              onFormCancel();
-                            }}
-                            className="link link-light"
-                          >
-                            Cancel
-                          </a>
-                        </li>
-                      </ul>
-                    </Col>
+    </Form>
+  </ModalBody>
+</Modal>
 
-                  </Form>
-                </div>
-              </div>
-            </ModalBody>
-          </Modal>
           <Modal
             isOpen={deleteModal}
             toggle={() => setDeleteModal(false)}

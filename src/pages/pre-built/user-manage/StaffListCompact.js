@@ -502,6 +502,7 @@ const StaffListCompact = () => {
               type="text"
               className="form-control"
               placeholder="Staff Code"
+              required
               value={formData.staffCode}
               onChange={e => setFormData({ ...formData, staffCode: e.target.value })}
             />
@@ -515,6 +516,7 @@ const StaffListCompact = () => {
               className="form-control"
               value={formData.staffStatus}
               onChange={e => setFormData({ ...formData, staffStatus: e.target.value })}
+              required
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -530,6 +532,7 @@ const StaffListCompact = () => {
       onChange={(e) =>
         setFormData({ ...formData, dutyStatus: e.target.value })
       }
+      required
     >
       <option value="active">active</option>
       <option value="inactive">inactive</option>
@@ -545,6 +548,7 @@ const StaffListCompact = () => {
               className="form-control"
               placeholder="Enter Blood Group (eg: O+, A-)"
               value={formData.bloodGroup}
+              required
               onChange={(e) =>
           setFormData({
             ...formData,
@@ -563,7 +567,7 @@ const StaffListCompact = () => {
             <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
               {({ getRootProps, getInputProps }) => (
                 <div {...getRootProps()} className="dropzone mt-2">
-                  <input {...getInputProps()} />
+                  <input {...getInputProps()} required/>
                   {formData.img ? <p>{formData.img.name}</p> : <p>Drag & drop an image or click to select</p>}
                 </div>
               )}
@@ -660,6 +664,7 @@ const StaffListCompact = () => {
               placeholder="Staff Code"
               value={formData.staffCode}
               onChange={e => setFormData({ ...formData, staffCode: e.target.value })}
+              required
             />
           </FormGroup>
         </Col>
@@ -671,6 +676,7 @@ const StaffListCompact = () => {
               className="form-control"
               value={formData.staffStatus}
               onChange={e => setFormData({ ...formData, staffStatus: e.target.value })}
+              required
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -686,6 +692,7 @@ const StaffListCompact = () => {
       onChange={(e) =>
         setFormData({ ...formData, dutyStatus: e.target.value })
       }
+      required
     >
       <option value="active">active</option>
       <option value="inactive">inactive</option>
@@ -701,6 +708,7 @@ const StaffListCompact = () => {
       className="form-control"
       placeholder="Enter Blood Group (eg: O+, A-)"
       value={formData.bloodGroup}
+      required
       onChange={(e) =>
   setFormData({
     ...formData,
