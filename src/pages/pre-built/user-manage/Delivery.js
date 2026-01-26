@@ -801,7 +801,276 @@ const Delivery = () => {
   };
 
   // Render Customer Alignment Tab
- 
+ const renderCustomerAlignment = () => {
+    const routeCustomers = getCustomersByRoute(selectedRouteForAlignment);
+    const selectedRoute = routes.find(r => r.id === selectedRouteForAlignment);
+    
+    return (
+      <div className="row g-4">
+        <div className="col-12">
+          <PreviewCard>
+            <div className="d-flex justify-content-between align-items-center mb-4 pb-5 ">
+              <div>
+                <h5 className="title">Customer Shop Alignment</h5>
+                <p className="text-soft mb-0">Drag and drop to set delivery line order for customers</p>
+              </div>
+              <div className="d-flex gap-2">
+                <div className="form-group" style={{ minWidth: '250px' }}>
+                  <label className="form-label">Select Route</label>
+                  <select
+                    className="form-control"
+                    value={selectedRouteForAlignment}
+                    onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
+                  >
+                    {routes.map((route) => (
+                      <option key={route.id} value={route.id}>
+                        {route.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button 
+                  color="primary" 
+                  style={{padding:"20px", marginLeft: "10px"}}
+                  size="md" 
+                  onClick={handleSaveAlignment}
+                  disabled={isSavingAlignment}
+                  className="mt-4"
+                >
+                  {isSavingAlignment ? "Saving..." : "Save Alignment"}
+                </Button>
+              
+              </div>
+            </div>
+
+            {success && (
+              <Alert color="success" className="mb-3">
+                <Icon name="check-circle"></Icon> {success}
+                <Button className="close" onClick={() => setSuccess(null)}>
+                  <Icon name="cross"></Icon>
+                </Button>
+              </Alert>
+            )}
+
+            {error && (
+              <Alert color="danger" className="mb-3">
+                <Icon name="alert-circle"></Icon> {error}
+                <Button className="close" onClick={() => setError(null)}>
+                  <Icon name="cross"></Icon>
+                </Button>
+              </Alert>
+            )}
+
+            <div className="row">
+              <div className="col-lg-8">
+                <div className="card card-bordered">
+                  <div className="card-inner">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h6 className="title">
+                        {selectedRoute?.name} - Delivery Line Order
+                        <Badge color="primary" className="ms-2">
+                          {routeCustomers.length} Customers
+                        </Badge>
+                      </h6>
+                      <div className="text-muted">
+                        <Icon name="info"></Icon> Drag customers to reorder delivery sequence
+                      </div>
+                    </div>
+
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="customers">
+                        {(provided) => (
+                          <div 
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="customer-list"
+                          >
+                            {routeCustomers.length > 0 ? (
+                              routeCustomers.map((customer, index) => (
+                                <Draggable 
+                                  key={customer._id} 
+                                  draggableId={customer._id} 
+                                  index={index}
+                                >
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className={`customer-item ${snapshot.isDragging ? 'dragging' : ''}`}
+                                      style={provided.draggableProps.style}
+                                    >
+                                      <div className="customer-item-content">
+                                        <div className="d-flex align-items-center">
+                                          <div className="customer-line-number">
+                                            <Badge color="primary" pill>
+                                              {customer.lineNo}
+                                            </Badge>
+                                          </div>
+                                          <div className="customer-drag-handle ms-3">
+                                            <Icon name="menu"></Icon>
+                                          </div>
+                                          <div className="customer-info ms-3">
+                                            <h6 className="mb-1">{customer.name}</h6>
+                                            <div className="d-flex flex-wrap gap-2">
+                                              <small className="text-muted">
+                                                <Icon name="map-pin"></Icon> {customer.address}
+                                              </small>
+                                              <small className="text-muted">
+                                                <Icon name="phone"></Icon> {customer.phone}
+                                              </small>
+                                              <Badge color="light" className="ms-2">
+                                                {customer.category}
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="customer-actions">
+                                          <Button size="sm" color="light">
+                                            <Icon name="eye"></Icon>
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))
+                            ) : (
+                              <div className="text-center py-5">
+                                <Icon name="users" className="icon-xl text-light mb-3"></Icon>
+                                <h6>No customers assigned to this route</h6>
+                               
+                              </div>
+                            )}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-lg-4">
+                <div className="card card-bordered h-100">
+                  <div className="card-inner">
+                    <h6 className="title">Route Information</h6>
+                    <div className="mt-3">
+                      {selectedRoute && (
+                        <div className="p-3 bg-light rounded mb-3">
+                          <h5 className="text-primary">{selectedRoute.name}</h5>
+                          <p className="text-muted">{selectedRoute.description}</p>
+                          <div className="d-flex justify-content-between">
+                            <div>
+                              <Icon name="map-pin" className="text-primary"></Icon>
+                              <span className="ms-2">{selectedRoute.stops} stops</span>
+                            </div>
+                            <div>
+                              <Icon name="clock" className="text-primary"></Icon>
+                              <span className="ms-2">{selectedRoute.estimatedTime}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4">
+                        <h6 className="title">Alignment Instructions</h6>
+                        <ul className="list-unstyled">
+                          <li className="mb-2">
+                            <Icon name="check-circle" className="text-success"></Icon>
+                            <span className="ms-2">Drag customers to set delivery order</span>
+                          </li>
+                          <li className="mb-2">
+                            <Icon name="check-circle" className="text-success"></Icon>
+                            <span className="ms-2">Line numbers update automatically</span>
+                          </li>
+                          <li className="mb-2">
+                            <Icon name="check-circle" className="text-success"></Icon>
+                            <span className="ms-2">Click Save Alignment to persist changes</span>
+                          </li>
+                          <li className="mb-2">
+                            <Icon name="check-circle" className="text-success"></Icon>
+                            <span className="ms-2">Add more customers from Add Customer button</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Details Table */}
+            <div className="mt-4">
+              <h6 className="title">Customer Details</h6>
+              <div className="table-responsive">
+                <table className="table table-hover mt-2">
+                  <thead>
+                    <tr>
+                      <th>Line No</th>
+                      <th>Customer Name</th>
+                      <th>Address</th>
+                      <th>Phone</th>
+                      <th>Category</th>
+                      <th>Credit Days</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {routeCustomers.map((customer) => (
+                      <tr key={customer._id}>
+                        <td>
+                          <Badge color="primary">{customer.lineNo}</Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <div className="avatar avatar-sm bg-light">
+                              <span>{customer.name.charAt(0)}</span>
+                            </div>
+                            <div className="ms-2">
+                              <div className="fw-bold">{customer.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="text-truncate" style={{ maxWidth: '200px' }}>
+                            {customer.address}
+                          </div>
+                        </td>
+                        <td>{customer.phone}</td>
+                        <td>
+                          <Badge color="light">{customer.category}</Badge>
+                        </td>
+                        <td>
+                          <Badge color={customer.creditDays > 30 ? "warning" : "success"}>
+                            {customer.creditDays} days
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            <Button size="sm" color="light">
+                              <Icon name="eye"></Icon>
+                            </Button>
+                            <Button size="sm" color="light">
+                              <Icon name="edit"></Icon>
+                            </Button>
+                            <Button size="sm" color="light">
+                              <Icon name="trash"></Icon>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </PreviewCard>
+        </div>
+      </div>
+    );
+  };
   // Render Live Track Tab
   const renderLiveTrack = () => {
     if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
@@ -1300,6 +1569,15 @@ const Delivery = () => {
                   <span>Live Track</span>
                 </button>
               </li>
+               <li>
+                <button
+                  className={`tab-btn ${activeTab === "alignment" ? "active" : ""}`}
+                  onClick={() => setActiveTab("alignment")}
+                >
+                  <Icon name="layers" />
+                  <span>Customer Alignment</span>
+                </button>
+              </li>
 
               
             </ul>
@@ -1312,6 +1590,9 @@ const Delivery = () => {
             </div>
             <div className={`tab-pane ${activeTab === "track" ? "active" : ""}`}>
               {renderLiveTrack()}
+            </div>
+             <div className={`tab-pane ${activeTab === "alignment" ? "active" : ""}`}>
+              {renderCustomerAlignment()}
             </div>
        
           </div>

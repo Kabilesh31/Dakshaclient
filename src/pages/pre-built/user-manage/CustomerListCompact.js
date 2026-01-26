@@ -490,6 +490,7 @@ const routeDatas = [
           <input type="number" className="form-control"
             value={formData.phone2}
             onChange={e=>setFormData({...formData, phone2:e.target.value})}
+            
           />
         </FormGroup>
       </Col>
@@ -512,6 +513,7 @@ const routeDatas = [
       isClearable
       isLoading={loadingRoutes}
       options={routes}
+      required
       placeholder="Select or create route"
       formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
       value={
@@ -552,6 +554,7 @@ const routeDatas = [
           <input type="number" className="form-control"
             value={formData.lineNo}
             onChange={e=>setFormData({...formData, lineNo:e.target.value})}
+            required
           />
         </FormGroup>
       </Col>
@@ -562,6 +565,7 @@ const routeDatas = [
     <select
       className="form-control"
       value={formData.creditDays}
+      required
       onChange={(e) =>
         setFormData({ ...formData, creditDays: e.target.value })
       }
@@ -582,6 +586,7 @@ const routeDatas = [
           <input type="number" className="form-control"
             value={formData.pincode}
             onChange={e=>setFormData({...formData, pincode:e.target.value})}
+            required
           />
         </FormGroup>
       </Col>
@@ -592,6 +597,7 @@ const routeDatas = [
     <select
       className="form-control"
       value={formData.category}
+      required
       onChange={(e) =>
         setFormData({ ...formData, category: e.target.value })
       }
@@ -609,6 +615,7 @@ const routeDatas = [
           <label className="form-label">Latitude</label>
           <input className="form-control"
             value={formData.geoLocation?.lat}
+            required
             onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, lat:e.target.value}})}
           />
         </FormGroup>
@@ -619,6 +626,7 @@ const routeDatas = [
           <label className="form-label">Longitude</label>
           <input className="form-control"
             value={formData.geoLocation?.long}
+            required
             onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, long:e.target.value}})}
           />
         </FormGroup>
@@ -677,6 +685,7 @@ const routeDatas = [
           <label className="form-label">Alternate Phone</label>
           <input type="number" className="form-control"
             value={formData.phone2}
+
             onChange={e=>setFormData({...formData, phone2:e.target.value})}
           />
         </FormGroup>
@@ -700,6 +709,7 @@ const routeDatas = [
       isClearable
       isLoading={loadingRoutes}
       options={routes}
+      required
       placeholder="Select or create route"
       formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
       value={
@@ -739,6 +749,7 @@ const routeDatas = [
           <label className="form-label">Line No</label>
           <input type="number" className="form-control"
             value={formData.lineNo}
+            required
             onChange={e=>setFormData({...formData, lineNo:e.target.value})}
           />
         </FormGroup>
@@ -797,6 +808,7 @@ const routeDatas = [
           <label className="form-label">Latitude</label>
           <input className="form-control"
             value={formData.geoLocation?.lat}
+            required
             onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, lat:e.target.value}})}
           />
         </FormGroup>
@@ -807,6 +819,7 @@ const routeDatas = [
           <label className="form-label">Longitude</label>
           <input className="form-control"
             value={formData.geoLocation?.long}
+            required
             onChange={e=>setFormData({...formData, geoLocation:{...formData.geoLocation, long:e.target.value}})}
           />
         </FormGroup>
