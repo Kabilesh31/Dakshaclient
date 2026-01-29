@@ -1,5 +1,6 @@
 import { Alert, Badge, DropdownItem, DropdownMenu, FormGroup, Input, Modal, ModalBody, ModalHeader } from "reactstrap";
 import React, { useState, useEffect } from "react";
+import { successToast, errorToast, warningToast } from "../../../utils/toaster";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import axios from "axios";
@@ -24,7 +25,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./Delivery.css";
 
 const Delivery = () => {
-  const [activeTab, setActiveTab] = useState("route");
+  const [activeTab, setActiveTab] = useState("alignment");
   const [deliveryStaff, setDeliveryStaff] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [routeAssignments, setRouteAssignments] = useState([]);
@@ -32,101 +33,8 @@ const Delivery = () => {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
   const [selectedTrackStaff, setSelectedTrackStaff] = useState(null);
   const [showAllStaff, setShowAllStaff] = useState(true);
-  
-  // Customer data
-  const [customers, setCustomers] = useState([
-    { 
-      _id: "C001", 
-      name: "Super Mart", 
-      phone: 1234567890, 
-      phone2: 1234567891,
-      address: "123 Main Street", 
-      routeName: "Downtown Loop",
-      routeId: "R001",
-      lineNo: 1,
-      creditDays: 30,
-      pincode: 560001,
-      geoLocation: { lat: "12.9716", long: "77.5946" },
-      category: "Retail",
-      status: true
-    },
-    { 
-      _id: "C002", 
-      name: "Fresh Grocery", 
-      phone: 1234567892, 
-      phone2: 1234567893,
-      address: "456 Oak Avenue", 
-      routeName: "Downtown Loop",
-      routeId: "R001",
-      lineNo: 2,
-      creditDays: 15,
-      pincode: 560002,
-      geoLocation: { lat: "12.9717", long: "77.5947" },
-      category: "Grocery",
-      status: true
-    },
-    { 
-      _id: "C003", 
-      name: "Tech Gadgets", 
-      phone: 1234567894, 
-      phone2: 1234567895,
-      address: "789 Tech Park", 
-      routeName: "North Suburbs",
-      routeId: "R002",
-      lineNo: 1,
-      creditDays: 45,
-      pincode: 560003,
-      geoLocation: { lat: "12.9718", long: "77.5948" },
-      category: "Electronics",
-      status: true
-    },
-    { 
-      _id: "C004", 
-      name: "Fashion Hub", 
-      phone: 1234567896, 
-      phone2: 1234567897,
-      address: "321 Fashion Street", 
-      routeName: "Eastside District",
-      routeId: "R003",
-      lineNo: 1,
-      creditDays: 30,
-      pincode: 560004,
-      geoLocation: { lat: "12.9719", long: "77.5949" },
-      category: "Clothing",
-      status: true
-    },
-    { 
-      _id: "C005", 
-      name: "Home Decor", 
-      phone: 1234567898, 
-      phone2: 1234567899,
-      address: "654 Design Avenue", 
-      routeName: "West Industrial",
-      routeId: "R004",
-      lineNo: 1,
-      creditDays: 60,
-      pincode: 560005,
-      geoLocation: { lat: "12.9720", long: "77.5950" },
-      category: "Home",
-      status: true
-    },
-    { 
-      _id: "C006", 
-      name: "Book Store", 
-      phone: 1234567800, 
-      phone2: 1234567801,
-      address: "987 Library Road", 
-      routeName: "Downtown Loop",
-      routeId: "R001",
-      lineNo: 3,
-      creditDays: 30,
-      pincode: 560006,
-      geoLocation: { lat: "12.9721", long: "77.5951" },
-      category: "Books",
-      status: true
-    },
-  ]);
-  
+  const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("");
+const [customers, setCustomers] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [assignModal, setAssignModal] = useState(false);
@@ -134,7 +42,10 @@ const Delivery = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("R001");
+  const [viewCustomerModal, setViewCustomerModal] = useState(false);
+const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+ 
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
   const [assignedRoutes, setAssignedRoutes] = useState([]);
 
@@ -150,6 +61,7 @@ const Delivery = () => {
   useEffect(() => {
     fetchStaff();
     fetchRoutes();
+    fetchCustomers();
   }, []);
 
   useEffect(() => {
@@ -268,6 +180,18 @@ const Delivery = () => {
       setLoading(false);
     }
   };
+// After fetching customers
+const fetchCustomers = async () => {
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
+    setCustomers(res.data.filter(c => !c.isDeleted && c.status));
+  } catch (err) {
+    console.error(err);
+    errorToast("Failed to fetch customers");
+  }
+};
+
+
 
   const fetchAssignedRoutes = async () => {
     try {
@@ -475,63 +399,93 @@ const Delivery = () => {
     });
   };
 
-  // Get customers for selected route
-  const getCustomersByRoute = (routeId) => {
-    return Array.isArray(customers)
-      ? customers
-          .filter(customer => customer.routeId === routeId)
-          .sort((a, b) => a.lineNo - b.lineNo)
-      : [];
-  };
+ const getCustomersByRoute = (routeIdOrName) => {
+  if (!Array.isArray(customers) || !routeIdOrName) return [];
 
-  // Handle drag end for customer alignment
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
+  return customers
+    .filter(c => 
+      String(c.routeId) === String(routeIdOrName) || 
+      c.routeName?.trim() === String(routeIdOrName)
+    )
+    .sort((a, b) => a.lineNo - b.lineNo);
+};
 
-    const routeCustomers = getCustomersByRoute(selectedRouteForAlignment);
-    const items = Array.from(routeCustomers);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
 
-    // Update line numbers based on new order
-    const updatedCustomers = items.map((customer, index) => ({
-      ...customer,
-      lineNo: index + 1
-    }));
+const handleDragEnd = (result) => {
+  if (!result.destination) return;
 
-    // Update customers with new order
-    setCustomers(prev => 
-      Array.isArray(prev)
-        ? prev.map(customer => {
-            const updatedCustomer = updatedCustomers.find(uc => uc._id === customer._id);
-            return updatedCustomer || customer;
-          })
-        : []
-    );
-  };
+  const routeCustomers = customers.filter(
+    c => String(c.routeId) === String(selectedRouteForAlignment)
+  );
 
-  // Handle save alignment
-  const handleSaveAlignment = async () => {
-    try {
-      setIsSavingAlignment(true);
-      
-      // Get updated customers for the route
-      const updatedRouteCustomers = getCustomersByRoute(selectedRouteForAlignment);
-      
-      // In a real app, you would make an API call here
-      console.log("Saving alignment for route:", selectedRouteForAlignment);
-      console.log("Updated customers:", updatedRouteCustomers);
-      
-      setSuccess("Customer alignment saved successfully!");
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (error) {
-      console.error('Error saving alignment:', error);
-      setError('Failed to save alignment');
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setIsSavingAlignment(false);
+  const otherCustomers = customers.filter(
+    c => String(c.routeId) !== String(selectedRouteForAlignment)
+  );
+
+  const items = Array.from(routeCustomers);
+  const [moved] = items.splice(result.source.index, 1);
+  items.splice(result.destination.index, 0, moved);
+
+  const updated = items.map((c, index) => ({
+    ...c,
+    lineNo: index + 1,
+  }));
+
+  setCustomers([...otherCustomers, ...updated]);
+};
+
+
+const handleSaveAlignment = async () => {
+  if (!selectedRouteForAlignment) {
+    errorToast("Please select a route first");
+    return;
+  }
+
+  try {
+    setIsSavingAlignment(true);
+
+    const routeId = selectedRouteForAlignment;
+
+    // ✅ Only customers of selected route
+    const customersToUpdate = customers
+      .filter(c => String(c.routeId) === String(routeId))
+      .map((c, index) => ({
+        _id: c._id,
+        lineNo: index + 1
+      }));
+
+    // ✅ SEND CORRECT PAYLOAD
+const res = await axios.put(
+  `${process.env.REACT_APP_BACKENDURL}/api/delivery/update-line-order`,
+  {
+    routeId,
+    customers: customersToUpdate   // ✅ THIS IS THE FIX
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
     }
-  };
+  }
+);
+
+    if (res.data.status === "success") {
+      successToast("Alignment saved successfully");
+      fetchCustomers();
+    } else {
+      errorToast("Failed to save alignment");
+    }
+
+  } catch (err) {
+    console.error("SAVE ALIGNMENT ERROR 👉", err.response?.data || err);
+    // errorToast(err.response?.data?.error || "Save failed");
+  } finally {
+    setIsSavingAlignment(false);
+  }
+};
+const handleViewCustomer = (customer) => {
+  setSelectedCustomer(customer);
+  setViewCustomerModal(true);
+};
 
   // Render Route Assign Tab
   const renderRouteAssign = () => {
@@ -802,8 +756,15 @@ const Delivery = () => {
 
   // Render Customer Alignment Tab
  const renderCustomerAlignment = () => {
-    const routeCustomers = getCustomersByRoute(selectedRouteForAlignment);
-    const selectedRoute = routes.find(r => r.id === selectedRouteForAlignment);
+ const selectedRoute = routes.find(
+  (route) => String(route._id) === String(selectedRouteForAlignment)
+);
+
+const routeCustomers = customers
+  .filter(c => String(c.routeId) === String(selectedRouteForAlignment))
+  .sort((a, b) => a.lineNo - b.lineNo);
+
+
     
     return (
       <div className="row g-4">
@@ -817,17 +778,21 @@ const Delivery = () => {
               <div className="d-flex gap-2">
                 <div className="form-group" style={{ minWidth: '250px' }}>
                   <label className="form-label">Select Route</label>
-                  <select
-                    className="form-control"
-                    value={selectedRouteForAlignment}
-                    onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
-                  >
-                    {routes.map((route) => (
-                      <option key={route.id} value={route.id}>
-                        {route.name}
-                      </option>
-                    ))}
-                  </select>
+                 <select
+  className="form-control"
+  value={selectedRouteForAlignment}
+  onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
+>
+  <option value="">Select Route</option>
+  {routes.map(route => (
+    <option key={route._id} value={route._id}>
+  {route.routeName}
+</option>
+  ))}
+</select>
+
+
+
                 </div>
                 <Button 
                   color="primary" 
@@ -863,93 +828,73 @@ const Delivery = () => {
 
             <div className="row">
               <div className="col-lg-8">
-                <div className="card card-bordered">
-                  <div className="card-inner">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="title">
-                        {selectedRoute?.name} - Delivery Line Order
-                        <Badge color="primary" className="ms-2">
-                          {routeCustomers.length} Customers
-                        </Badge>
-                      </h6>
-                      <div className="text-muted">
-                        <Icon name="info"></Icon> Drag customers to reorder delivery sequence
-                      </div>
-                    </div>
+  <div className="card card-bordered">
+    <div className="card-inner">
 
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="customers">
-                        {(provided) => (
-                          <div 
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="customer-list"
-                          >
-                            {routeCustomers.length > 0 ? (
-                              routeCustomers.map((customer, index) => (
-                                <Draggable 
-                                  key={customer._id} 
-                                  draggableId={customer._id} 
-                                  index={index}
-                                >
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={`customer-item ${snapshot.isDragging ? 'dragging' : ''}`}
-                                      style={provided.draggableProps.style}
-                                    >
-                                      <div className="customer-item-content">
-                                        <div className="d-flex align-items-center">
-                                          <div className="customer-line-number">
-                                            <Badge color="primary" pill>
-                                              {customer.lineNo}
-                                            </Badge>
-                                          </div>
-                                          <div className="customer-drag-handle ms-3">
-                                            <Icon name="menu"></Icon>
-                                          </div>
-                                          <div className="customer-info ms-3">
-                                            <h6 className="mb-1">{customer.name}</h6>
-                                            <div className="d-flex flex-wrap gap-2">
-                                              <small className="text-muted">
-                                                <Icon name="map-pin"></Icon> {customer.address}
-                                              </small>
-                                              <small className="text-muted">
-                                                <Icon name="phone"></Icon> {customer.phone}
-                                              </small>
-                                              <Badge color="light" className="ms-2">
-                                                {customer.category}
-                                              </Badge>
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="customer-actions">
-                                          <Button size="sm" color="light">
-                                            <Icon name="eye"></Icon>
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))
-                            ) : (
-                              <div className="text-center py-5">
-                                <Icon name="users" className="icon-xl text-light mb-3"></Icon>
-                                <h6>No customers assigned to this route</h6>
-                               
-                              </div>
-                            )}
-                            {provided.placeholder}
+      <h6 className="title mb-3">
+        {selectedRoute
+          ? `${selectedRoute.routeName} - Delivery Line Order`
+          : "Select a Route"}
+        {selectedRoute && (
+          <Badge color="primary" className="ms-2">
+            {routeCustomers.length} Customers
+          </Badge>
+        )}
+      </h6>
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="customers">
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps}>
+
+              {routeCustomers.length > 0 ? (
+                routeCustomers.map((customer, index) => (
+                  <Draggable
+                    key={customer._id}
+                    draggableId={customer._id}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="customer-item mb-2"
+                      >
+                        <div className="d-flex align-items-center">
+
+                          <Badge color="primary" pill>
+                            {customer.lineNo}
+                          </Badge>
+
+                          <div className="ms-3 ml-3">
+                            <strong>{customer.name}</strong>
+                            <div className="text-muted small">
+                              {customer.address} | {customer.phone}
+                            </div>
                           </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                  </div>
-                </div>
-              </div>
+
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))
+              ) : (
+                <p className="text-center text-muted">
+                  No customers assigned to this route
+                </p>
+              )}
+
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+    </div>
+  </div>
+</div>
+
 
               <div className="col-lg-4">
                 <div className="card card-bordered h-100">
@@ -1049,9 +994,14 @@ const Delivery = () => {
                         </td>
                         <td>
                           <div className="d-flex gap-1">
-                            <Button size="sm" color="light">
-                              <Icon name="eye"></Icon>
-                            </Button>
+                            <Button
+  size="sm"
+  color="light"
+  onClick={() => handleViewCustomer(customer)}
+>
+  <Icon name="eye"></Icon>
+</Button>
+
                             <Button size="sm" color="light">
                               <Icon name="edit"></Icon>
                             </Button>
@@ -1358,21 +1308,26 @@ const Delivery = () => {
         </div>
 
         {/* CURRENT */}
-        <div className="rail-row current">
-          <div className="rail-left">
-            <div className="rail-dot pulse"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Ganesh Super Mart</strong>
-              <span className="time text-primary">10:18</span>
-            </div>
-            <small className="text-primary">
-              Arriving • On Time • 34 km
-            </small>
-          </div>
-        </div>
+        {/* CURRENT */}
+<div className="rail-row current">
+  <div className="rail-left">
+    {/* Van Icon instead of dot */}
+    <div className="rail-van">
+      <Icon name="truck" className="text-primary" />
+    </div>
+    <div className="rail-line"></div>
+  </div>
+  <div className="rail-content">
+    <div className="d-flex justify-content-between">
+      <strong>Ganesh Super Mart</strong>
+      <span className="time text-primary">10:18</span>
+    </div>
+    <small className="text-primary">
+      Arriving • On Time • 34 km
+    </small>
+  </div>
+</div>
+
 
         {/* UPCOMING */}
         <div className="rail-row upcoming">
@@ -1552,6 +1507,15 @@ const Delivery = () => {
             <ul className="custom-tabs">
               <li>
                 <button
+                  className={`tab-btn ${activeTab === "alignment" ? "active" : ""}`}
+                  onClick={() => setActiveTab("alignment")}
+                >
+                  <Icon name="layers" />
+                  <span>Customer Alignment</span>
+                </button>
+              </li>
+              <li>
+                <button
                   className={`tab-btn ${activeTab === "route" ? "active" : ""}`}
                   onClick={() => setActiveTab("route")}
                 >
@@ -1569,15 +1533,7 @@ const Delivery = () => {
                   <span>Live Track</span>
                 </button>
               </li>
-               <li>
-                <button
-                  className={`tab-btn ${activeTab === "alignment" ? "active" : ""}`}
-                  onClick={() => setActiveTab("alignment")}
-                >
-                  <Icon name="layers" />
-                  <span>Customer Alignment</span>
-                </button>
-              </li>
+               
 
               
             </ul>
@@ -1667,6 +1623,111 @@ const Delivery = () => {
               </div>
             </ModalBody>
           </Modal>
+          <Modal
+  isOpen={viewCustomerModal}
+  toggle={() => setViewCustomerModal(false)}
+  size="lg"
+  centered
+>
+  <ModalHeader toggle={() => setViewCustomerModal(false)}>
+    Customer Details
+  </ModalHeader>
+
+  <ModalBody>
+    {selectedCustomer && (
+      <div className="row g-4">
+
+        {/* Profile Section */}
+       <div className="col-12">
+  <div
+    className="d-flex align-items-center p-3 bg-light rounded"
+    style={{ gap: "15px" }} // horizontal spacing between items
+  >
+    {/* Avatar */}
+    <div
+      className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
+      style={{ fontSize: "20px", width: "60px", height: "60px" }}
+    >
+      {selectedCustomer.name.charAt(0)}
+    </div>
+
+    {/* Name & Phone */}
+    <div className="d-flex flex-column">
+      <h5 className="mb-1">{selectedCustomer.name}</h5>
+      <span className="text-muted">{selectedCustomer.phone}</span>
+    </div>
+
+    {/* Line No Badge */}
+    <div className="ms-auto">
+      <Badge color="primary" className="px-3 py-2">
+        Line #{selectedCustomer.lineNo}
+      </Badge>
+    </div>
+  </div>
+</div>
+
+
+        {/* Info Cards */}
+        <div className="col-md-6">
+          <div className="card card-bordered h-100">
+            <div className="card-inner">
+              <h6 className="title mb-2">
+                <Icon name="map-pin" className="me-1" /> Address
+              </h6>
+              <p className="mb-0 text-muted">
+                {selectedCustomer.address}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="card card-bordered h-100">
+            <div className="card-inner">
+              <h6 className="title mb-2">
+                <Icon name="tag" className="me-1" /> Category
+              </h6>
+              <Badge color="light" className="px-3 py-2">
+                {selectedCustomer.category}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit & Contact */}
+        <div className="col-md-6">
+          <div className="card card-bordered h-100">
+            <div className="card-inner">
+              <h6 className="title mb-2">
+                <Icon name="clock" className="me-1" /> Credit Days
+              </h6>
+              <Badge
+                color={selectedCustomer.creditDays > 30 ? "warning" : "success"}
+                className="px-3 py-2"
+              >
+                {selectedCustomer.creditDays} Days
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="card card-bordered h-100">
+            <div className="card-inner">
+              <h6 className="title mb-2">
+                <Icon name="phone" className="me-1" /> Contact
+              </h6>
+              <p className="mb-0">{selectedCustomer.phone}</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    )}
+  </ModalBody>
+</Modal>
+
+
         </Block>
       </Content>
     </>
