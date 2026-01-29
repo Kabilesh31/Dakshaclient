@@ -354,6 +354,27 @@
   background-color: #c1c9d2;
   border-radius: 3px;
 }
+.rail-van {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #e7f1ff; /* light blue bg for the van */
+  border: 2px solid #0d6efd; /* primary color border */
+  font-size: 18px; /* icon size */
+  position: relative;
+  left: -5px; /* shift left */
+  animation: pulse 2s infinite; /* optional pulse effect */
+}
+
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13,110,253,0.5); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(13,110,253,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(13,110,253,0); }
+}
 
 /* Map Styles */
 .map-container {
