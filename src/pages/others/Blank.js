@@ -82,7 +82,7 @@ const PopperContainer = ({ children }) => {
       <div className="d-flex gap-4" style={{ height: "90vh" }}>
         {/* Left Panel: Customers */}
         <div style={{ flex: 1, overflowY: "auto", borderRight: "1px solid #eee", paddingRight: "1rem" }}>
-          <h5 className="mb-3">Customers</h5>
+          <h5 className="mt-3">Customers</h5>
           <Input
             type="text"
             placeholder="Search customers..."
@@ -104,8 +104,8 @@ const PopperContainer = ({ children }) => {
                     {c.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="fw-bold">{c.name}</div>
-                    <small>{c.phone}</small>
+                    <div className="fw-bold ml-1">{c.name}</div>
+                    <small className="ml-1">{c.phone}</small>
                   </div>
                 </div>
                 <Badge color={selectedCustomer?._id === c._id ? "light" : "info"}>Line #{c.lineNo}</Badge>
