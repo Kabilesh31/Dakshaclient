@@ -56,6 +56,7 @@ const StaffListCompact = () => {
     name: "",
     type: "",
     email: "",
+    mobile:" ",
     staffStatus: "active",
     staffCode: "",
     img: null,
@@ -112,6 +113,7 @@ const StaffListCompact = () => {
       name: "",
       type: "",
       email: "",
+      mobile:" ",
       staffStatus: "active",
       staffCode: "",
       img: null,
@@ -164,6 +166,7 @@ const StaffListCompact = () => {
       name: item.name,
       type: item.type,
       email: item.email,
+      mobile:item.mobile,
       staffStatus: item.staffStatus,
       dutyStatus: item.dutyStatus,
       staffCode: item.staffCode,
@@ -480,6 +483,20 @@ const StaffListCompact = () => {
             />
           </FormGroup>
         </Col>
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">* Mobile</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Mobile Number"
+      value={formData.mobile}
+      onChange={e => setFormData({ ...formData, mobile: e.target.value })}
+      required
+    />
+  </FormGroup>
+</Col>
+
 
         <Col md="6">
           <FormGroup>
