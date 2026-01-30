@@ -657,6 +657,20 @@ const StaffListCompact = () => {
             />
           </FormGroup>
         </Col>
+        <Col md="6">
+  <FormGroup>
+    <label className="form-label">* Mobile</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Mobile Number"
+      value={formData.mobile}
+      onChange={e => setFormData({ ...formData, mobile: e.target.value })}
+      required
+    />
+  </FormGroup>
+</Col>
+
 
         <Col md="6">
           <FormGroup>
