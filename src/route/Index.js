@@ -68,6 +68,7 @@ import UserListRegularPage from "../pages/pre-built/user-manage/UserListRegular"
 import UserContactCardPage from "../pages/pre-built/user-manage/UserContactCard";
 import UserDetailsPage from "../pages/pre-built/user-manage/UserDetailsRegular";
 import UserListCompact from "../pages/pre-built/user-manage/UserListCompact";
+import Orders from "../pages/pre-built/user-manage/Orders";
 import UserProfileLayout from "../pages/pre-built/user-manage/UserProfileLayout";
 import KycListRegular from "../pages/pre-built/kyc-list-regular/KycListRegular";
 import KycDetailsRegular from "../pages/pre-built/kyc-list-regular/kycDetailsRegular";
@@ -154,6 +155,15 @@ const Pages = () => {
           render={() => (
             <UserContextProvider>
               <UserListCompact />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route 
+          exact
+          path={`${process.env.PUBLIC_URL}/Orders`}
+          render={() => (
+            <UserContextProvider>
+              <Orders />
             </UserContextProvider>
           )}
         ></Route>

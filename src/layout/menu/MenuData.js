@@ -47,6 +47,12 @@ const menu = [
     link: "/sales",
   },
   {
+    icon: "box",
+    text: "Orders",
+    link: "/Orders"
+
+  },
+  {
     icon: "reports",       // ni ni-reports
     text: "Reports",
     link: "/reports",
