@@ -9,7 +9,7 @@ const Notifications = () => {
       <div className="card-inner border-bottom">
         <div className="card-title-group">
           <CardTitle>
-            <h6 className="title">Notifications</h6>
+            <h6 className="title">Notificatssions</h6>
           </CardTitle>
           <div className="card-tools">
             <a
