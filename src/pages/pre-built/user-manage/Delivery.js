@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { successToast, errorToast, warningToast } from "../../../utils/toaster";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
+import CustomerLiveMap from "./delivery/CustomerLiveMap";
 import axios from "axios";
 import { 
   Block, 
@@ -44,6 +45,7 @@ const [customers, setCustomers] = useState([]);
   const [success, setSuccess] = useState(null);
   const [viewCustomerModal, setViewCustomerModal] = useState(false);
 const [selectedCustomer, setSelectedCustomer] = useState(null);
+const [liveLocation, setLiveLocation] = useState(null);
 
  
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
@@ -63,6 +65,39 @@ const [selectedCustomer, setSelectedCustomer] = useState(null);
     fetchRoutes();
     fetchCustomers();
   }, []);
+useEffect(() => {
+  if (!selectedTrackStaff) return;
+
+ const fetchLocation = async () => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
+    );
+console.log("LIVE LOCATION 👉", liveLocation);
+    // ✅ Map-friendly format
+    setLiveLocation({
+      lat: res.data.latitude,
+      lng: res.data.longitude,
+      updatedAt: res.data.updatedAt,
+      batteryLevel: res.data.batteryLevel,
+      gpsStatus: res.data.gpsStatus,
+      networkStatus: res.data.networkStatus,
+      isOnline: res.data.isOnline,
+    });
+
+  } catch (err) {
+    console.error("Live tracking error", err);
+  }
+};
+
+
+  fetchLocation();
+
+  // 🔁 auto refresh every 5 seconds
+  const interval = setInterval(fetchLocation, 5000);
+
+  return () => clearInterval(interval);
+}, [selectedTrackStaff]);
 
   useEffect(() => {
     fetchAssignmentsByDate(selectedDate);
@@ -1037,21 +1072,21 @@ const routeCustomers = customers
     
     // Get staff with active deliveries
     const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
-      activeDeliveries.some(delivery => delivery.staffId === staff.id)
+      activeDeliveries.some(delivery => 
+  String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
+)
+
     );
     
-    // Get selected staff's active delivery
-    const selectedStaffDelivery = selectedTrackStaff 
-      ? activeDeliveries.find(delivery => delivery.staffId === selectedTrackStaff.id)
-      : null;
-    
-    // Mock location data for staff
-    const staffLocations = {
-      "1": { lat: 12.9716, lng: 77.5946, address: "123 Main St", speed: "25 km/h", lastUpdated: "2 min ago" },
-      "2": { lat: 12.9718, lng: 77.5948, address: "456 Oak Ave", speed: "18 km/h", lastUpdated: "5 min ago" },
-      "3": { lat: 12.9720, lng: 77.5950, address: "789 Tech Park", speed: "32 km/h", lastUpdated: "Just now" },
-    };
+    const selectedStaffDelivery = selectedTrackStaff
+  ? activeDeliveries.find(delivery =>
+      String(delivery.staffId?._id || delivery.staffId) ===
+      String(selectedTrackStaff._id)
+    )
+  : null;
 
+    
+  
     return (
       <div className="row g-4">
         <div className="col-12">
@@ -1097,12 +1132,16 @@ const routeCustomers = customers
 
                     <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                       {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
-                        const staffDelivery = activeDeliveries.find(d => d.staffId === staff.id);
-                        const isSelected = selectedTrackStaff?.id === staff.id;
+                       const staffDelivery = activeDeliveries.find(d =>
+  String(d.staffId?._id || d.staffId) === String(staff._id)
+);
+
+                       const isSelected = selectedTrackStaff?._id === staff._id;
+
                         
                         return (
                           <div 
-  key={staff.id}
+  key={staff._id}
   className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
   onClick={() => setSelectedTrackStaff(staff)}
   style={{ 
@@ -1148,28 +1187,7 @@ const routeCustomers = customers
     </div>
   )}
 
-  {/* Location Info */}
-  {staffLocations[staff.id] && (
-    <div className="mt-1 fs-11 text-muted">
-      <div className="d-flex align-items-center">
-        <Icon name="map-pin" className="me-1" />
-        <span className="text-truncate">
-          {staffLocations[staff.id].address}
-        </span>
-      </div>
-
-      <div className="d-flex justify-content-between mt-1">
-        <span>
-          <Icon name="clock" className="me-1" />
-          {staffLocations[staff.id].lastUpdated}
-        </span>
-        <span>
-          <Icon name="speed" className="me-1" />
-          {staffLocations[staff.id].speed}
-        </span>
-      </div>
-    </div>
-  )}
+ 
 </div>
 
                         );
@@ -1194,49 +1212,43 @@ const routeCustomers = customers
               </div>
 
               {/* Right Side - Map View */}
-              <div className="col-lg-6">
-                <div className="card card-bordered h-100">
-                  <div className="card-inner">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div>
-                        <h6 className="title">
-                          {selectedTrackStaff 
-                            ? `Tracking: ${selectedTrackStaff.name}`
-                            : "Live Map View (All Staff)"
-                          }
-                          {selectedTrackStaff && selectedStaffDelivery && (
-                            <Badge color="primary" className="ms-2">
-                              {selectedStaffDelivery.routeName}
-                            </Badge>
-                          )}
-                        </h6>
-                        {selectedTrackStaff && staffLocations[selectedTrackStaff.id] && (
-                          <p className="text-muted mb-0 small">
-                            Last updated: {staffLocations[selectedTrackStaff.id].lastUpdated} • 
-                            Speed: {staffLocations[selectedTrackStaff.id].speed}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Map Container */}
-                    <div className="map-container bg-light rounded" style={{ height: '500px', position: 'relative' }}>
-                      {/* Mock Map with markers */}
-                      {/* <div className="w-100 h-100 position-relative">
-                        <div className="text-center py-5">
-                          <Icon name="map" className="icon-xl text-muted mb-3"></Icon>
-                          <p className="text-muted">Map integration would appear here</p>
-                          <p className="text-muted small">Google Maps or similar service integration required</p>
-                        </div>
-                      </div> */}
-                      
-                    </div>
-                    
-                  </div>
-                  
-                </div>
-                
-              </div>
+           <div className="col-lg-6">
+  <div className="card card-bordered h-100">
+    <div className="card-inner">
+
+      {/* HEADER */}
+      <div className="mb-3">
+        <h6 className="title">
+          {selectedTrackStaff
+            ? `Tracking: ${selectedTrackStaff.name}`
+            : "Live Map View (All Staff)"}
+
+          {selectedTrackStaff && selectedStaffDelivery && (
+            <Badge color="primary" className="ms-2">
+              {selectedStaffDelivery.routeName}
+            </Badge>
+          )}
+        </h6>
+
+        {selectedTrackStaff && liveLocation && (
+          <p className="text-muted mb-0 small">
+            Last updated:{" "}
+            {new Date(
+              liveLocation.updatedAt ||
+              liveLocation.timeStamp ||
+              Date.now()
+            ).toLocaleTimeString()}
+          </p>
+        )}
+      </div>
+
+      {/* MAP (ONLY THIS) */}
+      <CustomerLiveMap location={liveLocation} />
+
+    </div>
+  </div>
+</div>
+
                        
               <div className="col-lg-4">
   <div className="card card-bordered h-100">

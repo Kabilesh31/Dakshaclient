@@ -1,0 +1,42 @@
+.nk-notification-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.nk-notification-item.unread {
+  background-color: #f0f8ff;
+}
+
+.nk-notification-icon {
+  margin-right: 10px;
+}
+
+.nk-notification-text {
+  font-size: 14px;
+}
+
+.nk-notification-time {
+  font-size: 12px;
+  color: #888;
+}
+
+.mark-read-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: red;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
