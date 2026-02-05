@@ -73,6 +73,7 @@ useEffect(() => {
     const res = await axios.get(
       `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
     );
+    
 console.log("LIVE LOCATION 👉", liveLocation);
     // ✅ Map-friendly format
     setLiveLocation({
