@@ -44,6 +44,7 @@ const [customers, setCustomers] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [viewCustomerModal, setViewCustomerModal] = useState(false);
+  const [routeCustomers, setRouteCustomers] = useState([]);
 const [selectedCustomer, setSelectedCustomer] = useState(null);
 const [liveLocation, setLiveLocation] = useState(null);
 
@@ -1085,6 +1086,19 @@ const routeCustomers = customers
       String(selectedTrackStaff._id)
     )
   : null;
+  // Customers for the route assigned to the selected staff
+const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
+  ? customers.filter(
+      (c) =>
+        String(c.routeId) ===
+        String(
+          selectedStaffDelivery.routeId?._id ||
+          selectedStaffDelivery.routeId ||
+          selectedStaffDelivery.routeName
+        )
+    )
+  : [];
+
 
     
   
@@ -1243,8 +1257,13 @@ const routeCustomers = customers
         )}
       </div>
 
-      {/* MAP (ONLY THIS) */}
-      <CustomerLiveMap location={liveLocation} />
+<CustomerLiveMap
+  staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
+  customers={liveRouteCustomers}
+/>
+
+
+
 
     </div>
   </div>
