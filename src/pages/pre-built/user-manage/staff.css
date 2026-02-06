@@ -104,7 +104,7 @@
   padding: 20mm !important;
   box-sizing: border-box;
 }
-* remove modal UI effects */
+
 .pdf-mode .close,
 .pdf-mode .tb-status {
   display: none !important;
