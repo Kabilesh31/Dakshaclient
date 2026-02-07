@@ -1,16 +1,16 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   selectedProducts: [],
 };
 
 const billingSlice = createSlice({
-  name: 'billing',
+  name: "billing",
   initialState,
   reducers: {
     addProduct: (state, action) => {
       const existingProductIndex = state.selectedProducts.findIndex(
-        (item) => item.productCode === action.payload.productCode
+        (item) => item.productCode === action.payload.productCode,
       );
       if (existingProductIndex >= 0) {
         state.selectedProducts[existingProductIndex].quantity += 1;
@@ -42,9 +42,7 @@ const billingSlice = createSlice({
     },
 
     deleteProduct: (state, action) => {
-      state.selectedProducts = state.selectedProducts.filter(
-        (_, index) => index !== action.payload
-      );
+      state.selectedProducts = state.selectedProducts.filter((_, index) => index !== action.payload);
     },
 
     clearProducts: (state) => {
@@ -57,15 +55,12 @@ const billingSlice = createSlice({
 
     updateProductValue: (state, action) => {
       const { id, newValue } = action.payload;
-      const product = state.selectedProducts.find(
-        (product) => product._id === id
-      );
+      const product = state.selectedProducts.find((product) => product._id === id);
       if (product) {
         product.value = newValue;
       }
     },
 
-    // ✅ New reducer for updating GST
     updateGst: (state, action) => {
       const { index, gst } = action.payload;
       const product = state.selectedProducts[index];
@@ -85,7 +80,7 @@ export const {
   clearAllProducts,
   updateQuantity,
   updateProductValue,
-  updateGst, // ✅ Export here
+  updateGst,
 } = billingSlice.actions;
 
 export default billingSlice.reducer;

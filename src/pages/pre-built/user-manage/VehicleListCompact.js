@@ -73,8 +73,8 @@ const VehicleListCompact = () => {
   };
 
   useEffect(() => {
-    if(data.length === 0){
-       fetchVehicles();
+    if (data.length === 0) {
+      fetchVehicles();
     }
   }, [data]);
 
@@ -92,16 +92,15 @@ const VehicleListCompact = () => {
     if (value === "") {
       fetchVehicles();
     } else {
-      setData(data.filter(v => v.vehicleNumber.toLowerCase().includes(value)));
+      setData(data.filter((v) => v.vehicleNumber.toLowerCase().includes(value)));
     }
   };
 
   /* ================= SORT ================= */
   const sortFunc = (type) => {
     let sorted = [...data];
-    sorted.sort((a, b) => type === "asc"
-      ? a.vehicleNumber.localeCompare(b.vehicleNumber)
-      : b.vehicleNumber.localeCompare(a.vehicleNumber)
+    sorted.sort((a, b) =>
+      type === "asc" ? a.vehicleNumber.localeCompare(b.vehicleNumber) : b.vehicleNumber.localeCompare(a.vehicleNumber),
     );
     setData(sorted);
   };
@@ -125,52 +124,41 @@ const VehicleListCompact = () => {
     setModalAdd(true);
   };
 
- const onAddSubmit = async (e) => {
-  e.preventDefault();
+  const onAddSubmit = async (e) => {
+    e.preventDefault();
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  // Append form data
-  Object.keys(formData).forEach((k) => {
-    let value = formData[k];
+    Object.keys(formData).forEach((k) => {
+      let value = formData[k];
 
-    // Force vehicle number to uppercase
-    if (k === "vehicleNumber" && value) value = value.toUpperCase();
+      if (k === "vehicleNumber" && value) value = value.toUpperCase();
 
-    if (value) {
-      // Convert dates to ISO string
-      fd.append(k, value instanceof Date ? value.toISOString() : value);
-    }
-  });
-
-  // Append uploaded image if exists
-  if (uploadedFile) fd.append("img", uploadedFile);
-
-  // Append createdBy
-  fd.append("createdBy", userData._id);
-
-  try {
-    await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/vehicle`, fd, {
-      // Do NOT set Content-Type manually
-      headers: {
-        // Authorization if needed
-        // Authorization: `Bearer ${userData.token}`,
-      },
+      if (value) {
+        fd.append(k, value instanceof Date ? value.toISOString() : value);
+      }
     });
 
-    successToast("Vehicle added successfully");
+    if (uploadedFile) fd.append("img", uploadedFile);
 
-    // Close Add Modal and reset form
-    setModalAdd(false);
-    resetForm();
+    fd.append("createdBy", userData._id);
 
-    // Refresh vehicle list
-    fetchVehicles();
-  } catch (err) {
-    console.error(err);
-    errorToast("Add vehicle failed");
-  }
-};
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/vehicle`, fd, {
+        headers: {},
+      });
+
+      successToast("Vehicle added successfully");
+
+      setModalAdd(false);
+      resetForm();
+
+      fetchVehicles();
+    } catch (err) {
+      console.error(err);
+      errorToast("Add vehicle failed");
+    }
+  };
 
   // ================= EDIT VEHICLE =================
   const onEditClick = (item) => {
@@ -189,7 +177,7 @@ const VehicleListCompact = () => {
   const onEditSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData();
-    Object.keys(formData).forEach(k => {
+    Object.keys(formData).forEach((k) => {
       if (formData[k]) fd.append(k, formData[k] instanceof Date ? formData[k].toISOString() : formData[k]);
     });
     if (uploadedFile) fd.append("img", uploadedFile);
@@ -206,7 +194,7 @@ const VehicleListCompact = () => {
   };
 
   // ================= DELETE VEHICLE =================
- const onDeleteConfirm = async () => {
+  const onDeleteConfirm = async () => {
     try {
       await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/vehicle/${selectedId}`);
       successToast("Vehicle deleted successfully");
@@ -222,54 +210,53 @@ const VehicleListCompact = () => {
     <React.Fragment>
       <Head title="Vehicle List" />
       <Content>
-       <BlockHead size="sm">
-        <BlockBetween>
-          <BlockHeadContent>
-            <BlockTitle tag="h3" page>
-              Vehicle List
-            </BlockTitle>
-            <BlockDes className="text-soft">
-              <p>You have total {data?.length} Vehicles.</p>
-            </BlockDes>
-          </BlockHeadContent>
-          <BlockHeadContent>
-            <div className="toggle-wrap nk-block-tools-toggle">
-              <Button
-                className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
-                onClick={() => updateSm(!sm)}
-              >
-                <Icon name="menu-alt-r"></Icon>
-              </Button>
-              <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
-                <ul className="nk-block-tools g-3">
-                  <li>
-                    <a
-                      href="#export"
-                      onClick={(ev) => {
-                        ev.preventDefault();
-                      
-                      }}
-                      className="btn btn-white btn-outline-light"
-                    >
-                      <Icon name="download-cloud"></Icon>
-                      <span>Export</span>
-                    </a>
-                  </li>
-                  <li className="nk-block-tools-opt">
-                    <Button color="primary" className="btn-icon" onClick={openAddModal}>
-                      <Icon name="plus"></Icon>
-                    </Button>
-                  </li>
-                </ul>
+        <BlockHead size="sm">
+          <BlockBetween>
+            <BlockHeadContent>
+              <BlockTitle tag="h3" page>
+                Vehicle List
+              </BlockTitle>
+              <BlockDes className="text-soft">
+                <p>You have total {data?.length} Vehicles.</p>
+              </BlockDes>
+            </BlockHeadContent>
+            <BlockHeadContent>
+              <div className="toggle-wrap nk-block-tools-toggle">
+                <Button
+                  className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
+                  onClick={() => updateSm(!sm)}
+                >
+                  <Icon name="menu-alt-r"></Icon>
+                </Button>
+                <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
+                  <ul className="nk-block-tools g-3">
+                    <li>
+                      <a
+                        href="#export"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                        }}
+                        className="btn btn-white btn-outline-light"
+                      >
+                        <Icon name="download-cloud"></Icon>
+                        <span>Export</span>
+                      </a>
+                    </li>
+                    <li className="nk-block-tools-opt">
+                      <Button color="primary" className="btn-icon" onClick={openAddModal}>
+                        <Icon name="plus"></Icon>
+                      </Button>
+                    </li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </BlockHeadContent>
-        </BlockBetween>
-      </BlockHead>
+            </BlockHeadContent>
+          </BlockBetween>
+        </BlockHead>
 
         <Block>
           <DataTable className="card-stretch">
-           <div className="card-inner position-relative card-tools-toggle">
+            <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
@@ -282,7 +269,10 @@ const VehicleListCompact = () => {
                     <li>
                       <a
                         href="#search"
-                        onClick={(ev) => { ev.preventDefault(); setOnSearch(true); }}
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          setOnSearch(true);
+                        }}
                         className="btn btn-icon search-toggle"
                       >
                         <Icon name="search" />
@@ -296,20 +286,53 @@ const VehicleListCompact = () => {
                         </DropdownToggle>
                         <DropdownMenu right className="dropdown-menu-xs">
                           <ul className="link-check">
-                            <li><span>Show</span></li>
-                            {[10,15].map(n => (
+                            <li>
+                              <span>Show</span>
+                            </li>
+                            {[10, 15].map((n) => (
                               <li key={n} className={itemPerPage === n ? "active" : ""}>
-                                <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setItemPerPage(n);}}>{n}</DropdownItem>
+                                <DropdownItem
+                                  tag="a"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setItemPerPage(n);
+                                  }}
+                                >
+                                  {n}
+                                </DropdownItem>
                               </li>
                             ))}
                           </ul>
                           <ul className="link-check">
-                            <li><span>Order</span></li>
+                            <li>
+                              <span>Order</span>
+                            </li>
                             <li className={sort === "dsc" ? "active" : ""}>
-                              <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setSortState("dsc");sortFunc("dsc");}}>DESC</DropdownItem>
+                              <DropdownItem
+                                tag="a"
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortState("dsc");
+                                  sortFunc("dsc");
+                                }}
+                              >
+                                DESC
+                              </DropdownItem>
                             </li>
                             <li className={sort === "asc" ? "active" : ""}>
-                              <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setSortState("asc");sortFunc("asc");}}>ASC</DropdownItem>
+                              <DropdownItem
+                                tag="a"
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortState("asc");
+                                  sortFunc("asc");
+                                }}
+                              >
+                                ASC
+                              </DropdownItem>
                             </li>
                           </ul>
                         </DropdownMenu>
@@ -323,7 +346,14 @@ const VehicleListCompact = () => {
               <div className={`card-search search-wrap ${onSearch ? "active" : ""}`}>
                 <div className="card-body">
                   <div className="search-content">
-                    <Button className="search-back btn-icon" onClick={() => { setSearchText(""); setOnSearch(false); fetchVehicles(); }}>
+                    <Button
+                      className="search-back btn-icon"
+                      onClick={() => {
+                        setSearchText("");
+                        setOnSearch(false);
+                        fetchVehicles();
+                      }}
+                    >
                       <Icon name="arrow-left" />
                     </Button>
                     <input
@@ -341,46 +371,69 @@ const VehicleListCompact = () => {
             {/* TABLE */}
             <DataTableBody compact>
               <DataTableHead>
-                
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Vehicle Number</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Type</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Year</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Insurance Expiry</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">FC Upto</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Status</span></DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Vehicle Number
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Type
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Year
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Insurance Expiry
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    FC Upto
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Status
+                  </span>
+                </DataTableRow>
                 <DataTableRow className="nk-tb-col-tools"></DataTableRow>
               </DataTableHead>
 
-              {currentItems.map(item => (
+              {currentItems.map((item) => (
                 <DataTableItem key={item._id}>
-                    <DataTableRow>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <img
-                      src={item.img}
-                      alt="vehicle"
-                      style={{
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: "50%",
-                        objectFit: "cover"
-                      }}
-                    />
-                    <Link
-                      className="tb-lead"
-                      to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}
-                    >
-                      {item.vehicleNumber}
-                    </Link>
-                  </div>
-                </DataTableRow>
+                  <DataTableRow>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <img
+                        src={item.img}
+                        alt="vehicle"
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <Link className="tb-lead" to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}>
+                        {item.vehicleNumber}
+                      </Link>
+                    </div>
+                  </DataTableRow>
 
-                  
                   <DataTableRow>{item.vehicleType}</DataTableRow>
                   <DataTableRow>{item.makeYear}</DataTableRow>
-                  <DataTableRow>{item.insuranceExpiry ? new Date(item.insuranceExpiry).toLocaleDateString() : "--"}</DataTableRow>
+                  <DataTableRow>
+                    {item.insuranceExpiry ? new Date(item.insuranceExpiry).toLocaleDateString() : "--"}
+                  </DataTableRow>
                   <DataTableRow>{item.fcUpto ? new Date(item.fcUpto).toLocaleDateString() : "--"}</DataTableRow>
                   <DataTableRow>
-                    <span className={`tb-status text-${item.status ? "success" : "danger"}`}>{item.status ? "Active" : "Inactive"}</span>
+                    <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
+                      {item.status ? "Active" : "Inactive"}
+                    </span>
                   </DataTableRow>
 
                   {/* ACTIONS: EDIT + MORE MENU */}
@@ -404,7 +457,12 @@ const VehicleListCompact = () => {
                                 </DropdownItem>
                               </li>
                               <li>
-                                <DropdownItem onClick={() => { setSelectedId(item._id); setModalDelete(true); }}>
+                                <DropdownItem
+                                  onClick={() => {
+                                    setSelectedId(item._id);
+                                    setModalDelete(true);
+                                  }}
+                                >
                                   <Icon name="trash" /> <span>Delete</span>
                                 </DropdownItem>
                               </li>
@@ -414,7 +472,6 @@ const VehicleListCompact = () => {
                       </li>
                     </ul>
                   </DataTableRow>
-
                 </DataTableItem>
               ))}
             </DataTableBody>
@@ -437,9 +494,16 @@ const VehicleListCompact = () => {
       </Content>
 
       {/* ADD VEHICLE MODAL */}
-         <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
+      <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
         <ModalBody>
-          <a href="#cancel" onClick={(ev)=>{ ev.preventDefault(); setModalAdd(false); }} className="close">
+          <a
+            href="#cancel"
+            onClick={(ev) => {
+              ev.preventDefault();
+              setModalAdd(false);
+            }}
+            className="close"
+          >
             <Icon name="cross-sm"></Icon>
           </a>
           <div className="p-2">
@@ -448,20 +512,19 @@ const VehicleListCompact = () => {
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Vehicle Number</label>
-                 <input
+                  <input
                     className="form-control"
                     type="text"
                     placeholder="Enter Vehicle Number"
                     value={formData.vehicleNumber}
-                    onChange={e =>
+                    onChange={(e) =>
                       setFormData({
                         ...formData,
-                        vehicleNumber: e.target.value.toUpperCase(), // convert to uppercase
+                        vehicleNumber: e.target.value.toUpperCase(),
                       })
                     }
                     required
                   />
-
                 </FormGroup>
               </Col>
               <Col md="6">
@@ -472,7 +535,7 @@ const VehicleListCompact = () => {
                     type="text"
                     placeholder="Enter Vehicle Type"
                     value={formData.vehicleType}
-                    onChange={e=>setFormData({...formData, vehicleType:e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -485,7 +548,7 @@ const VehicleListCompact = () => {
                     type="number"
                     placeholder="Enter Make Year"
                     value={formData.makeYear}
-                    onChange={e=>setFormData({...formData, makeYear:e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, makeYear: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -496,7 +559,7 @@ const VehicleListCompact = () => {
                   <DatePicker
                     selected={formData.insuranceExpiry}
                     className="form-control"
-                    onChange={d=>setFormData({...formData, insuranceExpiry:d})}
+                    onChange={(d) => setFormData({ ...formData, insuranceExpiry: d })}
                     placeholderText="Insurance Expiry"
                     required
                   />
@@ -508,25 +571,26 @@ const VehicleListCompact = () => {
                   <DatePicker
                     selected={formData.fcUpto}
                     className="form-control"
-                    onChange={d=>setFormData({...formData, fcUpto:d})}
+                    onChange={(d) => setFormData({ ...formData, fcUpto: d })}
                     placeholderText="FC Upto"
                     required
                   />
                 </FormGroup>
               </Col>
               <Col md="12">
-               <Dropzone multiple={false} onDrop={(acceptedFiles) => setUploadedFile(acceptedFiles[0])}>
-  {({ getRootProps, getInputProps }) => (
-    <div {...getRootProps()} className="dropzone mt-2">
-      <input {...getInputProps()} required />
-      {uploadedFile ? <p>{uploadedFile.name}</p> : <p>Drag & drop an image or click to select</p>}
-    </div>
-  )}
-</Dropzone>
-
+                <Dropzone multiple={false} onDrop={(acceptedFiles) => setUploadedFile(acceptedFiles[0])}>
+                  {({ getRootProps, getInputProps }) => (
+                    <div {...getRootProps()} className="dropzone mt-2">
+                      <input {...getInputProps()} required />
+                      {uploadedFile ? <p>{uploadedFile.name}</p> : <p>Drag & drop an image or click to select</p>}
+                    </div>
+                  )}
+                </Dropzone>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">Save</Button>
+                <Button color="primary" type="submit">
+                  Save
+                </Button>
               </Col>
             </Form>
           </div>
@@ -536,7 +600,14 @@ const VehicleListCompact = () => {
       {/* ================= EDIT MODAL ================= */}
       <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} className="modal-dialog-centered" size="lg">
         <ModalBody>
-          <a href="#cancel" onClick={(ev)=>{ ev.preventDefault(); setModalEdit(false); }} className="close">
+          <a
+            href="#cancel"
+            onClick={(ev) => {
+              ev.preventDefault();
+              setModalEdit(false);
+            }}
+            className="close"
+          >
             <Icon name="cross-sm"></Icon>
           </a>
           <div className="p-2">
@@ -550,7 +621,7 @@ const VehicleListCompact = () => {
                     type="text"
                     placeholder="Enter Vehicle Number"
                     value={formData.vehicleNumber}
-                    onChange={e=>setFormData({...formData, vehicleNumber:e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -563,7 +634,7 @@ const VehicleListCompact = () => {
                     type="text"
                     placeholder="Enter Vehicle Type"
                     value={formData.vehicleType}
-                    onChange={e=>setFormData({...formData, vehicleType:e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -576,7 +647,7 @@ const VehicleListCompact = () => {
                     type="number"
                     placeholder="Enter Make Year"
                     value={formData.makeYear}
-                    onChange={e=>setFormData({...formData, makeYear:e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, makeYear: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -587,7 +658,7 @@ const VehicleListCompact = () => {
                   <DatePicker
                     selected={formData.insuranceExpiry}
                     className="form-control"
-                    onChange={d=>setFormData({...formData, insuranceExpiry:d})}
+                    onChange={(d) => setFormData({ ...formData, insuranceExpiry: d })}
                     placeholderText="Insurance Expiry"
                     required
                   />
@@ -599,7 +670,7 @@ const VehicleListCompact = () => {
                   <DatePicker
                     selected={formData.fcUpto}
                     className="form-control"
-                    onChange={d=>setFormData({...formData, fcUpto:d})}
+                    onChange={(d) => setFormData({ ...formData, fcUpto: d })}
                     placeholderText="FC Upto"
                     required
                   />
@@ -607,45 +678,46 @@ const VehicleListCompact = () => {
               </Col>
               <Col md="12">
                 {/* EDIT MODAL IMAGE UPLOAD */}
-<Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
-  {({ getRootProps, getInputProps }) => (
-    <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
-      <input {...getInputProps()}  required/>
-      
-      {/* Show preview if file selected */}
-      {uploadedFile ? (
-        <div className="dz-preview dz-image-preview">
-          <div className="dz-image">
-            <img
-              src={URL.createObjectURL(uploadedFile)}
-              alt="preview"
-              style={{ width: "100px", height: "100px", objectFit: "cover" }}
-            />
-          </div>
-          <p>{uploadedFile.name}</p>
-        </div>
-      ) : formData.img ? (
-        // Show previously uploaded image from backend
-        <div className="dz-preview dz-image-preview">
-          <div className="dz-image">
-            <img
-              src={formData.img}
-              alt="current"
-              style={{ width: "100px", height: "100px", objectFit: "cover" }}
-            />
-          </div>
-          <p>Current Image</p>
-        </div>
-      ) : (
-        <p>Drag & drop or click to upload image</p>
-      )}
-    </div>
-  )}
-</Dropzone>
+                <Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
+                  {({ getRootProps, getInputProps }) => (
+                    <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
+                      <input {...getInputProps()} required />
 
+                      {/* Show preview if file selected */}
+                      {uploadedFile ? (
+                        <div className="dz-preview dz-image-preview">
+                          <div className="dz-image">
+                            <img
+                              src={URL.createObjectURL(uploadedFile)}
+                              alt="preview"
+                              style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                            />
+                          </div>
+                          <p>{uploadedFile.name}</p>
+                        </div>
+                      ) : formData.img ? (
+                        // Show previously uploaded image from backend
+                        <div className="dz-preview dz-image-preview">
+                          <div className="dz-image">
+                            <img
+                              src={formData.img}
+                              alt="current"
+                              style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                            />
+                          </div>
+                          <p>Current Image</p>
+                        </div>
+                      ) : (
+                        <p>Drag & drop or click to upload image</p>
+                      )}
+                    </div>
+                  )}
+                </Dropzone>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">Update</Button>
+                <Button color="primary" type="submit">
+                  Update
+                </Button>
               </Col>
             </Form>
           </div>
@@ -653,13 +725,21 @@ const VehicleListCompact = () => {
       </Modal>
 
       {/* DELETE MODAL */}
-       <Modal isOpen={modalDelete} toggle={()=>setModalDelete(false)} centered>
+      <Modal isOpen={modalDelete} toggle={() => setModalDelete(false)} centered>
         <ModalBody className="text-center">
           <Icon name="alert-circle" className="text-danger mb-2" />
           <h5>Are you sure to delete?</h5>
           <ul className="d-flex justify-content-center mt-3">
-            <li><Button color="danger" onClick={onDeleteConfirm}>Delete</Button></li>
-            <li><Button color="light" onClick={()=>setModalDelete(false)}>Cancel</Button></li>
+            <li>
+              <Button color="danger" onClick={onDeleteConfirm}>
+                Delete
+              </Button>
+            </li>
+            <li>
+              <Button color="light" onClick={() => setModalDelete(false)}>
+                Cancel
+              </Button>
+            </li>
           </ul>
         </ModalBody>
       </Modal>

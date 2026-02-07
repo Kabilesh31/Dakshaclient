@@ -33,7 +33,6 @@ const UserDetailsPage = ({ match }) => {
   const [addNoteText, setAddNoteText] = useState("");
   const history = useHistory();
 
-  // grabs the id of the url and loads the corresponding data
   useEffect(() => {
     const id = match.params.id;
     if (id !== undefined || null || "") {
@@ -495,10 +494,10 @@ const UserDetailsPage = ({ match }) => {
                             user.kycStatus === "success"
                               ? "success"
                               : user.kycStatus === "pending"
-                              ? "info"
-                              : user.kycStatus === "warning"
-                              ? "warning"
-                              : "secondary"
+                                ? "info"
+                                : user.kycStatus === "warning"
+                                  ? "warning"
+                                  : "secondary"
                           }`}
                         >
                           {user.kycStatus.toUpperCase()}

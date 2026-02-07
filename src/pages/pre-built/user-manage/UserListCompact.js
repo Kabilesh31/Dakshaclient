@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
-import {  filterRole, filterStatus } from "./UserData";
+import { filterRole, filterStatus } from "./UserData";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
 import {
   DropdownMenu,
@@ -39,15 +39,15 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { UserContext } from "./UserContext";
 import { bulkActionOptions } from "../../../utils/Utils";
-import axios from 'axios';
-import DataContext  from "../../../utils/DataContext"
+import axios from "axios";
+import DataContext from "../../../utils/DataContext";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 const UserListCompact = () => {
   const { contextData } = useContext(UserContext);
   const [data, setData] = useState([]);
-  const {userData} = useContext(DataContext)
+  const { userData } = useContext(DataContext);
   const [sm, updateSm] = useState(false);
   const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(true);
@@ -68,21 +68,22 @@ const UserListCompact = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
   const [sort, setSortState] = useState("");
- 
-  useEffect(()=> {
-    if(data?.length === 0){
-      fetchUserData()
+
+  useEffect(() => {
+    if (data?.length === 0) {
+      fetchUserData();
     }
-  },[data])
+  }, [data]);
 
   // fetch users list
-  const fetchUserData = async() => {
-    try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/user")
-      setData(response.data.data.reverse())
-      } catch (err){
-        console.log(err)
-      }}
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/user");
+      setData(response.data.data.reverse());
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   // Sorting data
   const sortFunc = (params) => {
@@ -95,7 +96,7 @@ const UserListCompact = () => {
       setData([...sortedData]);
     }
   };
-  
+
   localStorage.setItem("isGridView", false);
 
   // Changing state value when searching name
@@ -122,10 +123,10 @@ const UserListCompact = () => {
   const resetForm = () => {
     setFormData({
       name: "",
-    email: "",
-    role: "",
-    phone: "",
-    status: "",
+      email: "",
+      role: "",
+      phone: "",
+      status: "",
     });
   };
 
@@ -136,8 +137,7 @@ const UserListCompact = () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async(submitData) => {
- 
+  const onFormSubmit = async (submitData) => {
     const { name, email, role, phone, status } = submitData;
     let submittedData = {
       name: name,
@@ -147,28 +147,26 @@ const UserListCompact = () => {
       status: formData.status,
       password: phone,
       confirmPassword: phone,
-      createdBy: "userData._id"
+      createdBy: "userData._id",
     };
-    try{
-      const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/user/signup", submittedData);
+    try {
+      const response = await axios.post(process.env.REACT_APP_BACKENDURL + "/api/user/signup", submittedData);
       if (response.status === 201) {
-        successToast("User Created Successfully")
-        // Reset form and close modal on success
+        successToast("User Created Successfully");
+
         resetForm();
         setModal({ edit: false, add: false });
-        fetchUserData()
-        
+        fetchUserData();
       } else {
-        warningToast()
+        warningToast();
       }
-      
-    }catch(err){
-      errorToast("Please Provide All Details")
+    } catch (err) {
+      errorToast("Please Provide All Details");
     }
   };
 
   // submit function to update a new item
-  const onEditSubmit = async(submitData) => {
+  const onEditSubmit = async (submitData) => {
     const { name, phone } = submitData;
     let submittedData;
     let newitems = data;
@@ -182,19 +180,16 @@ const UserListCompact = () => {
         };
       }
     });
-    try{
-      const response = await axios.put(process.env.REACT_APP_BACKENDURL+"/api/user/"+editId, submittedData)
-      if(response.status === 200){
-        successToast("Updated Successfully")
+    try {
+      const response = await axios.put(process.env.REACT_APP_BACKENDURL + "/api/user/" + editId, submittedData);
+      if (response.status === 200) {
+        successToast("Updated Successfully");
         setModal({ edit: false });
-        fetchUserData()
+        fetchUserData();
       }
-    }catch(err){
-      errorToast("Something Went Wrong")
+    } catch (err) {
+      errorToast("Something Went Wrong");
     }
-    // let index = newitems.findIndex((item) => item._id === editId);
-    // newitems[index] = submittedData;
-    // setModal({ edit: false });
   };
 
   // function that loads the want to editted data
@@ -216,26 +211,23 @@ const UserListCompact = () => {
 
   // export
   const handleExport = () => {
-    // Exclude unwanted fields
     const cleanedData = data.map(({ password, createdBy, _v, ...rest }) => rest);
- 
+
     const worksheet = XLSX.utils.json_to_sheet(cleanedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
- 
-    // Create excel file buffer
+
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
- 
+
     // Save file
     const blob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
     saveAs(blob, "export.xlsx");
   };
-
 
   // function which fires on applying selected action
   const onActionClick = (e) => {
@@ -251,9 +243,6 @@ const UserListCompact = () => {
       setData([...newData]);
     }
   };
-
-  // function which selects all the items
-
 
   // function to toggle the search option
   const toggle = () => setonSearch(!onSearch);
@@ -297,7 +286,7 @@ const UserListCompact = () => {
                         href="#export"
                         onClick={(ev) => {
                           ev.preventDefault();
-                          handleExport()
+                          handleExport();
                         }}
                         className="btn btn-white btn-outline-light"
                       >
@@ -323,11 +312,8 @@ const UserListCompact = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                     
-                    </div>
+                    <div className="form-wrap"></div>
                     <div className="btn-wrap">
-                   
                       <span className="d-md-none">
                         <Button
                           color="light"
@@ -550,7 +536,7 @@ const UserListCompact = () => {
                       onClick={() => {
                         setSearchText("");
                         toggle();
-                        fetchUserData()
+                        fetchUserData();
                       }}
                     >
                       <Icon name="arrow-left"></Icon>
@@ -653,7 +639,7 @@ const UserListCompact = () => {
               {/*Head*/}
               {currentItems.length > 0
                 ? currentItems.map((item) => {
-                    return (     
+                    return (
                       <DataTableItem key={item._id}>
                         <DataTableRow className="nk-tb-col-check">
                           {/* <div className="custom-control custom-control-sm custom-checkbox notext">
@@ -671,17 +657,17 @@ const UserListCompact = () => {
                         </DataTableRow>
                         <DataTableRow>
                           {/* <Link to={`${process.env.PUBLIC_URL}/user-details-regular/${item._id}`}> */}
-                            <div className="user-card">
-                              <UserAvatar
-                                theme={item.avatarBg}
-                                className="xs"
-                                text={findUpper(item.name)}
-                                image={item.image}
-                              ></UserAvatar>
-                              <div className="user-info">
-                                <span className="tb-lead">{item.name} </span>
-                              </div>
+                          <div className="user-card">
+                            <UserAvatar
+                              theme={item.avatarBg}
+                              className="xs"
+                              text={findUpper(item.name)}
+                              image={item.image}
+                            ></UserAvatar>
+                            <div className="user-info">
+                              <span className="tb-lead">{item.name} </span>
                             </div>
+                          </div>
                           {/* </Link> */}
                         </DataTableRow>
                         <DataTableRow size="md">
@@ -846,11 +832,11 @@ const UserListCompact = () => {
                         defaultValue={formData.name}
                         placeholder="Enter name"
                         onInput={(e) => {
-      let value = e.target.value;
-      if (value.length > 0) {
-        e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
-      }
-    }}
+                          let value = e.target.value;
+                          if (value.length > 0) {
+                            e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
+                          }
+                        }}
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
@@ -877,26 +863,26 @@ const UserListCompact = () => {
                     </FormGroup>
                   </Col>
                   <Col md="6">
-                 <FormGroup>
-  <label className="form-label">Phone</label>
-  <input
-    className="form-control"
-    type="tel"
-    name="phone"
-    placeholder="Enter phone"
-    defaultValue={formData.phone}
-    maxLength={10}
-    onInput={(e) => (e.target.value = e.target.value.replace(/\D/g, ""))} // only digits
-    ref={register({
-      required: "This field is required",
-      pattern: {
-        value: /^[0-9]{10}$/, 
-        message: "Phone number must be exactly 10 digits",
-      },
-    })}
-  />
-  {errors.phone && <span className="invalid">{errors.phone.message}</span>}
-</FormGroup>
+                    <FormGroup>
+                      <label className="form-label">Phone</label>
+                      <input
+                        className="form-control"
+                        type="tel"
+                        name="phone"
+                        placeholder="Enter phone"
+                        defaultValue={formData.phone}
+                        maxLength={10}
+                        onInput={(e) => (e.target.value = e.target.value.replace(/\D/g, ""))} // only digits
+                        ref={register({
+                          required: "This field is required",
+                          pattern: {
+                            value: /^[0-9]{10}$/,
+                            message: "Phone number must be exactly 10 digits",
+                          },
+                        })}
+                      />
+                      {errors.phone && <span className="invalid">{errors.phone.message}</span>}
+                    </FormGroup>
 
                     {/* <FormGroup>
                       <label className="form-label">Balance</label>
@@ -909,35 +895,35 @@ const UserListCompact = () => {
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup> */}  
+                    </FormGroup> */}
                   </Col>
                   <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Role</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={filterRole}
-                        // defaultValue={{ value: "admin", label: "Admin" }}
-                        onChange={(e) => {
-                          setFormData({ ...formData, role: e.value });
-                        }}
-                      />
-                    </div>
-                  </FormGroup>
-                </Col>
+                    <FormGroup>
+                      <label className="form-label">Role</label>
+                      <div className="form-control-wrap">
+                        <RSelect
+                          options={filterRole}
+                          // defaultValue={{ value: "admin", label: "Admin" }}
+                          onChange={(e) => {
+                            setFormData({ ...formData, role: e.value });
+                          }}
+                        />
+                      </div>
+                    </FormGroup>
+                  </Col>
 
-                <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Status</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={filterStatus}
-                        // defaultValue={{ value:"active", label: "Active" }}
-                        onChange={(e) => setFormData({ ...formData, status: e.value })}
-                      />
-                    </div>
-                  </FormGroup>
-                </Col>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Status</label>
+                      <div className="form-control-wrap">
+                        <RSelect
+                          options={filterStatus}
+                          // defaultValue={{ value:"active", label: "Active" }}
+                          onChange={(e) => setFormData({ ...formData, status: e.value })}
+                        />
+                      </div>
+                    </FormGroup>
+                  </Col>
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
@@ -1066,9 +1052,9 @@ const UserListCompact = () => {
                       <div className="form-control-wrap">
                         <RSelect
                           options={filterStatus}
-                          defaultValue={{ 
+                          defaultValue={{
                             value: formData.status,
-                            label: formData.status === 'active' ? 'Active' : 'Suspend',
+                            label: formData.status === "active" ? "Active" : "Suspend",
                           }}
                           onChange={(e) => setFormData({ ...formData, status: e.value })}
                         />

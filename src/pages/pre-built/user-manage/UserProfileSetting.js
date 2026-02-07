@@ -67,10 +67,10 @@ const UserProfileSettingPage = ({ sm, updateSm }) => {
                 <div className="nk-block-actions flex-shrink-sm-0">
                   <ul className="align-center flex-wrap flex-sm-nowrap gx-3 gy-2">
                     <li className="order-md-last">
-  <Link to={`${process.env.PUBLIC_URL}/auth-reset`}>
-    <Button color="primary">Change Password</Button>
-  </Link>
-</li>
+                      <Link to={`${process.env.PUBLIC_URL}/auth-reset`}>
+                        <Button color="primary">Change Password</Button>
+                      </Link>
+                    </li>
                     <li>
                       {/* <em className="text-soft text-date fs-12px">
                         Last changed: <span>Oct 2, 2019</span>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
-import {  filterRate, filterRole, filterStatus } from "./UserData";
+import { filterRate, filterRole, filterStatus } from "./UserData";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
 import {
   DropdownMenu,
@@ -39,15 +39,15 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { UserContext } from "./UserContext";
 import { bulkActionOptions } from "../../../utils/Utils";
-import axios from 'axios';
-import DataContext  from "../../../utils/DataContext"
+import axios from "axios";
+import DataContext from "../../../utils/DataContext";
 import Dropzone from "react-dropzone";
-import imageCompression from 'browser-image-compression';
+import imageCompression from "browser-image-compression";
 
 const StockListCompact = () => {
   const { contextData } = useContext(UserContext);
   const [data, setData] = useState([]);
-  const {userData} = useContext(DataContext)
+  const { userData } = useContext(DataContext);
   const [sm, updateSm] = useState(false);
   const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(true);
@@ -59,35 +59,35 @@ const StockListCompact = () => {
   const [editId, setEditedId] = useState();
   const [formData, setFormData] = useState({
     name: "",
-    address:"",
-    phone:"",
-    alterPhone:"",
-    note:"",
-    rating:null
+    address: "",
+    phone: "",
+    alterPhone: "",
+    note: "",
+    rating: null,
   });
   const [actionText, setActionText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
   const [sort, setSortState] = useState("");
-  const [files, setFiles] = useState([])
+  const [files, setFiles] = useState([]);
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [imageURL, setImageURL] = useState('');
+  const [imageURL, setImageURL] = useState("");
 
-
-  useEffect(()=> {
-    if(data?.length === 0){
-      fetchUserData()
+  useEffect(() => {
+    if (data?.length === 0) {
+      fetchUserData();
     }
-  },[data])
+  }, [data]);
 
   // fetch users list
-  const fetchUserData = async() => {
-    try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/detail")
-      setData(response.data)
-      } catch (err){
-        console.log(err)
-      }}
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/detail");
+      setData(response.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   // Sorting data
   const sortFunc = (params) => {
@@ -121,105 +121,95 @@ const StockListCompact = () => {
     setSearchText(e.target.value);
   };
 
-
- 
   // function to reset the form
   const resetForm = () => {
     setFormData({
-    name: "",
-    address:"",
-    phone:"",
-    alterPhone:"",
-    note:"",
-    rating:null
+      name: "",
+      address: "",
+      phone: "",
+      alterPhone: "",
+      note: "",
+      rating: null,
     });
-    setFiles([])
+    setFiles([]);
   };
 
   // function to close the form modal
   const onFormCancel = () => {
     setModal({ edit: false, add: false });
     resetForm();
-    setUploadedFile(null)
-    setFiles([])
+    setUploadedFile(null);
+    setFiles([]);
   };
-
 
   const compressImage = async (file) => {
     const options = {
       maxSizeMB: 0.05, // 50 KB
       maxWidthOrHeight: 1024,
-      useWebWorker: true, 
+      useWebWorker: true,
     };
-  
+
     try {
       const compressedFile = await imageCompression(file, options);
       return new File([compressedFile], file.name, { type: file.type });
     } catch (error) {
       console.error("Image compression failed:", error);
-      throw error; 
+      throw error;
     }
   };
 
-  const handleDropChange = async(acceptedFiles) => {
-    const file = acceptedFiles[0]
-    if(!file) return;
+  const handleDropChange = async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
     // compress image
-    try{
+    try {
       const compressedFile = await compressImage(file);
       const newFile = {
-        name:compressedFile.name,
-        type:compressedFile.type,
-        file:compressedFile,
-        preview: URL.createObjectURL(compressedFile)
-      }
-      setFiles([newFile]),
-      setUploadedFile(newFile)
-    }catch(error){
+        name: compressedFile.name,
+        type: compressedFile.type,
+        file: compressedFile,
+        preview: URL.createObjectURL(compressedFile),
+      };
+      (setFiles([newFile]), setUploadedFile(newFile));
+    } catch (error) {
       console.error("Error compressing file:", error);
     }
-    
-  }
-
-
+  };
 
   // submit function to add a new item
-  const onFormSubmit = async() => {
-
+  const onFormSubmit = async () => {
     const formData2 = new FormData();
-    formData2.append('name',formData. name);
-    formData2.append('address', formData.address)
-    formData2.append('phone', formData.phone);
-    formData2.append('alterPhone', formData.alterPhone);
-    formData2.append('note', formData.note);
-    formData2.append('rating', formData.rating);
-    formData2.append('createdBy', userData._id);
+    formData2.append("name", formData.name);
+    formData2.append("address", formData.address);
+    formData2.append("phone", formData.phone);
+    formData2.append("alterPhone", formData.alterPhone);
+    formData2.append("note", formData.note);
+    formData2.append("rating", formData.rating);
+    formData2.append("createdBy", userData._id);
 
     if (uploadedFile) {
-      formData2.append('file', uploadedFile.file); // `uploadedFile` should be set when the file is selected
+      formData2.append("file", uploadedFile.file);
     }
     try {
-      // Send data to the backend
       const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/detail`, formData2, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-  
+
       if (response.status === 201) {
-        successToast('User Created Successfully');
-        resetForm(); 
+        successToast("User Created Successfully");
+        resetForm();
         setModal({ edit: false, add: false });
         fetchUserData();
       } else {
         warningToast();
       }
     } catch (err) {
-      errorToast('Please Provide All Details');
+      errorToast("Please Provide All Details");
     }
   };
 
   // submit function to update a new item
-  const onEditSubmit = async() => {
-
+  const onEditSubmit = async () => {
     const submittedData = {
       name: formData.name || undefined,
       address: formData.address || undefined,
@@ -227,31 +217,29 @@ const StockListCompact = () => {
       alterPhone: formData.alterPhone || undefined,
       note: formData.note || undefined,
       rating: formData.rating || undefined,
-    }
+    };
 
-    const formDataToSend = new FormData()
+    const formDataToSend = new FormData();
 
-    Object.keys(submittedData).forEach((key)=> {
-      if(submittedData[key] !== undefined){
-        formDataToSend.append(key, submittedData[key])
+    Object.keys(submittedData).forEach((key) => {
+      if (submittedData[key] !== undefined) {
+        formDataToSend.append(key, submittedData[key]);
       }
-    })
+    });
 
-    if(uploadedFile){
-      formDataToSend.append('file', uploadedFile.file)
+    if (uploadedFile) {
+      formDataToSend.append("file", uploadedFile.file);
     }
 
     try {
-      const response = await axios.put(
-        `${process.env.REACT_APP_BACKENDURL}/api/detail/${editId}`,
-        formDataToSend,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-  
+      const response = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/detail/${editId}`, formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       if (response.status === 200) {
         successToast("Details Updated Successfully");
-        fetchUserData()
-        onFormCancel()
+        fetchUserData();
+        onFormCancel();
       }
     } catch (error) {
       errorToast(error);
@@ -275,7 +263,6 @@ const StockListCompact = () => {
       }
     });
   };
-
 
   // function to change to suspend property for an item
   const suspendUser = (id) => {
@@ -323,8 +310,6 @@ const StockListCompact = () => {
   // Change Page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  
-  
   return (
     <React.Fragment>
       <Head title="User List - Compact"></Head>
@@ -379,11 +364,8 @@ const StockListCompact = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                     
-                    </div>
+                    <div className="form-wrap"></div>
                     <div className="btn-wrap">
-                   
                       <span className="d-md-none">
                         <Button
                           color="light"
@@ -708,7 +690,7 @@ const StockListCompact = () => {
               {/*Head*/}
               {currentItems?.length > 0
                 ? currentItems.map((item) => {
-                    return (     
+                    return (
                       <DataTableItem key={item._id}>
                         <DataTableRow className="nk-tb-col-check">
                           {/* <div className="custom-control custom-control-sm custom-checkbox notext">
@@ -726,18 +708,18 @@ const StockListCompact = () => {
                         </DataTableRow>
                         <DataTableRow>
                           {/* <Link to={`${process.env.PUBLIC_URL}/user-details-regular/${item._id}`}> */}
-                            <div className="user-card">
-                              <UserAvatar
-                                theme={item.avatarBg}
-                                className="xs"
-                                text={findUpper(item.name)}
-                                image={item.file}
-                              ></UserAvatar>
-                                
-                              <div className="user-info">
-                                <span className="tb-lead">{item.name} </span>
-                              </div>
+                          <div className="user-card">
+                            <UserAvatar
+                              theme={item.avatarBg}
+                              className="xs"
+                              text={findUpper(item.name)}
+                              image={item.file}
+                            ></UserAvatar>
+
+                            <div className="user-info">
+                              <span className="tb-lead">{item.name} </span>
                             </div>
+                          </div>
                           {/* </Link> */}
                         </DataTableRow>
                         <DataTableRow size="md">
@@ -928,9 +910,8 @@ const StockListCompact = () => {
                     </FormGroup>
                   </Col>
 
-
                   <Col md="6">
-                  <FormGroup>
+                    <FormGroup>
                       <label className="form-label">Phone No</label>
                       <input
                         className="form-control"
@@ -946,11 +927,10 @@ const StockListCompact = () => {
                       />
                       {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
-                   
                   </Col>
 
                   <Col md="6">
-                  <FormGroup>
+                    <FormGroup>
                       <label className="form-label">Alternative Phone No</label>
                       <input
                         className="form-control"
@@ -966,27 +946,24 @@ const StockListCompact = () => {
                       />
                       {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
-                   
                   </Col>
 
                   <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Rating</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={filterRate}
-                        // defaultValue={{ value: "admin", label: "Admin" }}
-                        onChange={(e) => {
-                          setFormData({ ...formData, rating: e.value });
-                        }}
-                      />
-                    </div>
-                  </FormGroup>
-                </Col>
+                    <FormGroup>
+                      <label className="form-label">Rating</label>
+                      <div className="form-control-wrap">
+                        <RSelect
+                          options={filterRate}
+                          // defaultValue={{ value: "admin", label: "Admin" }}
+                          onChange={(e) => {
+                            setFormData({ ...formData, rating: e.value });
+                          }}
+                        />
+                      </div>
+                    </FormGroup>
+                  </Col>
 
-
-
-                {/* <Col md="6">
+                  {/* <Col md="6">
                   <FormGroup>
                     <label className="form-label">Status</label>
                     <div className="form-control-wrap">
@@ -998,7 +975,7 @@ const StockListCompact = () => {
                     </div>
                   </FormGroup>
                 </Col> */}
-                <Col md="6">
+                  <Col md="6">
                     <FormGroup>
                       <label className="form-label">Note</label>
                       <input
@@ -1009,7 +986,6 @@ const StockListCompact = () => {
                         onChange={(e) => {
                           setFormData({ ...formData, note: e.target.value });
                         }}
-
                         placeholder="Enter Note"
                         ref={register({ required: "This field is required" })}
                       />
@@ -1017,33 +993,33 @@ const StockListCompact = () => {
                     </FormGroup>
                   </Col>
 
-
                   <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange(acceptedFiles, setFiles)}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
-                              {files.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
+                    <Dropzone
+                      accept=".png, .jpg"
+                      multiple={false}
+                      onDrop={(acceptedFiles) => handleDropChange(acceptedFiles, setFiles)}
+                    >
+                      {({ getRootProps, getInputProps }) => (
+                        <section>
+                          <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
+                            <input {...getInputProps()} />
+                            {files.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
+                            {files.map((file) => (
+                              <div
+                                key={file.name}
+                                className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
+                              >
+                                <div className="dz-image">
+                                  <img src={file.preview} alt="preview" />
                                 </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </Col>
+                                <span>{file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                    </Dropzone>
+                  </Col>
 
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
@@ -1096,7 +1072,7 @@ const StockListCompact = () => {
                         type="text"
                         name="name"
                         defaultValue={formData.name}
-                        onChange={(e)=> setFormData({...formData, name:e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Enter name"
                         ref={register({ required: "This field is required" })}
                       />
@@ -1112,7 +1088,7 @@ const StockListCompact = () => {
                         name="address"
                         defaultValue={formData.address}
                         placeholder="Enter Address"
-                        onChange={(e)=> setFormData({...formData, address:e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
@@ -1127,7 +1103,7 @@ const StockListCompact = () => {
                         name="phone"
                         defaultValue={Number(formData.phone)}
                         ref={register({ required: "This field is required" })}
-                        onChange={(e)=> setFormData({...formData, phone:e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       />
                       {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
@@ -1139,7 +1115,7 @@ const StockListCompact = () => {
                         className="form-control"
                         name="alterphone"
                         defaultValue={Number(formData.alterPhone)}
-                        onChange={(e)=> setFormData({...formData, alterPhone:e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, alterPhone: e.target.value })}
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.phone && <span className="invalid">{errors.phone.message}</span>}
@@ -1170,7 +1146,7 @@ const StockListCompact = () => {
                         name="note"
                         defaultValue={formData.note}
                         placeholder="Enter Note"
-                        onChange={(e)=> setFormData({...formData, note:e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
@@ -1178,31 +1154,32 @@ const StockListCompact = () => {
                   </Col>
 
                   <Col size="12">
-                      <Dropzone accept=".png, .jpg" multiple={false} onDrop={(acceptedFiles) => handleDropChange(acceptedFiles, setFiles)}>
-                        {({ getRootProps, getInputProps }) => (
-                          <section>
-                            <div
-                              {...getRootProps()}
-                              className="dropzone upload-zone small bg-lighter my-2 dz-clickable"
-                            >
-                              <input {...getInputProps()} />
-                              {files.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
-                              {files.map((file) => (
-                                <div
-                                  key={file.name}
-                                  className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
-                                >
-                                  <div className="dz-image">
-                                    <img src={file.preview} alt="preview" />
-                                  </div>
-                                  <span>{file.name}</span>
+                    <Dropzone
+                      accept=".png, .jpg"
+                      multiple={false}
+                      onDrop={(acceptedFiles) => handleDropChange(acceptedFiles, setFiles)}
+                    >
+                      {({ getRootProps, getInputProps }) => (
+                        <section>
+                          <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
+                            <input {...getInputProps()} />
+                            {files.length === 0 && <p>Drag 'n' drop PNG, JPG files or click to select files</p>}
+                            {files.map((file) => (
+                              <div
+                                key={file.name}
+                                className="dz-preview dz-processing dz-image-preview dz-error dz-complete"
+                              >
+                                <div className="dz-image">
+                                  <img src={file.preview} alt="preview" />
                                 </div>
-                              ))}
-                            </div>
-                          </section>
-                        )}
-                      </Dropzone>
-                    </Col>
+                                <span>{file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                    </Dropzone>
+                  </Col>
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>

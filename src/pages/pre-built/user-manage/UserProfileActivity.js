@@ -39,7 +39,7 @@ const UserProfileActivityPage = ({ sm, updateSm }) => {
           </BlockHeadContent>
         </BlockBetween>
       </BlockHead>
-    <HeaderSettings/>
+      <HeaderSettings />
     </React.Fragment>
   );
 };

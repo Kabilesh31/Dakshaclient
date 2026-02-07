@@ -1,4 +1,3 @@
-// DeliveryProgress.js
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -11,9 +10,7 @@ const DeliveryProgress = () => {
 
   const fetchProgress = async () => {
     const today = new Date().toISOString().slice(0, 10);
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/route-assign?date=${today}`
-    );
+    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assign?date=${today}`);
     setData(res.data);
   };
 
@@ -30,18 +27,12 @@ const DeliveryProgress = () => {
           </tr>
         </thead>
         <tbody>
-          {data.map(item => (
+          {data.map((item) => (
             <tr key={item._id}>
               <td>{item.staffId}</td>
               <td>{item.routeId?.routeName}</td>
               <td>
-                <span
-                  className={`badge bg-${
-                    item.status === "COMPLETED" ? "success" : "warning"
-                  }`}
-                >
-                  {item.status}
-                </span>
+                <span className={`badge bg-${item.status === "COMPLETED" ? "success" : "warning"}`}>{item.status}</span>
               </td>
             </tr>
           ))}

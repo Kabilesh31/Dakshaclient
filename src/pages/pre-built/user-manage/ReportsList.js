@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
-import {  filterRole, filterStatus } from "./UserData";
+import { filterRole, filterStatus } from "./UserData";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
 import {
   DropdownMenu,
@@ -39,16 +39,14 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { UserContext } from "./UserContext";
 import { bulkActionOptions } from "../../../utils/Utils";
-import axios from 'axios';
-import DataContext  from "../../../utils/DataContext"
-
+import axios from "axios";
+import DataContext from "../../../utils/DataContext";
 
 const ReportsList = () => {
-
-  const [selectedType, setSelectedType] = useState("")
+  const [selectedType, setSelectedType] = useState("");
   const { contextData } = useContext(UserContext);
   const [data, setData] = useState([]);
-  const {userData} = useContext(DataContext)
+  const { userData } = useContext(DataContext);
   const [sm, updateSm] = useState(false);
   const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(true);
@@ -69,22 +67,22 @@ const ReportsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
   const [sort, setSortState] = useState("");
- 
-  useEffect(()=> {
-    if(data?.length === 0){
-      fetchUserData()
-    }
-  },[data])
 
+  useEffect(() => {
+    if (data?.length === 0) {
+      fetchUserData();
+    }
+  }, [data]);
 
   // fetch users list
-  const fetchUserData = async() => {
-    try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/customer")
-      setData(response.data.data)
-      } catch (err){
-        console.log(err)
-      }}
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer");
+      setData(response.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   // Sorting data
   const sortFunc = (params) => {
@@ -135,10 +133,10 @@ const ReportsList = () => {
   const resetForm = () => {
     setFormData({
       name: "",
-    email: "",
-    role: "",
-    phone: "",
-    status: "",
+      email: "",
+      role: "",
+      phone: "",
+      status: "",
     });
   };
 
@@ -149,8 +147,7 @@ const ReportsList = () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async(submitData) => {
- 
+  const onFormSubmit = async (submitData) => {
     const { name, email, role, phone, status } = submitData;
     let submittedData = {
       name: name,
@@ -160,28 +157,25 @@ const ReportsList = () => {
       status: formData.status,
       password: phone,
       confirmPassword: phone,
-      createdBy: "userData._id"
+      createdBy: "userData._id",
     };
-    try{
-      const response = await axios.post(process.env.REACT_APP_BACKENDURL+"/api/user/signup", submittedData);
+    try {
+      const response = await axios.post(process.env.REACT_APP_BACKENDURL + "/api/user/signup", submittedData);
       if (response.status === 201) {
-        successToast("User Created Successfully")
-        // Reset form and close modal on success
+        successToast("User Created Successfully");
         resetForm();
         setModal({ edit: false, add: false });
-        fetchUserData()
-        
+        fetchUserData();
       } else {
-        warningToast()
+        warningToast();
       }
-      
-    }catch(err){
-      errorToast("Please Provide All Details")
+    } catch (err) {
+      errorToast("Please Provide All Details");
     }
   };
 
   // submit function to update a new item
-  const onEditSubmit = async(submitData) => {
+  const onEditSubmit = async (submitData) => {
     const { name, phone } = submitData;
     let submittedData;
     let newitems = data;
@@ -195,22 +189,18 @@ const ReportsList = () => {
         };
       }
     });
-    try{
-      const response = await axios.put(process.env.REACT_APP_BACKENDURL+"/api/user/"+editId, submittedData)
-      if(response.status === 200){
-        successToast("Updated Successfully")
+    try {
+      const response = await axios.put(process.env.REACT_APP_BACKENDURL + "/api/user/" + editId, submittedData);
+      if (response.status === 200) {
+        successToast("Updated Successfully");
         setModal({ edit: false });
-        fetchUserData()
+        fetchUserData();
       }
-    }catch(err){
-      errorToast("Something Went Wrong")
+    } catch (err) {
+      errorToast("Something Went Wrong");
     }
-    // let index = newitems.findIndex((item) => item._id === editId);
-    // newitems[index] = submittedData;
-    // setModal({ edit: false });
   };
 
-  // function that loads the want to editted data
   const onEditClick = (id) => {
     data.forEach((item) => {
       if (item._id === id) {
@@ -227,8 +217,6 @@ const ReportsList = () => {
     });
   };
 
-
-  // function to change to suspend property for an item
   const suspendUser = (id) => {
     let newData = data;
     let index = newData.findIndex((item) => item._id === id);
@@ -266,8 +254,7 @@ const ReportsList = () => {
 
   const { errors, register, handleSubmit } = useForm();
 
-
-  const filterCustomerType = selectedType?.length > 4 ? data?.filter((item)=> item.type === selectedType) : data
+  const filterCustomerType = selectedType?.length > 4 ? data?.filter((item) => item.type === selectedType) : data;
 
   // Get current list, pagination
   const indexOfLastItem = currentPage * itemPerPage;
@@ -291,77 +278,79 @@ const ReportsList = () => {
                 <p>You have total {filterCustomerType?.length} Bills.</p>
               </BlockDes>
             </BlockHeadContent>
-           <BlockHeadContent>
-                <div className="toggle-wrap nk-block-tools-toggle">
-                  <Button
-                    className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
-                    onClick={() => updateSm(!sm)}
-                  >
-                    <Icon name="more-v" />
-                  </Button>
-                  <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
-                    <ul className="nk-block-tools g-3">
-                      <li>
-                        <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
-                            <Icon className="d-none d-sm-inline" name="calender-date" />
-                            <span>
-                              <span className="d-none d-md-inline">{selectedType.length > 1 ? selectedType : "Select Type" }</span>
+            <BlockHeadContent>
+              <div className="toggle-wrap nk-block-tools-toggle">
+                <Button
+                  className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
+                  onClick={() => updateSm(!sm)}
+                >
+                  <Icon name="more-v" />
+                </Button>
+                <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
+                  <ul className="nk-block-tools g-3">
+                    <li>
+                      <UncontrolledDropdown>
+                        <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+                          <Icon className="d-none d-sm-inline" name="calender-date" />
+                          <span>
+                            <span className="d-none d-md-inline">
+                              {selectedType.length > 1 ? selectedType : "Select Type"}
                             </span>
-                            <Icon className="dd-indc" name="chevron-right" />
-                          </DropdownToggle>
-                          <DropdownMenu>
-                            <ul className="link-list-opt no-bdr">
-                              <li>
-                                <DropdownItem
-                                  tag="a"
-                                  onClick={(ev) => {
-                                    ev.preventDefault();
-                                    setSelectedType("All")
-                                  }}
-                                  href="#!"
-                                >
-                                  <span>All</span>
-                                </DropdownItem>
-                              </li>
-                              <li>
-                                <DropdownItem
-                                  tag="a"
-                                  onClick={(ev) => {
-                                    ev.preventDefault();
-                                    setSelectedType("weekly")
-                                  }}
-                                  href="#dropdownitem"
-                                >
-                                  <span>Weekly</span>
-                                </DropdownItem>
-                              </li>
-                              <li>
-                                <DropdownItem
-                                  tag="a"
-                                  onClick={(ev) => {
-                                    ev.preventDefault();
-                                    setSelectedType("monthly")
-                                  }}
-                                  href="#dropdownitem"
-                                >
-                                  <span>Monthly</span>
-                                </DropdownItem>
-                              </li>
-                            </ul>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
-                      </li>
-                      {/* <li className="nk-block-tools-opt">
+                          </span>
+                          <Icon className="dd-indc" name="chevron-right" />
+                        </DropdownToggle>
+                        <DropdownMenu>
+                          <ul className="link-list-opt no-bdr">
+                            <li>
+                              <DropdownItem
+                                tag="a"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  setSelectedType("All");
+                                }}
+                                href="#!"
+                              >
+                                <span>All</span>
+                              </DropdownItem>
+                            </li>
+                            <li>
+                              <DropdownItem
+                                tag="a"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  setSelectedType("weekly");
+                                }}
+                                href="#dropdownitem"
+                              >
+                                <span>Weekly</span>
+                              </DropdownItem>
+                            </li>
+                            <li>
+                              <DropdownItem
+                                tag="a"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  setSelectedType("monthly");
+                                }}
+                                href="#dropdownitem"
+                              >
+                                <span>Monthly</span>
+                              </DropdownItem>
+                            </li>
+                          </ul>
+                        </DropdownMenu>
+                      </UncontrolledDropdown>
+                    </li>
+                    {/* <li className="nk-block-tools-opt">
                         <Button color="primary">
                           <Icon name="reports" />
                           <span>Reports</span>
                         </Button>
                       </li> */}
-                    </ul>
-                  </div>
+                  </ul>
                 </div>
-              </BlockHeadContent>
+              </div>
+            </BlockHeadContent>
           </BlockBetween>
         </BlockHead>
 
@@ -371,11 +360,8 @@ const ReportsList = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                     
-                    </div>
+                    <div className="form-wrap"></div>
                     <div className="btn-wrap">
-                   
                       <span className="d-md-none">
                         <Button
                           color="light"
@@ -700,7 +686,7 @@ const ReportsList = () => {
               {/*Head*/}
               {currentItems.length > 0
                 ? currentItems.map((item) => {
-                    return (     
+                    return (
                       <DataTableItem key={item._id}>
                         <DataTableRow className="nk-tb-col-check">
                           {/* <div className="custom-control custom-control-sm custom-checkbox notext">
@@ -718,17 +704,17 @@ const ReportsList = () => {
                         </DataTableRow>
                         <DataTableRow>
                           {/* <Link to={`${process.env.PUBLIC_URL}/user-details-regular/${item._id}`}> */}
-                            <div className="user-card">
-                              <UserAvatar
-                                theme={item.avatarBg}
-                                className="xs"
-                                text={findUpper(item.name)}
-                                image={item.image}
-                              ></UserAvatar>
-                              <div className="user-info">
-                                <span className="tb-lead">{item.name} </span>
-                              </div>
+                          <div className="user-card">
+                            <UserAvatar
+                              theme={item.avatarBg}
+                              className="xs"
+                              text={findUpper(item.name)}
+                              image={item.image}
+                            ></UserAvatar>
+                            <div className="user-info">
+                              <span className="tb-lead">{item.name} </span>
                             </div>
+                          </div>
                           {/* </Link> */}
                         </DataTableRow>
                         <DataTableRow size="md">
@@ -918,7 +904,7 @@ const ReportsList = () => {
                     </FormGroup>
                   </Col>
                   <Col md="6">
-                  <FormGroup>
+                    <FormGroup>
                       <label className="form-label">Phone</label>
                       <input
                         className="form-control"
@@ -942,35 +928,33 @@ const ReportsList = () => {
                         ref={register({ required: "This field is required" })}
                       />
                       {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup> */}  
+                    </FormGroup> */}
                   </Col>
                   <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Role</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={filterRole}
-                        // defaultValue={{ value: "admin", label: "Admin" }}
-                        onChange={(e) => {
-                          setFormData({ ...formData, role: e.value });
-                        }}
-                      />
-                    </div>
-                  </FormGroup>
-                </Col>
+                    <FormGroup>
+                      <label className="form-label">Role</label>
+                      <div className="form-control-wrap">
+                        <RSelect
+                          options={filterRole}
+                          onChange={(e) => {
+                            setFormData({ ...formData, role: e.value });
+                          }}
+                        />
+                      </div>
+                    </FormGroup>
+                  </Col>
 
-                <Col md="6">
-                  <FormGroup>
-                    <label className="form-label">Status</label>
-                    <div className="form-control-wrap">
-                      <RSelect
-                        options={filterStatus}
-                        // defaultValue={{ value:"active", label: "Active" }}
-                        onChange={(e) => setFormData({ ...formData, status: e.value })}
-                      />
-                    </div>
-                  </FormGroup>
-                </Col>
+                  <Col md="6">
+                    <FormGroup>
+                      <label className="form-label">Status</label>
+                      <div className="form-control-wrap">
+                        <RSelect
+                          options={filterStatus}
+                          onChange={(e) => setFormData({ ...formData, status: e.value })}
+                        />
+                      </div>
+                    </FormGroup>
+                  </Col>
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
@@ -1098,9 +1082,9 @@ const ReportsList = () => {
                       <div className="form-control-wrap">
                         <RSelect
                           options={filterStatus}
-                          defaultValue={{ 
+                          defaultValue={{
                             value: formData.status,
-                            label: formData.status === 'active' ? 'Active' : 'Suspend',
+                            label: formData.status === "active" ? "Active" : "Suspend",
                           }}
                           onChange={(e) => setFormData({ ...formData, status: e.value })}
                         />

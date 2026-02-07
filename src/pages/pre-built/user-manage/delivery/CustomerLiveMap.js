@@ -51,7 +51,7 @@ const CustomerLiveMap = ({ staff, customers = [] }) => {
           }}
           title={customer.name}
           icon={{
-            url: "/icons/bike.png",
+            url: "/icons/store.png",
             scaledSize: new window.google.maps.Size(35, 35),
           }}
         />
