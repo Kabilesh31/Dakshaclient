@@ -30,12 +30,11 @@ const Delivery = () => {
   const [deliveryStaff, setDeliveryStaff] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [routeAssignments, setRouteAssignments] = useState([]);
-  const [confirmModal, setConfirmModal] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
   const [selectedTrackStaff, setSelectedTrackStaff] = useState(null);
   const [showAllStaff, setShowAllStaff] = useState(true);
   const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("");
-const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [assignModal, setAssignModal] = useState(false);
@@ -44,14 +43,11 @@ const [customers, setCustomers] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [viewCustomerModal, setViewCustomerModal] = useState(false);
-  const [routeCustomers, setRouteCustomers] = useState([]);
-const [selectedCustomer, setSelectedCustomer] = useState(null);
-const [liveLocation, setLiveLocation] = useState(null);
-
- 
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [liveLocation, setLiveLocation] = useState(null);
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [assinedCustomerDatas, setAssignedCustomerDatas] = useState([]);
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
-  const [assignedRoutes, setAssignedRoutes] = useState([]);
-
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   useEffect(() => {
@@ -61,49 +57,63 @@ const [liveLocation, setLiveLocation] = useState(null);
     console.log("Is routeAssignments array?", Array.isArray(routeAssignments));
   }, [routes, routeAssignments]);
 
+
   useEffect(() => {
     fetchStaff();
     fetchRoutes();
     fetchCustomers();
   }, []);
-useEffect(() => {
-  if (!selectedTrackStaff) return;
 
- const fetchLocation = async () => {
-  try {
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
-    );
-    
-console.log("LIVE LOCATION 👉", liveLocation);
-    // ✅ Map-friendly format
-    setLiveLocation({
-      lat: res.data.latitude,
-      lng: res.data.longitude,
-      updatedAt: res.data.updatedAt,
-      batteryLevel: res.data.batteryLevel,
-      gpsStatus: res.data.gpsStatus,
-      networkStatus: res.data.networkStatus,
-      isOnline: res.data.isOnline,
-    });
-
-  } catch (err) {
-    console.error("Live tracking error", err);
+  const fetchCustomersByAssignedStaff = async() => {
+    try{
+      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`)
+      if(response.status === 200) {
+        setAssignedCustomerDatas(response.data.customers)
+      }
+    }catch(err){
+      console.log(err)
+    }
   }
-};
+
+  useEffect(()=> {
+    fetchCustomersByAssignedStaff()
+  },[selectedStaffId])
+
+  useEffect(() => {
+    if (!selectedTrackStaff) return;
+
+  const fetchLocation = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
+      );
+    
+      setLiveLocation({
+        lat: res.data.latitude,
+        lng: res.data.longitude,
+        updatedAt: res.data.updatedAt,
+        batteryLevel: res.data.batteryLevel,
+        gpsStatus: res.data.gpsStatus,
+        networkStatus: res.data.networkStatus,
+        isOnline: res.data.isOnline,
+      });
+
+    } catch (err) {
+      console.error("Live tracking error", err);
+    }
+  };
 
 
-  fetchLocation();
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 5000);
 
-  // 🔁 auto refresh every 5 seconds
-  const interval = setInterval(fetchLocation, 5000);
-
-  return () => clearInterval(interval);
-}, [selectedTrackStaff]);
+    return () => clearInterval(interval);
+  }, [selectedTrackStaff]);
 
   useEffect(() => {
     fetchAssignmentsByDate(selectedDate);
   }, [selectedDate]);
+
 
   // Helper function to safely find a route
   const findRoute = (routeId) => {
@@ -229,22 +239,6 @@ const fetchCustomers = async () => {
 };
 
 
-
-  const fetchAssignedRoutes = async () => {
-    try {
-      const resAssigned = await axios.get(`/api/routeassign?date=${selectedDate}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-
-      // Filter only assignments that have a staffId
-      const assignedToStaff = resAssigned.data?.filter(a => a.staffId);
-
-      setRouteAssignments(assignedToStaff);
-    } catch (err) {
-      console.error("Failed to fetch assigned routes:", err);
-    }
-  };
-
  const filteredDeliveryStaff = Array.isArray(deliveryStaff)
   ? deliveryStaff.filter(
       (staff) =>
@@ -310,17 +304,6 @@ const fetchCustomers = async () => {
     }
   };
 
-  // Handle staff selection for assignment
-  const handleAssignRoute = (staff) => {
-    if (!canAssignMoreRoutes(staff._id)) {
-      setError(`Cannot assign more routes to ${staff.name}. Maximum 2 routes per day.`);
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-
-    setSelectedStaff(staff);
-    setAssignModal(true);
-  };
 
   // Handle route assignment submission
   const onSubmitAssignment = async (data) => {
@@ -408,22 +391,7 @@ const fetchCustomers = async () => {
     setConfirmOpen(true);
   };
 
-  // Update route status
-  const handleUpdateStatus = async (assignmentId, newStatus) => {
-    try {
-      setRouteAssignments(prev => 
-        Array.isArray(prev) 
-          ? prev.map(assignment => 
-              assignment._id === assignmentId 
-                ? { ...assignment, status: newStatus }
-                : assignment
-            )
-          : []
-      );
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
+
 
   // Format date for display
   const formatDisplayDate = (dateString) => {
@@ -435,17 +403,6 @@ const fetchCustomers = async () => {
       day: 'numeric' 
     });
   };
-
- const getCustomersByRoute = (routeIdOrName) => {
-  if (!Array.isArray(customers) || !routeIdOrName) return [];
-
-  return customers
-    .filter(c => 
-      String(c.routeId) === String(routeIdOrName) || 
-      c.routeName?.trim() === String(routeIdOrName)
-    )
-    .sort((a, b) => a.lineNo - b.lineNo);
-};
 
 
 const handleDragEnd = (result) => {
@@ -524,6 +481,7 @@ const handleViewCustomer = (customer) => {
   setViewCustomerModal(true);
 };
 
+const currentLineNo = 2; 
   // Render Route Assign Tab
   const renderRouteAssign = () => {
     if (loading && routeAssignments.length === 0) {
@@ -537,7 +495,6 @@ const handleViewCustomer = (customer) => {
         </Alert>
       );
     }
-
     return (
       <div className="row g-4">
         <div className="col-12">
@@ -1134,76 +1091,78 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                     </div>
                     
                     <div className="mb-3">
-  <div className="input-group input-group-sm">
-    
-    <Input
-      type="text"
-      placeholder="Search staff..."
-      className="form-control form-control-sm"
-    />
-  </div>
-</div>
+                      <div className="input-group input-group-sm">
+                        
+                        <Input
+                          type="text"
+                          placeholder="Search staff..."
+                          className="form-control form-control-sm"
+                        />
+                      </div>
+                    </div>
 
 
                     <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                       {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
                        const staffDelivery = activeDeliveries.find(d =>
-  String(d.staffId?._id || d.staffId) === String(staff._id)
-);
+                          String(d.staffId?._id || d.staffId) === String(staff._id)
+                        );
 
                        const isSelected = selectedTrackStaff?._id === staff._id;
-
                         
                         return (
                           <div 
-  key={staff._id}
-  className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
-  onClick={() => setSelectedTrackStaff(staff)}
-  style={{ 
-    cursor: 'pointer',
-    borderColor: isSelected ? '#6576ff' : '#e5e9f2',
-    backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.04)' : '#fff'
-  }}
->
-  {/* Top Row */}
-  <div className="d-flex align-items-center justify-content-between">
-    <div className="d-flex align-items-center">
-      <div className="avatar avatar-xxs mr-1 bg-primary me-2 d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '50%' }}>
-  <span>{staff.name?.charAt(0) || 'S'}</span>
-</div>
+                            key={staff._id}
+                            className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
+                            onClick={() => {
+                               setSelectedTrackStaff(staff);
+                               setSelectedStaffId(staff._id)
+                            }}
+                            style={{ 
+                              cursor: 'pointer',
+                              borderColor: isSelected ? '#6576ff' : '#e5e9f2',
+                              backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.04)' : '#fff'
+                            }}
+                          >
+                            {/* Top Row */}
+                            <div className="d-flex align-items-center justify-content-between">
+                              <div className="d-flex align-items-center">
+                                <div className="avatar avatar-xxs mr-1 bg-primary me-2 d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '50%' }}>
+                            <span>{staff.name?.charAt(0) || 'S'}</span>
+                          </div>
 
 
-      <div className="lh-1">
-        <div className="fw-medium fs-13">{staff.name}</div>
-        <div className="text-muted fs-11">{staff.phone}</div>
-      </div>
-    </div>
+                                <div className="lh-1">
+                                  <div className="fw-medium fs-13">{staff.name}</div>
+                                  <div className="text-muted fs-11">{staff.phone}</div>
+                                </div>
+                              </div>
 
-    {staffDelivery && (
-      <Badge
-        size="sm"
-        color={getStatusBadge(staffDelivery.status)}
-        className="fs-10"
-      >
-        {staffDelivery.status?.replace('_', ' ')}
-      </Badge>
-    )}
-  </div>
+                              {staffDelivery && (
+                                <Badge
+                                  size="sm"
+                                  color={getStatusBadge(staffDelivery.status)}
+                                  className="fs-10"
+                                >
+                                  {staffDelivery.status?.replace('_', ' ')}
+                                </Badge>
+                              )}
+                            </div>
 
-  {/* Route Info */}
-  {staffDelivery && (
-    <div className="mt-1">
-      <small className="text-muted fs-11">
-        Route:
-        <span className="fw-medium text-dark ms-1">
-          {staffDelivery.routeName}
-        </span>
-      </small>
-    </div>
-  )}
+                            {/* Route Info */}
+                            {staffDelivery && (
+                              <div className="mt-1">
+                                <small className="text-muted fs-11">
+                                  Route:
+                                  <span className="fw-medium text-dark ms-1">
+                                    {staffDelivery.routeName}
+                                  </span>
+                                </small>
+                              </div>
+                            )}
 
- 
-</div>
+                          
+                          </div>
 
                         );
                       })}
@@ -1226,199 +1185,153 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                 </div>
               </div>
 
-              {/* Right Side - Map View */}
            <div className="col-lg-6">
-  <div className="card card-bordered h-100">
-    <div className="card-inner">
+            <div className="card card-bordered h-100">
+              <div className="card-inner">
 
-      {/* HEADER */}
-      <div className="mb-3">
-        <h6 className="title">
-          {selectedTrackStaff
-            ? `Tracking: ${selectedTrackStaff.name}`
-            : "Live Map View (All Staff)"}
+                {/* HEADER */}
+                <div className="mb-3">
+                  <h6 className="title">
+                    {selectedTrackStaff
+                      ? `Tracking: ${selectedTrackStaff.name}`
+                      : "Live Map View (All Staff)"}
 
-          {selectedTrackStaff && selectedStaffDelivery && (
-            <Badge color="primary" className="ms-2">
-              {selectedStaffDelivery.routeName}
-            </Badge>
-          )}
-        </h6>
+                    {selectedTrackStaff && selectedStaffDelivery && (
+                      <Badge color="primary" className="ms-2">
+                        {selectedStaffDelivery.routeName}
+                      </Badge>
+                    )}
+                  </h6>
 
-        {selectedTrackStaff && liveLocation && (
-          <p className="text-muted mb-0 small">
-            Last updated:{" "}
-            {new Date(
-              liveLocation.updatedAt ||
-              liveLocation.timeStamp ||
-              Date.now()
-            ).toLocaleTimeString()}
-          </p>
-        )}
-      </div>
+                  {selectedTrackStaff && liveLocation && (
+                    <p className="text-muted mb-0 small">
+                      Last updated:{" "}
+                      {new Date(
+                        liveLocation.updatedAt ||
+                        liveLocation.timeStamp ||
+                        Date.now()
+                      ).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
 
-<CustomerLiveMap
-  staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
-  customers={liveRouteCustomers}
-/>
+                <CustomerLiveMap
 
-
-
-
-    </div>
-  </div>
-</div>
+                  staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
+                  customers={assinedCustomerDatas}
+                />
+              </div>
+            </div>
+          </div>
 
                        
               <div className="col-lg-4">
-  <div className="card card-bordered h-100">
-    <div className="card-inner">
+              <div className="card card-bordered h-100">
+                <div className="card-inner">
 
-      {/* HEADER */}
-      <div className="mb-3">
-        <h6 className="title mb-1">
-          🚚 Delivery Van – Route #DL-204
-          <Badge color="success" className="ms-2">Running</Badge>
-        </h6>
-        <small className="text-muted">
-          Started 08:30 • ETA 12:30 • 65 km
-        </small>
-      </div>
+                  {/* HEADER */}
+                  <div className="mb-3">
+                    <h6 className="title mb-1">
+                      🚚 Delivery Van – Route #DL-204
+                      <Badge color="success" className="ms-2 mt-2">Status : Running</Badge>
+                    </h6>
+                    <small className="text-muted">
+                      Started 08:30 • ETA 12:30 • 65 km
+                    </small>
+                  </div>
 
-      {/* RAIL STATUS */}
-      <div className="rail-status">
+                  {/* RAIL STATUS */}
+               
 
-        {/* START */}
-        <div className="rail-row completed">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Central Warehouse</strong>
-              <span className="time">08:30</span>
+                  <div className="rail-status">
+                    {/* START POINT */}
+                    <div className="rail-row completed">
+                      <div className="rail-left">
+                        <div className="rail-dot"></div>
+                        <div className="rail-line"></div>
+                      </div>
+                      <div className="rail-content">
+                        <div className="d-flex justify-content-between">
+                          <strong>Central Warehouse</strong>
+                          <span className="time">08:30</span>
+                        </div>
+                        <small className="text-muted">
+                          Trip Started • 0 km
+                        </small>
+                      </div>
+                    </div>
+
+                    {/* CUSTOMERS */}
+                    {assinedCustomerDatas
+                      .sort((a, b) => a.lineNo - b.lineNo)
+                      .map((customer, index) => {
+                        let rowStatus = "upcoming";
+
+                        if (customer.lineNo < currentLineNo) {
+                          rowStatus = "completed";
+                        } else if (customer.lineNo === currentLineNo) {
+                          rowStatus = "current";
+                        }
+
+                        return (
+                          <div className={`rail-row ${rowStatus}`} key={customer._id}>
+                            <div className="rail-left">
+                              {rowStatus === "current" ? (
+                                <div className="rail-van">
+                                  <Icon name="truck" className="text-primary" />
+                                </div>
+                              ) : (
+                                <div className="rail-dot"></div>
+                              )}
+
+                              {index !== assinedCustomerDatas.length - 1 && (
+                                <div className="rail-line"></div>
+                              )}
+                            </div>
+
+                            <div className="rail-content">
+                              <div className="d-flex justify-content-between">
+                                <strong>{customer.name}</strong>
+                                <span className={`time ${rowStatus === "current" ? "text-primary" : ""}`}>
+                                  {rowStatus === "completed" && "Delivered"}
+                                  {rowStatus === "current" && "Arriving"}
+                                  {rowStatus === "upcoming" && "Expected"}
+                                </span>
+                              </div>
+
+                              <small
+                                className={
+                                  rowStatus === "current" ? "text-primary" : "text-muted"
+                                }
+                              >
+                                Line No: {customer.lineNo} • {customer.routeName}
+                              </small>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    {/* END POINT */}
+                    <div className="rail-row upcoming">
+                      <div className="rail-left">
+                        <div className="rail-dot"></div>
+                      </div>
+                      <div className="rail-content">
+                        <div className="d-flex justify-content-between">
+                          <strong>Route End (Warehouse)</strong>
+                          <span className="time">12:30</span>
+                        </div>
+                        <small className="text-muted">
+                          Trip Completion
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
-            <small className="text-muted">
-              Trip Started • 0 km
-            </small>
           </div>
-        </div>
-
-        {/* STOP 1 */}
-        <div className="rail-row completed">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Sri Lakshmi Stores</strong>
-              <span className="time">09:12</span>
-            </div>
-            <small className="text-success">
-              Delivered • Halt 5 min • 12 km
-            </small>
-          </div>
-        </div>
-
-        {/* STOP 2 */}
-        <div className="rail-row completed">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Kannan Wholesale</strong>
-              <span className="time">09:45</span>
-            </div>
-            <small className="text-success">
-              Delivered • Halt 7 min • 21 km
-            </small>
-          </div>
-        </div>
-
-        {/* CURRENT */}
-        {/* CURRENT */}
-<div className="rail-row current">
-  <div className="rail-left">
-    {/* Van Icon instead of dot */}
-    <div className="rail-van">
-      <Icon name="truck" className="text-primary" />
-    </div>
-    <div className="rail-line"></div>
-  </div>
-  <div className="rail-content">
-    <div className="d-flex justify-content-between">
-      <strong>Ganesh Super Mart</strong>
-      <span className="time text-primary">10:18</span>
-    </div>
-    <small className="text-primary">
-      Arriving • On Time • 34 km
-    </small>
-  </div>
-</div>
-
-
-        {/* UPCOMING */}
-        <div className="rail-row upcoming">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Vijaya Provisions</strong>
-              <span className="time">11:05</span>
-            </div>
-            <small className="text-muted">
-              Expected • 46 km
-            </small>
-          </div>
-        </div>
-
-        {/* UPCOMING */}
-        <div className="rail-row upcoming">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-            <div className="rail-line"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Shree Traders</strong>
-              <span className="time">11:40</span>
-            </div>
-            <small className="text-muted">
-              Expected • 58 km
-            </small>
-          </div>
-        </div>
-
-        {/* END */}
-        <div className="rail-row upcoming">
-          <div className="rail-left">
-            <div className="rail-dot"></div>
-          </div>
-          <div className="rail-content">
-            <div className="d-flex justify-content-between">
-              <strong>Route End (Warehouse)</strong>
-              <span className="time">12:30</span>
-            </div>
-            <small className="text-muted">
-              Trip Completion • 65 km
-            </small>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-  </div>
-</div>
-
-              
-            </div>
    
             
 
