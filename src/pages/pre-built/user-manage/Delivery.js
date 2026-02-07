@@ -1043,7 +1043,7 @@ const routeCustomers = customers
       String(selectedTrackStaff._id)
     )
   : null;
-  // Customers for the route assigned to the selected staff
+
 const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
   ? customers.filter(
       (c) =>

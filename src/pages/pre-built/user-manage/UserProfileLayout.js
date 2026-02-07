@@ -8,16 +8,14 @@ import { Route, Switch, Link } from "react-router-dom";
 import { Icon, UserAvatar } from "../../../components/Component";
 import { findUpper } from "../../../utils/Utils";
 import { Card, DropdownItem, UncontrolledDropdown, DropdownMenu, DropdownToggle } from "reactstrap";
-import DataContext from "../../../utils/DataContext"
+import DataContext from "../../../utils/DataContext";
 
 const UserProfileLayout = () => {
   const [sm, updateSm] = useState(false);
-  const [mobileView , setMobileView] = useState(false);
+  const [mobileView, setMobileView] = useState(false);
   const [profileName, setProfileName] = useState("Abu Bin Ishtiak");
-  const {userData} = useContext(DataContext)
-  
+  const { userData } = useContext(DataContext);
 
-  // function to change the design view under 990 px
   const viewChange = () => {
     if (window.innerWidth < 990) {
       setMobileView(true);
@@ -39,7 +37,7 @@ const UserProfileLayout = () => {
       window.removeEventListener("load", viewChange);
     };
   }, []);
-  
+
   return (
     <React.Fragment>
       <Content>

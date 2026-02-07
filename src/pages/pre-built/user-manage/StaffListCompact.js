@@ -37,7 +37,6 @@ import { Link } from "react-router-dom/cjs/react-router-dom.min";
 const StaffListCompact = () => {
   const { userData } = useContext(DataContext);
 
-  /* ================= STATE ================= */
   const [data, setData] = useState([]);
   const [currentItems, setCurrentItems] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -56,12 +55,12 @@ const StaffListCompact = () => {
     name: "",
     type: "",
     email: "",
-    mobile:" ",
+    mobile: " ",
     staffStatus: "active",
     staffCode: "",
     img: null,
-     bloodGroup: "",
-     dutyStatus: "active",
+    bloodGroup: "",
+    dutyStatus: "active",
     documents: [],
   });
 
@@ -93,17 +92,14 @@ const StaffListCompact = () => {
     if (value === "") {
       fetchStaff();
     } else {
-      setData(data.filter(v => v.name.toLowerCase().includes(value) || v.email.toLowerCase().includes(value)));
+      setData(data.filter((v) => v.name.toLowerCase().includes(value) || v.email.toLowerCase().includes(value)));
     }
   };
 
   /* ================= SORT ================= */
   const sortFunc = (type) => {
     let sorted = [...data];
-    sorted.sort((a, b) => type === "asc"
-      ? a.name.localeCompare(b.name)
-      : b.name.localeCompare(a.name)
-    );
+    sorted.sort((a, b) => (type === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
     setData(sorted);
   };
 
@@ -113,12 +109,12 @@ const StaffListCompact = () => {
       name: "",
       type: "",
       email: "",
-      mobile:" ",
+      mobile: " ",
       staffStatus: "active",
       staffCode: "",
       img: null,
-       bloodGroup: "",
-       dutyStatus: "active",
+      bloodGroup: "",
+      dutyStatus: "active",
       documents: [],
     });
     setSelectedId(null);
@@ -131,33 +127,30 @@ const StaffListCompact = () => {
   };
 
   const onAddSubmit = async (e) => {
-  e.preventDefault();
-  const fd = new FormData();
+    e.preventDefault();
+    const fd = new FormData();
 
-  Object.keys(formData).forEach((k) => {
-    if (k === "documents" && formData.documents.length > 0) {
-      formData.documents.forEach((file) => fd.append("documents", file));
-    } else if (formData[k] !== undefined && formData[k] !== null) {
-      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+    Object.keys(formData).forEach((k) => {
+      if (k === "documents" && formData.documents.length > 0) {
+        formData.documents.forEach((file) => fd.append("documents", file));
+      } else if (formData[k] !== undefined && formData[k] !== null) {
+        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+      }
+    });
+
+    fd.append("createdBy", userData._id);
+
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/staff`, fd);
+      successToast("Staff added successfully");
+      setModalAdd(false);
+      resetForm();
+      fetchStaff();
+    } catch (err) {
+      console.error(err);
+      errorToast("Add staff failed");
     }
-  });
-
-  fd.append("createdBy", userData._id);
-
-  try {
-    await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      fd
-    );
-    successToast("Staff added successfully");
-    setModalAdd(false);
-    resetForm();
-    fetchStaff();
-  } catch (err) {
-    console.error(err);
-    errorToast("Add staff failed");
-  }
-};
+  };
 
   // ================= EDIT STAFF =================
   const onEditClick = (item) => {
@@ -166,13 +159,13 @@ const StaffListCompact = () => {
       name: item.name,
       type: item.type,
       email: item.email,
-      mobile:item.mobile,
+      mobile: item.mobile,
       staffStatus: item.staffStatus,
       dutyStatus: item.dutyStatus,
       staffCode: item.staffCode,
-      bloodGroup: item.bloodGroup || "", 
+      bloodGroup: item.bloodGroup || "",
       img: item.img || null,
-      documents: [], // new docs can be added
+      documents: [],
     });
     setModalEdit(true);
   };
@@ -181,9 +174,9 @@ const StaffListCompact = () => {
     e.preventDefault();
     const fd = new FormData();
 
-    Object.keys(formData).forEach(k => {
+    Object.keys(formData).forEach((k) => {
       if (k === "documents" && formData.documents.length > 0) {
-        formData.documents.forEach(file => fd.append("documents", file));
+        formData.documents.forEach((file) => fd.append("documents", file));
       } else if (formData[k]) {
         fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
       }
@@ -219,50 +212,49 @@ const StaffListCompact = () => {
       <Head title="Staff List" />
       <Content>
         <BlockHead size="sm">
-                <BlockBetween>
-                  <BlockHeadContent>
-                    <BlockTitle tag="h3" page>
-                      Staff Listssss
-                    </BlockTitle>
-                    
-                    <BlockDes className="text-soft">
-                      <p>You have total {data?.length} Staffs.</p>
-                    </BlockDes>
-                  </BlockHeadContent>
-                  <BlockHeadContent>
-                    <div className="toggle-wrap nk-block-tools-toggle">
-                      <Button
-                        className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
-                        onClick={() => updateSm(!sm)}
+          <BlockBetween>
+            <BlockHeadContent>
+              <BlockTitle tag="h3" page>
+                Staff Listssss
+              </BlockTitle>
+
+              <BlockDes className="text-soft">
+                <p>You have total {data?.length} Staffs.</p>
+              </BlockDes>
+            </BlockHeadContent>
+            <BlockHeadContent>
+              <div className="toggle-wrap nk-block-tools-toggle">
+                <Button
+                  className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
+                  onClick={() => updateSm(!sm)}
+                >
+                  <Icon name="menu-alt-r"></Icon>
+                </Button>
+                <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
+                  <ul className="nk-block-tools g-3">
+                    <li>
+                      <a
+                        href="#export"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                        }}
+                        className="btn btn-white btn-outline-light"
                       >
-                        <Icon name="menu-alt-r"></Icon>
+                        <Icon name="download-cloud"></Icon>
+                        <span>Export</span>
+                      </a>
+                    </li>
+                    <li className="nk-block-tools-opt">
+                      <Button color="primary" className="btn-icon" onClick={openAddModal}>
+                        <Icon name="plus"></Icon>
                       </Button>
-                      <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
-                        <ul className="nk-block-tools g-3">
-                          <li>
-                            <a
-                              href="#export"
-                              onClick={(ev) => {
-                                ev.preventDefault();
-                              
-                              }}
-                              className="btn btn-white btn-outline-light"
-                            >
-                              <Icon name="download-cloud"></Icon>
-                              <span>Export</span>
-                            </a>
-                          </li>
-                          <li className="nk-block-tools-opt">
-                            <Button color="primary" className="btn-icon" onClick={openAddModal}>
-                              <Icon name="plus"></Icon>
-                            </Button>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </BlockHeadContent>
-                </BlockBetween>
-              </BlockHead>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </BlockHeadContent>
+          </BlockBetween>
+        </BlockHead>
 
         <Block>
           <DataTable className="card-stretch">
@@ -279,7 +271,10 @@ const StaffListCompact = () => {
                     <li>
                       <a
                         href="#search"
-                        onClick={(ev) => { ev.preventDefault(); setOnSearch(true); }}
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          setOnSearch(true);
+                        }}
                         className="btn btn-icon search-toggle"
                       >
                         <Icon name="search" />
@@ -293,20 +288,53 @@ const StaffListCompact = () => {
                         </DropdownToggle>
                         <DropdownMenu right className="dropdown-menu-xs">
                           <ul className="link-check">
-                            <li><span>Show</span></li>
-                            {[10, 15].map(n => (
+                            <li>
+                              <span>Show</span>
+                            </li>
+                            {[10, 15].map((n) => (
                               <li key={n} className={itemPerPage === n ? "active" : ""}>
-                                <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setItemPerPage(n);}}>{n}</DropdownItem>
+                                <DropdownItem
+                                  tag="a"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setItemPerPage(n);
+                                  }}
+                                >
+                                  {n}
+                                </DropdownItem>
                               </li>
                             ))}
                           </ul>
                           <ul className="link-check">
-                            <li><span>Order</span></li>
+                            <li>
+                              <span>Order</span>
+                            </li>
                             <li className={sort === "dsc" ? "active" : ""}>
-                              <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setSortState("dsc");sortFunc("dsc");}}>DESC</DropdownItem>
+                              <DropdownItem
+                                tag="a"
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortState("dsc");
+                                  sortFunc("dsc");
+                                }}
+                              >
+                                DESC
+                              </DropdownItem>
                             </li>
                             <li className={sort === "asc" ? "active" : ""}>
-                              <DropdownItem tag="a" href="#" onClick={(e)=>{e.preventDefault();setSortState("asc");sortFunc("asc");}}>ASC</DropdownItem>
+                              <DropdownItem
+                                tag="a"
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSortState("asc");
+                                  sortFunc("asc");
+                                }}
+                              >
+                                ASC
+                              </DropdownItem>
                             </li>
                           </ul>
                         </DropdownMenu>
@@ -320,7 +348,14 @@ const StaffListCompact = () => {
               <div className={`card-search search-wrap ${onSearch ? "active" : ""}`}>
                 <div className="card-body">
                   <div className="search-content">
-                    <Button className="search-back btn-icon" onClick={() => { setSearchText(""); setOnSearch(false); fetchStaff(); }}>
+                    <Button
+                      className="search-back btn-icon"
+                      onClick={() => {
+                        setSearchText("");
+                        setOnSearch(false);
+                        fetchStaff();
+                      }}
+                    >
                       <Icon name="arrow-left" />
                     </Button>
                     <input
@@ -338,21 +373,45 @@ const StaffListCompact = () => {
             {/* TABLE */}
             <DataTableBody compact>
               <DataTableHead>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Profile</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Name</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Email</span></DataTableRow>
                 <DataTableRow>
-  <span style={{ fontWeight: "bold" }} className="sub-text">
-    Duty
-  </span>
-</DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Type</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Code</span></DataTableRow>
-                <DataTableRow><span style={{fontWeight:"bold"}} className="sub-text">Status</span></DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Profile
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Name
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Email
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Duty
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Type
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Code
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Status
+                  </span>
+                </DataTableRow>
                 <DataTableRow className="nk-tb-col-tools"></DataTableRow>
               </DataTableHead>
 
-              {currentItems.map(item => (
+              {currentItems.map((item) => (
                 <DataTableItem key={item._id}>
                   <DataTableRow>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -372,14 +431,10 @@ const StaffListCompact = () => {
 
                   <DataTableRow>{item.email}</DataTableRow>
                   <DataTableRow>
-  <span
-    className={`tb-status text-${
-      item.dutyStatus === "active" ? "success" : "danger"
-    }`}
-  >
-    {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
-  </span>
-</DataTableRow>
+                    <span className={`tb-status text-${item.dutyStatus === "active" ? "success" : "danger"}`}>
+                      {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
+                    </span>
+                  </DataTableRow>
 
                   <DataTableRow>{item.type}</DataTableRow>
                   <DataTableRow>{item.staffCode || "--"}</DataTableRow>
@@ -409,7 +464,12 @@ const StaffListCompact = () => {
                                 </DropdownItem>
                               </li>
                               <li>
-                                <DropdownItem onClick={() => { setSelectedId(item._id); setModalDelete(true); }}>
+                                <DropdownItem
+                                  onClick={() => {
+                                    setSelectedId(item._id);
+                                    setModalDelete(true);
+                                  }}
+                                >
                                   <Icon name="trash" /> <span>Delete</span>
                                 </DropdownItem>
                               </li>
@@ -440,386 +500,401 @@ const StaffListCompact = () => {
         </Block>
       </Content>
 
-      {/* ================= ADD MODAL ================= */}
-     {/* ================= ADD STAFF MODAL ================= */}
-<Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
-  <ModalBody>
-    <a href="#cancel" onClick={(ev) => { ev.preventDefault(); setModalAdd(false); }} className="close">
-      <Icon name="cross-sm"></Icon>
-    </a>
-    <div className="p-2">
-      <h5 className="title">Add Staff</h5>
-      <Form className="row gy-4" onSubmit={onAddSubmit}>
-        <Col md="6">
-         <FormGroup>
-            <label className="form-label">* Name</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Name"
-              value={formData.name}
-              onChange={(e) => {
-                const value = e.target.value;
-                const capitalized =
-                  value.charAt(0).toUpperCase() + value.slice(1);
-                setFormData({ ...formData, name: capitalized });
-              }}
-              required
-            />
-          </FormGroup>
+      <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
+        <ModalBody>
+          <a
+            href="#cancel"
+            onClick={(ev) => {
+              ev.preventDefault();
+              setModalAdd(false);
+            }}
+            className="close"
+          >
+            <Icon name="cross-sm"></Icon>
+          </a>
+          <div className="p-2">
+            <h5 className="title">Add Staff</h5>
+            <Form className="row gy-4" onSubmit={onAddSubmit}>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const capitalized = value.charAt(0).toUpperCase() + value.slice(1);
+                      setFormData({ ...formData, name: capitalized });
+                    }}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-        </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="Enter Email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Mobile</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Mobile Number"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Email</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Enter Email"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Mobile</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Mobile Number"
-      value={formData.mobile}
-      onChange={e => setFormData({ ...formData, mobile: e.target.value })}
-      required
-    />
-  </FormGroup>
-</Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Type</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Type"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Staff Code</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Staff Code"
+                    required
+                    value={formData.staffCode}
+                    onChange={(e) => setFormData({ ...formData, staffCode: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Type</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Type"
-              value={formData.type}
-              onChange={e => setFormData({ ...formData, type: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.staffStatus}
+                    onChange={(e) => setFormData({ ...formData, staffStatus: e.target.value })}
+                    required
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Duty Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.dutyStatus}
+                    onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
+                    required
+                  >
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">Staff Code</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Staff Code"
-              required
-              value={formData.staffCode}
-              onChange={e => setFormData({ ...formData, staffCode: e.target.value })}
-            />
-          </FormGroup>
-        </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Blood Group</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Blood Group (eg: O+, A-)"
+                    value={formData.bloodGroup}
+                    required
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        bloodGroup: e.target.value.toUpperCase(),
+                      })
+                    }
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">Status</label>
-            <select
-              className="form-control"
-              value={formData.staffStatus}
-              onChange={e => setFormData({ ...formData, staffStatus: e.target.value })}
-              required
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </FormGroup>
-        </Col>
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">Duty Status</label>
-    <select
-      className="form-control"
-      value={formData.dutyStatus}
-      onChange={(e) =>
-        setFormData({ ...formData, dutyStatus: e.target.value })
-      }
-      required
-    >
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-    </select>
-  </FormGroup>
-</Col>
+              {/* Profile Image Upload */}
+              <Col md="12">
+                <FormGroup>
+                  <label className="form-label">Profile Image</label>
+                  <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone mt-2">
+                        <input {...getInputProps()} required />
+                        {formData.img ? <p>{formData.img.name}</p> : <p>Drag & drop an image or click to select</p>}
+                      </div>
+                    )}
+                  </Dropzone>
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">Blood Group</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Blood Group (eg: O+, A-)"
-              value={formData.bloodGroup}
-              required
-              onChange={(e) =>
-          setFormData({
-            ...formData,
-            bloodGroup: e.target.value.toUpperCase()
-          })
-        }
-      />
-    </FormGroup>
-  </Col>
+              {/* Documents Upload */}
+              <Col md="12">
+                <FormGroup>
+                  <label className="form-label">Documents</label>
+                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone mt-2">
+                        <input {...getInputProps()} />
+                        {formData.documents.length > 0 ? (
+                          <ul>
+                            {formData.documents.map((f, idx) => (
+                              <li key={idx}>{f.name}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p>Drag & drop files or click to select</p>
+                        )}
+                      </div>
+                    )}
+                  </Dropzone>
+                </FormGroup>
+              </Col>
 
+              <Col md="12">
+                <Button color="primary" type="submit">
+                  Save
+                </Button>
+              </Col>
+            </Form>
+          </div>
+        </ModalBody>
+      </Modal>
 
-        {/* Profile Image Upload */}
-        <Col md="12">
-          <FormGroup>
-            <label className="form-label">Profile Image</label>
-            <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
-              {({ getRootProps, getInputProps }) => (
-                <div {...getRootProps()} className="dropzone mt-2">
-                  <input {...getInputProps()} required/>
-                  {formData.img ? <p>{formData.img.name}</p> : <p>Drag & drop an image or click to select</p>}
-                </div>
-              )}
-            </Dropzone>
-          </FormGroup>
-        </Col>
+      {/* ================= EDIT STAFF MODAL ================= */}
+      <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} className="modal-dialog-centered" size="lg">
+        <ModalBody>
+          <a
+            href="#cancel"
+            onClick={(ev) => {
+              ev.preventDefault();
+              setModalEdit(false);
+            }}
+            className="close"
+          >
+            <Icon name="cross-sm"></Icon>
+          </a>
+          <div className="p-2">
+            <h5 className="title">Edit Staff</h5>
+            <Form className="row gy-4" onSubmit={onEditSubmit}>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-        {/* Documents Upload */}
-        <Col md="12">
-          <FormGroup>
-            <label className="form-label">Documents</label>
-            <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-              {({ getRootProps, getInputProps }) => (
-                <div {...getRootProps()} className="dropzone mt-2">
-                  <input {...getInputProps()} />
-                  {formData.documents.length > 0 ? (
-                    <ul>
-                      {formData.documents.map((f, idx) => <li key={idx}>{f.name}</li>)}
-                    </ul>
-                  ) : (
-                    <p>Drag & drop files or click to select</p>
-                  )}
-                </div>
-              )}
-            </Dropzone>
-          </FormGroup>
-        </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    placeholder="Enter Email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Mobile</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Mobile Number"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="12">
-          <Button color="primary" type="submit">Save</Button>
-        </Col>
-      </Form>
-    </div>
-  </ModalBody>
-</Modal>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Type</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Type"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-{/* ================= EDIT STAFF MODAL ================= */}
-<Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} className="modal-dialog-centered" size="lg">
-  <ModalBody>
-    <a href="#cancel" onClick={(ev) => { ev.preventDefault(); setModalEdit(false); }} className="close">
-      <Icon name="cross-sm"></Icon>
-    </a>
-    <div className="p-2">
-      <h5 className="title">Edit Staff</h5>
-      <Form className="row gy-4" onSubmit={onEditSubmit}>
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Name</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Name"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Staff Code</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Staff Code"
+                    value={formData.staffCode}
+                    onChange={(e) => setFormData({ ...formData, staffCode: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Email</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Enter Email"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Mobile</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Mobile Number"
-      value={formData.mobile}
-      onChange={e => setFormData({ ...formData, mobile: e.target.value })}
-      required
-    />
-  </FormGroup>
-</Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.staffStatus}
+                    onChange={(e) => setFormData({ ...formData, staffStatus: e.target.value })}
+                    required
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Duty Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.dutyStatus}
+                    onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
+                    required
+                  >
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
 
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Blood Group</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Blood Group (eg: O+, A-)"
+                    value={formData.bloodGroup}
+                    required
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        bloodGroup: e.target.value.toUpperCase(),
+                      })
+                    }
+                  />
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">* Type</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter Type"
-              value={formData.type}
-              onChange={e => setFormData({ ...formData, type: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
+              {/* Profile Image Upload */}
+              <Col md="12">
+                <FormGroup>
+                  <label className="form-label">Profile Image</label>
+                  <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone mt-2">
+                        <input {...getInputProps()} />
+                        {formData.img ? (
+                          <div className="dz-preview dz-image-preview">
+                            <img
+                              src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
+                              alt="profile"
+                              style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                            />
+                            <p>{typeof formData.img === "string" ? "Current Image" : formData.img.name}</p>
+                          </div>
+                        ) : (
+                          <p>Drag & drop an image or click to select</p>
+                        )}
+                      </div>
+                    )}
+                  </Dropzone>
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">Staff Code</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Staff Code"
-              value={formData.staffCode}
-              onChange={e => setFormData({ ...formData, staffCode: e.target.value })}
-              required
-            />
-          </FormGroup>
-        </Col>
+              {/* Documents Upload */}
+              <Col md="12">
+                <FormGroup>
+                  <label className="form-label">Documents</label>
+                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone mt-2">
+                        <input {...getInputProps()} />
+                        {formData.documents.length > 0 ? (
+                          <ul>
+                            {formData.documents.map((f, idx) => (
+                              <li key={idx}>{f.name}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p>Drag & drop files or click to select</p>
+                        )}
+                      </div>
+                    )}
+                  </Dropzone>
+                </FormGroup>
+              </Col>
 
-        <Col md="6">
-          <FormGroup>
-            <label className="form-label">Status</label>
-            <select
-              className="form-control"
-              value={formData.staffStatus}
-              onChange={e => setFormData({ ...formData, staffStatus: e.target.value })}
-              required
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </FormGroup>
-        </Col>
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">Duty Status</label>
-    <select
-      className="form-control"
-      value={formData.dutyStatus}
-      onChange={(e) =>
-        setFormData({ ...formData, dutyStatus: e.target.value })
-      }
-      required
-    >
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-    </select>
-  </FormGroup>
-</Col>
-
-        <Col md="6">
-  <FormGroup>
-    <label className="form-label">Blood Group</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Blood Group (eg: O+, A-)"
-      value={formData.bloodGroup}
-      required
-      onChange={(e) =>
-  setFormData({
-    ...formData,
-    bloodGroup: e.target.value.toUpperCase()
-  })
-}
-
-    />
-  </FormGroup>
-</Col>
-
-
-        {/* Profile Image Upload */}
-        <Col md="12">
-          <FormGroup>
-            <label className="form-label">Profile Image</label>
-            <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
-              {({ getRootProps, getInputProps }) => (
-                <div {...getRootProps()} className="dropzone mt-2">
-                  <input {...getInputProps()} />
-                  {formData.img ? (
-                    <div className="dz-preview dz-image-preview">
-                      <img
-                        src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
-                        alt="profile"
-                        style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                      />
-                      <p>{typeof formData.img === "string" ? "Current Image" : formData.img.name}</p>
-                    </div>
-                  ) : (
-                    <p>Drag & drop an image or click to select</p>
-                  )}
-                </div>
-              )}
-            </Dropzone>
-          </FormGroup>
-        </Col>
-
-        {/* Documents Upload */}
-        <Col md="12">
-          <FormGroup>
-            <label className="form-label">Documents</label>
-            <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-              {({ getRootProps, getInputProps }) => (
-                <div {...getRootProps()} className="dropzone mt-2">
-                  <input {...getInputProps()} />
-                  {formData.documents.length > 0 ? (
-                    <ul>
-                      {formData.documents.map((f, idx) => <li key={idx}>{f.name}</li>)}
-                    </ul>
-                  ) : (
-                    <p>Drag & drop files or click to select</p>
-                  )}
-                </div>
-              )}
-            </Dropzone>
-          </FormGroup>
-        </Col>
-
-        <Col md="12">
-          <Button color="primary" type="submit">Update</Button>
-        </Col>
-      </Form>
-    </div>
-  </ModalBody>
-</Modal>
-
+              <Col md="12">
+                <Button color="primary" type="submit">
+                  Update
+                </Button>
+              </Col>
+            </Form>
+          </div>
+        </ModalBody>
+      </Modal>
 
       {/* ================= DELETE MODAL ================= */}
-      <Modal isOpen={modalDelete} toggle={()=>setModalDelete(false)} centered>
+      <Modal isOpen={modalDelete} toggle={() => setModalDelete(false)} centered>
         <ModalBody className="text-center">
           <Icon name="alert-circle" className="text-danger mb-2" />
           <h5>Are you sure to delete?</h5>
           <ul className="d-flex justify-content-center mt-3">
-            <li><Button color="danger" onClick={onDeleteConfirm}>Delete</Button></li>
-            <li><Button color="light" onClick={()=>setModalDelete(false)}>Cancel</Button></li>
+            <li>
+              <Button color="danger" onClick={onDeleteConfirm}>
+                Delete
+              </Button>
+            </li>
+            <li>
+              <Button color="light" onClick={() => setModalDelete(false)}>
+                Cancel
+              </Button>
+            </li>
           </ul>
         </ModalBody>
       </Modal>
-
     </React.Fragment>
   );
 };

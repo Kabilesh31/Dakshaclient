@@ -76,7 +76,7 @@ const UserProfileRegularPage = ({ sm, updateSm, setProfileName }) => {
           <div className="data-head">
             <h6 className="overline-title">Basics</h6>
           </div>
-          <div className="data-item" >
+          <div className="data-item">
             <div className="data-col">
               <span className="data-label">Company Name</span>
               <span className="data-value">Retail Pulse</span>
@@ -109,22 +109,21 @@ const UserProfileRegularPage = ({ sm, updateSm, setProfileName }) => {
               </span>
             </div> */}
           </div>
-          <div className="data-item" >
+          <div className="data-item">
             <div className="data-col">
               <span className="data-label">Phone Number</span>
               <span className="data-value text-soft">{userInfo.phone}</span>
             </div>
           </div>
 
-          <div className="data-item" >
+          <div className="data-item">
             <div className="data-col">
               <span className="data-label">GST Number</span>
               <span className="data-value text-soft">22AAAAA0000A1Z5</span>
             </div>
-          
           </div>
 
-          <div className="data-item" >
+          <div className="data-item">
             <div className="data-col">
               <span className="data-label">Company Started year</span>
               <span className="data-value text-soft">2020</span>
@@ -135,7 +134,6 @@ const UserProfileRegularPage = ({ sm, updateSm, setProfileName }) => {
               </span>
             </div> */}
           </div>
-
 
           {/* <div className="data-item" onClick={() => setModal(true)}>
             <div className="data-col">
@@ -148,7 +146,7 @@ const UserProfileRegularPage = ({ sm, updateSm, setProfileName }) => {
               </span>
             </div>
           </div> */}
-          <div className="data-item" >
+          <div className="data-item">
             <div className="data-col">
               <span className="data-label">Address</span>
               <span className="data-value">

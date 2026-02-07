@@ -1,4 +1,3 @@
-// RouteAssign.js
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Button, Icon } from "../../../components/Component";
@@ -11,9 +10,7 @@ const RouteAssign = () => {
   }, []);
 
   const fetchRoutes = async () => {
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/routes`
-    );
+    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/routes`);
     setRoutes(res.data.data);
   };
 
@@ -30,7 +27,7 @@ const RouteAssign = () => {
           </tr>
         </thead>
         <tbody>
-          {routes.map(route => (
+          {routes.map((route) => (
             <tr key={route._id}>
               <td>{route.routeName}</td>
               <td>{route.customerCount}</td>

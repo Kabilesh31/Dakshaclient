@@ -1,4 +1,4 @@
-/* Tooltip styling */
+
 .tooltip {
     position: absolute;
     bottom: -25px;
@@ -15,8 +15,6 @@
     white-space: nowrap;
     z-index: 10;
   }
-  
-  /* Show tooltip on hover */
   td:hover .tooltip {
     visibility: visible;
     opacity: 1;

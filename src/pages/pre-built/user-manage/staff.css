@@ -12,7 +12,7 @@
 }
 
 .profile-ud-label {
-  width: 160px;      /* fixed key width */
+  width: 160px;
   font-weight: 500;
   color: #8094ae;
 }
@@ -70,8 +70,8 @@
   background-color: #f9f9f9;
 }
 .invoice-pdf {
-  width: 210mm;              /* A4 width */
-  min-height: 297mm;         /* A4 height */
+  width: 210mm;
+  min-height: 297mm;
   padding: 20mm;
   margin: auto;
   background: #fff;
@@ -92,12 +92,10 @@
   font-size: 12px;
 }
 
-/* Avoid content breaking weirdly */
 .invoice-pdf {
   page-break-inside: avoid;
 }
-/* ================= PDF MODE ROOT ================= */
-/* ===== FORCE A4 SIZE FOR PDF ===== */
+
 .pdf-mode {
   width: 210mm !important;
   min-height: 297mm !important;
@@ -115,7 +113,6 @@
   box-shadow: none !important;
 }
 
-/* ================= HEADER FIX ================= */
 .pdf-mode .d-flex.justify-content-between.align-items-center {
   display: table !important;
   width: 100% !important;
@@ -130,14 +127,12 @@
   text-align: right !important;
 }
 
-/* ================= CUSTOMER & STAFF FIX ================= */
 .pdf-mode .d-flex.justify-content-between.mb-2 {
   display: table !important;
   width: 100% !important;
   margin-top: 10px;
 }
 
-/* Customer box → LEFT */
 .pdf-mode .d-flex.justify-content-between.mb-2 > .section:first-child {
   display: table-cell !important;
   width: 48% !important;
@@ -147,7 +142,6 @@
   vertical-align: top;
 }
 
-/* Staff box → RIGHT */
 .pdf-mode .d-flex.justify-content-between.mb-2 > .section:last-child {
   display: table-cell !important;
   width: 48% !important;
@@ -157,12 +151,10 @@
   vertical-align: top;
 }
 
-/* space between boxes */
 .pdf-mode .d-flex.justify-content-between.mb-2 > .section:first-child {
   margin-right: 4% !important;
 }
 
-/* ================= TABLE / ITEMS (future-safe) ================= */
 .pdf-mode table {
   width: 100% !important;
   border-collapse: collapse !important;

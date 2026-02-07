@@ -194,8 +194,8 @@ const UserContactCardPage = () => {
                           item.status === "Active"
                             ? "bg-success text-white"
                             : item.status === "Pending"
-                            ? "bg-warning text-white"
-                            : "bg-danger text-white"
+                              ? "bg-warning text-white"
+                              : "bg-danger text-white"
                         } `}
                       >
                         <Icon
