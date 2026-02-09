@@ -71,31 +71,57 @@ const CustomerLiveMap = ({ staff, customers = [] }) => {
         >
           <div style={{ position: "relative", transform: "translate(-50%, -100%)" }}>
             {/* Line No Badge */}
-            <div
-              style={{
-                position: "absolute",
-                top: "-18px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "#e53935",
-                color: "#fff",
-                borderRadius: "50%",
-                width: "22px",
-                height: "22px",
-                fontSize: "12px",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-              }}
-            >
-              {customer.lineNo}
-            </div>
+          <div
+  style={{
+    position: "absolute",
+    top: "-40px", // move circle above the marker
+    left: "60%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    pointerEvents: "none", // so it doesn't block map interactions
+  }}
+>
+  {/* Circle with line number */}
+  <div
+    style={{
+      background: "#e53935",
+      color: "#fff",
+      borderRadius: "50%",
+      width: "24px",
+      height: "24px",
+      fontSize: "12px",
+      fontWeight: "bold",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+    }}
+  >
+    {customer.lineNo}
+  </div>
+
+  {/* Name below the circle */}
+  <div
+    style={{
+      marginTop: "2px",
+      background: "rgba(0,0,0,0.6)",
+      color: "#fff",
+      borderRadius: "4px",
+      padding: "2px 4px",
+      fontSize: "10px",
+      whiteSpace: "nowrap",
+      textAlign: "center",
+    }}
+  >
+    {customer.name}
+  </div>
+</div>
 
             {/* Shop Icon */}
             <img
-              src="/icons/shop.png"
+              src="/icons/store.png"
               alt="Shop"
               style={{
                 width: "36px",
