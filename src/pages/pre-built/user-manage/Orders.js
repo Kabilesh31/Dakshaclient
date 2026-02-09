@@ -18,14 +18,18 @@ import { Modal, ModalBody, UncontrolledDropdown, DropdownToggle, DropdownMenu, D
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
+  const [pdfOrder, setPdfOrder] = useState(null);
 
   const modalRef = useRef();
+  const hiddenPdfRef = useRef();
 
   const downloadPDF = () => {
     if (!modalRef.current) return;
@@ -40,6 +44,7 @@ const Orders = () => {
           scale: 2.5,
           scrollY: 0,
           windowWidth: 794,
+          windowHeight: modalRef.current.scrollHeight, 
         },
         jsPDF: {
           unit: "mm",
@@ -51,6 +56,37 @@ const Orders = () => {
       .save()
       .then(() => modalRef.current.classList.remove("pdf-mode"));
   };
+const downloadOrderDirect = (order) => {
+  setPdfOrder(order);
+
+  setTimeout(() => {
+    if (!hiddenPdfRef.current) return;
+
+    hiddenPdfRef.current.classList.add("pdf-mode");
+
+    html2pdf()
+      .set({
+        filename: `Order_${order._id}.pdf`,
+        margin: 0,
+        html2canvas: {
+          scale: 2.5,
+          scrollY: 0,
+          windowWidth: 794,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+        },
+      })
+      .from(hiddenPdfRef.current)
+      .save()
+      .then(() => {
+        hiddenPdfRef.current.classList.remove("pdf-mode");
+        setPdfOrder(null); // cleanup
+      });
+  }, 100); // 👈 allow DOM to render
+};
 
   useEffect(() => {
     fetchOrders();
@@ -71,22 +107,35 @@ const Orders = () => {
     }
   };
 
-  useEffect(() => {
-    let data = [...orders];
+ useEffect(() => {
+  let data = [...orders];
 
-    if (statusFilter !== "all") {
-      data = data.filter((o) => o.orderStatus === statusFilter);
-    }
+  // STATUS FILTER
+  if (statusFilter !== "all") {
+    data = data.filter((o) => o.orderStatus === statusFilter);
+  }
 
-    if (search.trim()) {
-      const keyword = search.toLowerCase();
-      data = data.filter(
-        (o) => o.customerName?.toLowerCase().includes(keyword) || o._id?.toLowerCase().includes(keyword),
-      );
-    }
+  // DATE FILTER
+  if (selectedDate) {
+    data = data.filter((o) => {
+      const orderDate = new Date(o.createdAt).toISOString().split("T")[0];
+      return orderDate === selectedDate;
+    });
+  }
 
-    setFiltered(data);
-  }, [search, statusFilter, orders]);
+  // SEARCH FILTER
+  if (search.trim()) {
+    const keyword = search.toLowerCase();
+    data = data.filter(
+      (o) =>
+        o.customerName?.toLowerCase().includes(keyword) ||
+        o._id?.toLowerCase().includes(keyword)
+    );
+  }
+
+  setFiltered(data);
+}, [search, statusFilter, selectedDate, orders]);
+
 
   const changeStatus = async (id, status) => {
     try {
@@ -110,19 +159,50 @@ const Orders = () => {
               <BlockTitle tag="h3"> Orders</BlockTitle>
             </BlockHeadContent>
 
-            {/* STATUS FILTER */}
-            <div className="btn-group btn-group-sm">
-              {["all", "pending", "approved", "rejected"].map((s) => (
-                <Button
-                  key={s}
-                  color={statusFilter === s ? "primary" : "light"}
-                  className="px-3"
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s.toUpperCase()}
-                </Button>
-              ))}
-            </div>
+          
+            <div className="d-flex align-items-center gap-5">
+<div className="position-relative">
+  <Icon
+    name="calendar"
+    className="position-absolute"
+    style={{
+      left: "100px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      fontSize: "16px",
+      color: "#8094ae",
+      pointerEvents: "none",
+    }}
+  />
+  <input
+    type="date"
+    className="form-control form-control-sm ps-5"
+    style={{
+      width: "130px",
+      borderRadius: "8px",
+      border: "1px solid #dbdfea",
+    }}
+    value={selectedDate}
+    onChange={(e) => setSelectedDate(e.target.value)}
+  />
+</div>
+
+ 
+
+    {/* STATUS FILTER */}
+    <div className="btn-group btn-group-sm ml-3">
+      {["all", "pending", "approved", "rejected"].map((s) => (
+        <Button
+          key={s}
+          color={statusFilter === s ? "primary" : "light"}
+          className="px-3"
+          onClick={() => setStatusFilter(s)}
+        >
+          {s.toUpperCase()}
+        </Button>
+      ))}
+    </div>
+  </div>
           </BlockBetween>
         </BlockHead>
 
@@ -195,6 +275,7 @@ const Orders = () => {
                 {/* Table Header */}
                 <thead>
                   <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "center" }}>
+                    <th className="px-4 py-2 text-start">Date</th>
                     <th className="px-4 py-2 text-start">Customer</th>
                     <th className="px-4 py-2 text-start">Order ID</th>
 
@@ -206,14 +287,24 @@ const Orders = () => {
 
                 {/* Table Body */}
                 <tbody>
-                  {filtered?.map((order) => (
+                  {filtered?.length > 0 ? (
+  filtered.map((order) => (
                     <tr
                       key={order._id}
                       className="align-middle"
                       style={{ borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", textAlign: "center" }}
                     >
+                      <td className="px-4 py-2 text-start">
+        {new Date(order.createdAt).toLocaleDateString("en-IN")}
+      </td>
                       <td className=" py-2 text-start">{order.customerName}</td>
-                      <td className="px-4 py-2 text-start">#{order._id}</td>
+                     <td
+  className="px-4 py-2 text-start"
+  title={order._id}
+>
+  #{order._id.slice(0, 4)}...{order._id.slice(-4)}
+</td>
+
 
                       <td className="px-4 py-2 text-end">₹ {order.totalAmt}</td>
                       <td className="px-4 py-2 text-center">
@@ -238,11 +329,23 @@ const Orders = () => {
                             <DropdownItem onClick={() => setSelectedOrder(order)}>
                               <Icon name="eye" /> View Details
                             </DropdownItem>
+                            <DropdownItem onClick={() => downloadOrderDirect(order)}>
+  <Icon name="download" /> Download PDF
+</DropdownItem>
                           </DropdownMenu>
                         </UncontrolledDropdown>
                       </td>
                     </tr>
-                  ))}
+                      ))
+) : (
+  <tr>
+    <td colSpan="6" className="text-center py-4 text-muted">
+      No orders found for selected date
+    </td>
+  </tr>
+)}
+
+                  
                 </tbody>
               </table>
             </DataTable>
@@ -366,6 +469,123 @@ const Orders = () => {
           </ModalBody>
         </Modal>
       )}
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+  <div ref={hiddenPdfRef} className="order-invoice-pdf">
+    {pdfOrder && (
+      <>
+        {/* HEADER */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+          <div>
+            <h4 style={{ margin: 0 }}>Retail Pulse</h4>
+            <small>Order Invoice</small>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ margin: 0 }}>
+              <strong>Order ID:</strong> #{pdfOrder._id.slice(-6)}
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Date:</strong>{" "}
+              {new Date(pdfOrder.createdAt).toLocaleDateString("en-IN")}
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Status:</strong>{" "}
+              <span style={{ textTransform: "capitalize" }}>
+                {pdfOrder.orderStatus}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <hr />
+
+        {/* CUSTOMER & STAFF */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+          {/* CUSTOMER */}
+          <div style={{ width: "48%" }}>
+            <h6 style={{ marginBottom: "4px" }}>Customer Details</h6>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Name:</strong>{" "}
+              {pdfOrder.customerDetails?.name || pdfOrder.customerName || "-"}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Mobile:</strong>{" "}
+              {pdfOrder.customerDetails?.mobile || "-"}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Address:</strong>{" "}
+              {pdfOrder.customerDetails?.address || "-"}
+            </p>
+          </div>
+
+          {/* STAFF */}
+          <div style={{ width: "48%" }}>
+            <h6 style={{ marginBottom: "4px" }}>Staff Details</h6>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Name:</strong>{" "}
+              {pdfOrder.staffDetails?.name || "Unassigned"}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Role:</strong>{" "}
+              {pdfOrder.staffDetails?.type || "-"}
+            </p>
+            <p style={{ margin: "2px 0" }}>
+              <strong>Mobile:</strong>{" "}
+              {pdfOrder.staffDetails?.mobile || "-"}
+            </p>
+          </div>
+        </div>
+
+        {/* PRODUCT TABLE */}
+        <table
+          width="100%"
+          border="1"
+          cellPadding="6"
+          style={{ borderCollapse: "collapse", marginTop: "10px" }}
+        >
+          <thead>
+            <tr>
+              <th>#</th>
+              <th align="left">Product</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pdfOrder.orderedProducts?.map((p, i) => (
+              <tr key={i}>
+                <td align="center">{i + 1}</td>
+                <td>{p.productName}</td>
+                <td align="center">{p.qty}</td>
+                <td align="right">₹ {p.value}</td>
+                <td align="right">₹ {p.qty * p.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* TOTALS */}
+        <div style={{ marginTop: "10px", width: "100%", textAlign: "right" }}>
+          <p style={{ margin: "4px 0" }}>
+            <strong>Subtotal:</strong> ₹ {pdfOrder.totalAmt}
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            <strong>Discount:</strong> ₹ {pdfOrder.discount || 0}
+          </p>
+          <p style={{ margin: "4px 0" }}>
+            <strong>Tax:</strong> ₹ {pdfOrder.tax || 0}
+          </p>
+          <hr />
+          <h5 style={{ margin: 0 }}>
+            <strong>Total:</strong> ₹ {pdfOrder.totalAmt}
+          </h5>
+        </div>
+      </>
+    )}
+  </div>
+</div>
+
+
     </>
   );
 };
