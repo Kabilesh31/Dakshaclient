@@ -13,10 +13,6 @@ import {
   BlockDes,
   Button,
   Icon,
-  DataTable,
-  DataTableItem,
-  DataTableHead,
-  DataTableRow,
   PreviewCard,
   PreviewAltCard,
   TooltipComponent,
@@ -49,6 +45,7 @@ const Delivery = () => {
   const [assinedCustomerDatas, setAssignedCustomerDatas] = useState([]);
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
 
   useEffect(() => {
     console.log("Routes state:", routes);
@@ -1216,9 +1213,9 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                 </div>
 
                 <CustomerLiveMap
-
                   staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
                   customers={assinedCustomerDatas}
+                  selectedCustomer={selectedCustomerForMap}
                 />
               </div>
             </div>
@@ -1274,7 +1271,9 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                         }
 
                         return (
-                          <div className={`rail-row ${rowStatus}`} key={customer._id}>
+                          <div className={`rail-row ${rowStatus}`} key={customer._id} onClick={() => {
+                              setSelectedCustomerForMap(customer);
+                            }}>
                             <div className="rail-left">
                               {rowStatus === "current" ? (
                                 <div className="rail-van">
