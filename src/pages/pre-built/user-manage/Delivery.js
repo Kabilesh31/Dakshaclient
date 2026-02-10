@@ -478,7 +478,18 @@ const handleViewCustomer = (customer) => {
   setViewCustomerModal(true);
 };
 
-const currentLineNo = 2; 
+const sortedCustomers = [...assinedCustomerDatas].sort(
+  (a, b) => a.lineNo - b.lineNo
+);
+
+const firstPendingCustomer = sortedCustomers.find(
+  (customer) => customer.orderPending === true
+);
+
+const currentLineNo = firstPendingCustomer
+  ? firstPendingCustomer.lineNo
+  : null;
+
   // Render Route Assign Tab
   const renderRouteAssign = () => {
     if (loading && routeAssignments.length === 0) {
