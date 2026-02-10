@@ -1227,6 +1227,7 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                   staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
                   customers={assinedCustomerDatas}
                   selectedCustomer={selectedCustomerForMap}
+                  travelMode="DRIVING"
                 />
               </div>
             </div>
