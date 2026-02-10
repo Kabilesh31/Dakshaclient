@@ -20,6 +20,14 @@
 .fs-13 {
   font-size: 13px;
 }
+.active-customer {
+  background: rgba(101, 118, 255, 0.08);
+  border-left: 4px solid #6576ff;
+}
+
+.active-customer strong {
+  color: #6576ff;
+}
 
 .avatar-xxs {
   width: 17px;

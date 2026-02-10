@@ -10,6 +10,7 @@ import {
   BlockHead,
   BlockHeadContent,
   BlockTitle,
+  PaginationComponent,
   Icon,
   Button,
   DataTable,
@@ -27,6 +28,8 @@ const Orders = () => {
   const [loading, setLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
   const [pdfOrder, setPdfOrder] = useState(null);
+  const itemPerPage = 10;
+const [currentPage, setCurrentPage] = useState(1);
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
@@ -147,6 +150,15 @@ const downloadOrderDirect = (order) => {
   };
 
   const statusColor = (s) => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
+
+const indexOfLastItem = currentPage * itemPerPage;
+const indexOfFirstItem = indexOfLastItem - itemPerPage;
+
+const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+useEffect(() => {
+  setCurrentPage(1);
+}, [search, statusFilter, selectedDate]);
+const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <>
@@ -274,10 +286,11 @@ const downloadOrderDirect = (order) => {
               >
                 {/* Table Header */}
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "center" }}>
+                  <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
                     <th className="px-4 py-2 text-start">Date</th>
                     <th className="px-4 py-2 text-start">Customer</th>
                     <th className="px-4 py-2 text-start">Order ID</th>
+                    <th className="px-4 py-2 text-center">Products</th>
 
                     <th className="px-4 py-2 text-end">Amount</th>
                     <th className="px-4 py-2 text-center">Status</th>
@@ -287,12 +300,12 @@ const downloadOrderDirect = (order) => {
 
                 {/* Table Body */}
                 <tbody>
-                  {filtered?.length > 0 ? (
-  filtered.map((order) => (
+                 {currentItems.length > 0 ? (
+  currentItems.map((order) => (
                     <tr
                       key={order._id}
                       className="align-middle"
-                      style={{ borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", textAlign: "center" }}
+                      style={{ borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", textAlign: "left" }}
                     >
                       <td className="px-4 py-2 text-start">
         {new Date(order.createdAt).toLocaleDateString("en-IN")}
@@ -304,7 +317,9 @@ const downloadOrderDirect = (order) => {
 >
   #{order._id.slice(0, 4)}...{order._id.slice(-4)}
 </td>
-
+<td className="px-4 py-2 text-center">
+  {order.orderedProducts?.length || 0}
+</td>
 
                       <td className="px-4 py-2 text-end">₹ {order.totalAmt}</td>
                       <td className="px-4 py-2 text-center">
@@ -348,6 +363,21 @@ const downloadOrderDirect = (order) => {
                   
                 </tbody>
               </table>
+              <div className="card-inner">
+  {currentItems.length > 0 ? (
+    <PaginationComponent
+      itemPerPage={itemPerPage}
+      totalItems={filtered.length}
+      paginate={paginate}
+      currentPage={currentPage}
+    />
+  ) : (
+    <div className="text-center">
+      <span className="text-silent">No data found</span>
+    </div>
+  )}
+</div>
+
             </DataTable>
           )}
         </Block>
@@ -435,6 +465,7 @@ const downloadOrderDirect = (order) => {
                       </tr>
                     )}
                   </tbody>
+                  
                 </table>
               </div>
 
