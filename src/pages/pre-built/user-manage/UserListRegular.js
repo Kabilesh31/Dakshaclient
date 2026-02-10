@@ -83,7 +83,7 @@ const UserListRegularPage = () => {
       return item;
     });
     setData([...newData]);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Changing state value when searching name
   useEffect(() => {
@@ -672,8 +672,8 @@ const UserListRegularPage = () => {
                                       item.status === "Active"
                                         ? "success"
                                         : item.status === "Pending"
-                                        ? "warning"
-                                        : "danger"
+                                          ? "warning"
+                                          : "danger"
                                     } d-md-none ml-1`}
                                   ></span>
                                 </span>
@@ -698,15 +698,15 @@ const UserListRegularPage = () => {
                                   item.emailStatus === "success"
                                     ? "success"
                                     : item.emailStatus === "pending"
-                                    ? "info"
-                                    : "secondary"
+                                      ? "info"
+                                      : "secondary"
                                 }`}
                                 name={`${
                                   item.emailStatus === "success"
                                     ? "check-circle"
                                     : item.emailStatus === "alert"
-                                    ? "alert-circle"
-                                    : "alarm-alt"
+                                      ? "alert-circle"
+                                      : "alarm-alt"
                                 }`}
                               ></Icon>{" "}
                               <span>Email</span>
@@ -717,17 +717,17 @@ const UserListRegularPage = () => {
                                   item.kycStatus === "success"
                                     ? "success"
                                     : item.kycStatus === "pending"
-                                    ? "info"
-                                    : item.kycStatus === "warning"
-                                    ? "warning"
-                                    : "secondary"
+                                      ? "info"
+                                      : item.kycStatus === "warning"
+                                        ? "warning"
+                                        : "secondary"
                                 }`}
                                 name={`${
                                   item.kycStatus === "success"
                                     ? "check-circle"
                                     : item.kycStatus === "pending"
-                                    ? "alarm-alt"
-                                    : "alert-circle"
+                                      ? "alarm-alt"
+                                      : "alert-circle"
                                 }`}
                               ></Icon>{" "}
                               <span>KYC</span>

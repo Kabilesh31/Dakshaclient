@@ -46,6 +46,7 @@ const Delivery = () => {
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
   const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
+  
 
   useEffect(() => {
     console.log("Routes state:", routes);
@@ -851,6 +852,7 @@ const routeCustomers = customers
 
               {routeCustomers.length > 0 ? (
                 routeCustomers.map((customer, index) => (
+                  
                   <Draggable
                     key={customer._id}
                     draggableId={customer._id}
@@ -1064,7 +1066,11 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
     )
   : [];
 
+const totalCustomers = assinedCustomerDatas?.length || 0;
 
+const completedCustomers = assinedCustomerDatas?.filter(
+  (c) => c.orderStatus === "DELIVERED" || c.status === "completed"
+).length || 0;
     
   
     return (
@@ -1089,7 +1095,7 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
               </div>
             </div>
 
-            <div className="row">
+            <div className="row g-1">
               {/* Left Side - Staff Selection */}
               <div className="col-lg-2">
                 <div className="card card-bordered h-100">
@@ -1200,9 +1206,17 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                 {/* HEADER */}
                 <div className="mb-3">
                   <h6 className="title">
-                    {selectedTrackStaff
-                      ? `Tracking: ${selectedTrackStaff.name}`
-                      : "Live Map View (All Staff)"}
+                   {selectedTrackStaff ? (
+  <>
+    Tracking: {selectedTrackStaff.name}
+    <span className="text-muted ml-1 ms-2">
+      ({completedCustomers} / {totalCustomers})
+    </span>
+  </>
+) : (
+  "Live Map View (All Staff)"
+)}
+
 
                     {selectedTrackStaff && selectedStaffDelivery && (
                       <Badge color="primary" className="ms-2">
@@ -1274,6 +1288,8 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                     {assinedCustomerDatas
                       .sort((a, b) => a.lineNo - b.lineNo)
                       .map((customer, index) => {
+                        const isActiveCustomer =
+  selectedCustomerForMap?._id === customer._id;
                         let rowStatus = "upcoming";
 
                         if (customer.lineNo < currentLineNo) {
@@ -1283,9 +1299,12 @@ const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
                         }
 
                         return (
-                          <div className={`rail-row ${rowStatus}`} key={customer._id} onClick={() => {
-                              setSelectedCustomerForMap(customer);
-                            }}>
+                          <div
+  className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+  key={customer._id}
+  onClick={() => setSelectedCustomerForMap(customer)}
+>
+
                             <div className="rail-left">
                               {rowStatus === "current" ? (
                                 <div className="rail-van">
