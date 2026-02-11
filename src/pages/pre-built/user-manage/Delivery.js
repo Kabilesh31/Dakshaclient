@@ -73,9 +73,44 @@ const Delivery = () => {
     }
   }
 
-  useEffect(()=> {
-    fetchCustomersByAssignedStaff()
-  },[selectedStaffId])
+ useEffect(() => {
+  const loadAssignedCustomers = async () => {
+    if (!selectedStaffId) {
+      setAssignedCustomerDatas([]);
+      return;
+    }
+
+    // 🔎 Check if staff has route assigned on selectedDate
+    const staffAssignments = routeAssignments.filter(
+      (assignment) =>
+        assignment.staffId?._id?.toString() === selectedStaffId.toString() &&
+        assignment.date === selectedDate
+    );
+
+    // ❌ If no route assigned → clear customers
+    if (staffAssignments.length === 0) {
+      setAssignedCustomerDatas([]);
+      return;
+    }
+
+    // ✅ If assigned → fetch customers
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`
+      );
+
+      if (response.status === 200) {
+        setAssignedCustomerDatas(response.data.customers || []);
+      }
+    } catch (err) {
+      console.log(err);
+      setAssignedCustomerDatas([]);
+    }
+  };
+
+  loadAssignedCustomers();
+}, [selectedStaffId, routeAssignments, selectedDate]);
+
 
   useEffect(() => {
     if (!selectedTrackStaff) return;
@@ -1071,7 +1106,37 @@ const totalCustomers = assinedCustomerDatas?.length || 0;
 const completedCustomers = assinedCustomerDatas?.filter(
   (c) => c.orderStatus === "DELIVERED" || c.status === "completed"
 ).length || 0;
-    
+ 
+const getCustomerStatusClass = (status) => {
+  switch (status) {
+    case "completed":
+      return "text-success";   // Delivered
+    case "current":
+      return "text-primary";   // Arriving
+    case "upcoming":
+      return "text-warning";   // Expected
+    default:
+      return "text-muted";
+  }
+};
+const getRailIcon = (status) => {
+  if (status === "completed") {
+    return <Icon name="check-circle-fill" className="text-success" />;
+  }
+
+  if (status === "current") {
+    return selectedTrackStaff?.type === "delivery" ? (
+      <Icon name="truck" className="text-primary" />
+    ) : (
+      <Icon name="truck" className="text-primary" />
+    );
+  }
+
+  return <Icon name="clock" className="text-muted" />;
+};
+
+
+
   
     return (
       <div className="row g-4">
@@ -1254,10 +1319,32 @@ const completedCustomers = assinedCustomerDatas?.filter(
 
                   {/* HEADER */}
                   <div className="mb-3">
-                    <h6 className="title mb-1">
-                      🚚 Delivery Van – Route #DL-204
-                      <Badge color="success" className="ms-2 mt-2">Status : Running</Badge>
-                    </h6>
+                    <div className="mb-1">
+  {/* FIRST LINE */}
+  <h6 className="title d-flex align-items-center mb-0">
+    <span
+      className="me-1"
+      style={{ fontSize: "27px", lineHeight: 1 }}
+    >
+      {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
+    </span>
+
+    {selectedTrackStaff?.type === "delivery"
+      ? "Delivery Van"
+      : "Sales Bike"}{" "}
+    – Route #{selectedStaffDelivery?.routeCode || "DL-204"}
+  </h6>
+
+  {/* SECOND LINE */}
+  <div className="mt-1">
+    <Badge color="success" className="fs-11">
+      Status : Running
+    </Badge>
+  </div>
+</div>
+
+
+
                     <small className="text-muted">
                       Started 08:30 • ETA 12:30 • 65 km
                     </small>
@@ -1308,7 +1395,10 @@ const completedCustomers = assinedCustomerDatas?.filter(
                             <div className="rail-left">
                               {rowStatus === "current" ? (
                                 <div className="rail-van">
-                                  <Icon name="truck" className="text-primary" />
+                                  <div className="rail-icon">
+  {getRailIcon(rowStatus)}
+</div>
+
                                 </div>
                               ) : (
                                 <div className="rail-dot"></div>
@@ -1322,11 +1412,11 @@ const completedCustomers = assinedCustomerDatas?.filter(
                             <div className="rail-content">
                               <div className="d-flex justify-content-between">
                                 <strong>{customer.name}</strong>
-                                <span className={`time ${rowStatus === "current" ? "text-primary" : ""}`}>
-                                  {rowStatus === "completed" && "Delivered"}
-                                  {rowStatus === "current" && "Arriving"}
-                                  {rowStatus === "upcoming" && "Expected"}
-                                </span>
+                                 <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
+      {rowStatus === "completed" && "Delivered"}
+      {rowStatus === "current" && "Arriving"}
+      {rowStatus === "upcoming" && "Expected"}
+    </span>
                               </div>
 
                               <small
