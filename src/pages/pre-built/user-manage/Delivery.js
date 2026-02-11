@@ -1330,8 +1330,8 @@ const getRailIcon = (status) => {
     </span>
 
     {selectedTrackStaff?.type === "delivery"
-      ? "Delivery Van"
-      : "Sales Bike"}{" "}
+      ? "Delivery Vehicle"
+      : "Sales Vehicle"}{" "}
     – Route #{selectedStaffDelivery?.routeCode || "DL-204"}
   </h6>
 

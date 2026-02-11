@@ -56,7 +56,7 @@ const Notification = () => {
 
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`http://localhost:8000/api/notifications/${id}/read`);
+      await axios.patch(`${process.env.REACT_APP_BACKENDURL}/api/notifications/${id}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, seen: true } : n))
       );
@@ -67,7 +67,7 @@ const Notification = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.patch(`http://localhost:8000/api/notifications/read-all`);
+      await axios.patch(`${process.env.REACT_APP_BACKENDURL}/api/notifications/read-all`);
       setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
     } catch (err) {
       console.error("Failed to mark all notifications as read", err);
