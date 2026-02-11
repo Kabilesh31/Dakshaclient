@@ -169,6 +169,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3"> Orders</BlockTitle>
+              
             </BlockHeadContent>
 
           
@@ -296,6 +297,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                     <th className="px-4 py-2 text-end">Amount</th>
                     <th className="px-4 py-2 text-center">Status</th>
                     <th className="px-4 py-2 text-center">Actions</th>
+                    
                   </tr>
                 </thead>
 
@@ -326,7 +328,13 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
   {order.orderedProducts?.length || 0}
 </td> */}
 
-                      <td className="px-4 py-2 text-end">₹ {order.totalAmt}</td>
+                    <td
+  className="px-4 py-2 text-end"
+  style={{ color: "#66BB6A", fontWeight: 600 }}
+>
+  ₹ {order.totalAmt}
+</td>
+
                       <td className="px-4 py-2 text-center">
                         <span className={`tb-status text-${statusColor(order.orderStatus)}`}>{order.orderStatus}</span>
                       </td>
