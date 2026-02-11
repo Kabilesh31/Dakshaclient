@@ -287,10 +287,11 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                 {/* Table Header */}
                 <thead>
                   <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
+                     <th className="px-3 py-2 text-center">S.No</th>
                     <th className="px-4 py-2 text-start">Date</th>
                     <th className="px-4 py-2 text-start">Customer</th>
                     <th className="px-4 py-2 text-start">Order ID</th>
-                    <th className="px-4 py-2 text-center">Products</th>
+                    {/* <th className="px-4 py-2 text-center">Products</th> */}
 
                     <th className="px-4 py-2 text-end">Amount</th>
                     <th className="px-4 py-2 text-center">Status</th>
@@ -301,12 +302,16 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                 {/* Table Body */}
                 <tbody>
                  {currentItems.length > 0 ? (
-  currentItems.map((order) => (
+  currentItems.map((order, index) => (
                     <tr
                       key={order._id}
                       className="align-middle"
                       style={{ borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", textAlign: "left" }}
                     >
+                      <td className="px-3 py-2 text-center">
+      {indexOfFirstItem + index + 1}
+    </td>
+                      
                       <td className="px-4 py-2 text-start">
         {new Date(order.createdAt).toLocaleDateString("en-IN")}
       </td>
@@ -317,9 +322,9 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
 >
   #{order._id.slice(0, 4)}...{order._id.slice(-4)}
 </td>
-<td className="px-4 py-2 text-center">
+{/* <td className="px-4 py-2 text-center">
   {order.orderedProducts?.length || 0}
-</td>
+</td> */}
 
                       <td className="px-4 py-2 text-end">₹ {order.totalAmt}</td>
                       <td className="px-4 py-2 text-center">
