@@ -58,11 +58,11 @@ const menu = [
     link: "/reports",
   },
 
-  // {
-  //   icon: "check-circle-cut",
-  //   text: "Staff Attendance",
-  //   link: "/blank",
-  // },
+  {
+    icon: "check-circle-cut",
+    text: "Staff Attendance",
+    link: "/blank",
+  },
 
    // {
   //   icon: "search",

@@ -56,45 +56,47 @@ const UserListCompact = () => {
   }, [month, year]);
 
   const fetchAttendance = async () => {
-    try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/attendance");
-      const attendanceArray = response.data;
+  try {
+    const response = await axios.get(
+      process.env.REACT_APP_BACKENDURL + "/api/attendance"
+    );
 
-      const structuredAttendance = {};
+    const attendanceArray = response.data;
+    const structuredAttendance = {};
 
-      attendanceArray.forEach((record) => {
-        const recordDate = new Date(record.date);
-        const year = recordDate.getFullYear();
-        const month = recordDate.getMonth();
-        const day = recordDate.getDate();
+    attendanceArray.forEach((record) => {
+      const recordDate = new Date(record.date);
+      const year = recordDate.getFullYear();
+      const monthIndex = recordDate.getMonth();
+      const day = recordDate.getDate();
+      const monthName = months[monthIndex];
 
-        // Ensure year exists in the structure
-        if (!structuredAttendance[year]) structuredAttendance[year] = {};
+      if (!structuredAttendance[year]) structuredAttendance[year] = {};
+      if (!structuredAttendance[year][monthName])
+        structuredAttendance[year][monthName] = {};
+      if (!structuredAttendance[year][monthName][record.staffId])
+        structuredAttendance[year][monthName][record.staffId] = {};
 
-        // Ensure month exists for the given year
-        const monthName = months[month];
-        if (!structuredAttendance[year][monthName]) {
-          structuredAttendance[year][monthName] = {};
-        }
+      // Decide status
+      let status = "present";
 
-        // Ensure employee exists for the given month
-        if (!structuredAttendance[year][monthName][record.employeeId]) {
-          structuredAttendance[year][monthName][record.employeeId] = {};
-        }
+      if (record.currentStatus === "checked-in") {
+        status = "working";
+      }
 
-        // Add the status and hours for the day
-        structuredAttendance[year][monthName][record.employeeId][day] = {
-          status: record.status,
-          hours: record.hours,
-        };
-      });
+      structuredAttendance[year][monthName][record.staffId][day] = {
+        status: status,
+        hours: record.totalHours || null,
+      };
+    });
 
-      setAttendance(structuredAttendance);
-      setSpinner(false);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    setAttendance(structuredAttendance);
+    setSpinner(false);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 
   const months = [
     "January",
@@ -122,44 +124,44 @@ const UserListCompact = () => {
     setPermissionHour(attendance[year]?.[months[month]]?.[id]?.[`${day}_hours`] || "");
   };
 
-  const confirmAttendance = async () => {
-    if (!selected) return;
+  // const confirmAttendance = async () => {
+  //   if (!selected) return;
 
-    const attendanceData = {
-      employeeId: selected.id,
-      date: `${year}-${month + 1}-${selected.day}`,
-      status: tempStatus,
-      hours: tempStatus === "permission" ? permissionHour : null,
-    };
+  //   const attendanceData = {
+  //     employeeId: selected.id,
+  //     date: `${year}-${month + 1}-${selected.day}`,
+  //     status: tempStatus,
+  //     hours: tempStatus === "permission" ? permissionHour : null,
+  //   };
 
-    try {
-      const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/attendance`, attendanceData);
-      console.log("Attendance Saved:", response.data);
+  //   try {
+  //     const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/attendance`, attendanceData);
+  //     console.log("Attendance Saved:", response.data);
 
-      // Update local state after successful save
-      setAttendance((prev) => ({
-        ...prev,
-        [year]: {
-          ...prev[year],
-          [months[month]]: {
-            ...prev[year]?.[months[month]],
-            [selected.id]: {
-              ...prev[year]?.[months[month]]?.[selected.id],
-              [selected.day]: tempStatus,
-              [`${selected.day}_hours`]: tempStatus === "permission" ? permissionHour : undefined,
-            },
-          },
-        },
-      }));
+  //     // Update local state after successful save
+  //     setAttendance((prev) => ({
+  //       ...prev,
+  //       [year]: {
+  //         ...prev[year],
+  //         [months[month]]: {
+  //           ...prev[year]?.[months[month]],
+  //           [selected.id]: {
+  //             ...prev[year]?.[months[month]]?.[selected.id],
+  //             [selected.day]: tempStatus,
+  //             [`${selected.day}_hours`]: tempStatus === "permission" ? permissionHour : undefined,
+  //           },
+  //         },
+  //       },
+  //     }));
 
-      setDialogOpen(false);
-      setTempStatus(null);
-      fetchAttendance();
-      setPermissionHour("");
-    } catch (error) {
-      console.error("Error saving attendance:", error);
-    }
-  };
+  //     setDialogOpen(false);
+  //     setTempStatus(null);
+  //     fetchAttendance();
+  //     setPermissionHour("");
+  //   } catch (error) {
+  //     console.error("Error saving attendance:", error);
+  //   }
+  // };
 
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
@@ -332,6 +334,31 @@ const UserListCompact = () => {
 
             <div style={{ padding: "16px", maxWidth: "100%", margin: "0 auto", overflowX: "auto" }}>
               <div style={{ border: "1px solid #ccc", borderRadius: "8px", padding: "16px", overflowX: "auto" }}>
+                <div
+  style={{
+    display: "flex",
+    gap: "20px",
+    marginBottom: "16px",
+    alignItems: "center",
+    flexWrap: "wrap",
+  }}
+>
+  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+    <div style={{ width: "18px", height: "18px", backgroundColor: "#5DB996", borderRadius: "4px" }}></div>
+    <span style={{ fontSize: "14px" }}>Completed Day (Checked-out)</span>
+  </div>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+    <div style={{ width: "18px", height: "18px", backgroundColor: "#4F46E5", borderRadius: "4px" }}></div>
+    <span style={{ fontSize: "14px" }}>Currently Working (Checked-in)</span>
+  </div>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+    <div style={{ width: "18px", height: "18px", backgroundColor: "#ddd", borderRadius: "4px" }}></div>
+    <span style={{ fontSize: "14px" }}>No Attendance (Absent)</span>
+  </div>
+</div>
+
                 {spinner && (
                   <div
                     style={{ display: "flex", justifyContent: "center" }}
@@ -384,15 +411,12 @@ const UserListCompact = () => {
                                   justifyContent: "center",
                                   borderRadius: "4px",
                                   backgroundColor:
-                                    status === "present"
-                                      ? "#5DB996"
-                                      : status === "half"
-                                        ? "#FFC145"
-                                        : status === "permission"
-                                          ? "#D69ADE"
-                                          : status === "absent"
-                                            ? "red"
-                                            : "#ddd",
+  status === "present"
+    ? "#5DB996"
+    : status === "working"
+    ? "#4F46E5"
+    : "#ddd",
+
                                   color: status === "absent" ? "white" : "black",
                                   fontWeight: "bold",
                                   position: "relative",
@@ -495,7 +519,7 @@ const UserListCompact = () => {
                         color="primary"
                         className="btn-icon"
                         disabled={!tempStatus}
-                        onClick={confirmAttendance}
+                       onClick={() => {}}
                         size="md"
                         style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}
                       >
