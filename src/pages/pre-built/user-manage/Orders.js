@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Content from "../../../layout/content/Content";
 import html2pdf from "html2pdf.js";
+import DatePicker from "react-multi-date-picker";
 import Head from "../../../layout/head/Head";
 import "./staff.css";
 import {
@@ -19,7 +20,7 @@ import { Modal, ModalBody, UncontrolledDropdown, DropdownToggle, DropdownMenu, D
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
+const [selectedDates, setSelectedDates] = useState([]);
 
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
@@ -30,6 +31,10 @@ const Orders = () => {
   const [pdfOrder, setPdfOrder] = useState(null);
   const itemPerPage = 10;
 const [currentPage, setCurrentPage] = useState(1);
+const [confirmModal, setConfirmModal] = useState(false);
+const [actionType, setActionType] = useState(null); 
+const [actionOrderId, setActionOrderId] = useState(null);
+
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
@@ -119,12 +124,20 @@ const downloadOrderDirect = (order) => {
   }
 
   // DATE FILTER
-  if (selectedDate) {
-    data = data.filter((o) => {
-      const orderDate = new Date(o.createdAt).toISOString().split("T")[0];
-      return orderDate === selectedDate;
-    });
-  }
+ if (selectedDates.length > 0) {
+  const formattedDates = selectedDates.map((d) =>
+    d.format("YYYY-MM-DD")
+  );
+
+  data = data.filter((o) => {
+    const orderDate = new Date(o.createdAt)
+      .toISOString()
+      .split("T")[0];
+
+    return formattedDates.includes(orderDate);
+  });
+}
+
 
   // SEARCH FILTER
   if (search.trim()) {
@@ -137,19 +150,55 @@ const downloadOrderDirect = (order) => {
   }
 
   setFiltered(data);
-}, [search, statusFilter, selectedDate, orders]);
+}, [search, statusFilter, selectedDates, orders]);
+
+const openConfirmModal = (id, type) => {
+  setActionOrderId(id);
+  setActionType(type);
+  setConfirmModal(true);
+};
+
+const confirmAction = async () => {
+  if (!actionOrderId || !actionType) return;
+
+  try {
+    await changeStatus(actionOrderId, actionType);
+    setConfirmModal(false);
+    setActionOrderId(null);
+    setActionType(null);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+ const changeStatus = async (id, status) => {
+  try {
+    const res = await axios.patch(
+      `${process.env.REACT_APP_BACKENDURL}/api/bills/${id}/status`,
+      { orderStatus: status }
+    );
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o._id === id ? { ...o, orderStatus: status } : o
+      )
+    );
+
+    return true; // ✅ important
+  } catch (err) {
+    console.error(err);
+    return false; // ✅ important
+  }
+};
 
 
-  const changeStatus = async (id, status) => {
-    try {
-      await axios.patch(`${process.env.REACT_APP_BACKENDURL}/api/bills/${id}/status`, { orderStatus: status });
-      setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const statusColor = (s) => {
+  if (s === "approved") return "success";
+  if (s === "rejected") return "danger";
+  if (s === "delivered") return "primary";
+  return "warning"; // pending
+};
 
-  const statusColor = (s) => (s === "approved" ? "success" : s === "rejected" ? "danger" : "warning");
 
 const indexOfLastItem = currentPage * itemPerPage;
 const indexOfFirstItem = indexOfLastItem - itemPerPage;
@@ -157,7 +206,7 @@ const indexOfFirstItem = indexOfLastItem - itemPerPage;
 const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
 useEffect(() => {
   setCurrentPage(1);
-}, [search, statusFilter, selectedDate]);
+}, [search, statusFilter, selectedDates]);
 const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
@@ -175,29 +224,23 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
           
             <div className="d-flex align-items-center gap-5">
 <div className="position-relative">
-  <Icon
-    name="calendar"
-    className="position-absolute"
-    style={{
-      left: "100px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      fontSize: "16px",
-      color: "#8094ae",
-      pointerEvents: "none",
-    }}
-  />
-  <input
-    type="date"
-    className="form-control form-control-sm ps-5"
-    style={{
-      width: "130px",
-      borderRadius: "8px",
-      border: "1px solid #dbdfea",
-    }}
-    value={selectedDate}
-    onChange={(e) => setSelectedDate(e.target.value)}
-  />
+ 
+  <DatePicker
+  multiple
+  value={selectedDates}
+  onChange={setSelectedDates}
+  format="YYYY-MM-DD"
+   placeholder="Select dates"
+  style={{
+    width: "110px",
+    borderRadius: "8px",
+    border: "1px solid #dbdfea",
+    height: "31px",
+    fontSize: "14px",
+  }}
+  inputClass="form-control form-control-sm ps-5"
+/>
+
 </div>
 
  
@@ -346,10 +389,11 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                           <DropdownMenu right>
                             {order.orderStatus === "pending" && (
                               <>
-                                <DropdownItem onClick={() => changeStatus(order._id, "approved")}>
+                               <DropdownItem onClick={() => openConfirmModal(order._id, "approved")}>
                                   <Icon name="check-circle" /> Approve
                                 </DropdownItem>
-                                <DropdownItem onClick={() => changeStatus(order._id, "rejected")}>
+                                <DropdownItem onClick={() => openConfirmModal(order._id, "rejected")}>
+
                                   <Icon name="cross-circle" /> Reject
                                 </DropdownItem>
                               </>
@@ -628,6 +672,39 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
     )}
   </div>
 </div>
+<Modal isOpen={confirmModal} centered>
+  <ModalBody className="text-center p-4">
+    <h5 className="mb-3">
+      {actionType === "approved"
+        ? "Confirm Order Approval"
+        : "Confirm Order Rejection"}
+    </h5>
+
+    <p>
+      Are you sure you want to{" "}
+      <strong>
+        {actionType === "approved" ? "approve" : "reject"}
+      </strong>{" "}
+      this order?
+    </p>
+
+    <div className="d-flex justify-content-center gap-2 mt-4">
+      <Button
+        color="light"
+        onClick={() => setConfirmModal(false)}
+      >
+        Cancel
+      </Button>
+
+      <Button
+        color={actionType === "approved" ? "success" : "danger"}
+        onClick={confirmAction}
+      >
+        Yes, {actionType === "approved" ? "Approve" : "Reject"}
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
 
 
     </>
