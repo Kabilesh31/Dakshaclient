@@ -4,6 +4,7 @@ import Content from "../../../layout/content/Content";
 import html2pdf from "html2pdf.js";
 import DatePicker from "react-multi-date-picker";
 import Head from "../../../layout/head/Head";
+import { useLocation } from "react-router-dom";
 import "./staff.css";
 import {
   Block,
@@ -34,10 +35,14 @@ const [currentPage, setCurrentPage] = useState(1);
 const [confirmModal, setConfirmModal] = useState(false);
 const [actionType, setActionType] = useState(null); 
 const [actionOrderId, setActionOrderId] = useState(null);
+const [activeHighlight, setActiveHighlight] = useState(null);
 
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
+
+  const location = useLocation();
+const highlightOrderId = location.state?.highlightOrderId;
 
   const downloadPDF = () => {
     if (!modalRef.current) return;
@@ -99,6 +104,25 @@ const downloadOrderDirect = (order) => {
   useEffect(() => {
     fetchOrders();
   }, []);
+useEffect(() => {
+  if (highlightOrderId) {
+    setActiveHighlight(highlightOrderId);
+
+    setTimeout(() => {
+      setActiveHighlight(null);
+    }, 5000); // highlight for 5 seconds
+  }
+}, [highlightOrderId]);
+
+useEffect(() => {
+  if (activeHighlight) {
+    const element = document.getElementById(activeHighlight);
+    element?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }
+}, [activeHighlight]);
 
   const fetchOrders = async () => {
     try {
@@ -345,80 +369,116 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                 </thead>
 
                 {/* Table Body */}
-                <tbody>
-                 {currentItems.length > 0 ? (
-  currentItems.map((order, index) => (
-                    <tr
-                      key={order._id}
-                      className="align-middle"
-                      style={{ borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0", textAlign: "left" }}
+               <tbody>
+  {currentItems.length > 0 ? (
+    currentItems.map((order, index) => {
+      const isHighlighted = order._id === activeHighlight;
+
+      return (
+        <tr
+          key={order._id}
+          id={order._id}
+          className={`align-middle ${
+            isHighlighted ? "highlight-row" : ""
+          }`}
+          style={{
+            borderTop: "1px solid #e0e0e0",
+            borderBottom: "1px solid #e0e0e0",
+            textAlign: "left",
+          }}
+        >
+          <td className="px-3 py-2 text-center">
+            {indexOfFirstItem + index + 1}
+          </td>
+
+          <td className="px-4 py-2 text-start">
+            {new Date(order.createdAt).toLocaleDateString("en-IN")}
+          </td>
+
+          <td className="py-2 text-start">
+            {order.customerName}
+          </td>
+
+          <td
+            className="px-4 py-2 text-start"
+            title={order._id}
+          >
+            #{order._id.slice(0, 4)}...{order._id.slice(-4)}
+          </td>
+
+          <td
+            className="px-4 py-2 text-end"
+            style={{ color: "#66BB6A", fontWeight: 600 }}
+          >
+            ₹ {order.totalAmt}
+          </td>
+
+          <td className="px-4 py-2 text-center">
+            <span
+              className={`tb-status text-${statusColor(
+                order.orderStatus
+              )}`}
+            >
+              {order.orderStatus}
+            </span>
+          </td>
+
+          <td className="px-4 py-2 text-center">
+            <UncontrolledDropdown>
+              <DropdownToggle
+                tag="a"
+                className="btn btn-icon btn-trigger"
+              >
+                <Icon name="more-h" />
+              </DropdownToggle>
+
+              <DropdownMenu right>
+                {order.orderStatus === "pending" && (
+                  <>
+                    <DropdownItem
+                      onClick={() =>
+                        openConfirmModal(order._id, "approved")
+                      }
                     >
-                      <td className="px-3 py-2 text-center">
-      {indexOfFirstItem + index + 1}
-    </td>
-                      
-                      <td className="px-4 py-2 text-start">
-        {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                      <Icon name="check-circle" /> Approve
+                    </DropdownItem>
+
+                    <DropdownItem
+                      onClick={() =>
+                        openConfirmModal(order._id, "rejected")
+                      }
+                    >
+                      <Icon name="cross-circle" /> Reject
+                    </DropdownItem>
+                  </>
+                )}
+
+                <DropdownItem
+                  onClick={() => setSelectedOrder(order)}
+                >
+                  <Icon name="eye" /> View Details
+                </DropdownItem>
+
+                <DropdownItem
+                  onClick={() => downloadOrderDirect(order)}
+                >
+                  <Icon name="download" /> Download PDF
+                </DropdownItem>
+              </DropdownMenu>
+            </UncontrolledDropdown>
+          </td>
+        </tr>
+      );
+    })
+  ) : (
+    <tr>
+      <td colSpan="7" className="text-center py-4 text-muted">
+        No orders found for selected date
       </td>
-                      <td className=" py-2 text-start">{order.customerName}</td>
-                     <td
-  className="px-4 py-2 text-start"
-  title={order._id}
->
-  #{order._id.slice(0, 4)}...{order._id.slice(-4)}
-</td>
-{/* <td className="px-4 py-2 text-center">
-  {order.orderedProducts?.length || 0}
-</td> */}
+    </tr>
+  )}
+</tbody>
 
-                    <td
-  className="px-4 py-2 text-end"
-  style={{ color: "#66BB6A", fontWeight: 600 }}
->
-  ₹ {order.totalAmt}
-</td>
-
-                      <td className="px-4 py-2 text-center">
-                        <span className={`tb-status text-${statusColor(order.orderStatus)}`}>{order.orderStatus}</span>
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                            <Icon name="more-h" />
-                          </DropdownToggle>
-                          <DropdownMenu right>
-                            {order.orderStatus === "pending" && (
-                              <>
-                               <DropdownItem onClick={() => openConfirmModal(order._id, "approved")}>
-                                  <Icon name="check-circle" /> Approve
-                                </DropdownItem>
-                                <DropdownItem onClick={() => openConfirmModal(order._id, "rejected")}>
-
-                                  <Icon name="cross-circle" /> Reject
-                                </DropdownItem>
-                              </>
-                            )}
-                            <DropdownItem onClick={() => setSelectedOrder(order)}>
-                              <Icon name="eye" /> View Details
-                            </DropdownItem>
-                            <DropdownItem onClick={() => downloadOrderDirect(order)}>
-  <Icon name="download" /> Download PDF
-</DropdownItem>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
-                      </td>
-                    </tr>
-                      ))
-) : (
-  <tr>
-    <td colSpan="6" className="text-center py-4 text-muted">
-      No orders found for selected date
-    </td>
-  </tr>
-)}
-
-                  
-                </tbody>
               </table>
               <div className="card-inner">
   {currentItems.length > 0 ? (
