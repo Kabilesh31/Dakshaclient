@@ -44,6 +44,8 @@ const CustomerListCompact = () => {
   const [sort, setSort] = useState("dsc");
   const [routes, setRoutes] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+const [editLoading, setEditLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
@@ -72,18 +74,42 @@ const CustomerListCompact = () => {
     img: null,
   });
 
-  const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-      setData(res.data.filter((c) => !c.isDeleted));
-    } catch {
-      errorToast("Failed to fetch customers");
-    }
-  };
+const fetchCustomers = async () => {
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
+
+    const filtered = res.data.filter((c) => !c.isDeleted);
+
+  
+    const sorted = filtered.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    setData(sorted);
+  } catch {
+    errorToast("Failed to fetch customers");
+  }
+};
 
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  useEffect(() => {
+  if (!data.length) return;
+
+  const sorted = [...data].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+
+    return sort === "asc"
+      ? dateA - dateB   // Oldest first
+      : dateB - dateA;  // Newest first
+  });
+
+  setData(sorted);
+}, [sort]);
+
   const fetchRoutes = async () => {
     try {
       setLoadingRoutes(true);
@@ -145,12 +171,19 @@ const CustomerListCompact = () => {
     }
   };
 
-  const sortFunc = (type) => {
-    const sorted = [...data].sort((a, b) =>
-      type === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-    );
-    setData(sorted);
-  };
+const sortFunc = (type) => {
+  const sorted = [...data].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+
+    return type === "asc"
+      ? dateA - dateB   // Oldest first
+      : dateB - dateA;  // Newest first
+  });
+
+  setData(sorted);
+};
+
 
   const resetForm = () => {
     setFormData({
@@ -174,6 +207,7 @@ const CustomerListCompact = () => {
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+      setAddLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
@@ -198,6 +232,9 @@ const CustomerListCompact = () => {
     } catch {
       errorToast("Add failed");
     }
+    finally {
+    setAddLoading(false);
+  }
   };
 
   const onEditClick = (item) => {
@@ -206,13 +243,17 @@ const CustomerListCompact = () => {
       ...item,
       routeId: item.routeId?._id || item.routeId,
       routeName: item.routeName || "",
-      geoLocation: item.geoLocation || { lat: "", long: "" },
+      geoLocation: {
+      lat: item.geoLocation?.lat || "",
+      long: item.geoLocation?.long || "",
+    },
     });
     setModalEdit(true);
   };
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
+    setEditLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
@@ -235,7 +276,9 @@ const CustomerListCompact = () => {
       fetchCustomers();
     } catch {
       errorToast("Update failed");
-    }
+    }finally {
+    setEditLoading(false);
+  }
   };
 
   const onDeleteConfirm = async () => {
@@ -262,7 +305,14 @@ const CustomerListCompact = () => {
             <BlockHeadContent>
               <BlockTitle tag="h3">Customer List</BlockTitle>
             </BlockHeadContent>
-            <Button color="primary" onClick={() => setModalAdd(true)}>
+            <Button
+  color="primary"
+  onClick={() => {
+    resetForm();       // clear old edit data
+    setModalAdd(true); // open add modal
+  }}
+>
+
               <Icon name="plus" />
             </Button>
           </BlockBetween>
@@ -326,11 +376,8 @@ const CustomerListCompact = () => {
                               <DropdownItem
                                 tag="a"
                                 href="#"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSortState("dsc");
-                                  sortFunc("dsc");
-                                }}
+                                onClick={() => setSort("dsc")}
+
                               >
                                 DESC
                               </DropdownItem>
@@ -339,11 +386,7 @@ const CustomerListCompact = () => {
                               <DropdownItem
                                 tag="a"
                                 href="#"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setSortState("asc");
-                                  sortFunc("asc");
-                                }}
+                                onClick={() => setSort("asc")}
                               >
                                 ASC
                               </DropdownItem>
@@ -415,22 +458,25 @@ const CustomerListCompact = () => {
                 <DataTableItem key={item._id}>
                   {/* Name with image and link */}
                   <DataTableRow>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      {item.img && (
-                        <img
-                          src={item.img}
-                          alt={item.name}
-                          style={{
-                            width: "30px",
-                            height: "30px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      )}
+                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+  <img
+    src={item.img || "/default-avatar.png"}
+    alt={item.name}
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = "/default-avatar.png";
+    }}
+    style={{
+      width: "30px",
+      height: "30px",
+      borderRadius: "50%",
+      objectFit: "cover",
+    }}
+  />
 
-                      <span className="tb-lead">{item.name}</span>
-                    </div>
+  <span className="tb-lead">{item.name}</span>
+</div>
+
                   </DataTableRow>
 
                   <DataTableRow>{item.phone}</DataTableRow>
@@ -493,7 +539,16 @@ const CustomerListCompact = () => {
           </DataTable>
         </Block>
       </Content>
-      <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
+      <Modal
+  isOpen={modalAdd}
+  toggle={() => {
+    setModalAdd(false);
+    resetForm();
+  }}
+  centered
+  size="lg"
+>
+
         <ModalBody>
           <a
             href="#cancel"
@@ -501,6 +556,8 @@ const CustomerListCompact = () => {
             onClick={(e) => {
               e.preventDefault();
               setModalAdd(false);
+resetForm();
+
             }}
           >
             <Icon name="cross-sm" />
@@ -516,6 +573,7 @@ const CustomerListCompact = () => {
                   className="form-control"
                   required
                   value={formData.name}
+                  placeholder="Enter customer name"
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </FormGroup>
@@ -525,12 +583,21 @@ const CustomerListCompact = () => {
               <FormGroup>
                 <label className="form-label">Phone *</label>
                 <input
-                  type="number"
-                  className="form-control"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
+  type="tel"
+  className="form-control"
+  required
+  maxLength="10"
+  pattern="[0-9]{10}"
+  placeholder="Enter mobile number"
+  value={formData.phone}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, ""); // only numbers
+    if (value.length <= 10) {
+      setFormData({ ...formData, phone: value });
+    }
+  }}
+/>
+
               </FormGroup>
             </Col>
 
@@ -538,11 +605,19 @@ const CustomerListCompact = () => {
               <FormGroup>
                 <label className="form-label">Alternate Phone</label>
                 <input
-                  type="number"
-                  className="form-control"
-                  value={formData.phone2}
-                  onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                />
+  type="tel"
+  className="form-control"
+  maxLength="10"
+  placeholder="Enter alternate number (optional)"
+  value={formData.phone2}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, "");
+    if (value.length <= 10) {
+      setFormData({ ...formData, phone2: value });
+    }
+  }}
+/>
+
               </FormGroup>
             </Col>
 
@@ -553,6 +628,7 @@ const CustomerListCompact = () => {
                   className="form-control"
                   rows="2"
                   required
+                  placeholder="Enter address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
@@ -600,6 +676,7 @@ const CustomerListCompact = () => {
                   type="number"
                   className="form-control"
                   value={formData.lineNo}
+                  placeholder="Enter line no"
                   onChange={(e) => setFormData({ ...formData, lineNo: e.target.value })}
                   required
                 />
@@ -631,6 +708,7 @@ const CustomerListCompact = () => {
                   type="number"
                   className="form-control"
                   value={formData.pincode}
+                  placeholder="Enter Pincode"
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   required
                 />
@@ -660,6 +738,7 @@ const CustomerListCompact = () => {
                   className="form-control"
                   value={formData.geoLocation?.lat}
                   required
+                  placeholder="Enter Latitude"
                   onChange={(e) =>
                     setFormData({ ...formData, geoLocation: { ...formData.geoLocation, lat: e.target.value } })
                   }
@@ -672,6 +751,7 @@ const CustomerListCompact = () => {
                 <label className="form-label">Longitude</label>
                 <input
                   className="form-control"
+                  placeholder="Enter Longitude"
                   value={formData.geoLocation?.long}
                   required
                   onChange={(e) =>
@@ -693,9 +773,17 @@ const CustomerListCompact = () => {
             </Col>
 
             <Col md="12" className="text-end">
-              <Button color="primary" type="submit">
-                Save Customer
-              </Button>
+              <Button color="primary" type="submit" disabled={addLoading}>
+  {addLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" />
+      Saving...
+    </>
+  ) : (
+    "Save Customer"
+  )}
+</Button>
+
             </Col>
           </Form>
         </ModalBody>
@@ -897,9 +985,17 @@ const CustomerListCompact = () => {
             </Col>
 
             <Col md="12" className="text-end">
-              <Button color="primary" type="submit">
-                Save Customer
-              </Button>
+              <Button color="primary" type="submit" disabled={editLoading}>
+  {editLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" />
+      Updating...
+    </>
+  ) : (
+    "Save Customer"
+  )}
+</Button>
+
             </Col>
           </Form>
         </ModalBody>

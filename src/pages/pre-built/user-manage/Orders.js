@@ -733,38 +733,57 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
   </div>
 </div>
 <Modal isOpen={confirmModal} centered>
-  <ModalBody className="text-center p-4">
-    <h5 className="mb-3">
+  <ModalBody className="p-4">
+
+    <h5 className="fw-bold mb-3">
       {actionType === "approved"
-        ? "Confirm Order Approval"
-        : "Confirm Order Rejection"}
+        ? "Approve Order"
+        : "Reject Order"}
     </h5>
 
-    <p>
+    <p className="mb-4">
       Are you sure you want to{" "}
-      <strong>
+      <span className="fw-bold">
         {actionType === "approved" ? "approve" : "reject"}
-      </strong>{" "}
+      </span>{" "}
       this order?
     </p>
 
-    <div className="d-flex justify-content-center gap-2 mt-4">
+    <div className="d-flex justify-content-end" style={{ gap: "18px" }}>
       <Button
-        color="light"
+        style={{
+          backgroundColor: "#eeeeee",
+          border: "1px solid #dddddd",
+          color: "#333",
+          fontWeight: "600",
+          padding: "10px 32px",
+          borderRadius: "0",
+          fontSize: "15px",
+        }}
         onClick={() => setConfirmModal(false)}
       >
         Cancel
       </Button>
 
       <Button
-        color={actionType === "approved" ? "success" : "danger"}
+        style={{
+          backgroundColor: "#888890",
+          border: "1px solid #888888",
+          color: "#fff",
+          fontWeight: "600",
+          padding: "10px 36px",
+          borderRadius: "0",
+          fontSize: "15px",
+        }}
         onClick={confirmAction}
       >
-        Yes, {actionType === "approved" ? "Approve" : "Reject"}
+        Confirm
       </Button>
     </div>
+
   </ModalBody>
 </Modal>
+
 
 
     </>

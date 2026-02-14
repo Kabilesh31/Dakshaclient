@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import {
   Block,
   BlockBetween,
@@ -47,6 +49,9 @@ const VehicleListCompact = () => {
   const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
+  const [addLoading, setAddLoading] = useState(false);
+const [editLoading, setEditLoading] = useState(false);
+
 
   const [modalAdd, setModalAdd] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
@@ -72,11 +77,10 @@ const VehicleListCompact = () => {
     }
   };
 
-  useEffect(() => {
-    if (data.length === 0) {
-      fetchVehicles();
-    }
-  }, [data]);
+ useEffect(() => {
+  fetchVehicles();
+}, []);
+
 
   /* ================= PAGINATION ================= */
   useEffect(() => {
@@ -106,17 +110,19 @@ const VehicleListCompact = () => {
   };
 
   /* ================= CRUD ================= */
-  const resetForm = () => {
-    setFormData({
-      vehicleNumber: "",
-      vehicleType: "",
-      makeYear: "",
-      insuranceExpiry: null,
-      fcUpto: null,
-    });
-    setUploadedFile(null);
-    setSelectedId(null);
-  };
+const resetForm = () => {
+  setFormData({
+    vehicleNumber: "",
+    vehicleType: "",
+    makeYear: "",
+    insuranceExpiry: null,
+    fcUpto: null,
+    img: "",
+  });
+
+  setUploadedFile(null);
+  setSelectedId(null);
+};
 
   // ================= ADD VEHICLE =================
   const openAddModal = () => {
@@ -126,6 +132,7 @@ const VehicleListCompact = () => {
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+    setAddLoading(true);
 
     const fd = new FormData();
 
@@ -157,25 +164,31 @@ const VehicleListCompact = () => {
     } catch (err) {
       console.error(err);
       errorToast("Add vehicle failed");
-    }
+    }finally {
+    setAddLoading(false);
+  }
   };
 
   // ================= EDIT VEHICLE =================
   const onEditClick = (item) => {
     setSelectedId(item._id);
     setFormData({
-      vehicleNumber: item.vehicleNumber,
-      vehicleType: item.vehicleType,
-      makeYear: item.makeYear,
-      insuranceExpiry: item.insuranceExpiry ? new Date(item.insuranceExpiry) : null,
-      fcUpto: item.fcUpto ? new Date(item.fcUpto) : null,
-    });
+  vehicleNumber: item.vehicleNumber,
+  vehicleType: item.vehicleType,
+  makeYear: item.makeYear,
+  insuranceExpiry: item.insuranceExpiry ? new Date(item.insuranceExpiry) : null,
+  fcUpto: item.fcUpto ? new Date(item.fcUpto) : null,
+  img: item.img || "",
+});
+
     setUploadedFile(null);
     setModalEdit(true);
   };
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
+    setEditLoading(true);
+
     const fd = new FormData();
     Object.keys(formData).forEach((k) => {
       if (formData[k]) fd.append(k, formData[k] instanceof Date ? formData[k].toISOString() : formData[k]);
@@ -190,7 +203,9 @@ const VehicleListCompact = () => {
       fetchVehicles();
     } catch {
       errorToast("Update failed");
-    }
+    }finally {
+    setEditLoading(false);
+  }
   };
 
   // ================= DELETE VEHICLE =================
@@ -204,6 +219,40 @@ const VehicleListCompact = () => {
       errorToast("Delete failed");
     }
   };
+const exportToExcel = () => {
+  if (!data || data.length === 0) {
+    errorToast("No data to export");
+    return;
+  }
+
+  const formattedData = data.map((item) => ({
+    "Vehicle Number": item.vehicleNumber,
+    "Vehicle Type": item.vehicleType,
+    "Make Year": item.makeYear,
+    "Insurance Expiry": item.insuranceExpiry
+      ? new Date(item.insuranceExpiry).toLocaleDateString()
+      : "--",
+    "FC Upto": item.fcUpto
+      ? new Date(item.fcUpto).toLocaleDateString()
+      : "--",
+    Status: item.status ? "Active" : "Inactive",
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(formattedData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Vehicles");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+  });
+
+  saveAs(blob, "Vehicle_List.xlsx");
+};
 
   /* ================= UI ================= */
   return (
@@ -232,15 +281,17 @@ const VehicleListCompact = () => {
                   <ul className="nk-block-tools g-3">
                     <li>
                       <a
-                        href="#export"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                        }}
-                        className="btn btn-white btn-outline-light"
-                      >
-                        <Icon name="download-cloud"></Icon>
-                        <span>Export</span>
-                      </a>
+  href="#export"
+  onClick={(ev) => {
+    ev.preventDefault();
+    exportToExcel();
+  }}
+  className="btn btn-white btn-outline-light"
+>
+  <Icon name="download-cloud"></Icon>
+  <span>Export</span>
+</a>
+
                     </li>
                     <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={openAddModal}>
@@ -513,44 +564,70 @@ const VehicleListCompact = () => {
                 <FormGroup>
                   <label className="form-label">* Vehicle Number</label>
                   <input
-                    className="form-control"
-                    type="text"
-                    placeholder="Enter Vehicle Number"
-                    value={formData.vehicleNumber}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        vehicleNumber: e.target.value.toUpperCase(),
-                      })
-                    }
-                    required
-                  />
+  className="form-control"
+  type="text"
+  placeholder="Enter Vehicle Number"
+  value={formData.vehicleNumber}
+  onChange={(e) => {
+    let value = e.target.value
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, ""); // Allow only letters, numbers, space
+
+    setFormData({
+      ...formData,
+      vehicleNumber: value,
+    });
+  }}
+  required
+/>
+
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Vehicle Type</label>
                   <input
-                    className="form-control"
-                    type="text"
-                    placeholder="Enter Vehicle Type"
-                    value={formData.vehicleType}
-                    onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                    required
-                  />
+  className="form-control"
+  type="text"
+  placeholder="Enter Vehicle Type"
+  value={formData.vehicleType}
+  onChange={(e) => {
+    let value = e.target.value.replace(/[^a-zA-Z\s]/g, ""); // Letters + space only
+
+    setFormData({
+      ...formData,
+      vehicleType: value,
+    });
+  }}
+  required
+/>
+  
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Make Year</label>
                   <input
-                    className="form-control"
-                    type="number"
-                    placeholder="Enter Make Year"
-                    value={formData.makeYear}
-                    onChange={(e) => setFormData({ ...formData, makeYear: e.target.value })}
-                    required
-                  />
+  className="form-control"
+  type="number"
+  placeholder="Enter Make Year"
+  value={formData.makeYear}
+  min="1900"
+  max={new Date().getFullYear()}
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Allow only 4 digits
+    if (value.length > 4) return;
+
+    setFormData({
+      ...formData,
+      makeYear: value,
+    });
+  }}
+  required
+/>
+
                 </FormGroup>
               </Col>
               <Col md="6">
@@ -581,16 +658,24 @@ const VehicleListCompact = () => {
                 <Dropzone multiple={false} onDrop={(acceptedFiles) => setUploadedFile(acceptedFiles[0])}>
                   {({ getRootProps, getInputProps }) => (
                     <div {...getRootProps()} className="dropzone mt-2">
-                      <input {...getInputProps()} required />
+                      <input {...getInputProps()} />
                       {uploadedFile ? <p>{uploadedFile.name}</p> : <p>Drag & drop an image or click to select</p>}
                     </div>
                   )}
                 </Dropzone>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Save
-                </Button>
+                <Button color="primary" type="submit" disabled={addLoading}>
+  {addLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Saving...
+    </>
+  ) : (
+    "Save"
+  )}
+</Button>
+
               </Col>
             </Form>
           </div>
@@ -681,7 +766,7 @@ const VehicleListCompact = () => {
                 <Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
                   {({ getRootProps, getInputProps }) => (
                     <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
-                      <input {...getInputProps()} required />
+                      <input {...getInputProps()} />
 
                       {/* Show preview if file selected */}
                       {uploadedFile ? (
@@ -715,9 +800,17 @@ const VehicleListCompact = () => {
                 </Dropzone>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Update
-                </Button>
+                <Button color="primary" type="submit" disabled={editLoading}>
+  {editLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Updating...
+    </>
+  ) : (
+    "Update"
+  )}
+</Button>
+
               </Col>
             </Form>
           </div>
@@ -726,22 +819,36 @@ const VehicleListCompact = () => {
 
       {/* DELETE MODAL */}
       <Modal isOpen={modalDelete} toggle={() => setModalDelete(false)} centered>
-        <ModalBody className="text-center">
-          <Icon name="alert-circle" className="text-danger mb-2" />
-          <h5>Are you sure to delete?</h5>
-          <ul className="d-flex justify-content-center mt-3">
-            <li>
-              <Button color="danger" onClick={onDeleteConfirm}>
-                Delete
-              </Button>
-            </li>
-            <li>
-              <Button color="light" onClick={() => setModalDelete(false)}>
-                Cancel
-              </Button>
-            </li>
-          </ul>
-        </ModalBody>
+        <ModalBody className="text-center p-4">
+  <Icon
+    name="alert-circle"
+    className="text-danger mb-3"
+    style={{ fontSize: "40px" }}
+  />
+
+  <h5 className="mb-4 fw-bold">
+    Are you sure you want to delete?
+  </h5>
+
+  <div className="d-flex justify-content-center mt-3">
+    <Button
+      color="danger"
+      className="px-4 me-4 mr-2"
+      onClick={onDeleteConfirm}
+    >
+      Delete
+    </Button>
+
+    <Button
+      color="secondary"
+      className="px-4"
+      onClick={() => setModalDelete(false)}
+    >
+      Cancel
+    </Button>
+  </div>
+</ModalBody>
+
       </Modal>
     </React.Fragment>
   );

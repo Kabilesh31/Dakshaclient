@@ -47,6 +47,9 @@ const ProductsListCompact = () => {
   const [onSearchText, setSearchText] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
+  const [addLoading, setAddLoading] = useState(false);
+const [editLoading, setEditLoading] = useState(false);
+
   const [modal, setModal] = useState({
     edit: false,
     add: false,
@@ -223,6 +226,7 @@ const ProductsListCompact = () => {
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+     setAddLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -260,11 +264,14 @@ const ProductsListCompact = () => {
     } catch (err) {
       console.error(err);
       errorToast("Add product failed");
-    }
+    } finally {
+    setAddLoading(false);
+  }
   };
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
+    setEditLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -300,7 +307,9 @@ const ProductsListCompact = () => {
     } catch (err) {
       console.error(err);
       errorToast("Update failed");
-    }
+    }finally {
+    setEditLoading(false);
+  }
   };
 
   const onEditClick = (item) => {
@@ -864,9 +873,17 @@ const ProductsListCompact = () => {
               </Col>
 
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Save Product
-                </Button>
+                <Button color="primary" type="submit" disabled={addLoading}>
+  {addLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Saving...
+    </>
+  ) : (
+    "Save Product"
+  )}
+</Button>
+
               </Col>
             </Form>
           </ModalBody>
@@ -995,9 +1012,17 @@ const ProductsListCompact = () => {
               </Col>
 
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Update Product
-                </Button>
+                <Button color="primary" type="submit" disabled={editLoading}>
+  {editLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Updating...
+    </>
+  ) : (
+    "Update Product"
+  )}
+</Button>
+
               </Col>
             </Form>
           </ModalBody>

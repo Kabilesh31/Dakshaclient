@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import {
   Block,
   BlockBetween,
@@ -45,6 +47,8 @@ const StaffListCompact = () => {
   const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
+const [addLoading, setAddLoading] = useState(false);
+const [editLoading, setEditLoading] = useState(false);
 
   const [modalAdd, setModalAdd] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
@@ -55,12 +59,12 @@ const StaffListCompact = () => {
     name: "",
     type: "",
     email: "",
-    mobile: " ",
+    mobile: "",
     staffStatus: "active",
     staffCode: "",
     img: null,
     bloodGroup: "",
-    dutyStatus: "active",
+    dutyStatus: "inactive",
     documents: [],
   });
 
@@ -109,12 +113,12 @@ const StaffListCompact = () => {
       name: "",
       type: "",
       email: "",
-      mobile: " ",
+      mobile: "",
       staffStatus: "active",
       staffCode: "",
       img: null,
       bloodGroup: "",
-      dutyStatus: "active",
+      dutyStatus: "inactive",
       documents: [],
     });
     setSelectedId(null);
@@ -128,12 +132,14 @@ const StaffListCompact = () => {
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+    setAddLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
       if (k === "documents" && formData.documents.length > 0) {
         formData.documents.forEach((file) => fd.append("documents", file));
-      } else if (formData[k] !== undefined && formData[k] !== null) {
+      } else if (formData[k] !== undefined && formData[k] !== null && formData[k] !== "")
+ {
         fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
       }
     });
@@ -149,7 +155,9 @@ const StaffListCompact = () => {
     } catch (err) {
       console.error(err);
       errorToast("Add staff failed");
-    }
+    }finally {
+    setAddLoading(false);
+  }
   };
 
   // ================= EDIT STAFF =================
@@ -172,6 +180,7 @@ const StaffListCompact = () => {
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
+    setEditLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
@@ -191,7 +200,9 @@ const StaffListCompact = () => {
     } catch (err) {
       console.error(err);
       errorToast("Update failed");
-    }
+    }finally {
+    setEditLoading(false);
+  }
   };
 
   // ================= DELETE STAFF =================
@@ -205,6 +216,42 @@ const StaffListCompact = () => {
       errorToast("Delete failed");
     }
   };
+const exportToExcel = () => {
+  if (!data || data.length === 0) {
+    errorToast("No data to export");
+    return;
+  }
+
+  // Format data for Excel
+  const exportData = data.map((item, index) => ({
+    SNo: index + 1,
+    Name: item.name,
+    Email: item.email,
+    Mobile: item.mobile,
+    Type: item.type,
+    StaffCode: item.staffCode || "--",
+    BloodGroup: item.bloodGroup || "--",
+    DutyStatus: item.dutyStatus,
+    StaffStatus: item.staffStatus,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Staff List");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+  });
+
+  saveAs(blob, "Staff_List.xlsx");
+};
 
   /* ================= UI ================= */
   return (
@@ -215,7 +262,7 @@ const StaffListCompact = () => {
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3" page>
-                Staff Listssss
+                Staff List
               </BlockTitle>
 
               <BlockDes className="text-soft">
@@ -235,9 +282,7 @@ const StaffListCompact = () => {
                     <li>
                       <a
                         href="#export"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                        }}
+                        onClick={exportToExcel}
                         className="btn btn-white btn-outline-light"
                       >
                         <Icon name="download-cloud"></Icon>
@@ -415,12 +460,18 @@ const StaffListCompact = () => {
                 <DataTableItem key={item._id}>
                   <DataTableRow>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <img
-                        src={item.img}
-                        alt="profile"
-                        style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }}
-                      />
-                    </div>
+  <img
+    src={item.img ? item.img : "/default-avatar.png"}
+    alt="profile"
+    style={{
+      width: "30px",
+      height: "30px",
+      borderRadius: "50%",
+      objectFit: "cover",
+    }}
+  />
+</div>
+
                   </DataTableRow>
 
                   <DataTableRow>
@@ -554,7 +605,12 @@ const StaffListCompact = () => {
                     className="form-control"
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    onChange={(e) => {
+  const value = e.target.value.replace(/\D/g, ""); // only numbers
+  if (value.length <= 10) {
+    setFormData({ ...formData, mobile: value });
+  }
+}}
                     required
                   />
                 </FormGroup>
@@ -563,14 +619,19 @@ const StaffListCompact = () => {
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Type</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter Type"
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    required
-                  />
+                  <select
+  className="form-control"
+  value={formData.type}
+  onChange={(e) =>
+    setFormData({ ...formData, type: e.target.value })
+  }
+  required
+>
+  <option value="">Select Type</option>
+  <option value="sales">Sales</option>
+  <option value="delivery">Delivery</option>
+</select>
+
                 </FormGroup>
               </Col>
 
@@ -603,19 +664,22 @@ const StaffListCompact = () => {
                 </FormGroup>
               </Col>
               <Col md="6">
-                <FormGroup>
-                  <label className="form-label">Duty Status</label>
-                  <select
-                    className="form-control"
-                    value={formData.dutyStatus}
-                    onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
-                    required
-                  >
-                    <option value="active">active</option>
-                    <option value="inactive">inactive</option>
-                  </select>
-                </FormGroup>
-              </Col>
+  <FormGroup>
+    <label className="form-label">Duty Status</label>
+    <select
+      className="form-control"
+      value={formData.dutyStatus}
+      onChange={(e) =>
+        setFormData({ ...formData, dutyStatus: e.target.value })
+      }
+      disabled   // 👈 This makes it disabled
+    >
+      <option value="active">active</option>
+      <option value="inactive">inactive</option>
+    </select>
+  </FormGroup>
+</Col>
+
 
               <Col md="6">
                 <FormGroup>
@@ -643,7 +707,7 @@ const StaffListCompact = () => {
                   <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
                     {({ getRootProps, getInputProps }) => (
                       <div {...getRootProps()} className="dropzone mt-2">
-                        <input {...getInputProps()} required />
+                        <input {...getInputProps()} />
                         {formData.img ? <p>{formData.img.name}</p> : <p>Drag & drop an image or click to select</p>}
                       </div>
                     )}
@@ -675,9 +739,17 @@ const StaffListCompact = () => {
               </Col>
 
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Save
-                </Button>
+                <Button color="primary" type="submit" disabled={addLoading}>
+  {addLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Saving...
+    </>
+  ) : (
+    "Save"
+  )}
+</Button>
+
               </Col>
             </Form>
           </div>
@@ -735,7 +807,12 @@ const StaffListCompact = () => {
                     className="form-control"
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                   onChange={(e) => {
+  const value = e.target.value.replace(/\D/g, ""); // only numbers
+  if (value.length <= 10) {
+    setFormData({ ...formData, mobile: value });
+  }
+}}
                     required
                   />
                 </FormGroup>
@@ -867,9 +944,17 @@ const StaffListCompact = () => {
               </Col>
 
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Update
-                </Button>
+                <Button color="primary" type="submit" disabled={editLoading}>
+  {editLoading ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2"></span>
+      Updating...
+    </>
+  ) : (
+    "Update"
+  )}
+</Button>
+
               </Col>
             </Form>
           </div>
