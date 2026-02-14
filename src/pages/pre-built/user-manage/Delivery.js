@@ -15,7 +15,6 @@ import {
   Icon,
   PreviewCard,
   PreviewAltCard,
-  TooltipComponent,
 } from "../../../components/Component";
 import { useForm } from "react-hook-form";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
@@ -46,21 +45,6 @@ const Delivery = () => {
   const [isSavingAlignment, setIsSavingAlignment] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
   const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
-  
-
-  useEffect(() => {
-    console.log("Routes state:", routes);
-    console.log("Is routes array?", Array.isArray(routes));
-    console.log("Route assignments:", routeAssignments);
-    console.log("Is routeAssignments array?", Array.isArray(routeAssignments));
-  }, [routes, routeAssignments]);
-
-
-  useEffect(() => {
-    fetchStaff();
-    fetchRoutes();
-    fetchCustomers();
-  }, []);
 
   const fetchCustomersByAssignedStaff = async() => {
     try{
@@ -73,27 +57,31 @@ const Delivery = () => {
     }
   }
 
+  useEffect(() => {
+    fetchStaff();
+    fetchRoutes();
+    fetchCustomers();
+  }, []);
+
  useEffect(() => {
   const loadAssignedCustomers = async () => {
     if (!selectedStaffId) {
       setAssignedCustomerDatas([]);
       return;
     }
-
-    // 🔎 Check if staff has route assigned on selectedDate
+    
     const staffAssignments = routeAssignments.filter(
       (assignment) =>
         assignment.staffId?._id?.toString() === selectedStaffId.toString() &&
         assignment.date === selectedDate
     );
 
-    // ❌ If no route assigned → clear customers
     if (staffAssignments.length === 0) {
       setAssignedCustomerDatas([]);
       return;
     }
 
-    // ✅ If assigned → fetch customers
+    // If assigned → fetch customers
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`
@@ -138,7 +126,7 @@ const Delivery = () => {
 
 
     fetchLocation();
-    const interval = setInterval(fetchLocation, 5000);
+    const interval = setInterval(fetchLocation, 20000);
 
     return () => clearInterval(interval);
   }, [selectedTrackStaff]);
@@ -539,6 +527,10 @@ const currentLineNo = firstPendingCustomer
         </Alert>
       );
     }
+
+    const handlesRefresh = () => {
+      fetchStaff();
+    };
     return (
       <div className="row g-4">
         <div className="col-12">
@@ -549,8 +541,9 @@ const currentLineNo = firstPendingCustomer
                 <p className="text-soft mb-0">Assign routes to delivery staff (max 2 routes per staff per day)</p>
               </div>
               <div className="d-flex gap-2 align-items-center">
-                <div className="form-group" style={{ width: '200px' }}>
-                  <label className="form-label">Select Date</label>
+                
+                <div style={{marginRight : "10px"}} >
+              
                   <Input
                     type="date"
                     value={selectedDate}
@@ -558,6 +551,15 @@ const currentLineNo = firstPendingCustomer
                     className="form-control"
                   />
                 </div>
+
+                {/* Refresh Button */}
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handlesRefresh}
+                >
+                  Refresh
+                </button>
               </div>
             </div>
 
@@ -1134,10 +1136,11 @@ const getRailIcon = (status) => {
 
   return <Icon name="clock" className="text-muted" />;
 };
-
-
-
-  
+  const handleRefresh = () => {
+    fetchCustomersByAssignedStaff()
+    fetchCustomers()
+    fetchStaff()
+  };
     return (
       <div className="row g-4">
         <div className="col-12">
@@ -1145,11 +1148,14 @@ const getRailIcon = (status) => {
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <h5 className="title">Live Delivery Tracking</h5>
-                <p className="text-soft mb-0">Track deliveries in real-time on the map</p>
+                <p className="text-soft mb-0">
+                  Track deliveries in real-time on the map
+                </p>
               </div>
-              <div className="d-flex gap-2 align-items-center">
-                <div className="form-group" style={{ width: '200px' }}>
-                  <label className="form-label">Select Date</label>
+
+              <div className="d-flex gap-2 align-items-end">
+                <div style={{marginRight : "10px"}} >
+              
                   <Input
                     type="date"
                     value={selectedDate}
@@ -1157,6 +1163,15 @@ const getRailIcon = (status) => {
                     className="form-control"
                   />
                 </div>
+
+                {/* Refresh Button */}
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleRefresh}
+                >
+                  Refresh
+                </button>
               </div>
             </div>
 
