@@ -52,6 +52,7 @@ const UserListCompact = () => {
   const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(true);
   const [onSearchText, setSearchText] = useState("");
+  const [originalData, setOriginalData] = useState([]);
   const [modal, setModal] = useState({
     edit: false,
     add: false,
@@ -77,42 +78,47 @@ const UserListCompact = () => {
 
   // fetch users list
   const fetchUserData = async () => {
-    try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/user");
-      setData(response.data.data.reverse());
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/user");
+    const reversed = response.data.data.reverse();
+    setOriginalData(reversed);
+    setData(reversed);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 
   // Sorting data
-  const sortFunc = (params) => {
-    let defaultData = data;
-    if (params === "asc") {
-      let sortedData = defaultData.sort((a, b) => a.name.localeCompare(b.name));
-      setData([...sortedData]);
-    } else if (params === "dsc") {
-      let sortedData = defaultData.sort((a, b) => b.name.localeCompare(a.name));
-      setData([...sortedData]);
+  const sortFunc = (order) => {
+  let sorted = [...data].sort((a, b) => {
+    if (order === "asc") {
+      return a.name.localeCompare(b.name);
+    } else {
+      return b.name.localeCompare(a.name);
     }
-  };
+  });
+
+  setData(sorted);
+  setSortState(order);
+};
+
 
   localStorage.setItem("isGridView", false);
 
   // Changing state value when searching name
-  useEffect(() => {
-    if (onSearchText !== "") {
-      const filteredObject = data.filter((item) => {
-        return (
-          item.name.toLowerCase().includes(onSearchText.toLowerCase()) ||
-          item.email.toLowerCase().includes(onSearchText.toLowerCase())
-        );
-      });
-      setData([...filteredObject]);
-    } else {
-      setData([...data]);
-    }
-  }, [onSearchText, setData]);
+ useEffect(() => {
+  if (onSearchText !== "") {
+    const filtered = originalData.filter((item) =>
+      item.name.toLowerCase().includes(onSearchText.toLowerCase()) ||
+      item.email.toLowerCase().includes(onSearchText.toLowerCase())
+    );
+    setData(filtered);
+  } else {
+    setData(originalData);
+  }
+}, [onSearchText, originalData]);
+
 
   // onChange function for searching name
   const onFilterChange = (e) => {
@@ -719,7 +725,7 @@ const UserListCompact = () => {
                         </DataTableRow>
                         <DataTableRow className="nk-tb-col-tools">
                           <ul className="nk-tb-actions gx-1">
-                            <li className="nk-tb-action-hidden" onClick={() => onEditClick(item._id)}>
+                            {/* <li className="nk-tb-action-hidden" onClick={() => onEditClick(item._id)}>
                               <TooltipComponent
                                 tag="a"
                                 containerClassName="btn btn-trigger btn-icon"
@@ -728,7 +734,7 @@ const UserListCompact = () => {
                                 direction="top"
                                 text="Edit"
                               />
-                            </li>
+                            </li> */}
                             {/* {item.status !== "Suspend" && (
                               <React.Fragment>
                                 <li className="nk-tb-action-hidden" onClick={() => suspendUser(item._id)}>
@@ -825,20 +831,32 @@ const UserListCompact = () => {
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Name</label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="name"
-                        defaultValue={formData.name}
-                        placeholder="Enter name"
-                        onInput={(e) => {
-                          let value = e.target.value;
-                          if (value.length > 0) {
-                            e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
-                          }
-                        }}
-                        ref={register({ required: "This field is required" })}
-                      />
+                     <input
+  className="form-control"
+  type="text"
+  name="name"
+  defaultValue={formData.name}
+  placeholder="Enter name"
+  onInput={(e) => {
+    // Remove special characters (allow only letters + space)
+    e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+
+    // Capitalize first letter
+    if (e.target.value.length > 0) {
+      e.target.value =
+        e.target.value.charAt(0).toUpperCase() +
+        e.target.value.slice(1);
+    }
+  }}
+  ref={register({
+    required: "This field is required",
+    pattern: {
+      value: /^[A-Za-z\s]+$/,
+      message: "Special characters are not allowed",
+    },
+  })}
+/>
+
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>
                   </Col>
