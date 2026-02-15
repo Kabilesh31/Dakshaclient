@@ -201,7 +201,6 @@
         } else if (Array.isArray(assignmentsData)) {
           setRouteAssignments(assignmentsData);
         } else {
-          console.warn("Assignments data is not in expected format:", assignmentsData);
           setRouteAssignments([]);
         }
       } catch (err) {
@@ -1347,7 +1346,7 @@
         className="me-1"
         style={{ fontSize: "27px", lineHeight: 1 }}
       >
-        {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
+        {selectedTrackStaff?.type === "delivery" ? "🚚" : "🚚"}
       </span>
 
       {selectedTrackStaff?.type === "delivery"
@@ -1357,16 +1356,17 @@
     </h6>
 
     {/* SECOND LINE */}
-    <div className="mt-1">
-      <Badge
-  color={isRouteCompleted ? "success" : "primary"}
-  className="fs-11"
->
-  Status : {isRouteCompleted ? "Completed" : "Running"}
-</Badge>
+    
+                    <div className="mt-1">
+                      <Badge
+                      color={isRouteCompleted ? "success" : "primary"}
+                      className="fs-11"
+                    >
+                      Status : {isRouteCompleted ? "Completed" : "Running"}
+                    </Badge>
 
-    </div>
-  </div>
+                        </div>
+                      </div>
 
 
 
@@ -1401,40 +1401,38 @@
                         .sort((a, b) => a.lineNo - b.lineNo)
                         .map((customer, index) => {
                           const isActiveCustomer =
-    selectedCustomerForMap?._id === customer._id;
+                          selectedCustomerForMap?._id === customer._id;
                          let rowStatus = "upcoming";
 
-if (customer.orderPending === false) {
-  rowStatus = "completed";
-} else if (customer.orderPending === true) {
-  const hasPreviousPending = assinedCustomerDatas
-    .sort((a, b) => a.lineNo - b.lineNo)
-    .some(
-      (c) =>
-        c.lineNo < customer.lineNo &&
-        c.orderPending === true
-    );
+                        if (customer.orderPending === false) {
+                          rowStatus = "completed";
+                        } else if (customer.orderPending === true) {
+                          const hasPreviousPending = assinedCustomerDatas
+                            .sort((a, b) => a.lineNo - b.lineNo)
+                            .some(
+                              (c) =>
+                                c.lineNo < customer.lineNo &&
+                                c.orderPending === true
+                            );
 
-  if (!hasPreviousPending) {
-    rowStatus = "current";
-  }
-}
-
-
+                          if (!hasPreviousPending) {
+                            rowStatus = "current";
+                          }
+                        }
 
                           return (
                             <div
-    className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
-    key={customer._id}
-    onClick={() => setSelectedCustomerForMap(customer)}
-  >
+                              className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+                              key={customer._id}
+                              onClick={() => setSelectedCustomerForMap(customer)}
+                            >
 
                               <div className="rail-left">
-                                {rowStatus === "current" ? (
+                                {rowStatus === "current" && selectedTrackStaff?.type === "delivery" ? (
                                   <div className="rail-van">
                                     <div className="rail-icon">
-    {getRailIcon(rowStatus)}
-  </div>
+                                      {getRailIcon(rowStatus)}
+                                    </div>
 
                                   </div>
                                 ) : (
@@ -1449,11 +1447,13 @@ if (customer.orderPending === false) {
                               <div className="rail-content">
                                 <div className="d-flex justify-content-between">
                                   <strong>{customer.name}</strong>
+                                  {selectedTrackStaff?.type === "delivery" && (
                                   <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
-        {rowStatus === "completed" && "Delivered"}
-        {rowStatus === "current" && "Arriving"}
-        {rowStatus === "upcoming" && "Expected"}
-      </span>
+                                    {rowStatus === "completed" && "Delivered"}
+                                    {rowStatus === "current" && "Arriving"}
+                                    {rowStatus === "upcoming" && "Expected"}
+                                  </span>
+                                  )}
                                 </div>
 
                                 <small
