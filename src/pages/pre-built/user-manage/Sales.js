@@ -20,7 +20,7 @@ import { useForm } from "react-hook-form";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "./Delivery.css";
 
-const Delivery = () => {
+const Sales = () => {
   const [activeTab, setActiveTab] = useState("alignment");
   const [deliveryStaff, setDeliveryStaff] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -51,11 +51,13 @@ const Delivery = () => {
       const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`)
       if(response.status === 200) {
         setAssignedCustomerDatas(response.data.customers)
+        
       }
     }catch(err){
       console.log(err)
     }
   }
+ 
 
   useEffect(() => {
     fetchStaff();
@@ -81,7 +83,6 @@ const Delivery = () => {
       return;
     }
 
-    // If assigned → fetch customers
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`
@@ -162,7 +163,7 @@ const Delivery = () => {
 
       if (Array.isArray(res.data)) {
         const datas = res.data
-        const filteredSalesStaff = datas.filter((item)=> item.type === "delivery")
+        const filteredSalesStaff = datas.filter((item)=> item.type === "sales")
         setDeliveryStaff(filteredSalesStaff);
 
       } else {
@@ -219,16 +220,12 @@ const Delivery = () => {
       const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-
-      console.log("ROUTES API RESPONSE 👉", res.data);
-
       // Check if the response is an array
       let routesData = res.data;
       
       // If it's an object with a data property that's an array
       if (routesData && routesData.data && Array.isArray(routesData.data)) {
         setRoutes(routesData.data);
-        console.log(routesData.data)
       } 
       // If the response itself is an array
       else if (Array.isArray(routesData)) {
@@ -247,6 +244,7 @@ const Delivery = () => {
       setLoading(false);
     }
   };
+
 // After fetching customers
 const fetchCustomers = async () => {
   try {
@@ -272,16 +270,15 @@ const fetchCustomers = async () => {
   // Get routes already assigned to a specific staff member on selected date
   const getStaffAssignedRoutes = (staffId) => {
     if (!Array.isArray(routeAssignments)) return [];
-    
     return routeAssignments.filter(
       assignment =>
-        assignment.staffId?._id?.toString() === staffId?.toString() &&
+        assignment.salesStaffId?.toString() === staffId?.toString() &&
         assignment.date === selectedDate
     );
   };
 
   // Get available routes (not assigned to anyone on selected date)
- const getAvailableRoutes = () => {
+const getAvailableRoutes = () => {
   if (!Array.isArray(routeAssignments) || !Array.isArray(routes)) {
     console.warn("routeAssignments or routes is not an array:", {
       routeAssignments,
@@ -290,21 +287,22 @@ const fetchCustomers = async () => {
     return [];
   }
 
+  // Get routeIds where salesStaffId is FILLED for selected date
   const assignedRouteIds = routeAssignments
     .filter(a =>
       a &&
       a.date === selectedDate &&
-      a.staffId &&             
-      a.staffId !== null
+      a.salesStaffId &&   
+      a.salesStaffId !== null
     )
     .map(a => {
       if (typeof a.routeId === "object" && a.routeId !== null) {
         return String(a.routeId._id || a.routeId.id);
       }
       return String(a.routeId);
-    })
-    .filter(id => id && id !== "undefined");
+    });
 
+  // Show routes that are NOT in assignedRouteIds
   return routes.filter(r => {
     const routeId = String(r._id || r.id);
     return !assignedRouteIds.includes(routeId);
@@ -464,7 +462,6 @@ const handleSaveAlignment = async () => {
 
     const routeId = selectedRouteForAlignment;
 
-    // ✅ Only customers of selected route
     const customersToUpdate = customers
       .filter(c => String(c.routeId) === String(routeId))
       .map((c, index) => ({
@@ -472,19 +469,18 @@ const handleSaveAlignment = async () => {
         lineNo: index + 1
       }));
 
-    // ✅ SEND CORRECT PAYLOAD
-const res = await axios.put(
-  `${process.env.REACT_APP_BACKENDURL}/api/delivery/update-line-order`,
-  {
-    routeId,
-    customers: customersToUpdate   // ✅ THIS IS THE FIX
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`
-    }
-  }
-);
+      const res = await axios.put(
+        `${process.env.REACT_APP_BACKENDURL}/api/delivery/update-line-order`,
+        {
+          routeId,
+          customers: customersToUpdate 
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        }
+      );
 
     if (res.data.status === "success") {
       successToast("Alignment saved successfully");
@@ -541,7 +537,7 @@ const currentLineNo = firstPendingCustomer
             <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
               <div>
                 <h5 className="title">Route Assignment</h5>
-                <p className="text-soft mb-0">Assign routes to delivery staff (max 2 routes per staff per day)</p>
+                <p className="text-soft mb-0">Assign routes to Sales staff (max 2 routes per staff per day)</p>
               </div>
               <div className="d-flex gap-2 align-items-center">
                 
@@ -599,7 +595,8 @@ const currentLineNo = firstPendingCustomer
                 <tbody>
                   {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
                     const staffAssignments = getStaffAssignedRoutes(staff._id);
-                 
+                    const canAssign = canAssignMoreRoutes(staff._id);
+                    
                     return (
                       <tr key={staff._id}>
                         <td>
@@ -707,7 +704,7 @@ const currentLineNo = firstPendingCustomer
                                     `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/assignRoute`,
                                     {
                                       date: selectedDate,
-                                      staffId: staff._id,
+                                      salesStaffId: staff._id,
                                       routeId: route._id || route.id,
                                       routeName: route.routeName || route.name,
                                     },
@@ -721,7 +718,6 @@ const currentLineNo = firstPendingCustomer
                                   setSuccess(`Route "${route.routeName || route.name}" assigned to ${staff.name}`);
                                   setTimeout(() => setSuccess(null), 3000);
 
-                                  // 🔥 reload assignments from DB
                                   fetchAssignmentsByDate(selectedDate);
 
                                   // reset dropdown
@@ -751,22 +747,21 @@ const currentLineNo = firstPendingCustomer
             </div>
           </PreviewCard>
         </div>
+
       </div>
     );
   };
 
   // Render Customer Alignment Tab
- const renderCustomerAlignment = () => {
- const selectedRoute = routes.find(
-  (route) => String(route._id) === String(selectedRouteForAlignment)
-);
+    const renderCustomerAlignment = () => {
+    const selectedRoute = routes.find(
+      (route) => String(route._id) === String(selectedRouteForAlignment)
+    );
 
-const routeCustomers = customers
-  .filter(c => String(c.routeId) === String(selectedRouteForAlignment))
-  .sort((a, b) => a.lineNo - b.lineNo);
-
-
-    
+    const routeCustomers = customers
+      .filter(c => String(c.routeId) === String(selectedRouteForAlignment))
+      .sort((a, b) => a.lineNo - b.lineNo);
+        
     return (
       <div className="row g-4">
         <div className="col-12">
@@ -780,17 +775,20 @@ const routeCustomers = customers
                 <div className="form-group" style={{ minWidth: '250px' }}>
                   <label className="form-label">Select Route</label>
                  <select
-                    className="form-control"
-                    value={selectedRouteForAlignment}
-                    onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
-                  >
-                    <option value="">Select Route</option>
-                    {routes.map(route => (
-                      <option key={route._id} value={route._id}>
-                    {route.routeName}
-                  </option>
-                    ))}
-                  </select>
+                  className="form-control"
+                  value={selectedRouteForAlignment}
+                  onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
+                >
+                  <option value="">Select Route</option>
+                  {routes.map(route => (
+                    <option key={route._id} value={route._id}>
+                  {route.routeName}
+                </option>
+                  ))}
+                </select>
+
+
+
                 </div>
                 <Button 
                   color="primary" 
@@ -1520,7 +1518,7 @@ const getRailIcon = (status) => {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="mt-3">Loading delivery management data...</p>
+          <p className="mt-3">Loading sales management data...</p>
         </div>
       </Content>
     );
@@ -1532,9 +1530,9 @@ const getRailIcon = (status) => {
       <Content>
         <BlockHead size="sm">
           <BlockHeadContent>
-            <BlockTitle page>Delivery Management</BlockTitle>
+            <BlockTitle page>Sales Management</BlockTitle>
             <BlockDes>
-              <p>Assign routes to delivery staff, track progress, and monitor performance</p>
+              <p>Assign routes to Sales staff, track progress, and monitor performance</p>
             </BlockDes>
           </BlockHeadContent>
         </BlockHead>
@@ -1772,4 +1770,4 @@ const getRailIcon = (status) => {
   );
 };
 
-export default Delivery;
+export default Sales;
