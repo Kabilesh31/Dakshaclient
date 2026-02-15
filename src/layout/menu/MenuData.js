@@ -41,11 +41,11 @@ const menu = [
     text: "Delivery",
     link: "/delivery",
   },
-  // {
-  //   icon: "growth",        // ni ni-growth
-  //   text: "Sales",
-  //   link: "/sales",
-  // },
+  {
+    icon: "growth",        // ni ni-growth
+    text: "Sales",
+    link: "/sales",
+  },
   {
     icon: "box",
     text: "Orders",

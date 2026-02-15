@@ -45,12 +45,14 @@
     const [isSavingAlignment, setIsSavingAlignment] = useState(false);
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
-
+    const [bills, setBills] = useState([]);
+    
     const fetchCustomersByAssignedStaff = async() => {
       try{
         const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`)
         if(response.status === 200) {
           setAssignedCustomerDatas(response.data.customers)
+          console.log(response.data.customers)
         }
       }catch(err){
         console.log(err)
@@ -61,8 +63,35 @@
       fetchStaff();
       fetchRoutes();
       fetchCustomers();
+      fetchBills()
     }, []);
 
+    const fetchBills = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`);
+        if (response.status === 200) {
+          // Store bills in state
+          setBills(response.data.bills || []);
+        }
+      } catch (err) {
+        console.log(err);
+        setBills([]);
+      }
+    };
+
+    const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    const last3DaysBills = bills.filter((bill) => {
+        return new Date(bill.createdAt) >= threeDaysAgo;
+    });
+
+    const filterAssignedCustomer = assinedCustomerDatas.filter((customer) =>
+      last3DaysBills.some(
+        (bill) => bill.customerId.toString() === customer._id.toString()
+      )
+    );
+    
   useEffect(() => {
     const loadAssignedCustomers = async () => {
       if (!selectedStaffId) {
@@ -86,13 +115,13 @@
         const response = await axios.get(
           `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`
         );
-
+        console.log(response.data.customers)
         if (response.status === 200) {
           setAssignedCustomerDatas(response.data.customers || []);
+          
         }
       } catch (err) {
-        console.log(err);
-        setAssignedCustomerDatas([]);
+         setAssignedCustomerDatas([]);
       }
     };
 
@@ -160,13 +189,11 @@
           }
         );
 
-        console.log("STAFF API RESPONSE 👉", res.data);
-
-        // Ensure we set an array
         if (Array.isArray(res.data)) {
-          setDeliveryStaff(res.data);
-        } else if (res.data && Array.isArray(res.data.data)) {
-          setDeliveryStaff(res.data.data);
+          const datas = res.data
+          const filteredStaffDatas = datas.filter((item)=> item.type === "delivery")
+
+          setDeliveryStaff(filteredStaffDatas);
         } else {
           console.warn("Staff data is not in expected format:", res.data);
           setDeliveryStaff([]);
@@ -221,8 +248,6 @@
         const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
-        console.log("ROUTES API RESPONSE 👉", res.data);
 
         // Check if the response is an array
         let routesData = res.data;
@@ -1036,12 +1061,12 @@
                           <td>
                             <div className="d-flex gap-1">
                               <Button
-    size="sm"
-    color="light"
-    onClick={() => handleViewCustomer(customer)}
-  >
-    <Icon name="eye"></Icon>
-  </Button>
+                                size="sm"
+                                color="light"
+                                onClick={() => handleViewCustomer(customer)}
+                              >
+                                <Icon name="eye"></Icon>
+                              </Button>
 
                               <Button size="sm" color="light">
                                 <Icon name="edit"></Icon>
@@ -1062,6 +1087,8 @@
         </div>
       );
     };
+
+    
     // Render Live Track Tab
     const renderLiveTrack = () => {
       if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
@@ -1078,9 +1105,9 @@
       
       // Get staff with active deliveries
       const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
-        activeDeliveries.some(delivery => 
-    String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
-  )
+            activeDeliveries.some(delivery => 
+        String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
+      )
 
       );
       
@@ -1103,10 +1130,10 @@
       )
     : [];
 
-  const totalCustomers = assinedCustomerDatas?.length || 0;
+  const totalCustomers = filterAssignedCustomer?.length || 0;
 
   const completedCustomers =
-  assinedCustomerDatas?.filter(
+  filterAssignedCustomer?.filter(
     (c) => c.orderPending === false
   ).length || 0;
 
@@ -1293,15 +1320,15 @@
                   <div className="mb-3">
                     <h6 className="title">
                     {selectedTrackStaff ? (
-    <>
-      Tracking: {selectedTrackStaff.name}
-      <span className="text-muted ml-1 ms-2">
-        ({completedCustomers} / {totalCustomers})
-      </span>
-    </>
-  ) : (
-    "Live Map View (All Staff)"
-  )}
+                        <>
+                          Tracking: {selectedTrackStaff.name}
+                          <span className="text-muted ml-1 ms-2">
+                            ({completedCustomers} / {totalCustomers})
+                          </span>
+                        </>
+                      ) : (
+                        "Live Map View (All Staff)"
+                      )}
 
 
                       {selectedTrackStaff && selectedStaffDelivery && (
@@ -1325,7 +1352,7 @@
 
                   <CustomerLiveMap
                     staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
-                    customers={assinedCustomerDatas}
+                    customers={filterAssignedCustomer}
                     selectedCustomer={selectedCustomerForMap}
                     travelMode="DRIVING"
                   />
@@ -1342,31 +1369,31 @@
                     <div className="mb-3">
                       <div className="mb-1">
     {/* FIRST LINE */}
-    <h6 className="title d-flex align-items-center mb-0">
-      <span
-        className="me-1"
-        style={{ fontSize: "27px", lineHeight: 1 }}
-      >
-        {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
-      </span>
+                      <h6 className="title d-flex align-items-center mb-0">
+                        <span
+                          className="me-1"
+                          style={{ fontSize: "27px", lineHeight: 1 }}
+                        >
+                          {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
+                        </span>
 
-      {selectedTrackStaff?.type === "delivery"
-        ? "Delivery Vehicle"
-        : "Sales Vehicle"}{" "}
-      – Route #{selectedStaffDelivery?.routeCode || "DL-204"}
-    </h6>
+                        {selectedTrackStaff?.type === "delivery"
+                          ? "Delivery Vehicle"
+                          : "Sales Vehicle"}{" "}
+                        – Route #{selectedStaffDelivery?.routeCode || "DL-204"}
+                      </h6>
 
-    {/* SECOND LINE */}
-    <div className="mt-1">
-      <Badge
-  color={isRouteCompleted ? "success" : "primary"}
-  className="fs-11"
->
-  Status : {isRouteCompleted ? "Completed" : "Running"}
-</Badge>
+                      {/* SECOND LINE */}
+                      <div className="mt-1">
+                        <Badge
+                    color={isRouteCompleted ? "success" : "primary"}
+                    className="fs-11"
+                  >
+                    Status : {isRouteCompleted ? "Completed" : "Running"}
+                  </Badge>
 
-    </div>
-  </div>
+                      </div>
+                    </div>
 
 
 
@@ -1395,46 +1422,44 @@
                           </small>
                         </div>
                       </div>
-
+                    
                       {/* CUSTOMERS */}
-                      {assinedCustomerDatas
+                      {filterAssignedCustomer
                         .sort((a, b) => a.lineNo - b.lineNo)
                         .map((customer, index) => {
                           const isActiveCustomer =
-    selectedCustomerForMap?._id === customer._id;
-                         let rowStatus = "upcoming";
+                                selectedCustomerForMap?._id === customer._id;
+                                                    let rowStatus = "upcoming";
 
-if (customer.orderPending === false) {
-  rowStatus = "completed";
-} else if (customer.orderPending === true) {
-  const hasPreviousPending = assinedCustomerDatas
-    .sort((a, b) => a.lineNo - b.lineNo)
-    .some(
-      (c) =>
-        c.lineNo < customer.lineNo &&
-        c.orderPending === true
-    );
+                            if (customer.orderPending === false) {
+                              rowStatus = "completed";
+                            } else if (customer.orderPending === true) {
+                              const hasPreviousPending = assinedCustomerDatas
+                                .sort((a, b) => a.lineNo - b.lineNo)
+                                .some(
+                                  (c) =>
+                                    c.lineNo < customer.lineNo &&
+                                    c.orderPending === true
+                                );
 
-  if (!hasPreviousPending) {
-    rowStatus = "current";
-  }
-}
-
-
+                              if (!hasPreviousPending) {
+                                rowStatus = "current";
+                              }
+                            }
 
                           return (
                             <div
-    className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
-    key={customer._id}
-    onClick={() => setSelectedCustomerForMap(customer)}
-  >
+                              className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+                              key={customer._id}
+                              onClick={() => setSelectedCustomerForMap(customer)}
+                            >
 
                               <div className="rail-left">
                                 {rowStatus === "current" ? (
                                   <div className="rail-van">
                                     <div className="rail-icon">
-    {getRailIcon(rowStatus)}
-  </div>
+                                    {getRailIcon(rowStatus)}
+                                  </div>
 
                                   </div>
                                 ) : (
@@ -1450,10 +1475,10 @@ if (customer.orderPending === false) {
                                 <div className="d-flex justify-content-between">
                                   <strong>{customer.name}</strong>
                                   <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
-        {rowStatus === "completed" && "Delivered"}
-        {rowStatus === "current" && "Arriving"}
-        {rowStatus === "upcoming" && "Expected"}
-      </span>
+                                    {rowStatus === "completed" && "Delivered"}
+                                    {rowStatus === "current" && "Arriving"}
+                                    {rowStatus === "upcoming" && "Expected"}
+                                  </span>
                                 </div>
 
                                 <small
@@ -1486,19 +1511,16 @@ if (customer.orderPending === false) {
                         </div>
                       </div>
                       {isRouteCompleted && (
-    <div className="alert alert-success py-2 mb-3">
-      🎉 All Customers Delivered – Route Completed Successfully
-    </div>
-  )}
+                        <div className="alert alert-success py-2 mb-3">
+                          🎉 All Customers Delivered – Route Completed Successfully
+                        </div>
+                      )}
                     </div>
 
                   </div>
                 </div>
               </div>
             </div>
-   
-            
-
             
             {/* Delivery Details Table */}
             {selectedTrackStaff && (
@@ -1583,6 +1605,7 @@ if (customer.orderPending === false) {
       </div>
     );
   };
+
 
   if (loading && routes.length === 0 && routeAssignments.length === 0) {
     return (
@@ -1733,47 +1756,47 @@ if (customer.orderPending === false) {
             </ModalBody>
           </Modal>
           <Modal
-  isOpen={viewCustomerModal}
-  toggle={() => setViewCustomerModal(false)}
-  size="lg"
-  centered
->
-  <ModalHeader toggle={() => setViewCustomerModal(false)}>
-    Customer Details
-  </ModalHeader>
+            isOpen={viewCustomerModal}
+            toggle={() => setViewCustomerModal(false)}
+            size="lg"
+            centered
+          >
+            <ModalHeader toggle={() => setViewCustomerModal(false)}>
+              Customer Details
+            </ModalHeader>
 
-  <ModalBody>
-    {selectedCustomer && (
-      <div className="row g-4">
+            <ModalBody>
+              {selectedCustomer && (
+                <div className="row g-4">
 
-        {/* Profile Section */}
-       <div className="col-12">
-  <div
-    className="d-flex align-items-center p-3 bg-light rounded"
-    style={{ gap: "15px" }} // horizontal spacing between items
-  >
-    {/* Avatar */}
-    <div
-      className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
-      style={{ fontSize: "20px", width: "60px", height: "60px" }}
-    >
-      {selectedCustomer.name.charAt(0)}
-    </div>
+                  {/* Profile Section */}
+                <div className="col-12">
+            <div
+              className="d-flex align-items-center p-3 bg-light rounded"
+              style={{ gap: "15px" }} // horizontal spacing between items
+            >
+              {/* Avatar */}
+              <div
+                className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
+                style={{ fontSize: "20px", width: "60px", height: "60px" }}
+              >
+                {selectedCustomer.name.charAt(0)}
+              </div>
 
-    {/* Name & Phone */}
-    <div className="d-flex flex-column">
-      <h5 className="mb-1">{selectedCustomer.name}</h5>
-      <span className="text-muted">{selectedCustomer.phone}</span>
-    </div>
+              {/* Name & Phone */}
+              <div className="d-flex flex-column">
+                <h5 className="mb-1">{selectedCustomer.name}</h5>
+                <span className="text-muted">{selectedCustomer.phone}</span>
+              </div>
 
-    {/* Line No Badge */}
-    <div className="ms-auto">
-      <Badge color="primary" className="px-3 py-2">
-        Line #{selectedCustomer.lineNo}
-      </Badge>
-    </div>
-  </div>
-</div>
+              {/* Line No Badge */}
+              <div className="ms-auto">
+                <Badge color="primary" className="px-3 py-2">
+                  Line #{selectedCustomer.lineNo}
+                </Badge>
+              </div>
+            </div>
+          </div>
 
 
         {/* Info Cards */}
@@ -1832,9 +1855,9 @@ if (customer.orderPending === false) {
         </div>
 
       </div>
-    )}
-  </ModalBody>
-</Modal>
+        )}
+      </ModalBody>
+    </Modal>
 
 
         </Block>
