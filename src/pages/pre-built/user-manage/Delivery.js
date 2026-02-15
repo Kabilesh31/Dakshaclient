@@ -146,13 +146,35 @@
       }) || null;
     };
 
-      if (Array.isArray(res.data)) {
-        const datas = res.data
-        const filteredSalesStaff = datas.filter((item)=> item.type === "delivery")
-        setDeliveryStaff(filteredSalesStaff);
+    const fetchStaff = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      } else {
-        console.warn("Staff data is not in expected format:", res.data);
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`, 
+            },
+          }
+        );
+
+        console.log("STAFF API RESPONSE 👉", res.data);
+
+        // Ensure we set an array
+        if (Array.isArray(res.data)) {
+          setDeliveryStaff(res.data);
+        } else if (res.data && Array.isArray(res.data.data)) {
+          setDeliveryStaff(res.data.data);
+        } else {
+          console.warn("Staff data is not in expected format:", res.data);
+          setDeliveryStaff([]);
+        }
+
+      } catch (err) {
+        console.error("STAFF FETCH ERROR 👉", err);
+        setError("Failed to load staff");
         setDeliveryStaff([]);
       } finally {
         setLoading(false);
@@ -252,39 +274,12 @@
     const getStaffAssignedRoutes = (staffId) => {
       if (!Array.isArray(routeAssignments)) return [];
       
-      // If it's an object with a data property that's an array
-      if (routesData && routesData.data && Array.isArray(routesData.data)) {
-        setRoutes(routesData.data);
-        console.log(routesData.data)
-      } 
-      // If the response itself is an array
-      else if (Array.isArray(routesData)) {
-        setRoutes(routesData);
-      }
-      // Otherwise set empty array
-      else {
-        console.warn("Routes data is not in expected format:", routesData);
-        setRoutes([]);
-      }
-    } catch (err) {
-      console.error("ROUTES FETCH ERROR 👉", err);
-      setError("Failed to load routes");
-      setRoutes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-// After fetching customers
-const fetchCustomers = async () => {
-  try {
-    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-    setCustomers(res.data.filter(c => !c.isDeleted && c.status));
-  } catch (err) {
-    console.error(err);
-    errorToast("Failed to fetch customers");
-  }
-};
-
+      return routeAssignments.filter(
+        assignment =>
+          assignment.staffId?._id?.toString() === staffId?.toString() &&
+          assignment.date === selectedDate
+      );
+    };
 
     // Get available routes (not assigned to anyone on selected date)
     const getAvailableRoutes = () => {
@@ -587,32 +582,38 @@ const fetchCustomers = async () => {
                 </Alert>
               )}
 
-            {/* Delivery Staff Table */}
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Staff Member</th>
-                    <th>Assigned Routes</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
-                    const staffAssignments = getStaffAssignedRoutes(staff._id);
-                 
-                    return (
-                      <tr key={staff._id}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <div className="user-avatar bg-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <img
-                                  src={staff.img}
-                                  alt="profile"
-                                  style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
-                                />
+              {/* Delivery Staff Table */}
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Staff Member</th>
+                      <th>Assigned Routes</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
+                      const staffAssignments = getStaffAssignedRoutes(staff._id);
+                      const canAssign = canAssignMoreRoutes(staff._id);
+                      
+                      return (
+                        <tr key={staff._id}>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <div className="user-avatar bg-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                  <img
+                                    src={staff.img}
+                                    alt="profile"
+                                    style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <div className="fw-bold">{staff.name}</div>
+                                <small className="text-muted">{staff.email}</small>
                               </div>
                             </div>
                           </td>
@@ -684,57 +685,114 @@ const fetchCustomers = async () => {
                                 </select>
                               </div>
 
-                                  await axios.post(
-                                    `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/assignRoute`,
-                                    {
-                                      date: selectedDate,
-                                      staffId: staff._id,
-                                      routeId: route._id || route.id,
-                                      routeName: route.routeName || route.name,
-                                    },
-                                    {
-                                      headers: {
-                                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                      },
+                              {/* Assign Button */}
+                              <Button
+                                color="primary"
+                                size="md"
+                                disabled={!staff.selectedRoute || !canAssignMoreRoutes(staff._id) || loading}
+                                onClick={async () => {
+                                  try {
+                                    setLoading(true);
+                                    setError(null);
+
+                                    const route = findRoute(staff.selectedRoute);
+                                    if (!route) {
+                                      setError("Selected route not found");
+                                      return;
                                     }
-                                  );
 
-                                  setSuccess(`Route "${route.routeName || route.name}" assigned to ${staff.name}`);
-                                  setTimeout(() => setSuccess(null), 3000);
+                                    await axios.post(
+                                      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
+                                      {
+                                        date: selectedDate,
+                                        staffId: staff._id,
+                                        routeId: route._id || route.id,
+                                        routeName: route.routeName || route.name,
+                                      },
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                        },
+                                      }
+                                    );
 
-                                  // 🔥 reload assignments from DB
-                                  fetchAssignmentsByDate(selectedDate);
+                                    setSuccess(`Route "${route.routeName || route.name}" assigned to ${staff.name}`);
+                                    setTimeout(() => setSuccess(null), 3000);
 
-                                  // reset dropdown
-                                  setDeliveryStaff(prev =>
-                                    Array.isArray(prev)
-                                      ? prev.map(s =>
-                                          s._id === staff._id ? { ...s, selectedRoute: "" } : s
-                                        )
-                                      : []
-                                  );
-                                } catch (err) {
-                                  setError(err.response?.data?.message || "Failed to assign route");
-                                } finally {
-                                  setLoading(false);
-                                }
-                              }}
-                            >
-                              {loading ? "Assigning..." : "Assign"}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </PreviewCard>
+                                    // 🔥 reload assignments from DB
+                                    fetchAssignmentsByDate(selectedDate);
+
+                                    // reset dropdown
+                                    setDeliveryStaff(prev =>
+                                      Array.isArray(prev)
+                                        ? prev.map(s =>
+                                            s._id === staff._id ? { ...s, selectedRoute: "" } : s
+                                          )
+                                        : []
+                                    );
+                                  } catch (err) {
+                                    setError(err.response?.data?.message || "Failed to assign route");
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
+                              >
+                                {loading ? "Assigning..." : "Assign"}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </PreviewCard>
+          </div>
+
+          {/* Available Routes & Statistics */}
+          <div className="col-lg-12">
+            <PreviewAltCard className="h-100">
+              <h5 className="title">Assigned Routes for {formatDisplayDate(selectedDate)}</h5>
+              <div className="mt-4">
+                {Array.isArray(routeAssignments) && routeAssignments.length > 0 ? (
+                  <div className="list-group">
+                    {routeAssignments.map((assignment) => (
+                      <div
+                        key={assignment._id}
+                        className="list-group-item d-flex justify-content-between align-items-center"
+                      >
+                        <div>
+                          <h6 className="mb-1">{assignment.routeId?.routeName || assignment.routeName}</h6>
+                          <p className="mb-0 small text-primary">
+                            Assigned to: {assignment.staffId?.name || assignment.staffId}
+                          </p>
+                        </div>
+
+                        <Badge
+                          color="danger"
+                          pill
+                          className="cursor-pointer ms-2"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => openUnassignConfirm(assignment._id)}
+                        >
+                          Unassign
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-5">
+                    <Icon name="package" className="icon-xl text-light mb-3" />
+                    <p className="text-muted">No routes are assigned to staff for this date</p>
+                  </div>
+                )}
+              </div>
+            </PreviewAltCard>
+          </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
     // Render Customer Alignment Tab
   const renderCustomerAlignment = () => {
