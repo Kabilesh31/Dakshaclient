@@ -120,7 +120,7 @@ import StaffAttendance from "../pages/pre-built/user-manage/StaffAttendance";
 import VehicleListCompact from "../pages/pre-built/user-manage/VehicleListCompact";
 import VehicleDetails from "../pages/pre-built/user-manage/VehicleDetails";
 import Delivery from "../pages/pre-built/user-manage/Delivery";
-import Sales from "../pages/others/Blank2";
+import Sales from "../pages/pre-built/user-manage/Sales";
 
 
 const Pages = () => {
