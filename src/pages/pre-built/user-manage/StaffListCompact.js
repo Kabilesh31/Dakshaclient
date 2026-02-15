@@ -630,6 +630,7 @@ const exportToExcel = () => {
   <option value="">Select Type</option>
   <option value="sales">Sales</option>
   <option value="delivery">Delivery</option>
+  <option value="manager">Manager</option>
 </select>
 
                 </FormGroup>
@@ -821,14 +822,20 @@ const exportToExcel = () => {
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Type</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter Type"
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    required
-                  />
+                  <select
+  className="form-control"
+  value={formData.type}
+  onChange={(e) =>
+    setFormData({ ...formData, type: e.target.value })
+  }
+  required
+>
+  <option value="">Select Type</option>
+  <option value="sales">Sales</option>
+  <option value="delivery">Delivery</option>
+  <option value="manager">Manager</option>
+</select>
+
                 </FormGroup>
               </Col>
 
