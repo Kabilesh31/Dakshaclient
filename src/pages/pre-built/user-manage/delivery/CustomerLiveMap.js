@@ -65,24 +65,15 @@ const CustomerLiveMap = ({
   }, [selectedCustomer]);
 
   /* ================= MAP CENTER ================= */
-  const center = useMemo(() => {
-    // Priority: Selected customer > Staff > First customer > Fallback
-    if (selectedCustomerPosition) {
-      return selectedCustomerPosition;
-    }
-    
-    if (staffPosition) return staffPosition;
-    
-    if (sortedCustomers[0]?.geoLocation) {
-      return {
-        lat: Number(sortedCustomers[0].geoLocation.lat),
-        lng: Number(sortedCustomers[0].geoLocation.long),
-      };
-    }
-    
-    return fallbackCenter;
-  }, [selectedCustomerPosition, staffPosition, sortedCustomers]);
+ 
 
+  useEffect(() => {
+  // When staff changes (refresh / new tracking)
+  // reset customer selection
+  if (staff) {
+    setInfoWindowOpen(false);
+  }
+}, [staff]);
   /* ================= AUTO FOCUS ON SELECTED CUSTOMER ================= */
   useEffect(() => {
     if (selectedCustomerPosition && mapRef.current) {
@@ -182,7 +173,13 @@ const CustomerLiveMap = ({
       alert("Error calculating route. Check console for details.");
     }
   }, [sortedCustomers, travelMode]);
+const center = useMemo(() => {
+  // Initially always staff
+  if (staffPosition) return staffPosition;
 
+  // Fallback (rare case)
+  return fallbackCenter;
+}, [staffPosition]);
   /* ================= CREATE/DESTROY POLYLINE ================= */
   useEffect(() => {
     if (!window.google || !mapRef.current) return;
@@ -297,20 +294,41 @@ const CustomerLiveMap = ({
       }, 100);
     }
   }, [sortedCustomers, staffPosition]);
-
+useEffect(() => {
+  if (selectedCustomer && sortedCustomers.length >= 2) {
+    // Calculate route between customers when a customer is selected
+    calculateRoute();
+  }
+}, [selectedCustomer, sortedCustomers, calculateRoute]);
   /* ================= AUTO CALCULATE ROUTE ================= */
-  useEffect(() => {
-    if (isLoaded && sortedCustomers.length >= 2) {
-      setTimeout(calculateRoute, 1000);
-    }
-  }, [isLoaded, sortedCustomers.length, calculateRoute]);
+// useEffect(() => {
+//   if (
+//     isLoaded &&
+//     sortedCustomers.length >= 2 &&
+//     !selectedCustomer
+//   ) {
+//     setTimeout(calculateRoute, 1000);
+//   }
+// }, [isLoaded, sortedCustomers.length, calculateRoute, selectedCustomer]);
+
 
   /* ================= AUTO FIT MAP ON LOAD ================= */
-  useEffect(() => {
-    if (isLoaded && mapRef.current) {
-      setTimeout(fitMapToBounds, 500);
-    }
-  }, [isLoaded, fitMapToBounds]);
+ useEffect(() => {
+  if (!isLoaded || !mapRef.current) return;
+
+  // If customer selected → focus customer
+  if (selectedCustomerPosition) {
+    mapRef.current.panTo(selectedCustomerPosition);
+    mapRef.current.setZoom(16);
+  }
+  // Otherwise → always focus staff
+  else if (staffPosition) {
+    mapRef.current.panTo(staffPosition);
+    mapRef.current.setZoom(14);
+  }
+}, [isLoaded, selectedCustomerPosition, staffPosition]);
+
+
 
   if (!isLoaded) return <p>Loading map...</p>;
 
