@@ -290,7 +290,7 @@ const Homepage = () => {
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
                     <li>
-                      <UncontrolledDropdown>
+                      {/* <UncontrolledDropdown>
                         <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
                           <Icon className="d-none d-sm-inline" name="user" />
                           <span>
@@ -328,7 +328,7 @@ const Homepage = () => {
                             ))}
                           </ul>
                         </DropdownMenu>
-                      </UncontrolledDropdown>
+                      </UncontrolledDropdown> */}
                     </li>
 
                     <li>
