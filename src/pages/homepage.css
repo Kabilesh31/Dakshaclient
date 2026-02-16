@@ -1,0 +1,45 @@
+/* Add to your main CSS file */
+.bg-gradient-primary {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-primary-soft {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+.bg-success-soft {
+  background-color: rgba(52, 195, 143, 0.1);
+}
+
+.bg-warning-soft {
+  background-color: rgba(255, 186, 0, 0.1);
+}
+
+.bg-info-soft {
+  background-color: rgba(0, 194, 255, 0.1);
+}
+
+.text-success-soft {
+  color: rgba(52, 195, 143, 0.9);
+}
+
+/* Hover effects for stats cards */
+.performer-card .col-6 > div {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.performer-card .col-6 > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06) !important;
+}
+
+/* Animation for the progress bar target */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.progress-bar span {
+  animation: bounce 2s infinite;
+}
