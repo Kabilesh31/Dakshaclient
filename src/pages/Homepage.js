@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Head from "../layout/head/Head";
 import Content from "../layout/content/Content";
-import AvgSubscription from "../components/partials/default/avg-subscription/AvgSubscription";
 import TransactionTable from "../components/partials/default/transaction/Transaction";
 import { DropdownToggle, DropdownMenu, Card, UncontrolledDropdown, DropdownItem, Modal, ModalBody } from "reactstrap";
 import {
@@ -18,9 +17,7 @@ import {
   PreviewAltCard,
   BlockBetween,
 } from "../components/Component";
-import ActiveUser from "../components/partials/analytics/active-user/ActiveUser";
 import TrafficDougnut from "../components/partials/analytics/traffic-dougnut/TrafficDoughnut";
-// Remove this line: import PerformerOfTheWeek from "../components/partials/analytics/performer/PerformerOfTheWeek";
 import axios from "axios";
 import "./homepage.css";
 
@@ -28,8 +25,9 @@ const Homepage = () => {
   const [sm, updateSm] = useState(false);
   const [customerData, setCustomerData] = useState([]);
   const [staffData, setStaffData] = useState([]);
+  const [productData, setProductData] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState("");
-  const [selectedStaffId, setSelectedStaffId] = useState("");
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [filterCustomerType, setFilterCustomerType] = useState([]);
   const [billData, setBillData] = useState([]);
   const [selectedDays, setSelectedDays] = useState("All");
@@ -37,12 +35,15 @@ const Homepage = () => {
   const [modal, setModal] = useState(false);
   const [selectedFromDate, setSelectedFromDate] = useState("");
   const [selectedToDate, setSelectedToDate] = useState("");
+  const [selectedStaffForPerformance, setSelectedStaffForPerformance] = useState(null);
+  const [showStaffModal, setShowStaffModal] = useState(false);
   
   // Loading states
   const [loading, setLoading] = useState({
     customers: false,
     staff: false,
-    bills: false
+    bills: false,
+    products: false
   });
 
   localStorage.setItem("isGridView", false);
@@ -56,7 +57,8 @@ const Homepage = () => {
     await Promise.all([
       fetchCustomerData(),
       fetchStaffData(),
-      fetchBillData()
+      fetchBillData(),
+      fetchProductData()
     ]);
   };
 
@@ -103,9 +105,23 @@ const Homepage = () => {
     }
   };
 
+  const fetchProductData = async () => {
+    setLoading(prev => ({ ...prev, products: true }));
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
+      if (response.status === 200) {
+        setProductData(response.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    } finally {
+      setLoading(prev => ({ ...prev, products: false }));
+    }
+  };
+
   const handleStaffSelection = (staff) => {
     if (staff === null) {
-      setSelectedStaff("All");
+      setSelectedStaff("All Staff");
       setSelectedStaffId(null);
       setFilterCustomerType(customerData);
     } else {
@@ -114,58 +130,89 @@ const Homepage = () => {
       const filteredByStaff = customerData?.filter((item) => item.createdBy === staff._id);
       setFilterCustomerType(filteredByStaff);
     }
+    setSelectedStaffForPerformance(null);
   };
 
   const handleDateSubmit = () => {
-    setCustomSelected(true);
-    setModal(false);
+    if (selectedFromDate && selectedToDate) {
+      setCustomSelected(true);
+      setSelectedDays("Custom");
+      setModal(false);
+    }
   };
 
-  // Date filters
-  const filterByDate = (data) => {
-    if (!data || data.length === 0) return [];
+  const handleStaffPerformanceSelect = (staff) => {
+    setSelectedStaffForPerformance(staff);
+    setShowStaffModal(false);
+  };
+
+  // Filter bills by date AND staff
+  const filterBills = () => {
+    if (!billData || billData.length === 0) return [];
     
-    if (!customSelected && selectedDays === "All") {
-      return data;
+    let filtered = [...billData];
+
+    // Apply staff filter
+    if (selectedStaffId) {
+      filtered = filtered.filter(bill => bill.createdBy === selectedStaffId);
     }
 
-    const now = new Date();
-    let startDate;
-
-    if (!customSelected) {
-      if (selectedDays === "7 Days") {
-        startDate = new Date();
-        startDate.setDate(now.getDate() - 7);
-      } else if (selectedDays === "30 Days") {
-        startDate = new Date();
-        startDate.setDate(now.getDate() - 30);
-      }
-      return data.filter((item) => new Date(item.createdAt) >= startDate);
-    }
-
-    // Custom date filter
+    // Apply date filter
     if (customSelected && selectedFromDate && selectedToDate) {
       const from = new Date(selectedFromDate);
       from.setHours(0, 0, 0, 0);
       const to = new Date(selectedToDate);
       to.setHours(23, 59, 59, 999);
       
-      return data?.filter((item) => {
+      filtered = filtered.filter((item) => {
         const createdAt = new Date(item.createdAt);
         return createdAt >= from && createdAt <= to;
       });
+    } else if (selectedDays === "7 Days") {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+      filtered = filtered.filter((item) => new Date(item.createdAt) >= startDate);
+    } else if (selectedDays === "30 Days") {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 30);
+      filtered = filtered.filter((item) => new Date(item.createdAt) >= startDate);
     }
 
-    return data;
+    return filtered;
   };
 
-  // Filter bills by date
-  const filteredBills = filterByDate(billData);
+  // Filtered bills
+  const filteredBills = filterBills();
 
-  // Calculate metrics
+  // 1. Order Status (based on orderStatus string)
+  const approvedOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
+  const rejectedOrders = filteredBills.filter(b => b.orderStatus === "rejected").length;
+  const pendingOrders = filteredBills.filter(b => b.orderStatus === "pending").length;
   const totalOrders = filteredBills.length;
+  
+  // 2. Payment Status (based on paymentMethod existence)
+  const paidAmount = filteredBills
+    .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
+    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+  
+  const notPaidAmount = filteredBills
+    .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
+    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+  
   const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
-  const totalCustomers = customerData?.length || 0;
+  
+  // 3. Delivery Status (based on orderStatus string)
+  const deliveredOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
+  const pendingDeliveryOrders = filteredBills.filter(b => b.orderStatus === "rejected" || b.orderStatus === "pending").length;
+  
+  // 4. Total products count
+  const totalProducts = productData?.length || 0;
+  
+  // 5. Total customers
+  const totalCustomers = selectedStaffId 
+    ? customerData?.filter(c => c.createdBy === selectedStaffId).length || 0
+    : customerData?.length || 0;
+  
   const totalStaff = staffData?.length || 0;
 
   // Get unique bills
@@ -173,58 +220,63 @@ const Homepage = () => {
     (item, index, self) => index === self.findIndex((t) => t._id === item._id)
   );
 
-  // Calculate performer of the week (staff with most orders)
-  const getPerformerOfTheWeek = () => {
-    if (!billData.length || !staffData.length) return null;
+  // Get selected staff performance details
+  const getSelectedStaffPerformance = () => {
+    if (!selectedStaffForPerformance) return null;
     
-    const last7Days = new Date();
-    last7Days.setDate(last7Days.getDate() - 7);
+    const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
     
-    const recentBills = billData.filter(bill => new Date(bill.createdAt) >= last7Days);
+    const totalBills = staffBills.length;
+    const totalRevenue = staffBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
     
-    const staffPerformance = {};
-    recentBills.forEach(bill => {
-      if (bill.createdBy) {
-        staffPerformance[bill.createdBy] = (staffPerformance[bill.createdBy] || 0) + 1;
-      }
-    });
+    // Order Status counts
+    const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
+    const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
+    const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
     
-    let topStaffId = null;
-    let maxOrders = 0;
+    // Payment Status
+    const paidBills = staffBills.filter(b => b.paymentMethod && b.paymentMethod !== null).length;
+    const unpaidBills = staffBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length;
     
-    Object.entries(staffPerformance).forEach(([staffId, orders]) => {
-      if (orders > maxOrders) {
-        maxOrders = orders;
-        topStaffId = staffId;
-      }
-    });
+    const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
     
-    const topStaff = staffData.find(s => s._id === topStaffId);
+    const lastBillDate = staffBills.length > 0 
+      ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
+      : 'N/A';
     
-    return topStaff ? {
-      name: topStaff.name,
-      orders: maxOrders,
-      image: topStaff.img || null,
-      revenue: recentBills
-        .filter(b => b.createdBy === topStaffId)
-        .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0)
-    } : null;
+    // Calculate average order value
+    const avgOrderValue = totalBills > 0 ? totalRevenue / totalBills : 0;
+    
+    return {
+      ...selectedStaffForPerformance,
+      totalBills,
+      totalRevenue,
+      approvedBills,
+      rejectedBills,
+      pendingBills,
+      paidBills,
+      unpaidBills,
+      customersServed,
+      lastBillDate,
+      avgOrderValue
+    };
   };
 
-  const performerOfTheWeek = getPerformerOfTheWeek();
+  const staffPerformance = getSelectedStaffPerformance();
 
   return (
     <React.Fragment>
       <Head title="Homepage"></Head>
       <Content>
+        {/* Header with Status Bar */}
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle page tag="h3">
-                Dashboard
+                Retail Pulse Dashboard
               </BlockTitle>
               <BlockDes className="text-soft">
-                <p>Welcome to Retail Pulse</p>
+                <p>Welcome back, {selectedStaff || 'Admin'}</p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
@@ -298,6 +350,8 @@ const Homepage = () => {
                                   ev.preventDefault();
                                   setSelectedDays("All");
                                   setCustomSelected(false);
+                                  setSelectedFromDate("");
+                                  setSelectedToDate("");
                                 }}
                               >
                                 <span>All Time</span>
@@ -311,6 +365,8 @@ const Homepage = () => {
                                   ev.preventDefault();
                                   setSelectedDays("7 Days");
                                   setCustomSelected(false);
+                                  setSelectedFromDate("");
+                                  setSelectedToDate("");
                                 }}
                               >
                                 <span>Last 7 days</span>
@@ -324,6 +380,8 @@ const Homepage = () => {
                                   ev.preventDefault();
                                   setSelectedDays("30 Days");
                                   setCustomSelected(false);
+                                  setSelectedFromDate("");
+                                  setSelectedToDate("");
                                 }}
                               >
                                 <span>Last 30 days</span>
@@ -335,8 +393,6 @@ const Homepage = () => {
                                 href="#!"
                                 onClick={(ev) => {
                                   ev.preventDefault();
-                                  setSelectedDays("Custom");
-                                  setCustomSelected(true);
                                   setModal(true);
                                 }}
                               >
@@ -354,97 +410,172 @@ const Homepage = () => {
           </BlockBetween>
         </BlockHead>
 
-        {/* First Row - 3 Boxes */}
+        {/* First Row - 4 Cards with Status Bars */}
         <Block>
           <Row className="g-gs">
             {/* Total Orders Card */}
-            <Col xl="4" md="4">
-              <PreviewAltCard className="h-100">
+            <Col xl="3" md="3">
+              <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
-                  <div className="card-title-group mb-2">
-                    <div className="card-title">
-                      <h6 className="title">Total Orders</h6>
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">TOTAL ORDERS</h6>
+                      <div className="stats-badges">
+                        <span className="badge-approved">✓ {approvedOrders}</span>
+                        <span className="badge-rejected">✗ {rejectedOrders}</span>
+                          <span className="badge-pending">⏳ {pendingOrders}</span>
+                      
+                      </div>
                     </div>
-                    <div className="card-tools">
-                      <Icon name="bag" size={24} className="text-primary" />
+                    <div className="stats-icon blue">
+                      <Icon name="bag" size={24} />
                     </div>
                   </div>
-                  <div className="card-amount">
+                  <div className="stats-value">
                     {loading.bills ? (
-                      <span className="amount">Loading...</span>
+                      <span>Loading...</span>
                     ) : (
                       <>
-                        <span className="amount">{totalOrders.toLocaleString('en-IN')}</span>
-                        <small className="change up text-success ms-2">
-                          <Icon name="arrow-up" /> +12.5%
-                        </small>
+                        <span className="value-number">{totalOrders}</span>
                       </>
                     )}
                   </div>
-                  <div className="card-info">
-                    <small className="text-soft">vs last period</small>
+                  {/* Status Bar */}
+                  <div className="status-bar-container">
+                    <div className="status-bar">
+                      <div 
+                        className="status-bar-segment approved" 
+                        style={{ width: `${totalOrders ? (approvedOrders/totalOrders)*100 : 0}%` }}
+                        title={`Approved: ${approvedOrders}`}
+                      />
+                      <div 
+                        className="status-bar-segment rejected" 
+                        style={{ width: `${totalOrders ? (rejectedOrders/totalOrders)*100 : 0}%` }}
+                        title={`Rejected: ${rejectedOrders}`}
+                      />
+                      {pendingOrders > 0 && (
+                        <div 
+                          className="status-bar-segment pending" 
+                          style={{ width: `${(pendingOrders/totalOrders)*100}%` }}
+                          title={`Pending: ${pendingOrders}`}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               </PreviewAltCard>
             </Col>
 
-            {/* Total Order Value Card */}
-            <Col xl="4" md="4">
-              <PreviewAltCard className="h-100">
+            {/* Paid Amount Card */}
+            <Col xl="3" md="3">
+              <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
-                  <div className="card-title-group mb-2">
-                    <div className="card-title">
-                      <h6 className="title">Total Order Value</h6>
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">PAID AMOUNT</h6>
+                      <div className="stats-badges">
+                        <span className="badge-paid">✓ Paid</span>
+                      </div>
                     </div>
-                    <div className="card-tools">
-                      <Icon name="card" size={24} className="text-success" />
+                    <div className="stats-icon green">
+                      <Icon name="check" size={24} />
                     </div>
                   </div>
-                  <div className="card-amount">
+                  <div className="stats-value">
                     {loading.bills ? (
-                      <span className="amount">Loading...</span>
+                      <span>Loading...</span>
                     ) : (
                       <>
-                        <span className="amount">₹{totalOrderValue.toLocaleString('en-IN')}</span>
-                        <small className="change up text-success ms-2">
-                          <Icon name="arrow-up" /> +8.2%
-                        </small>
+                        <span className="value-number">₹{(paidAmount).toLocaleString('en-IN')}</span>
                       </>
                     )}
                   </div>
-                  <div className="card-info">
-                    <small className="text-soft">vs last period</small>
+                  {/* Progress Bar */}
+                  <div className="progress-mini">
+                    <div className="progress-mini-label">
+                      <span>of ₹{(totalOrderValue).toLocaleString('en-IN')}</span>
+                      <span>{totalOrderValue ? ((paidAmount/totalOrderValue)*100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="progress-mini-bar">
+                      <div 
+                        className="progress-mini-fill paid" 
+                        style={{ width: `${totalOrderValue ? (paidAmount/totalOrderValue)*100 : 0}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               </PreviewAltCard>
             </Col>
 
-            {/* Total Customers Card */}
-            <Col xl="4" md="4">
-              <PreviewAltCard className="h-100">
+            {/* Pending Amount Card */}
+            <Col xl="3" md="3">
+              <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
-                  <div className="card-title-group mb-2">
-                    <div className="card-title">
-                      <h6 className="title">Total Customers</h6>
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">PENDING AMOUNT</h6>
+                      <div className="stats-badges">
+                        <span className="badge-pending">⏳ Pending</span>
+                      </div>
                     </div>
-                    <div className="card-tools">
-                      <Icon name="users" size={24} className="text-info" />
+                    <div className="stats-icon warning">
+                      <Icon name="clock" size={24} />
                     </div>
                   </div>
-                  <div className="card-amount">
-                    {loading.customers ? (
-                      <span className="amount">Loading...</span>
+                  <div className="stats-value">
+                    {loading.bills ? (
+                      <span>Loading...</span>
                     ) : (
                       <>
-                        <span className="amount">{totalCustomers.toLocaleString('en-IN')}</span>
-                        <small className="change up text-success ms-2">
-                          <Icon name="arrow-up" /> +5.3%
-                        </small>
+                        <span className="value-number">₹{(notPaidAmount).toLocaleString('en-IN')}</span>
                       </>
                     )}
                   </div>
-                  <div className="card-info">
-                    <small className="text-soft">active customers</small>
+                  {/* Progress Bar */}
+                  <div className="progress-mini">
+                    <div className="progress-mini-label">
+                      <span>of ₹{(totalOrderValue).toLocaleString('en-IN')}</span>
+                      <span>{totalOrderValue ? ((notPaidAmount/totalOrderValue)*100).toFixed(1) : 0}%</span>
+                    </div>
+                    <div className="progress-mini-bar">
+                      <div 
+                        className="progress-mini-fill pending" 
+                        style={{ width: `${totalOrderValue ? (notPaidAmount/totalOrderValue)*100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </PreviewAltCard>
+            </Col>
+
+            {/* Total Products Card */}
+            <Col xl="3" md="3">
+              <PreviewAltCard className="stats-card h-100">
+                <div className="card-body">
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">TOTAL PRODUCTS</h6>
+                      <div className="stats-badges">
+                        <span className="badge-info">📦 In Inventory</span>
+                      </div>
+                    </div>
+                    <div className="stats-icon purple">
+                      <Icon name="box" size={24} />
+                    </div>
+                  </div>
+                  <div className="stats-value">
+                    {loading.products ? (
+                      <span>Loading...</span>
+                    ) : (
+                      <>
+                        <span className="value-number">{totalProducts.toLocaleString('en-IN')}</span>
+                      </>
+                    )}
+                  </div>
+                  {/* Stock Indicator */}
+                  <div className="stock-indicator">
+                    <div className="stock-dot active" />
+                    <span className="stock-text">Active Products</span>
                   </div>
                 </div>
               </PreviewAltCard>
@@ -452,259 +583,465 @@ const Homepage = () => {
           </Row>
         </Block>
 
-        {/* Second Row - Performer of the Week (Left) and Circle Chart (Right) */}
+        {/* Second Row - Staff Performance and Charts */}
         <Block>
           <Row className="g-gs">
-  {/* Performer of the Week - Takes 4 columns */}
-  <Col xl="4" lg="4">
-    <Card className="card-bordered h-100">
-      <div className="card-inner">
-        <div className="card-title-group mb-3">
-          <div className="card-title">
-            <h6 className="title">🏆 Performer of the Week</h6>
+            {/* Staff Performance Card */}
+            <Col xl="4" lg="4">
+  <Card className="performance-card h-100">
+    <div className="card-inner">
+      <div className="performance-header">
+        <h6 className="performance-title">👤 Staff Performance</h6>
+        <Button 
+          size="sm" 
+          className="select-btn"
+          onClick={() => setShowStaffModal(true)}
+        >
+          <Icon name="select" /> Select Staff
+        </Button>
+      </div>
+      
+      {staffPerformance ? (
+        <div className="staff-details">
+          <div className="staff-avatar" style={{
+            background: staffPerformance.type === 'delivery' ? '#3498db' : 
+                        staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6'
+          }}>
+            {staffPerformance.name?.charAt(0)}
           </div>
-          <div className="card-tools">
-            <UncontrolledDropdown>
-              <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
-                <Icon name="more-h"></Icon>
-              </DropdownToggle>
-              <DropdownMenu end>
-                <ul className="link-list-opt no-bdr">
-                  <li>
-                    <DropdownItem tag="a" href="#dropdownitem" onClick={(ev) => ev.preventDefault()}>
-                      <span>This Week</span>
-                    </DropdownItem>
-                  </li>
-                  <li>
-                    <DropdownItem tag="a" href="#dropdownitem" onClick={(ev) => ev.preventDefault()}>
-                      <span>Last Week</span>
-                    </DropdownItem>
-                  </li>
-                  <li>
-                    <DropdownItem tag="a" href="#dropdownitem" onClick={(ev) => ev.preventDefault()}>
-                      <span>This Month</span>
-                    </DropdownItem>
-                  </li>
-                </ul>
-              </DropdownMenu>
-            </UncontrolledDropdown>
+          
+          <h5 className="staff-name">{staffPerformance.name}</h5>
+          <p className="staff-role" style={{
+            color: staffPerformance.type === 'delivery' ? '#3498db' : 
+                   staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6',
+            fontWeight: '600'
+          }}>
+            {staffPerformance.type === 'delivery' ? '🚚 Delivery Staff' : 
+             staffPerformance.type === 'sales' ? '💰 Sales Staff' : '👤 Manager'}
+          </p>
+          
+          {/* Sales Staff View */}
+          {staffPerformance.type === 'sales' && (
+            <>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span >Total Bills</span>
+                  <span className="stat-value">{staffPerformance.totalBills}</span>
+                </div>
+                <div className="stat-item">
+                  <span >Revenue</span>
+                  <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
+                </div>
+                <div className="stat-item">
+                  <span >Approved</span>
+                  <span className="stat-value success">{staffPerformance.approvedBills}</span>
+                </div>
+                <div className="stat-item">
+                  <span >Rejected</span>
+                  <span className="stat-value danger">{staffPerformance.rejectedBills}</span>
+                </div>
+              </div>
+
+              <div className="stats-grid-mini">
+                <div className="stat-item-mini">
+                  <span >Customers</span>
+                  <span className="stat-value">{staffPerformance.customersServed}</span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Last Bill</span>
+                  <span className="stat-value">{staffPerformance.lastBillDate}</span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Avg Order</span>
+                  <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Unpaid</span>
+                  <span className="stat-value warning">{staffPerformance.unpaidBills}</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Delivery Staff View */}
+          {staffPerformance.type === 'delivery' && (
+            <>
+              <div className="stats-grid">
+                <div className="stat-item">
+                  <span >Assigned Bills</span>
+                  <span className="stat-value">{staffPerformance.totalBills}</span>
+                </div>
+                <div className="stat-item">
+                  <span >Delivered</span>
+                  <span className="stat-value success">{staffPerformance.deliveredBills || 0}</span>
+                </div>
+                <div className="stat-item">
+                  <span >Pending</span>
+                  <span className="stat-value warning">{staffPerformance.pendingBills || 0}</span>
+                </div>
+                <div className="stat-item">
+                  <span >Revenue</span>
+                  <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
+                </div>
+              </div>
+
+              <div className="stats-grid-mini">
+                <div className="stat-item-mini">
+                  <span >Customers</span>
+                  <span className="stat-value">{staffPerformance.customersServed}</span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Last Delivery</span>
+                  <span className="stat-value">{staffPerformance.lastBillDate}</span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Delivery Rate</span>
+                  <span className="stat-value success">
+                    {staffPerformance.totalBills > 0 
+                      ? ((staffPerformance.deliveredBills / staffPerformance.totalBills) * 100).toFixed(1)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="stat-item-mini">
+                  <span >Avg per Bill</span>
+                  <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
+                </div>
+              </div>
+
+              {/* Delivery Progress Bar */}
+              <div className="performance-progress" style={{ marginTop: '1rem' }}>
+                {/* <div className="progress-label">
+                  <span>Delivery Completion</span>
+                  <span className="score">
+                    {staffPerformance.totalBills > 0 
+                      ? ((staffPerformance.deliveredBills / staffPerformance.totalBills) * 100).toFixed(1)
+                      : 0}%
+                  </span>
+                </div> */}
+                {/* <div className="progress-bar">
+                  <div 
+                    className="progress-fill success" 
+                    style={{ 
+                      width: staffPerformance.totalBills > 0 
+                        ? `${(staffPerformance.deliveredBills / staffPerformance.totalBills) * 100}%` 
+                        : '0%' 
+                    }}
+                  />
+                </div> */}
+              </div>
+            </>
+          )}
+
+          {/* Manager View - Simple Card */}
+          {(!staffPerformance.type || staffPerformance.type === 'manager') && (
+            <div className="manager-card" style={{
+              textAlign: 'center',
+              padding: '2rem 1rem',
+              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+              borderRadius: '16px',
+              marginTop: '1rem'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👔</div>
+              <h6 style={{ color: '#1a2b3c', marginBottom: '0.5rem' }}>Management Access Only</h6>
+              <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: 0 }}>
+                Performance metrics not applicable for manager role
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="no-staff-selected" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.3 }}>👤</div>
+          <p className="mt-3" style={{ color: '#6c757d' }}>Select a staff member to view performance</p>
+          <Button 
+            color="primary" 
+            className="select-btn mt-3"
+            onClick={() => setShowStaffModal(true)}
+          >
+            Browse Staff
+          </Button>
+        </div>
+      )}
+    </div>
+  </Card>
+</Col>
+
+            {/* Order Distribution Chart */}
+            <Col xl="4" lg="4">
+              <PreviewCard className="chart-card h-100">
+                <div className="card-head chart-header">
+                  <h6 className="chart-title mb-4">📊 Payment Distribution</h6>
+                  
+                </div>
+                <div className="chart-footer">
+                  <div className="chart-stat">
+                    <span className="stat-dot paid" />
+                    <span>Paid: ₹{(paidAmount).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="chart-stat">
+                    <span className="stat-dot unpaid" />
+                    <span>Unpaid: ₹{(notPaidAmount).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+                <div className="chart-container">
+                  <TrafficDougnut
+                    selectedDays={selectedDays}
+                    selectedFromDate={selectedFromDate}
+                    selectedToDate={selectedToDate}
+                    data={uniqueBills}
+                  />
+                </div>
+                {/* Chart Footer Stats */}
+                
+              </PreviewCard>
+            </Col>
+
+            {/* Delivery Status Cards */}
+            <Col xl="4" lg="4">
+              <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
+                <PreviewAltCard className="delivery-card flex-grow-1">
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
+                      <Icon name="user" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Total Customers</h6>
+                      <div className="delivery-value">
+                        {loading.customers ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">{totalCustomers}</span>
+                            <small className="badge">customers</small>
+                          </>
+                        )}
+                      </div>
+                      {/* Customer Growth Indicator */}
+                      <div className="growth-indicator">
+                        <Icon name="arrow-up" size={14} className="growth-icon" />
+                        <span className="growth-text">+{Math.round(totalCustomers * 0.15)} this month</span>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
+                {/* Total Staff Card */}
+               <PreviewAltCard className="delivery-card flex-grow-1">
+  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+    <div className="delivery-icon info" style={{ width: '55px', height: '55px' }}>
+      <Icon name="users" size={28} />
+    </div>
+    <div className="delivery-content">
+      <h6 className="delivery-title">Active Staff</h6>
+      <div className="delivery-value">
+        {loading.staff ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="value-number">{totalStaff}</span>
+            <small className="badge">total</small>
+          </>
+        )}
+      </div>
+      
+      {/* Staff Type Distribution */}
+      <div className="staff-type-distribution" style={{ marginTop: '0.75rem' }}>
+        {/* Delivery Staff */}
+        <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3498db' }} />
+            <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Delivery</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
+              {staffData.filter(s => s.type === 'delivery').length || 0}
+            </span>
+            <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
+              ({totalStaff ? Math.round((staffData.filter(s => s.type === 'delivery').length / totalStaff) * 100) : 0}%)
+            </small>
           </div>
         </div>
-        
-        {performerOfTheWeek ? (
-          <div className="text-center">
-            <div className="mx-auto mb-3" style={{ width: '80px', height: '80px' }}>
-              {performerOfTheWeek.image ? (
-                <img 
-                  src={performerOfTheWeek.image} 
-                  alt={performerOfTheWeek.name}
-                  className="rounded-circle w-100 h-100"
-                  style={{ objectFit: 'cover', border: '3px solid #f0f5ff' }}
-                />
-              ) : (
-                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center w-100 h-100 text-white fw-bold" 
-                     style={{ fontSize: '32px' }}>
-                  {performerOfTheWeek.name.charAt(0)}
-                </div>
-              )}
-            </div>
-            
-            <h5 className="fw-bold mb-1">{performerOfTheWeek.name}</h5>
-            <p className="text-soft small mb-3">Sales Representative</p>
 
-            <Row className="g-2 mb-3">
-              <Col xs="6">
-                <div className="bg-light rounded p-2">
-                  <div className="small text-soft">Orders</div>
-                  <div className="h4 fw-bold mb-0">{performerOfTheWeek.orders}</div>
-                </div>
-              </Col>
-              <Col xs="6">
-                <div className="bg-light rounded p-2">
-                  <div className="small text-soft">Revenue</div>
-                  <div className="h4 fw-bold mb-0">₹{performerOfTheWeek.revenue.toLocaleString('en-IN')}</div>
-                </div>
-              </Col>
-            </Row>
-
-            <div className="text-start">
-              <div className="d-flex justify-content-between mb-1">
-                <small className="text-soft">Monthly Target</small>
-                <small className="fw-medium text-primary">75%</small>
-              </div>
-              <div className="progress mb-3" style={{ height: '6px' }}>
-                <div className="progress-bar bg-primary" style={{ width: '75%' }} />
-              </div>
-            </div>
-
-            <div className="d-flex justify-content-between pt-2 border-top">
-              <div>
-                <small className="text-soft d-block">Completed</small>
-                <span className="fw-bold">24</span>
-              </div>
-              <div>
-                <small className="text-soft d-block">Target</small>
-                <span className="fw-bold">32</span>
-              </div>
-              <div>
-                <small className="text-soft d-block">Left</small>
-                <span className="fw-bold">8</span>
-              </div>
-            </div>
+        {/* Sales Staff */}
+        <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71' }} />
+            <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Sales</span>
           </div>
-        ) : (
-          <div className="text-center py-4">
-            <Icon name="user" size={40} className="text-soft mb-2" />
-            <p className="text-soft mb-0">No performer data</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
+              {staffData.filter(s => s.type === 'sales').length || 0}
+            </span>
+            <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
+              ({totalStaff ? Math.round((staffData.filter(s => s.type === 'sales').length / totalStaff) * 100) : 0}%)
+            </small>
+          </div>
+        </div>
+
+        {/* Other/Unspecified Staff */}
+        {staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length > 0 && (
+          <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#95a5a6' }} />
+              <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Other</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
+                {staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length}
+              </span>
+              <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
+                ({totalStaff ? Math.round((staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length / totalStaff) * 100) : 0}%)
+              </small>
+            </div>
           </div>
         )}
       </div>
-    </Card>
-  </Col>
 
-  {/* Circle Chart - Takes 4 columns */}
-  <Col xl="4" lg="4">
-                  <PreviewCard className="h-100">
-                    <div className="card-head">
-                      <h6 className="title">Order Distribution</h6>
-                    </div>
-                    <div className="nk-ck-sm" style={{ height: '280px' }}>
-                      <TrafficDougnut
-                        selectedDays={selectedDays}
-                        selectedFromDate={selectedFromDate}
-                        selectedToDate={selectedToDate}
-                        data={uniqueBills}
-                      />
-                    </div>
-                  </PreviewCard>
-                </Col>
-
-  {/* Small Cards Stack - Takes 4 columns */}
-  <Col xl="4" lg="4">
-    <div className="d-flex flex-column h-100" style={{ gap: '1rem' }}>
-      {/* Total Staff */}
-      <PreviewAltCard className="flex-grow-1">
-        <div className="card-body d-flex align-items-center">
-          <div className="bg-info-soft rounded p-3 me-3">
-            <Icon name="users" size={24} className="text-info" />
-          </div>
-          <div>
-            <h6 className="title ml-5 mb-1">Total Staff</h6>
-            <div className="d-flex ml-5 align-items-baseline">
-              {loading.staff ? (
-                <span>Loading...</span>
-              ) : (
-                <>
-                  <span className="h3 mb-0 ml-4 mt-1 me-2">{totalStaff}</span>
-                  <small className="text-soft">active</small>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </PreviewAltCard>
-
-      {/* Paid Amount */}
-      <PreviewAltCard className="flex-grow-1">
-        <div className="card-body d-flex align-items-center">
-          <div className="bg-success-soft rounded p-3 me-3">
-            <Icon name="check-circle" size={24} className="text-success" />
-          </div>
-          <div>
-            <h6 className="title mb-1 ml-5">Paid Amount</h6>
-            <div className="d-flex align-items-baseline ml-5 flex-wrap">
-              {loading.bills ? (
-                <span>Loading...</span>
-              ) : (
-                <>
-                  <span className="h4 mb-0 ml-4  mt-1 me-2">
-                    ₹{filteredBills
-                      .filter(b => b.paidStatus)
-                      .reduce((acc, b) => acc + (b.totalAmt || 0), 0)
-                      .toLocaleString('en-IN')}
-                  </span>
-                  <small className="text-soft">paid</small>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </PreviewAltCard>
-
-      {/* Pending Amount */}
-      <PreviewAltCard className="flex-grow-1">
-        <div className="card-body d-flex ">
-          <div className="bg-warning-soft rounded p-3 me-3">
-            <Icon name="clock" size={24} className="text-warning" />
-          </div>
-          <div>
-            <h6 className="title mb-1 ml-5">Pending Amount</h6>
-            <div className="d-flex align-items-baseline ml-5 flex-wrap">
-              {loading.bills ? (
-                <span>Loading...</span>
-              ) : (
-                <>
-                  <span className="h4 mb-0 ml-4 mt-1 me-2">
-                    ₹{filteredBills
-                      .filter(b => !b.paidStatus)
-                      .reduce((acc, b) => acc + (b.totalAmt || 0), 0)
-                      .toLocaleString('en-IN')}
-                  </span>
-                  <small className="text-soft">pending</small>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </PreviewAltCard>
+      
     </div>
-  </Col>
-</Row>
+  </div>
+</PreviewAltCard>
+
+                {/* Total Customers Card */}
+                
+
+                {/* Average Order Value Card */}
+                <PreviewAltCard className="delivery-card flex-grow-1">
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon purple" style={{ width: '55px', height: '55px' }}>
+                      <Icon name="trend-up" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Avg Order Value</h6>
+                      <div className="delivery-value">
+                        {loading.bills ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">
+                              ₹{totalOrders > 0 ? (totalOrderValue/totalOrders).toFixed(0) : 0}
+                            </span>
+                            <small className="badge">per order</small>
+                          </>
+                        )}
+                      </div>
+                      {/* Trend Indicator */}
+                      <div className="trend-indicator up">
+                        <Icon name="arrow-up" size={14} />
+                        <span>8.2% vs last period</span>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
+              </div>
+            </Col>
+          </Row>
         </Block>
 
         {/* Third Row - Transaction Table */}
         <Block>
           <Row className="g-gs">
             <Col xxl="12">
-              <Card className="card-bordered card-full">
-                <div className="card-inner">
-                  <div className="card-title-group mb-3">
-                    <div className="card-title">
-                      <h6 className="title">Recent Transactions</h6>
-                    </div>
-                    <div className="card-tools">
-                      <Button tag="a" href="#!" size="sm" className="btn-outline-light">
-                        View All
-                      </Button>
-                    </div>
+              <Card className="table-card">
+                <div className="card-inner table-header">
+                  <div className="title-section">
+                    <h6 className="table-title">Recent Transactions</h6>
+                    <p className="table-subtitle">Last 10 bills</p>
                   </div>
-                  <TransactionTable 
-                    bills={uniqueBills.slice(0, 10)} 
-                    loading={loading.bills}
-                  />
+                  <div className="table-tools">
+                    <Button tag="a" href="#!" size="sm" className="view-btn">
+                      View All <Icon name="arrow-right" />
+                    </Button>
+                  </div>
                 </div>
+                <TransactionTable 
+                  bills={uniqueBills.slice(0, 10)} 
+                  loading={loading.bills}
+                />
               </Card>
             </Col>
           </Row>
         </Block>
       </Content>
 
-      <Modal isOpen={modal} toggle={() => setModal(false)} className="modal-dialog-centered" size="lg">
-        <ModalBody>
+      {/* Staff Selection Modal */}
+      <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="lg">
+        <ModalBody className="staff-modal-body">
           <a
             href="#cancel"
             onClick={(ev) => {
               ev.preventDefault();
-              setModal(false);
-              setSelectedDays("All");
+              setShowStaffModal(false);
             }}
             className="close"
           >
             <Icon name="cross-sm"></Icon>
           </a>
-          <div className="p-2">
-            <h5 className="title">Select Date Range</h5>
-            <div className="mt-4">
+          <div className="staff-modal-content">
+            <h5 className="staff-modal-title">👤 Select Staff Member</h5>
+            <div className="staff-list">
+              {staffData.length > 0 ? (
+                staffData.map((staff) => {
+                  const staffBills = billData.filter(b => b.createdBy === staff._id);
+                  const totalRevenue = staffBills.reduce((acc, b) => acc + (b.totalAmt || 0), 0);
+                  const approvedCount = staffBills.filter(b => b.orderStatus === "approved").length;
+                  const pendingCount = staffBills.filter(b => b.orderStatus === "pending").length;
+                  
+                  return (
+                    <div
+                      key={staff._id}
+                      className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
+                      onClick={() => handleStaffPerformanceSelect(staff)}
+                    >
+                      <div className="staff-avatar-small">
+                        {staff.name?.charAt(0)}
+                      </div>
+                      <div className="staff-info">
+                        <h6>{staff.name}</h6>
+                        <p>{staff.email || 'No email'}</p>
+                      </div>
+                      <div className="staff-stats">
+                        {/* <span className="stat-badge">
+                          {staffBills.length} bills
+                        </span>
+                        <span className="stat-badge approved">
+                          {approvedCount} approved
+                        </span>
+                        {pendingCount > 0 && (
+                          <span className="stat-badge pending">
+                            {pendingCount} pending
+                          </span>
+                        )}
+                        <span className="stat-badge revenue">
+                          ₹{(totalRevenue/1000).toFixed(1)}K
+                        </span> */}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-center py-4">No staff found</p>
+              )}
+            </div>
+          </div>
+        </ModalBody>
+      </Modal>
+
+      {/* Date Range Modal */}
+      <Modal isOpen={modal} toggle={() => setModal(false)} className="date-modal" size="lg">
+        <ModalBody className="date-modal-body">
+          <a
+            href="#cancel"
+            onClick={(ev) => {
+              ev.preventDefault();
+              setModal(false);
+            }}
+            className="close"
+          >
+            <Icon name="cross-sm"></Icon>
+          </a>
+          <div className="date-modal-content">
+            <h5 className="date-modal-title">📅 Select Date Range</h5>
+            <div className="date-picker">
               <div className="row">
                 <div className="col-md-6">
                   <div className="form-group">
@@ -733,13 +1070,13 @@ const Homepage = () => {
                 </div>
               </div>
 
-              <div className="mt-4 text-right">
-                <button type="button" className="btn btn-secondary mr-2" onClick={() => setModal(false)}>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setModal(false)}>
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn-primary"
                   onClick={handleDateSubmit}
                   disabled={!selectedFromDate || !selectedToDate}
                 >

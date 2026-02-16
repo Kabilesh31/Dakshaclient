@@ -94,23 +94,23 @@ const TrafficDougnut = ({ selectedDays, selectedFromDate, selectedToDate, data }
         ) : (
           <div className="traffic-channel-group g-2 ">
             <div className="traffic-channel-data">
-              <div className="title">
+              <div className="title ml-5">
                 <span className="dot dot-lg sq" style={{ background: "#78B9B5" }}></span>
                 <span>Paid</span>
               </div>
-              <div className="amount">
+              <div className="amount ml-5">
                 {paidOrders} <small>{paidPercentage}%</small>
               </div>
             </div>
 
             <div className="traffic-channel-data">
-              <div className="title">
+              <div className="title ml-5">
                 <span className="dot dot-lg sq" style={{ background: "#FF7D7D" }}></span>
                 <span style={{ cursor: "pointer" }} onClick={handleNavigate}>
                   Not Paid
                 </span>
               </div>
-              <div className="amount">
+              <div className="amount ml-5">
                 {notPaidOrders} <small>{notPaidPercentage}%</small>
               </div>
             </div>
