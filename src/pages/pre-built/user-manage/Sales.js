@@ -896,13 +896,21 @@
                                             <Badge className="mx-2" color="primary" pill>
                                               {customer.lineNo}
                                             </Badge>
-
-                                            <div className="ms-3 ml-3">
+                                          <div className="ms-3 w-100">
+                                            <div style={{display : "flex", justifyContent : "space-between"}} className="d-flex w-100 pr-2">
                                               <strong>{customer.name}</strong>
-                                              <div className="text-muted small">
-                                                {customer.address} | {customer.phone}
-                                              </div>
+
+                                              {customer.isNew && (
+                                                <strong style={{backgroundColor : "#f2f2f2", width : "45px", textAlign : "center", marginTop : "5px", fontSize : "12px"}} className="ms-auto text-danger">
+                                                  New
+                                                </strong>
+                                              )}
                                             </div>
+
+                                            <div className="text-muted small">
+                                              {customer.address} | {customer.phone}
+                                            </div>
+                                          </div>
 
                                           </div>
                                         </div>
