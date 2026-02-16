@@ -16,30 +16,60 @@ const Reports = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [search, setSearch] = useState("");
+  
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+const fetchCustomers = async () => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`
+    );
 
-  const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-      setCustomers(res.data.filter((c) => !c.isDeleted));
-    } catch {
-      errorToast("Failed to fetch customers");
-    }
-  };
+    setCustomers(res.data); // your backend returns array directly
 
-  const fetchReport = (customer) => {
-    setSelectedCustomer(customer);
+  } catch (error) {
+    console.error(error);
+    errorToast("Failed to fetch customers");
+  }
+};
+const fetchReport = async () => {
+  if (!selectedCustomer) return;
 
-    const dummyOrders = [
-      { orderNo: "ORD001", date: "2026-01-01", amount: 1200 },
-      { orderNo: "ORD002", date: "2026-01-05", amount: 850 },
-      { orderNo: "ORD003", date: "2026-01-10", amount: 560 },
-    ];
-    setReportData(dummyOrders);
-  };
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/bills`,
+      {
+        params: {
+          startDate: startDate ? startDate.toISOString() : null,
+          endDate: endDate ? endDate.toISOString() : null,
+        },
+      }
+    );
+
+    // Filter bills for selected customer only
+    const customerBills = res.data.bills.filter(
+      (b) => b.customerId === selectedCustomer._id
+    );
+
+    setReportData(customerBills);
+  } catch (err) {
+    console.error("REPORT ERROR:", err.response?.data || err.message);
+    errorToast("Failed to fetch report");
+  }
+};
+
+
+useEffect(() => {
+  fetchCustomers();
+}, []);
+
+useEffect(() => {
+  if (selectedCustomer) fetchReport();
+}, [selectedCustomer, dateRange]);
+
+
+
+
+
   const PopperContainer = ({ children }) => {
     return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
   };
@@ -62,7 +92,10 @@ const Reports = () => {
     XLSX.writeFile(wb, `${selectedCustomer.name}_Report.xlsx`);
   };
 
-  const totalAmount = reportData.reduce((acc, o) => acc + o.amount, 0);
+ const totalAmount = reportData.reduce(
+  (acc, o) => acc + (o.totalAmt || 0),
+  0
+);
 
   const CustomDateButton = forwardRef(({ value, onClick }, ref) => (
     <button className="btn btn-outline-primary shadow-sm" onClick={onClick} ref={ref} style={{ minWidth: "220px" }}>
@@ -72,7 +105,7 @@ const Reports = () => {
 
   return (
     <div className="container py-4 mt-5">
-      <div className="d-flex gap-4" style={{ height: "90vh" }}>
+      <div className="d-flex gap-4" style={{ height: "70vh" }}>
         {/* Left Panel: Customers */}
         <div style={{ flex: 1, overflowY: "auto", borderRight: "1px solid #eee", paddingRight: "1rem" }}>
           <h5 className="mt-3">Customers</h5>
@@ -90,7 +123,11 @@ const Reports = () => {
                 key={c._id}
                 className={`d-flex align-items-center justify-content-between p-3 mb-2 rounded shadow-sm ${selectedCustomer?._id === c._id ? "bg-primary text-white" : "bg-white"}`}
                 style={{ cursor: "pointer", transition: "all 0.2s" }}
-                onClick={() => fetchReport(c)}
+                onClick={() => {
+  setSelectedCustomer(c);
+  fetchReport(c);   // call immediately
+}}
+
               >
                 <div className="d-flex align-items-center gap-2">
                   <div
@@ -173,6 +210,7 @@ const Reports = () => {
                   flexDirection: "column",
                   justifyContent: "flex-end",
                   paddingBottom: "2rem",
+                  marginTop:"50px"
                 }}
               >
                 <h4 className="fw-bold mb-2">Report: {selectedCustomer.name}</h4>
@@ -185,7 +223,7 @@ const Reports = () => {
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "flex-end",
-                  paddingBottom: "3rem",
+                  paddingBottom: "1rem",
                 }}
               >
                 {/* Summary Cards */}
@@ -209,36 +247,52 @@ const Reports = () => {
                 </Row>
 
                 {/* Report Table */}
-                {reportData.length > 0 ? (
-                  <Table hover responsive className="shadow-sm rounded bg-white">
-                    <thead className="table-light">
-                      <tr>
-                        <th style={{ width: "50px" }}>#</th>
-                        <th>Order No</th>
-                        <th>Date</th>
-                        <th>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.map((o, idx) => (
-                        <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>{o.orderNo}</td>
-                          <td>{o.date}</td>
-                          <td>{o.amount}</td>
-                        </tr>
-                      ))}
-                      <tr className="fw-bold bg-light">
-                        <td colSpan={3} className="text-end">
-                          Total
-                        </td>
-                        <td>{totalAmount}</td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                ) : (
-                  <div className="text-center mt-5 text-muted fs-5">No orders found for the selected date range</div>
-                )}
+               {reportData.length > 0 ? (
+  <Table hover responsive className="shadow-sm rounded bg-white">
+  <thead className="table-light">
+    <tr>
+      <th>#</th>
+      <th>Order No</th>
+      <th>Date</th>
+      <th>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {reportData.length > 0 ? (
+      reportData.map((o, idx) => (
+        <tr key={o._id}>
+          <td>{idx + 1}</td>
+          <td>#{o._id.toString().slice(-6)}</td>
+          <td>{new Date(o.createdAt).toLocaleDateString()}</td>
+          <td>₹ {o.totalAmt}</td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan={4} className="text-center text-muted py-4">
+          No orders found for the selected date range
+        </td>
+      </tr>
+    )}
+
+    {/* Always show the total row */}
+    <tr className="fw-bold bg-light">
+      <td colSpan={3} className="text-end">
+        Total
+      </td>
+      <td>
+        ₹ {reportData.reduce((sum, o) => sum + (o.totalAmt || 0), 0)}
+      </td>
+    </tr>
+  </tbody>
+</Table>
+
+) : (
+  <div className="text-center mt-5 text-muted fs-5">
+    No orders found for the selected date range
+  </div>
+)}
+
               </div>
             </>
           ) : (
