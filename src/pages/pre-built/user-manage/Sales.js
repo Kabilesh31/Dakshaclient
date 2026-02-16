@@ -810,19 +810,17 @@
                   <div className="form-group" style={{ minWidth: '250px' }}>
                     <label className="form-label">Select Route</label>
                   <select
-    className="form-control"
-    value={selectedRouteForAlignment}
-    onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
-  >
-    <option value="">Select Route</option>
-    {routes.map(route => (
-      <option key={route._id} value={route._id}>
-    {route.routeName}
-  </option>
-    ))}
-  </select>
-
-
+                    className="form-control"
+                    value={selectedRouteForAlignment}
+                    onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
+                  >
+                    <option value="">Select Route</option>
+                    {routes.map(route => (
+                      <option key={route._id} value={route._id}>
+                    {route.routeName}
+                  </option>
+                    ))}
+                  </select>
 
                   </div>
                   <Button 
@@ -859,98 +857,83 @@
 
               <div className="row">
                 <div className="col-lg-8">
-    <div className="card card-bordered">
-      <div className="card-inner">
+                  <div className="card card-bordered">
+                    <div className="card-inner">
 
-        <h6 className="title mb-3">
-          {selectedRoute
-            ? `${selectedRoute.routeName} - Delivery Line Order`
-            : "Select a Route"}
-          {selectedRoute && (
-            <Badge color="primary" className="ms-2">
-              {routeCustomers.length} Customers
-            </Badge>
-          )}
-        </h6>
+                      <h6 className="title mb-3">
+                        {selectedRoute
+                          ? `${selectedRoute.routeName} - Delivery Line Order`
+                          : "Select a Route"}
+                        {selectedRoute && (
+                          <Badge color="primary" className="ms-2">
+                            {routeCustomers.length} Customers
+                          </Badge>
+                        )}
+                      </h6>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="customers">
-            {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                          <Droppable droppableId="customers">
+                            {(provided) => (
+                              <div ref={provided.innerRef} {...provided.droppableProps}>
 
-                {routeCustomers.length > 0 ? (
-                  routeCustomers.map((customer, index) => (
-                    
-                    <Draggable
-                      key={customer._id}
-                      draggableId={customer._id}
-                      index={index}
-                    >
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="customer-item mb-2"
-                        >
-                          <div className="d-flex align-items-center">
+                                {routeCustomers.length > 0 ? (
+                                  routeCustomers.map((customer, index) => (
+                                    
+                                    <Draggable
+                                      key={customer._id}
+                                      draggableId={customer._id}
+                                      index={index}
+                                    >
+                                      {(provided) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          {...provided.dragHandleProps}
+                                          className="customer-item mb-2"
+                                        >
+                                          <div className="d-flex align-items-center">
 
-                            <Badge color="primary" pill>
-                              {customer.lineNo}
-                            </Badge>
+                                            <Badge className="mx-2" color="primary" pill>
+                                              {customer.lineNo}
+                                            </Badge>
 
-                            <div className="ms-3 ml-3">
-                              <strong>{customer.name}</strong>
-                              <div className="text-muted small">
-                                {customer.address} | {customer.phone}
+                                            <div className="ms-3 ml-3">
+                                              <strong>{customer.name}</strong>
+                                              <div className="text-muted small">
+                                                {customer.address} | {customer.phone}
+                                              </div>
+                                            </div>
+
+                                          </div>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))
+                                ) : (
+                                  <p className="text-center text-muted">
+                                    No customers assigned to this route
+                                  </p>
+                                )}
+
+                                {provided.placeholder}
                               </div>
-                            </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
 
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))
-                ) : (
-                  <p className="text-center text-muted">
-                    No customers assigned to this route
-                  </p>
-                )}
-
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-
-      </div>
-    </div>
-  </div>
+                      </div>
+                    </div>
+                  </div>
 
 
                 <div className="col-lg-4">
                   <div className="card card-bordered h-100">
                     <div className="card-inner">
-                      <h6 className="title">Route Information</h6>
-                      <div className="mt-3">
-                        {selectedRoute && (
-                          <div className="p-3 bg-light rounded mb-3">
-                            <h5 className="text-primary">{selectedRoute.name}</h5>
-                            <p className="text-muted">{selectedRoute.description}</p>
-                            <div className="d-flex justify-content-between">
-                              <div>
-                                <Icon name="map-pin" className="text-primary"></Icon>
-                                <span className="ms-2">{selectedRoute.stops} stops</span>
-                              </div>
-                              <div>
-                                <Icon name="clock" className="text-primary"></Icon>
-                                <span className="ms-2">{selectedRoute.estimatedTime}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                      
+                     
+                        
 
-                        <div className="mt-4">
+                        <div className="mt-2">
                           <h6 className="title">Alignment Instructions</h6>
                           <ul className="list-unstyled">
                             <li className="mb-2">
@@ -976,7 +959,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              
 
               {/* Customer Details Table */}
               <div className="mt-4">
@@ -1027,19 +1010,13 @@
                           <td>
                             <div className="d-flex gap-1">
                               <Button
-    size="sm"
-    color="light"
-    onClick={() => handleViewCustomer(customer)}
-  >
-    <Icon name="eye"></Icon>
-  </Button>
-
-                              <Button size="sm" color="light">
-                                <Icon name="edit"></Icon>
-                              </Button>
-                              <Button size="sm" color="light">
-                                <Icon name="trash"></Icon>
-                              </Button>
+                                  size="md"
+                                  style={{height:"30px"}}
+                                  color="light"
+                                  onClick={() => handleViewCustomer(customer)}
+                                >
+                                  <Icon name="eye"></Icon>
+                                </Button>
                             </div>
                           </td>
                         </tr>
@@ -1070,8 +1047,8 @@
       // Get staff with active deliveries
       const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
         activeDeliveries.some(delivery => 
-    String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
-  )
+        String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
+      )
 
       );
       
@@ -1082,28 +1059,18 @@
       )
     : null;
 
-  const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
-    ? customers.filter(
-        (c) =>
-          String(c.routeId) ===
-          String(
-            selectedStaffDelivery.routeId?._id ||
-            selectedStaffDelivery.routeId ||
-            selectedStaffDelivery.routeName
-          )
-      )
-    : [];
+    
 
-  const totalCustomers = assinedCustomerDatas?.length || 0;
+      const totalCustomers = assinedCustomerDatas?.length || 0;
 
-  const completedCustomers =
-  assinedCustomerDatas?.filter(
-    (c) => c.orderPending === false
-  ).length || 0;
+      const completedCustomers =
+      assinedCustomerDatas?.filter(
+        (c) => c.orderPending === false
+      ).length || 0;
 
 
-  const isRouteCompleted =
-  totalCustomers > 0 && completedCustomers === totalCustomers;
+      const isRouteCompleted =
+      totalCustomers > 0 && completedCustomers === totalCustomers;
 
   
   const getCustomerStatusClass = (status) => {
@@ -1284,15 +1251,15 @@
                   <div className="mb-3">
                     <h6 className="title">
                     {selectedTrackStaff ? (
-    <>
-      Tracking: {selectedTrackStaff.name}
-      <span className="text-muted ml-1 ms-2">
-        ({completedCustomers} / {totalCustomers})
-      </span>
-    </>
-  ) : (
-    "Live Map View (All Staff)"
-  )}
+                        <>
+                          Tracking: {selectedTrackStaff.name}
+                          <span className="text-muted ml-1 ms-2">
+                            ({completedCustomers} / {totalCustomers})
+                          </span>
+                        </>
+                      ) : (
+                        "Live Map View (All Staff)"
+                      )}
 
 
                       {selectedTrackStaff && selectedStaffDelivery && (
@@ -1303,13 +1270,17 @@
                     </h6>
 
                     {selectedTrackStaff && liveLocation && (
-                      <p className="text-muted mb-0 small">
+                     <p className="text-muted mb-0 small">
                         Last updated:{" "}
                         {new Date(
                           liveLocation.updatedAt ||
                           liveLocation.timeStamp ||
                           Date.now()
-                        ).toLocaleTimeString()}
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true, // remove if you want 24-hour format
+                        })}
                       </p>
                     )}
                   </div>
@@ -1332,33 +1303,33 @@
                     {/* HEADER */}
                     <div className="mb-3">
                       <div className="mb-1">
-    {/* FIRST LINE */}
-    <h6 className="title d-flex align-items-center mb-0">
-      <span
-        className="me-1"
-        style={{ fontSize: "27px", lineHeight: 1 }}
-      >
-        {selectedTrackStaff?.type === "delivery" ? "🚚" : "🚚"}
-      </span>
+                            {/* FIRST LINE */}
+                            <h6 className="title d-flex align-items-center mb-0">
+                              <span
+                                className="me-1"
+                                style={{ fontSize: "27px", lineHeight: 1 }}
+                              >
+                                {selectedTrackStaff?.type === "delivery" ? "🚚" : "🚚"}
+                              </span>
 
-      {selectedTrackStaff?.type === "delivery"
-        ? "Delivery Vehicle"
-        : "Sales Vehicle"}{" "}
-         <Badge
-          color={isRouteCompleted ? "success" : "primary"}
-          className="fs-11"
-        >
-          Status : {isRouteCompleted ? "Completed" : "Running"}
-        </Badge>
-    </h6>
-   
+                              {selectedTrackStaff?.type === "delivery"
+                                ? "Delivery Vehicle"
+                                : "Sales Vehicle"}{" "}
+                                <Badge
+                                  color={isRouteCompleted ? "success" : "primary"}
+                                  className="fs-11"
+                                >
+                                  Status : {isRouteCompleted ? "Completed" : "Running"}
+                                </Badge>
+                            </h6>
+                          
 
-    {/* SECOND LINE */}
-    <div className="mt-1">
-      
+                            {/* SECOND LINE */}
+                            <div className="mt-1">
+                              
 
-    </div>
-  </div>
+                            </div>
+                          </div>
 
 
 
@@ -1393,40 +1364,40 @@
                         .sort((a, b) => a.lineNo - b.lineNo)
                         .map((customer, index) => {
                           const isActiveCustomer =
-    selectedCustomerForMap?._id === customer._id;
-                         let rowStatus = "upcoming";
+                              selectedCustomerForMap?._id === customer._id;
+                                                  let rowStatus = "upcoming";
 
-if (customer.orderPending === false) {
-  rowStatus = "completed";
-} else if (customer.orderPending === true) {
-  const hasPreviousPending = assinedCustomerDatas
-    .sort((a, b) => a.lineNo - b.lineNo)
-    .some(
-      (c) =>
-        c.lineNo < customer.lineNo &&
-        c.orderPending === true
-    );
+                          if (customer.orderPending === false) {
+                            rowStatus = "completed";
+                          } else if (customer.orderPending === true) {
+                            const hasPreviousPending = assinedCustomerDatas
+                              .sort((a, b) => a.lineNo - b.lineNo)
+                              .some(
+                                (c) =>
+                                  c.lineNo < customer.lineNo &&
+                                  c.orderPending === true
+                              );
 
-  if (!hasPreviousPending) {
-    rowStatus = "current";
-  }
-}
+                            if (!hasPreviousPending) {
+                              rowStatus = "current";
+                            }
+                          }
 
 
 
                           return (
                             <div
-    className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
-    key={customer._id}
-    onClick={() => setSelectedCustomerForMap(customer)}
+                              className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+                              key={customer._id}
+                              onClick={() => setSelectedCustomerForMap(customer)}
   >
 
                               <div className="rail-left">
                                 {rowStatus === "current" ? (
                                   <div className="rail-van">
                                     <div className="rail-icon">
-    {getRailIcon(rowStatus)}
-  </div>
+                                      {getRailIcon(rowStatus)}
+                                    </div>
 
                                   </div>
                                 ) : (
@@ -1442,10 +1413,10 @@ if (customer.orderPending === false) {
                                 <div className="d-flex justify-content-between">
                                   <strong>{customer.name}</strong>
                                   <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
-        {rowStatus === "completed" && "Delivered"}
-        {rowStatus === "current" && "Arriving"}
-        {rowStatus === "upcoming" && "Expected"}
-      </span>
+                                      {rowStatus === "completed" && "Delivered"}
+                                      {rowStatus === "current" && "Arriving"}
+                                      {rowStatus === "upcoming" && "Expected"}
+                                    </span>
                                 </div>
 
                                 <small
@@ -1478,98 +1449,17 @@ if (customer.orderPending === false) {
                         </div>
                       </div>
                       {isRouteCompleted && (
-    <div className="alert alert-success py-2 mb-3">
-      🎉 All Customers Delivered – Route Completed Successfully
-    </div>
-  )}
+                        <div className="alert alert-success py-2 mb-3">
+                          🎉 All Customers Delivered – Route Completed Successfully
+                        </div>
+                      )}
                     </div>
 
                   </div>
                 </div>
               </div>
             </div>
-   
-            
-
-            
-            {/* Delivery Details Table */}
-            {selectedTrackStaff && (
-              <div className="mt-4">
-                <div className="card card-bordered">
-                  <div className="card-inner">
-                    <h6 className="title">Delivery Details for {selectedTrackStaff.name}</h6>
-                    <div className="table-responsive mt-3">
-                      <table className="table table-hover">
-                        <thead>
-                          <tr>
-                            <th>Route</th>
-                            <th>Start Time</th>
-                            <th>Estimated End</th>
-                            <th>Stops Completed</th>
-                            <th>Next Stop</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {activeDeliveries
-                            .filter(delivery => delivery.staffId === selectedTrackStaff.id)
-                            .map((delivery) => {
-                              const route = findRoute(delivery.routeId);
-                              return (
-                                <tr key={delivery._id}>
-                                  <td>
-                                    <div className="fw-medium">{delivery.routeName}</div>
-                                    <small className="text-muted">{route?.description}</small>
-                                  </td>
-                                  <td>
-                                    {delivery.createdAt 
-                                      ? new Date(delivery.createdAt).toLocaleTimeString([], { 
-                                          hour: '2-digit', 
-                                          minute: '2-digit' 
-                                        })
-                                      : 'N/A'
-                                    }
-                                  </td>
-                                  <td>
-                                    <div className="fw-medium">12:30 PM</div>
-                                    <small className="text-muted">Estimated</small>
-                                  </td>
-                                  <td>
-                                    <div className="d-flex align-items-center">
-                                      <div className="progress flex-grow-1 me-2" style={{ height: '6px' }}>
-                                        <div 
-                                          className="progress-bar bg-success" 
-                                          style={{ width: '65%' }}
-                                        ></div>
-                                      </div>
-                                      <span>4/8</span>
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="fw-medium">Fresh Grocery</div>
-                                    <small className="text-muted">456 Oak Ave</small>
-                                  </td>
-                                  <td>
-                                    <Badge color={getStatusBadge(delivery.status)}>
-                                      {delivery.status?.replace('_', ' ') || 'UNKNOWN'}
-                                    </Badge>
-                                  </td>
-                                  <td>
-                                    <Button size="sm" color="light">
-                                      <Icon name="phone"></Icon> Call
-                                    </Button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+          
           </PreviewCard>
         </div>
       </div>
@@ -1725,47 +1615,47 @@ if (customer.orderPending === false) {
             </ModalBody>
           </Modal>
           <Modal
-  isOpen={viewCustomerModal}
-  toggle={() => setViewCustomerModal(false)}
-  size="lg"
-  centered
->
-  <ModalHeader toggle={() => setViewCustomerModal(false)}>
-    Customer Details
-  </ModalHeader>
+            isOpen={viewCustomerModal}
+            toggle={() => setViewCustomerModal(false)}
+            size="lg"
+            centered
+          >
+            <ModalHeader toggle={() => setViewCustomerModal(false)}>
+              Customer Details
+            </ModalHeader>
 
-  <ModalBody>
-    {selectedCustomer && (
-      <div className="row g-4">
+            <ModalBody>
+              {selectedCustomer && (
+                <div className="row g-4">
 
-        {/* Profile Section */}
-       <div className="col-12">
-  <div
-    className="d-flex align-items-center p-3 bg-light rounded"
-    style={{ gap: "15px" }} // horizontal spacing between items
-  >
-    {/* Avatar */}
-    <div
-      className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
-      style={{ fontSize: "20px", width: "60px", height: "60px" }}
-    >
-      {selectedCustomer.name.charAt(0)}
-    </div>
+                  {/* Profile Section */}
+                <div className="col-12">
+            <div
+              className="d-flex align-items-center p-3 bg-light rounded"
+              style={{ gap: "15px" }} // horizontal spacing between items
+            >
+              {/* Avatar */}
+              <div
+                className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
+                style={{ fontSize: "20px", width: "60px", height: "60px" }}
+              >
+                {selectedCustomer.name.charAt(0)}
+              </div>
 
-    {/* Name & Phone */}
-    <div className="d-flex flex-column">
-      <h5 className="mb-1">{selectedCustomer.name}</h5>
-      <span className="text-muted">{selectedCustomer.phone}</span>
-    </div>
+              {/* Name & Phone */}
+              <div className="d-flex flex-column">
+                <h5 className="mb-1">{selectedCustomer.name}</h5>
+                <span className="text-muted">{selectedCustomer.phone}</span>
+              </div>
 
-    {/* Line No Badge */}
-    <div className="ms-auto">
-      <Badge color="primary" className="px-3 py-2">
-        Line #{selectedCustomer.lineNo}
-      </Badge>
-    </div>
-  </div>
-</div>
+              {/* Line No Badge */}
+              <div className="ms-auto">
+                <Badge color="primary" className="px-3 py-2">
+                  Line #{selectedCustomer.lineNo}
+                </Badge>
+              </div>
+            </div>
+          </div>
 
 
         {/* Info Cards */}

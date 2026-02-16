@@ -238,7 +238,7 @@ const Homepage = () => {
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
                     <li>
-                      <UncontrolledDropdown>
+                      {/* <UncontrolledDropdown>
                         <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
                           <Icon className="d-none d-sm-inline" name="user" />
                           <span>
@@ -276,7 +276,7 @@ const Homepage = () => {
                             ))}
                           </ul>
                         </DropdownMenu>
-                      </UncontrolledDropdown>
+                      </UncontrolledDropdown> */}
                     </li>
 
                     <li>
@@ -596,7 +596,7 @@ const Homepage = () => {
               ) : (
                 <>
                   <span className="h3 mb-0 ml-4 mt-1 me-2">{totalStaff}</span>
-                  <small className="text-soft">active</small>
+                  {/* <small className="text-soft">active</small> */}
                 </>
               )}
             </div>
@@ -623,7 +623,7 @@ const Homepage = () => {
                       .reduce((acc, b) => acc + (b.totalAmt || 0), 0)
                       .toLocaleString('en-IN')}
                   </span>
-                  <small className="text-soft">paid</small>
+                  {/* <small className="text-soft">paid</small> */}
                 </>
               )}
             </div>
@@ -650,7 +650,7 @@ const Homepage = () => {
                       .reduce((acc, b) => acc + (b.totalAmt || 0), 0)
                       .toLocaleString('en-IN')}
                   </span>
-                  <small className="text-soft">pending</small>
+                  {/* <small className="text-soft ml-1">pending</small> */}
                 </>
               )}
             </div>
