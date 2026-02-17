@@ -273,10 +273,10 @@ const Homepage = () => {
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle page tag="h3">
-                Retail Pulse Dashboard
+                Dashboard
               </BlockTitle>
               <BlockDes className="text-soft">
-                <p>Welcome back, {selectedStaff || 'Admin'}</p>
+                <p>Welcome back Admin</p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>

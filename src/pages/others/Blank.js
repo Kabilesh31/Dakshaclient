@@ -288,16 +288,16 @@ const Reports = () => {
       disabled={filteredReportData.length === 0}
     >
       <i className="ni ni-excel"></i>
-      <span>Excel</span>
+      <span>Export</span>
     </button>
-    <button
+    {/* <button
       onClick={exportPDF}
       className="export-btn pdf ultra-compact"
       disabled={filteredReportData.length === 0}
     >
       <i className="ni ni-pdf"></i>
       <span>PDF</span>
-    </button>
+    </button> */}
   </div>
 </div>
 
