@@ -188,9 +188,10 @@ const Login = () => {
               <Form onSubmit={handleSubmit(onFormSubmit)} className="premium-form">
                 <FormGroup className="form-group-premium">
                   <div className="input-header">
-                    <label className="input-label">
-                      <Icon name="mail" className="label-icon" />
-                      Email Address
+                    <label className="input-label "style={{color:"whitesmoke"}}>
+                      <Icon name="mail" className="label-icon mr-1" />
+
+                       Email Address
                     </label>
                   </div>
                   <div className="input-wrapper">
@@ -223,8 +224,8 @@ const Login = () => {
 
                 <FormGroup className="form-group-premium">
                   <div className="input-header">
-                    <label className="input-label">
-                      <Icon name="lock" className="label-icon" />
+                    <label className="input-label"style={{color:"whitesmoke"}}>
+                      <Icon name="lock" className="label-icon mr-1" />
                       Password
                     </label>
                     <Link to={`${process.env.PUBLIC_URL}/auth-reset`} className="forgot-link">
