@@ -456,7 +456,7 @@ const Homepage = () => {
                       {pendingOrders > 0 && (
                         <div 
                           className="status-bar-segment pending" 
-                          style={{ width: `${(pendingOrders/totalOrders)*100}%` }}
+                          style={{ width: `${(pendingOrders/totalOrders)*100}%`,}}
                           title={`Pending: ${pendingOrders}`}
                         />
                       )}
