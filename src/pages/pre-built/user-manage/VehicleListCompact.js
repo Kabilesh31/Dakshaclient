@@ -253,6 +253,21 @@ const exportToExcel = () => {
 
   saveAs(blob, "Vehicle_List.xlsx");
 };
+const isExpired = (date) => {
+  if (!date) return false;
+  return new Date(date) < new Date();
+};
+
+const isExpiringSoon = (date, days = 7) => {
+  if (!date) return false;
+
+  const today = new Date();
+  const expiry = new Date(date);
+  const diffTime = expiry - today;
+  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+  return diffDays > 0 && diffDays <= days;
+};
 
   /* ================= UI ================= */
   return (
@@ -457,30 +472,64 @@ const exportToExcel = () => {
 
               {currentItems.map((item) => (
                 <DataTableItem key={item._id}>
-                  <DataTableRow>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <img
-                        src={item.img}
-                        alt="vehicle"
-                        style={{
-                          width: "30px",
-                          height: "30px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-                      <Link className="tb-lead" to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}>
-                        {item.vehicleNumber}
-                      </Link>
-                    </div>
-                  </DataTableRow>
+                 <DataTableRow>
+  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <img
+      src={item.img ? item.img : "/default-vehicle.jpg"}
+      alt="vehicle"
+      onError={(e) => {
+        e.target.onerror = null; // prevent infinite loop
+        e.target.src = "/default-vehicle.jpg";
+      }}
+      style={{
+        width: "30px",
+        height: "30px",
+        borderRadius: "50%",
+        objectFit: "cover",
+      }}
+    />
+    <Link
+      className="tb-lead"
+      to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}
+    >
+      {item.vehicleNumber}
+    </Link>
+  </div>
+</DataTableRow>
+
 
                   <DataTableRow>{item.vehicleType}</DataTableRow>
                   <DataTableRow>{item.makeYear}</DataTableRow>
-                  <DataTableRow>
-                    {item.insuranceExpiry ? new Date(item.insuranceExpiry).toLocaleDateString() : "--"}
-                  </DataTableRow>
-                  <DataTableRow>{item.fcUpto ? new Date(item.fcUpto).toLocaleDateString() : "--"}</DataTableRow>
+                 <DataTableRow>
+  {item.insuranceExpiry ? (
+    <span
+      style={{
+        color: isExpired(item.insuranceExpiry) ? "red" : "inherit",
+        fontWeight: isExpired(item.insuranceExpiry) ? "500" : "normal",
+      }}
+    >
+      {new Date(item.insuranceExpiry).toLocaleDateString()}
+    </span>
+  ) : (
+    "--"
+  )}
+</DataTableRow>
+
+                 <DataTableRow>
+  {item.fcUpto ? (
+    <span
+      style={{
+        color: isExpired(item.fcUpto) ? "red" : "inherit",
+        fontWeight: isExpired(item.fcUpto) ? "500" : "normal",
+      }}
+    >
+      {new Date(item.fcUpto).toLocaleDateString()}
+    </span>
+  ) : (
+    "--"
+  )}
+</DataTableRow>
+
                   <DataTableRow>
                     <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
                       {item.status ? "Active" : "Inactive"}
@@ -496,30 +545,20 @@ const exportToExcel = () => {
                         </Button>
                       </li>
                       <li>
-                        <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                            <Icon name="more-h" />
-                          </DropdownToggle>
-                          <DropdownMenu right>
-                            <ul className="link-list-opt no-bdr">
-                              <li>
-                                <DropdownItem onClick={() => onEditClick(item)}>
-                                  <Icon name="edit" /> <span>Edit</span>
-                                </DropdownItem>
-                              </li>
-                              <li>
-                                <DropdownItem
-                                  onClick={() => {
-                                    setSelectedId(item._id);
-                                    setModalDelete(true);
-                                  }}
-                                >
-                                  <Icon name="trash" /> <span>Delete</span>
-                                </DropdownItem>
-                              </li>
-                            </ul>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
+                       <DataTableRow className="nk-tb-col-tools">
+  <Button
+    size="sm"
+    
+    className="btn-icon"
+    onClick={() => {
+      setSelectedId(item._id);
+      setModalDelete(true);
+    }}
+  >
+    <Icon name="trash" />
+  </Button>
+</DataTableRow>
+
                       </li>
                     </ul>
                   </DataTableRow>
@@ -656,13 +695,46 @@ const exportToExcel = () => {
               </Col>
               <Col md="12">
                 <Dropzone multiple={false} onDrop={(acceptedFiles) => setUploadedFile(acceptedFiles[0])}>
-                  {({ getRootProps, getInputProps }) => (
-                    <div {...getRootProps()} className="dropzone mt-2">
-                      <input {...getInputProps()} />
-                      {uploadedFile ? <p>{uploadedFile.name}</p> : <p>Drag & drop an image or click to select</p>}
-                    </div>
-                  )}
-                </Dropzone>
+  {({ getRootProps, getInputProps }) => (
+    <div {...getRootProps()} className="dropzone upload-zone small bg-lighter my-2 dz-clickable">
+      <input {...getInputProps()} />
+
+      {uploadedFile ? (
+        <div className="dz-preview dz-image-preview text-center">
+          <div className="dz-image mb-2">
+            <img
+              src={URL.createObjectURL(uploadedFile)}
+              alt="preview"
+              style={{
+                width: "120px",
+                height: "120px",
+                objectFit: "cover",
+                borderRadius: "8px",
+              }}
+            />
+          </div>
+          <p className="small">{uploadedFile.name}</p>
+
+          {/* Remove Image Option */}
+          <Button
+            size="sm"
+            color="danger"
+            outline
+            onClick={(e) => {
+              e.stopPropagation();
+              setUploadedFile(null);
+            }}
+          >
+            Remove
+          </Button>
+        </div>
+      ) : (
+        <p className="text-muted">Drag & drop or click to upload image</p>
+      )}
+    </div>
+  )}
+</Dropzone>
+
               </Col>
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
@@ -728,13 +800,44 @@ const exportToExcel = () => {
                 <FormGroup>
                   <label className="form-label">* Make Year</label>
                   <input
-                    className="form-control"
-                    type="number"
-                    placeholder="Enter Make Year"
-                    value={formData.makeYear}
-                    onChange={(e) => setFormData({ ...formData, makeYear: e.target.value })}
-                    required
-                  />
+  className="form-control"
+  type="text"
+  placeholder="Enter Make Year"
+  value={formData.makeYear}
+  onChange={(e) => {
+    let value = e.target.value;
+
+    // Allow empty (important for erase)
+    if (value === "") {
+      setFormData({ ...formData, makeYear: "" });
+      return;
+    }
+
+    // Allow only 4 digits
+    if (!/^\d{0,4}$/.test(value)) return;
+
+    setFormData({
+      ...formData,
+      makeYear: value,
+    });
+  }}
+  onBlur={() => {
+    if (!formData.makeYear) return; // Don't validate empty
+
+    const year = Number(formData.makeYear);
+    const currentYear = new Date().getFullYear();
+
+    if (year < 1900 || year > currentYear) {
+      errorToast(`Year must be between 1900 and ${currentYear}`);
+      setFormData({
+        ...formData,
+        makeYear: "",
+      });
+    }
+  }}
+  required
+/>
+
                 </FormGroup>
               </Col>
               <Col md="6">

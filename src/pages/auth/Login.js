@@ -35,6 +35,10 @@ const Login = () => {
   }, []);
 
   const onFormSubmit = async (e) => {
+    if (!email || !password) {
+    errorToast("Email and Password are required");
+    return;
+  }
      setLoading(true);
     const loginUser = {
       email: email,
@@ -53,7 +57,7 @@ const Login = () => {
       
       if(!response.ok){
         setLoading(false);
-        errorToast(resData.message)
+        eerrorToast(resData.message || "Invalid email or password");
       }
       else {
         successToast("Success")

@@ -1121,7 +1121,7 @@
                 <div>
                   <h5 className="title">Live Sales Tracking</h5>
                   <p className="text-soft mb-0">
-                    Track deliveries in real-time on the map
+                    Track Sales in real-time on the map
                   </p>
                 </div>
 
@@ -1421,7 +1421,7 @@
                                 <div className="d-flex justify-content-between">
                                   <strong>{customer.name}</strong>
                                   <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
-                                      {rowStatus === "completed" && "Delivered"}
+                                      {rowStatus === "completed" && "Visited"}
                                       {rowStatus === "current" && "Arriving"}
                                       {rowStatus === "upcoming" && "Expected"}
                                     </span>
@@ -1458,7 +1458,7 @@
                       </div>
                       {isRouteCompleted && (
                         <div className="alert alert-success py-2 mb-3">
-                          🎉 All Customers Delivered – Route Completed Successfully
+                          🎉 All Customers Visited – Route Completed Successfully
                         </div>
                       )}
                     </div>

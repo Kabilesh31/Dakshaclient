@@ -717,7 +717,7 @@ const exportToExcel = () => {
               </Col>
 
               {/* Documents Upload */}
-              <Col md="12">
+              {/* <Col md="12">
                 <FormGroup>
                   <label className="form-label">Documents</label>
                   <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
@@ -737,7 +737,7 @@ const exportToExcel = () => {
                     )}
                   </Dropzone>
                 </FormGroup>
-              </Col>
+              </Col> */}
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
@@ -828,13 +828,20 @@ const exportToExcel = () => {
   onChange={(e) =>
     setFormData({ ...formData, type: e.target.value })
   }
+  disabled={formData.dutyStatus === "active"}  // 🔥 Important line
   required
 >
+
   <option value="">Select Type</option>
   <option value="sales">Sales</option>
   <option value="delivery">Delivery</option>
   <option value="manager">Manager</option>
 </select>
+{formData.dutyStatus === "active" && (
+  <small className="text-danger">
+    Cannot change type while staff is On Duty
+  </small>
+)}
 
                 </FormGroup>
               </Col>
@@ -928,7 +935,7 @@ const exportToExcel = () => {
               </Col>
 
               {/* Documents Upload */}
-              <Col md="12">
+              {/* <Col md="12">
                 <FormGroup>
                   <label className="form-label">Documents</label>
                   <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
@@ -948,7 +955,7 @@ const exportToExcel = () => {
                     )}
                   </Dropzone>
                 </FormGroup>
-              </Col>
+              </Col> */}
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={editLoading}>

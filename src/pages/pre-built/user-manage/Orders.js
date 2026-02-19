@@ -666,7 +666,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
           </div>
 
           {/* STAFF */}
-          <div style={{ width: "48%" }}>
+          <div style={{ width: "48%", marginLeft: "350px" }}>
             <h6 style={{ marginBottom: "4px" }}>Staff Details</h6>
             <p style={{ margin: "2px 0" }}>
               <strong>Name:</strong>{" "}
