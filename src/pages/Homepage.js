@@ -26,6 +26,8 @@ const Homepage = () => {
   const [customerData, setCustomerData] = useState([]);
   const [staffData, setStaffData] = useState([]);
   const [productData, setProductData] = useState([]);
+  const [routeData, setRouteData] = useState([]);
+const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [filterCustomerType, setFilterCustomerType] = useState([]);
@@ -43,7 +45,8 @@ const Homepage = () => {
     customers: false,
     staff: false,
     bills: false,
-    products: false
+    products: false,
+     routes: false
   });
 
   localStorage.setItem("isGridView", false);
@@ -58,7 +61,8 @@ const Homepage = () => {
       fetchCustomerData(),
       fetchStaffData(),
       fetchBillData(),
-      fetchProductData()
+      fetchProductData(),
+      fetchRouteData() 
     ]);
   };
 
@@ -104,21 +108,39 @@ const Homepage = () => {
       setLoading(prev => ({ ...prev, bills: false }));
     }
   };
-
-  const fetchProductData = async () => {
-    setLoading(prev => ({ ...prev, products: true }));
-    try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
-      if (response.status === 200) {
-        setProductData(response.data || []);
-      }
-    } catch (err) {
-      console.error("Error fetching products:", err);
-    } finally {
-      setLoading(prev => ({ ...prev, products: false }));
+const fetchRouteData = async () => {
+  setLoading(prev => ({ ...prev, routes: true }));
+  try {
+    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/route");
+    console.log('Routes API response:', response.data);
+    
+    if (response.status === 200 && response.data.success) {
+      setRouteData(response.data.data || []);
     }
-  };
-
+  } catch (err) {
+    console.error("Error fetching routes:", err);
+  } finally {
+    setLoading(prev => ({ ...prev, routes: false }));
+  }
+};
+ const fetchProductData = async () => {
+  setLoading(prev => ({ ...prev, products: true }));
+  try {
+    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
+    if (response.status === 200) {
+      // Filter to only show active products (isDeleted === false)
+      const allProducts = response.data || [];
+      const activeProducts = allProducts.filter(product => !product.isDeleted);
+      console.log('Total products:', allProducts.length);
+      console.log('Active products:', activeProducts.length);
+      setProductData(activeProducts);
+    }
+  } catch (err) {
+    console.error("Error fetching products:", err);
+  } finally {
+    setLoading(prev => ({ ...prev, products: false }));
+  }
+};
   const handleStaffSelection = (staff) => {
     if (staff === null) {
       setSelectedStaff("All Staff");
@@ -417,7 +439,7 @@ const Homepage = () => {
             <Col xl="3" md="3">
               <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
-                  <div className="stats-header">
+                  <div className="stats-header p-1">
                     <div>
                       <h6 className="stats-title">TOTAL ORDERS</h6>
                       <div className="stats-badges">
@@ -441,8 +463,8 @@ const Homepage = () => {
                     )}
                   </div>
                   {/* Status Bar */}
-                  <div className="status-bar-container">
-                    <div className="status-bar">
+                  <div className="status-bar-container ">
+                    <div className="status-bar mt-2">
                       <div 
                         className="status-bar-segment approved" 
                         style={{ width: `${totalOrders ? (approvedOrders/totalOrders)*100 : 0}%` }}
@@ -550,36 +572,36 @@ const Homepage = () => {
 
             {/* Total Products Card */}
             <Col xl="3" md="3">
-              <PreviewAltCard className="stats-card h-100">
-                <div className="card-body">
-                  <div className="stats-header">
-                    <div>
-                      <h6 className="stats-title">TOTAL PRODUCTS</h6>
-                      <div className="stats-badges">
-                        <span className="badge-info">📦 In Inventory</span>
-                      </div>
-                    </div>
-                    <div className="stats-icon purple">
-                      <Icon name="box" size={24} />
-                    </div>
-                  </div>
-                  <div className="stats-value">
-                    {loading.products ? (
-                      <span>Loading...</span>
-                    ) : (
-                      <>
-                        <span className="value-number">{totalProducts.toLocaleString('en-IN')}</span>
-                      </>
-                    )}
-                  </div>
-                  {/* Stock Indicator */}
-                  <div className="stock-indicator">
-                    <div className="stock-dot active" />
-                    <span className="stock-text">Active Products</span>
-                  </div>
-                </div>
-              </PreviewAltCard>
-            </Col>
+  <PreviewAltCard className="stats-card h-100">
+    <div className="card-body">
+      <div className="stats-header">
+        <div>
+          <h6 className="stats-title">ACTIVE PRODUCTS</h6>
+          <div className="stats-badges">
+            <span className="badge-info">📦 In Stock</span>
+          </div>
+        </div>
+        <div className="stats-icon purple">
+          <Icon name="box" size={24} />
+        </div>
+      </div>
+      <div className="stats-value">
+        {loading.products ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="value-number">{totalProducts.toLocaleString('en-IN')}</span>
+          </>
+        )}
+      </div>
+      {/* Stock Indicator */}
+      <div className="stock-indicator">
+        <div className="stock-dot active" />
+        <span className="stock-text">Active Products</span>
+      </div>
+    </div>
+  </PreviewAltCard>
+</Col>
           </Row>
         </Block>
 
@@ -766,36 +788,278 @@ const Homepage = () => {
   </Card>
 </Col>
 
-            {/* Order Distribution Chart */}
-            <Col xl="4" lg="4">
-              <PreviewCard className="chart-card h-100">
-                <div className="card-head chart-header">
-                  <h6 className="chart-title mb-4">📊 Payment Distribution</h6>
-                  
-                </div>
-                <div className="chart-footer">
-                  <div className="chart-stat">
-                    <span className="stat-dot paid" />
-                    <span>Paid: ₹{(paidAmount).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="chart-stat">
-                    <span className="stat-dot unpaid" />
-                    <span>Unpaid: ₹{(notPaidAmount).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-                <div className="chart-container">
-                  <TrafficDougnut
-                    selectedDays={selectedDays}
-                    selectedFromDate={selectedFromDate}
-                    selectedToDate={selectedToDate}
-                    data={uniqueBills}
-                  />
-                </div>
-                {/* Chart Footer Stats */}
-                
-              </PreviewCard>
-            </Col>
+          {/* Order Distribution Chart */}
+{/* Order Distribution Chart */}
+<Col xl="4" lg="4">
+  {/* Routes Section - Separate Container */}
+  <PreviewCard className="chart-card mb-3">
+    <div className="card-head chart-header" style={{ 
+      padding: '0.5rem 0.75rem',
+      borderBottom: '1px solid #e9ecef'
+    }}>
+      <h6 className="chart-title" style={{ 
+        fontSize: '0.8rem', 
+        margin: 0,
+        fontWeight: '600',
+        color: '#1a2b3c'
+      }}>🗺️ Routes Overview</h6>
+    </div>
+    
+    <div className="card-body" style={{ padding: '0.75rem' }}>
+      {/* Main Stats - Fixed alignment */}
+      <div className="routes-main-stats" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-around', 
+        marginBottom: '0.75rem',
+        background: '#f8f9fa',
+        borderRadius: '8px',
+        padding: '0.5rem'
+      }}>
+        <div className="route-stat" style={{ textAlign: 'center' }}>
+          <span className="route-stat-label" style={{ 
+            fontSize: '0.55rem', 
+            color: '#6c757d',
+            display: 'block',
+            textTransform: 'uppercase',
+            letterSpacing: '0.3px',
+            marginBottom: '0.1rem'
+          }}>Total</span>
+          <span className="route-stat-value" style={{ 
+            fontSize: '1rem', 
+            fontWeight: '700', 
+            color: '#1a2b3c',
+            display: 'block'
+          }}>{routeData.length}</span>
+        </div>
+        <div className="route-stat" style={{ textAlign: 'center' }}>
+          <span className="route-stat-label" style={{ 
+            fontSize: '0.55rem', 
+            color: '#6c757d',
+            display: 'block',
+            textTransform: 'uppercase',
+            letterSpacing: '0.3px',
+            marginBottom: '0.1rem'
+          }}>Active</span>
+          <span className="route-stat-value success" style={{ 
+            fontSize: '1rem', 
+            fontWeight: '700', 
+            color: '#10b981',
+            display: 'block'
+          }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
+        </div>
+        <div className="route-stat" style={{ textAlign: 'center' }}>
+          <span className="route-stat-label" style={{ 
+            fontSize: '0.55rem', 
+            color: '#6c757d',
+            display: 'block',
+            textTransform: 'uppercase',
+            letterSpacing: '0.3px',
+            marginBottom: '0.1rem'
+          }}>Customers</span>
+          <span className="route-stat-value info" style={{ 
+            fontSize: '1rem', 
+            fontWeight: '700', 
+            color: '#0ea5e9',
+            display: 'block'
+          }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
+        </div>
+      </div>
 
+      {/* Routes List - Fixed spacing */}
+      <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
+        <div style={{ 
+          fontSize: '0.65rem', 
+          color: '#6c757d', 
+          marginBottom: '0.35rem',
+          fontWeight: '500',
+          textTransform: 'uppercase',
+          letterSpacing: '0.3px'
+        }}>Top Routes</div>
+        {routeData.slice(0, 2).map((route, index) => (
+          <div key={route._id || index} className="route-mini-item" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.4rem 0.5rem',
+            background: index === 0 ? '#fff7ed' : '#f0f9ff',
+            borderRadius: '6px',
+            marginBottom: '0.35rem',
+            border: '1px solid rgba(0,0,0,0.02)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ 
+                width: '18px', 
+                height: '18px', 
+                borderRadius: '50%', 
+                background: index === 0 ? '#f59e0b' : '#0ea5e9',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.6rem',
+                fontWeight: '600'
+              }}>
+                {index + 1}
+              </span>
+              <span style={{ 
+                fontSize: '0.7rem', 
+                fontWeight: '500', 
+                color: '#1a2b3c',
+                maxWidth: '100px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {route.routeName || `Route ${index + 1}`}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
+                {route.customerCount || 0}
+              </span>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: route.isActive !== false ? '#10b981' : '#ef4444'
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Utilization Bar - Fixed alignment */}
+      <div className="routes-utilization" style={{ 
+        marginTop: '0.25rem',
+        paddingTop: '0.5rem',
+        borderTop: '1px dashed #e9ecef'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          fontSize: '0.6rem', 
+          color: '#6c757d', 
+          marginBottom: '0.25rem',
+          fontWeight: '500'
+        }}>
+          <span>Route Utilization</span>
+          <span style={{ fontWeight: '600', color: '#f59e0b' }}>
+            {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
+          </span>
+        </div>
+        <div style={{ 
+          height: '4px', 
+          background: '#e9ecef', 
+          borderRadius: '10px', 
+          overflow: 'hidden',
+          width: '100%'
+        }}>
+          <div style={{
+            width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+            borderRadius: '10px',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+      </div>
+    </div>
+  </PreviewCard>
+
+  {/* Payment Distribution Chart - Separate Container */}
+ <PreviewCard className="chart-card">
+  {/* Stats Container - Now on top */}
+  <div style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'space-between',
+    padding: '0.5rem 0.75rem',
+    gap: '0.5rem',
+    background: '#f8f9fa',
+    borderRadius: '12px',
+    border: '1px solid #e9ecef',
+    margin: '0.75rem 0.75rem 0.25rem 0.75rem'
+  }}>
+    <div className="chart-stat" style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '0.35rem',
+      flex: 1
+    }}>
+      <span className="stat-dot paid" style={{ 
+        width: '8px', 
+        height: '8px', 
+        borderRadius: '50%', 
+        background: '#2ecc71',
+        display: 'inline-block',
+        boxShadow: '0 0 0 2px rgba(46, 204, 113, 0.2)'
+      }} />
+      <span style={{ 
+        fontSize: '0.7rem', 
+        fontWeight: '500',
+        color: '#1a2b3c',
+        whiteSpace: 'nowrap'
+      }}>
+        Paid: <span style={{ fontWeight: '700', color: '#2ecc71' }}>₹{(paidAmount/1000).toFixed(1)}K</span>
+      </span>
+    </div>
+    
+    <div style={{ width: '1px', height: '20px', background: '#dee2e6' }} />
+    
+    <div className="chart-stat" style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '0.35rem',
+      flex: 1,
+      justifyContent: 'flex-end'
+    }}>
+      <span className="stat-dot unpaid" style={{ 
+        width: '8px', 
+        height: '8px', 
+        borderRadius: '50%', 
+        background: '#f39c12',
+        display: 'inline-block',
+        boxShadow: '0 0 0 2px rgba(243, 156, 18, 0.2)'
+      }} />
+      <span style={{ 
+        fontSize: '0.7rem', 
+        fontWeight: '500',
+        color: '#1a2b3c',
+        whiteSpace: 'nowrap'
+      }}>
+        Unpaid: <span style={{ fontWeight: '700', color: '#f39c12' }}>₹{(notPaidAmount/1000).toFixed(1)}K</span>
+      </span>
+    </div>
+  </div>
+  
+  {/* Chart Container - Now below stats */}
+  <div className="chart-container" style={{ 
+    height: '130px', 
+    padding: '0.25rem 0.5rem 0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginTop: '0.25rem'
+  }}>
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop:"65px"
+    }}>
+      <TrafficDougnut
+        selectedDays={selectedDays}
+        selectedFromDate={selectedFromDate}
+        selectedToDate={selectedToDate}
+        data={uniqueBills}
+      />
+    </div>
+  </div>
+</PreviewCard>
+</Col>
             {/* Delivery Status Cards */}
             <Col xl="4" lg="4">
               <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
@@ -938,7 +1202,7 @@ const Homepage = () => {
         </Block>
 
         {/* Third Row - Transaction Table */}
-        <Block>
+        {/* <Block>
           <Row className="g-gs">
             <Col xxl="12">
               <Card className="table-card">
@@ -960,7 +1224,7 @@ const Homepage = () => {
               </Card>
             </Col>
           </Row>
-        </Block>
+        </Block> */}
       </Content>
 
       {/* Staff Selection Modal */}

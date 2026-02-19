@@ -76,48 +76,20 @@ const TrafficDougnut = ({ selectedDays, selectedFromDate, selectedToDate, data }
 
   return (
     <React.Fragment>
-      <div className="card-title-group">
+      {/* <div className="card-title-group">
         <div className="card-title card-title-sm">
           <h6 className="title">Billing Reports</h6>
         </div>
-      </div>
+      </div> */}
 
       <div className="traffic-channel">
         <div className="traffic-channel-doughnut-ck">
           <DoughnutExample data={chartData} />
         </div>
 
-        {paidOrders === 0 && notPaidOrders === 0 ? (
-          <div className="text-center mt-3">
-            <p><strong>No data available</strong></p>
-          </div>
-        ) : (
-          <div className="traffic-channel-group g-2 ">
-            <div className="traffic-channel-data">
-              <div className="title ml-5">
-                <span className="dot dot-lg sq" style={{ background: "#78B9B5" }}></span>
-                <span>Paid</span>
-              </div>
-              <div className="amount ml-5">
-                {paidOrders} <small>{paidPercentage}%</small>
-              </div>
-            </div>
+        
 
-            <div className="traffic-channel-data">
-              <div className="title ml-5">
-                <span className="dot dot-lg sq" style={{ background: "#FF7D7D" }}></span>
-                <span style={{ cursor: "pointer" }} onClick={handleNavigate}>
-                  Not Paid
-                </span>
-              </div>
-              <div className="amount ml-5">
-                {notPaidOrders} <small>{notPaidPercentage}%</small>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ marginTop: "60px" }}>
+        <div style={{ marginTop: "10px" }}>
           <h6 className="title">Your Total Reports – {totalOrders}</h6>
         </div>
       </div>

@@ -84,21 +84,19 @@ const sortFunc = (order) => {
 const calculateHours = (checkIn, checkOut) => {
   if (!checkIn || !checkOut) return "-";
 
-  const [inHour, inMin] = checkIn.split(":").map(Number);
-  const [outHour, outMin] = checkOut.split(":").map(Number);
-
-  const start = new Date(0, 0, 0, inHour, inMin);
-  const end = new Date(0, 0, 0, outHour, outMin);
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
 
   const diffMs = end - start;
 
   if (diffMs <= 0) return "-";
 
-  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMins = Math.floor((diffMs / (1000 * 60)) % 60);
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
 
-  return `${diffHrs}h ${diffMins}m`;
+  return `${hours}h ${minutes}m`;
 };
+
 
 const filteredStaff = staffs.filter(
   (emp) =>
@@ -145,14 +143,8 @@ const currentItems = filteredStaff.slice(
             record.currentStatus === "checked-in"
               ? "working"
               : "present",
-
-          checkIn: record.startTime
-            ? new Date(record.startTime).toLocaleTimeString()
-            : null,
-
-          checkOut: record.endTime
-            ? new Date(record.endTime).toLocaleTimeString()
-            : null,
+checkIn: record.startTime || null,
+checkOut: record.endTime || null,
 
           hours: record.totalHours
             ? record.totalHours.toFixed(2)
@@ -165,6 +157,13 @@ const currentItems = filteredStaff.slice(
     } catch (err) {
       console.log(err);
     }
+  };
+  const formatDateTime = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   };
 
   // For calendar attendance colors
@@ -607,15 +606,17 @@ const getStaffStatusColor = (status) => {
         : "Present"}
     </p>
 
-    <p>
-      <strong>Check In:</strong>{" "}
-      {selectedDateDetails.checkIn || "-"}
-    </p>
+   <p>
+  <strong>Check In:</strong>{" "}
+  {formatDateTime(selectedDateDetails.checkIn)}
+</p>
 
-    <p>
-      <strong>Check Out:</strong>{" "}
-      {selectedDateDetails.checkOut || "-"}
-    </p>
+<p>
+  <strong>Check Out:</strong>{" "}
+  {formatDateTime(selectedDateDetails.checkOut)}
+</p>
+
+
 
     <p>
      <strong>Total Hours:</strong>{" "}

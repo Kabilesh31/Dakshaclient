@@ -133,7 +133,9 @@ const [editLoading, setEditLoading] = useState(false);
 
     return matchesBrand && matchesSearch;
   });
-
+useEffect(() => {
+  setCurrentPage(1);
+}, [filteredProducts.length]);
   const fetchProductData = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product`);
@@ -226,6 +228,10 @@ const [editLoading, setEditLoading] = useState(false);
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+     if (!formData.brand) {
+    warningToast("Brand is required");
+    return;
+  }
      setAddLoading(true);
     const fd = new FormData();
 
@@ -255,7 +261,7 @@ const [editLoading, setEditLoading] = useState(false);
         });
         setBrands(Array.from(brandSet).map((b) => ({ name: b, productCount: brandCounts[b] })));
 
-        return updated;
+        return [...updated].reverse();
       });
 
       setCurrentPage(1);
@@ -773,7 +779,7 @@ const [editLoading, setEditLoading] = useState(false);
             <Form className="row gy-3" onSubmit={onAddSubmit}>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Brand</label>
+                  <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
                   <CreatableSelect
                     options={brandOptions}
                     value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
@@ -786,7 +792,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Product Name</label>
+                  <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
                   <input
                     className="form-control"
                     value={formData.productName}
@@ -798,7 +804,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Product Code</label>
+                  <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
                   <input
                     className="form-control"
                     value={formData.productCode}
@@ -810,7 +816,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Value</label>
+                  <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
                   <input
                     type="number"
                     className="form-control"
@@ -828,7 +834,7 @@ const [editLoading, setEditLoading] = useState(false);
                     className="form-check-input"
                     checked={formData.boxPacking}
                     onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
-                    required
+                    
                   />
                   <label className="form-label ms-2">Box Packing Available</label>
                 </FormGroup>
@@ -837,7 +843,7 @@ const [editLoading, setEditLoading] = useState(false);
               {[1, 2, 3].map((n) => (
                 <Col md="4" key={n}>
                   <FormGroup>
-                    <label className="form-label">PTR {n}</label>
+                    <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
                     <input
                       className="form-control"
                       value={formData[`ptr${n}`]}
@@ -850,7 +856,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Notes</label>
+                  <label className="form-label">Notes <span className="text-danger ml-1 ">*</span></label>
                   <textarea
                     className="form-control"
                     rows="2"
@@ -865,7 +871,7 @@ const [editLoading, setEditLoading] = useState(false);
                 <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
                   {({ getRootProps, getInputProps }) => (
                     <div {...getRootProps()} className="dropzone">
-                      <input {...getInputProps()} required />
+                      <input {...getInputProps()} />
                       {formData.img ? <p>{formData.img.name}</p> : <p>Upload Product Image</p>}
                     </div>
                   )}
@@ -908,7 +914,7 @@ const [editLoading, setEditLoading] = useState(false);
             <Form className="row gy-3" onSubmit={onEditSubmit}>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Brand</label>
+                  <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
                   <CreatableSelect
                     options={brandOptions}
                     value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
@@ -920,7 +926,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Product Name</label>
+                  <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
                   <input
                     className="form-control"
                     value={formData.productName}
@@ -932,7 +938,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Product Code</label>
+                  <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
                   <input
                     className="form-control"
                     value={formData.productCode}
@@ -944,7 +950,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Value</label>
+                  <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
                   <input
                     type="number"
                     className="form-control"
@@ -970,7 +976,7 @@ const [editLoading, setEditLoading] = useState(false);
               {[1, 2, 3].map((n) => (
                 <Col md="4" key={n}>
                   <FormGroup>
-                    <label className="form-label">PTR {n}</label>
+                    <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
                     <input
                       className="form-control"
                       value={formData[`ptr${n}`]}
@@ -982,7 +988,7 @@ const [editLoading, setEditLoading] = useState(false);
 
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Notes</label>
+                  <label className="form-label">Notes<span className="text-danger ml-1 ">*</span></label>
                   <textarea
                     className="form-control"
                     rows="2"

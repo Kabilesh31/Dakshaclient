@@ -42,6 +42,7 @@ const CustomerListCompact = () => {
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [sort, setSort] = useState("dsc");
+  
   const [routes, setRoutes] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
@@ -207,14 +208,19 @@ const sortFunc = (type) => {
 
   const onAddSubmit = async (e) => {
     e.preventDefault();
+      if (!formData.routeId) {
+    errorToast("Route is required");
+    return;
+  }
+
       setAddLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
       if (k === "createdBy") return;
       if (k === "geoLocation") {
-        fd.append("geoLocation[lat]", formData.geoLocation.lat);
-        fd.append("geoLocation[long]", formData.geoLocation.long);
+        fd.append("lat", formData.geoLocation.lat);
+fd.append("long", formData.geoLocation.long);
       } else if (formData[k] !== undefined && formData[k] !== null && formData[k] !== "") {
         fd.append(k, formData[k]);
       }
@@ -237,19 +243,31 @@ const sortFunc = (type) => {
   }
   };
 
-  const onEditClick = (item) => {
-    setSelectedId(item._id);
-    setFormData({
-      ...item,
-      routeId: item.routeId?._id || item.routeId,
-      routeName: item.routeName || "",
-      geoLocation: {
-      lat: item.geoLocation?.lat || "",
-      long: item.geoLocation?.long || "",
+ const onEditClick = (item) => {
+  setSelectedId(item._id);
+
+  setFormData({
+    name: item.name || "",
+    phone: item.phone || "",
+    phone2: item.phone2 || "",
+    address: item.address || "",
+    routeId: item.routeId?._id || item.routeId || "",
+    routeName: item.routeName || "",
+    lineNo: item.lineNo || "",
+    creditDays: item.creditDays || "",
+    pincode: item.pincode || "",
+    category: item.category || "",
+    status: item.status ?? true,
+    geoLocation: {
+      lat: item.geoLocation?.lat || item.geoLocation?.latitude || "",
+      long: item.geoLocation?.long || item.geoLocation?.longitude || "",
     },
-    });
-    setModalEdit(true);
-  };
+  });
+
+  setUploadedFile(null);
+  setModalEdit(true);
+};
+
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
@@ -303,10 +321,20 @@ const sortFunc = (type) => {
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              <BlockTitle tag="h3">Customer List</BlockTitle>
-            </BlockHeadContent>
-            <Button
-  color="primary"
+  <BlockTitle tag="h3">Customer List</BlockTitle>
+
+  <div className="mt-1">
+    <span className="text-soft">
+      You Have Total {" "} 
+      <span className="fw-bold mr-1">
+        {data.length}
+      </span>
+      Customers
+    </span>
+  </div>
+</BlockHeadContent>
+
+           <Button color="primary" className="btn-icon"
   onClick={() => {
     resetForm();       // clear old edit data
     setModalAdd(true); // open add modal
@@ -603,7 +631,7 @@ resetForm();
 
             <Col md="3">
               <FormGroup>
-                <label className="form-label">Alternate Phone</label>
+                <label className="form-label">Alternate Phone </label>
                 <input
   type="tel"
   className="form-control"
@@ -637,13 +665,13 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Route</label>
+                <label className="form-label">Route *</label>
 
                 <CreatableSelect
                   isClearable
                   isLoading={loadingRoutes}
                   options={routes}
-                  required
+                  
                   placeholder="Select or create route"
                   formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
                   value={formData.routeId ? routes.find((r) => r.value === formData.routeId) : null}
@@ -671,7 +699,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Line No</label>
+                <label className="form-label">Line No *</label>
                 <input
                   type="number"
                   className="form-control"
@@ -685,7 +713,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Credit Days</label>
+                <label className="form-label">Credit Days *</label>
                 <select
                   className="form-control"
                   value={formData.creditDays}
@@ -703,7 +731,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Pincode</label>
+                <label className="form-label">Pincode *</label>
                 <input
                   type="number"
                   className="form-control"
@@ -717,7 +745,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Category</label>
+                <label className="form-label">Category *</label>
                 <select
                   className="form-control"
                   value={formData.category}
@@ -733,7 +761,7 @@ resetForm();
 
             <Col md="6">
               <FormGroup>
-                <label className="form-label">Latitude</label>
+                <label className="form-label">Latitude *</label>
                 <input
                   className="form-control"
                   value={formData.geoLocation?.lat}
@@ -748,7 +776,7 @@ resetForm();
 
             <Col md="6">
               <FormGroup>
-                <label className="form-label">Longitude</label>
+                <label className="form-label">Longitude *</label>
                 <input
                   className="form-control"
                   placeholder="Enter Longitude"
@@ -856,13 +884,13 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Route</label>
+                <label className="form-label">Route *</label>
 
                 <CreatableSelect
                   isClearable
                   isLoading={loadingRoutes}
                   options={routes}
-                  required
+                  
                   placeholder="Select or create route"
                   formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
                   value={formData.routeId ? routes.find((r) => r.value === formData.routeId) : null}
@@ -890,7 +918,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Line No</label>
+                <label className="form-label">Line No *</label>
                 <input
                   type="number"
                   className="form-control"
@@ -903,7 +931,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Credit Days</label>
+                <label className="form-label">Credit Days *</label>
                 <select
                   className="form-control"
                   value={formData.creditDays}
@@ -920,7 +948,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Pincode</label>
+                <label className="form-label">Pincode *</label>
                 <input
                   type="number"
                   className="form-control"
@@ -932,7 +960,7 @@ resetForm();
 
             <Col md="4">
               <FormGroup>
-                <label className="form-label">Category</label>
+                <label className="form-label">Category *</label>
                 <select
                   className="form-control"
                   value={formData.category}
@@ -947,7 +975,7 @@ resetForm();
 
             <Col md="6">
               <FormGroup>
-                <label className="form-label">Latitude</label>
+                <label className="form-label">Latitude *</label>
                 <input
                   className="form-control"
                   value={formData.geoLocation?.lat}
@@ -961,7 +989,7 @@ resetForm();
 
             <Col md="6">
               <FormGroup>
-                <label className="form-label">Longitude</label>
+                <label className="form-label">Longitude *</label>
                 <input
                   className="form-control"
                   value={formData.geoLocation?.long}
