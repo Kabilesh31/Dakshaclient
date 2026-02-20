@@ -46,18 +46,18 @@ const CustomerListCompact = () => {
   const [routes, setRoutes] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
-const [editLoading, setEditLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
   const [modalAdd, setModalAdd] = useState(false);
-
   const [modalEdit, setModalEdit] = useState(false);
   const [modalDelete, setModalDelete] = useState(false);
 
   const [selectedId, setSelectedId] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null); // Add image preview state
 
   const [formData, setFormData] = useState({
     name: "",
@@ -75,52 +75,41 @@ const [editLoading, setEditLoading] = useState(false);
     img: null,
   });
 
-const fetchCustomers = async () => {
-  try {
-    const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-
-    const filtered = res.data.filter((c) => !c.isDeleted);
-
-  
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
-    setData(sorted);
-  } catch {
-    errorToast("Failed to fetch customers");
-  }
-};
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
+      const filtered = res.data.filter((c) => !c.isDeleted);
+      const sorted = filtered.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setData(sorted);
+    } catch {
+      errorToast("Failed to fetch customers");
+    }
+  };
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   useEffect(() => {
-  if (!data.length) return;
-
-  const sorted = [...data].sort((a, b) => {
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-
-    return sort === "asc"
-      ? dateA - dateB   // Oldest first
-      : dateB - dateA;  // Newest first
-  });
-
-  setData(sorted);
-}, [sort]);
+    if (!data.length) return;
+    const sorted = [...data].sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sort === "asc" ? dateA - dateB : dateB - dateA;
+    });
+    setData(sorted);
+  }, [sort]);
 
   const fetchRoutes = async () => {
     try {
       setLoadingRoutes(true);
       const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`);
-
       const options = res.data.data.map((r) => ({
         value: r._id,
         label: r.routeName,
       }));
-
       setRoutes(options);
     } catch (err) {
       errorToast("Failed to load routes");
@@ -132,23 +121,20 @@ const fetchCustomers = async () => {
   useEffect(() => {
     fetchRoutes();
   }, []);
+
   const createRoute = async (routeName) => {
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/route`, { routeName });
-
       const newRoute = {
         value: res.data.data._id,
         label: res.data.data.routeName,
       };
-
       setRoutes((prev) => [...prev, newRoute]);
-
       setFormData((prev) => ({
         ...prev,
         routeId: newRoute.value,
         routeName: newRoute.label,
       }));
-
       successToast("Route created");
     } catch (err) {
       errorToast("Route creation failed");
@@ -164,7 +150,6 @@ const fetchCustomers = async () => {
   const onFilterChange = (e) => {
     const value = e.target.value.toLowerCase();
     setSearchText(value);
-
     if (!value) {
       fetchCustomers();
     } else {
@@ -172,19 +157,14 @@ const fetchCustomers = async () => {
     }
   };
 
-const sortFunc = (type) => {
-  const sorted = [...data].sort((a, b) => {
-    const dateA = new Date(a.createdAt);
-    const dateB = new Date(b.createdAt);
-
-    return type === "asc"
-      ? dateA - dateB   // Oldest first
-      : dateB - dateA;  // Newest first
-  });
-
-  setData(sorted);
-};
-
+  const sortFunc = (type) => {
+    const sorted = [...data].sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return type === "asc" ? dateA - dateB : dateB - dateA;
+    });
+    setData(sorted);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -203,24 +183,46 @@ const sortFunc = (type) => {
       img: null,
     });
     setUploadedFile(null);
+    setImagePreview(null); // Reset image preview
     setSelectedId(null);
   };
 
+  // Handle file selection with preview
+  const handleFileSelect = (files) => {
+    const file = files[0];
+    setUploadedFile(file);
+    
+    // Create preview URL
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  // Clean up preview URL when modal closes
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
   const onAddSubmit = async (e) => {
     e.preventDefault();
-      if (!formData.routeId) {
-    errorToast("Route is required");
-    return;
-  }
+    if (!formData.routeId) {
+      errorToast("Route is required");
+      return;
+    }
 
-      setAddLoading(true);
+    setAddLoading(true);
     const fd = new FormData();
 
     Object.keys(formData).forEach((k) => {
       if (k === "createdBy") return;
       if (k === "geoLocation") {
         fd.append("lat", formData.geoLocation.lat);
-fd.append("long", formData.geoLocation.long);
+        fd.append("long", formData.geoLocation.long);
       } else if (formData[k] !== undefined && formData[k] !== null && formData[k] !== "") {
         fd.append(k, formData[k]);
       }
@@ -237,37 +239,42 @@ fd.append("long", formData.geoLocation.long);
       fetchCustomers();
     } catch {
       errorToast("Add failed");
+    } finally {
+      setAddLoading(false);
     }
-    finally {
-    setAddLoading(false);
-  }
   };
 
- const onEditClick = (item) => {
-  setSelectedId(item._id);
+  const onEditClick = (item) => {
+    setSelectedId(item._id);
 
-  setFormData({
-    name: item.name || "",
-    phone: item.phone || "",
-    phone2: item.phone2 || "",
-    address: item.address || "",
-    routeId: item.routeId?._id || item.routeId || "",
-    routeName: item.routeName || "",
-    lineNo: item.lineNo || "",
-    creditDays: item.creditDays || "",
-    pincode: item.pincode || "",
-    category: item.category || "",
-    status: item.status ?? true,
-    geoLocation: {
-      lat: item.geoLocation?.lat || item.geoLocation?.latitude || "",
-      long: item.geoLocation?.long || item.geoLocation?.longitude || "",
-    },
-  });
+    setFormData({
+      name: item.name || "",
+      phone: item.phone || "",
+      phone2: item.phone2 || "",
+      address: item.address || "",
+      routeId: item.routeId?._id || item.routeId || "",
+      routeName: item.routeName || "",
+      lineNo: item.lineNo || "",
+      creditDays: item.creditDays || "",
+      pincode: item.pincode || "",
+      category: item.category || "",
+      status: item.status ?? true,
+      geoLocation: {
+        lat: item.geoLocation?.lat || item.geoLocation?.latitude || "",
+        long: item.geoLocation?.long || item.geoLocation?.longitude || "",
+      },
+    });
 
-  setUploadedFile(null);
-  setModalEdit(true);
-};
-
+    // Set image preview if existing image exists
+    if (item.img) {
+      setImagePreview(item.img);
+    } else {
+      setImagePreview(null);
+    }
+    
+    setUploadedFile(null);
+    setModalEdit(true);
+  };
 
   const onEditSubmit = async (e) => {
     e.preventDefault();
@@ -294,9 +301,9 @@ fd.append("long", formData.geoLocation.long);
       fetchCustomers();
     } catch {
       errorToast("Update failed");
-    }finally {
-    setEditLoading(false);
-  }
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const onDeleteConfirm = async () => {
@@ -309,6 +316,7 @@ fd.append("long", formData.geoLocation.long);
       errorToast("Delete failed");
     }
   };
+
   const routeDatas = [
     { _id: 1, name: "route1" },
     { _id: 2, name: "route2" },
@@ -321,26 +329,24 @@ fd.append("long", formData.geoLocation.long);
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-  <BlockTitle tag="h3">Customer List</BlockTitle>
+              <BlockTitle tag="h3">Customer List</BlockTitle>
+              <div className="mt-1">
+                <span className="text-soft">
+                  You Have Total {" "} 
+                  <span className="fw-bold mr-1">
+                    {data.length}
+                  </span>
+                  Customers
+                </span>
+              </div>
+            </BlockHeadContent>
 
-  <div className="mt-1">
-    <span className="text-soft">
-      You Have Total {" "} 
-      <span className="fw-bold mr-1">
-        {data.length}
-      </span>
-      Customers
-    </span>
-  </div>
-</BlockHeadContent>
-
-           <Button color="primary" className="btn-icon"
-  onClick={() => {
-    resetForm();       // clear old edit data
-    setModalAdd(true); // open add modal
-  }}
->
-
+            <Button color="primary" className="btn-icon"
+              onClick={() => {
+                resetForm();
+                setModalAdd(true);
+              }}
+            >
               <Icon name="plus" />
             </Button>
           </BlockBetween>
@@ -357,7 +363,6 @@ fd.append("long", formData.geoLocation.long);
                 </div>
                 <div className="card-tools mr-n1">
                   <ul className="btn-toolbar gx-1">
-                    {/* SEARCH ICON */}
                     <li>
                       <a
                         href="#search"
@@ -405,7 +410,6 @@ fd.append("long", formData.geoLocation.long);
                                 tag="a"
                                 href="#"
                                 onClick={() => setSort("dsc")}
-
                               >
                                 DESC
                               </DropdownItem>
@@ -427,7 +431,6 @@ fd.append("long", formData.geoLocation.long);
                 </div>
               </div>
 
-              {/* SEARCH BAR */}
               <div className={`card-search search-wrap ${onSearch ? "active" : ""}`}>
                 <div className="card-body">
                   <div className="search-content">
@@ -484,29 +487,25 @@ fd.append("long", formData.geoLocation.long);
 
               {currentItems.map((item) => (
                 <DataTableItem key={item._id}>
-                  {/* Name with image and link */}
                   <DataTableRow>
-                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-  <img
-    src={item.img || "/default-avatar.png"}
-    alt={item.name}
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = "/default-avatar.png";
-    }}
-    style={{
-      width: "30px",
-      height: "30px",
-      borderRadius: "50%",
-      objectFit: "cover",
-    }}
-  />
-
-  <span className="tb-lead">{item.name}</span>
-</div>
-
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <img
+                        src={item.img || "/default-avatar.png"}
+                        alt={item.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/default-avatar.png";
+                        }}
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                      <span className="tb-lead">{item.name}</span>
+                    </div>
                   </DataTableRow>
-
                   <DataTableRow>{item.phone}</DataTableRow>
                   <DataTableRow>{item.routeName || "--"}</DataTableRow>
                   <DataTableRow>{item.category || "--"}</DataTableRow>
@@ -515,8 +514,6 @@ fd.append("long", formData.geoLocation.long);
                       {item.status ? "Active" : "Inactive"}
                     </span>
                   </DataTableRow>
-
-                  {/* Actions */}
                   <DataTableRow className="nk-tb-col-tools">
                     <ul className="nk-tb-actions gx-1">
                       <li>
@@ -567,16 +564,17 @@ fd.append("long", formData.geoLocation.long);
           </DataTable>
         </Block>
       </Content>
-      <Modal
-  isOpen={modalAdd}
-  toggle={() => {
-    setModalAdd(false);
-    resetForm();
-  }}
-  centered
-  size="lg"
->
 
+      {/* Add Modal with Image Preview */}
+      <Modal
+        isOpen={modalAdd}
+        toggle={() => {
+          setModalAdd(false);
+          resetForm();
+        }}
+        centered
+        size="lg"
+      >
         <ModalBody>
           <a
             href="#cancel"
@@ -584,8 +582,7 @@ fd.append("long", formData.geoLocation.long);
             onClick={(e) => {
               e.preventDefault();
               setModalAdd(false);
-resetForm();
-
+              resetForm();
             }}
           >
             <Icon name="cross-sm" />
@@ -611,21 +608,20 @@ resetForm();
               <FormGroup>
                 <label className="form-label">Phone *</label>
                 <input
-  type="tel"
-  className="form-control"
-  required
-  maxLength="10"
-  pattern="[0-9]{10}"
-  placeholder="Enter mobile number"
-  value={formData.phone}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, ""); // only numbers
-    if (value.length <= 10) {
-      setFormData({ ...formData, phone: value });
-    }
-  }}
-/>
-
+                  type="tel"
+                  className="form-control"
+                  required
+                  maxLength="10"
+                  pattern="[0-9]{10}"
+                  placeholder="Enter mobile number"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 10) {
+                      setFormData({ ...formData, phone: value });
+                    }
+                  }}
+                />
               </FormGroup>
             </Col>
 
@@ -633,19 +629,18 @@ resetForm();
               <FormGroup>
                 <label className="form-label">Alternate Phone </label>
                 <input
-  type="tel"
-  className="form-control"
-  maxLength="10"
-  placeholder="Enter alternate number (optional)"
-  value={formData.phone2}
-  onChange={(e) => {
-    const value = e.target.value.replace(/\D/g, "");
-    if (value.length <= 10) {
-      setFormData({ ...formData, phone2: value });
-    }
-  }}
-/>
-
+                  type="tel"
+                  className="form-control"
+                  maxLength="10"
+                  placeholder="Enter alternate number (optional)"
+                  value={formData.phone2}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 10) {
+                      setFormData({ ...formData, phone2: value });
+                    }
+                  }}
+                />
               </FormGroup>
             </Col>
 
@@ -666,12 +661,10 @@ resetForm();
             <Col md="4">
               <FormGroup>
                 <label className="form-label">Route *</label>
-
                 <CreatableSelect
                   isClearable
                   isLoading={loadingRoutes}
                   options={routes}
-                  
                   placeholder="Select or create route"
                   formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
                   value={formData.routeId ? routes.find((r) => r.value === formData.routeId) : null}
@@ -790,32 +783,60 @@ resetForm();
             </Col>
 
             <Col md="12">
-              <Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
-                {({ getRootProps, getInputProps }) => (
-                  <div {...getRootProps()} className="dropzone upload-zone small bg-lighter">
-                    <input {...getInputProps()} />
-                    {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
-                  </div>
-                )}
-              </Dropzone>
+              <FormGroup>
+                <label className="form-label">Customer Image</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <Dropzone multiple={false} onDrop={handleFileSelect}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
+                        <input {...getInputProps()} />
+                        {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
+                      </div>
+                    )}
+                  </Dropzone>
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div style={{ 
+                      width: '60px', 
+                      height: '60px', 
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid #e5e9f2',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover' 
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </FormGroup>
             </Col>
 
             <Col md="12" className="text-end">
               <Button color="primary" type="submit" disabled={addLoading}>
-  {addLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2" />
-      Saving...
-    </>
-  ) : (
-    "Save Customer"
-  )}
-</Button>
-
+                {addLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Customer"
+                )}
+              </Button>
             </Col>
           </Form>
         </ModalBody>
       </Modal>
+
+      {/* Edit Modal with Image Preview */}
       <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
         <ModalBody>
           <a
@@ -885,12 +906,10 @@ resetForm();
             <Col md="4">
               <FormGroup>
                 <label className="form-label">Route *</label>
-
                 <CreatableSelect
                   isClearable
                   isLoading={loadingRoutes}
                   options={routes}
-                  
                   placeholder="Select or create route"
                   formatCreateLabel={(inputValue) => `Create route "${inputValue}"`}
                   value={formData.routeId ? routes.find((r) => r.value === formData.routeId) : null}
@@ -1002,32 +1021,59 @@ resetForm();
             </Col>
 
             <Col md="12">
-              <Dropzone multiple={false} onDrop={(files) => setUploadedFile(files[0])}>
-                {({ getRootProps, getInputProps }) => (
-                  <div {...getRootProps()} className="dropzone upload-zone small bg-lighter">
-                    <input {...getInputProps()} />
-                    {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
-                  </div>
-                )}
-              </Dropzone>
+              <FormGroup>
+                <label className="form-label">Customer Image</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                  <Dropzone multiple={false} onDrop={handleFileSelect}>
+                    {({ getRootProps, getInputProps }) => (
+                      <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
+                        <input {...getInputProps()} />
+                        {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
+                      </div>
+                    )}
+                  </Dropzone>
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div style={{ 
+                      width: '60px', 
+                      height: '60px', 
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid #e5e9f2',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover' 
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </FormGroup>
             </Col>
 
             <Col md="12" className="text-end">
               <Button color="primary" type="submit" disabled={editLoading}>
-  {editLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2" />
-      Updating...
-    </>
-  ) : (
-    "Save Customer"
-  )}
-</Button>
-
+                {editLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Updating...
+                  </>
+                ) : (
+                  "Save Customer"
+                )}
+              </Button>
             </Col>
           </Form>
         </ModalBody>
       </Modal>
+
       <Modal isOpen={modalDelete} toggle={() => setModalDelete(false)} centered>
         <ModalBody className="text-center">
           <Icon name="alert-circle" className="text-danger mb-2" />

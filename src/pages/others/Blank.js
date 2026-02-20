@@ -4,10 +4,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { Input, Badge, Button, Table, Card, CardBody, Row, Col, Pagination, PaginationItem, PaginationLink } from "reactstrap";
 import { errorToast } from "../../utils/toaster";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+// import jsPDF from "jspdf";
+// import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import "./report.css";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 
 const Reports = () => {
   const [customers, setCustomers] = useState([]);
@@ -19,6 +22,7 @@ const Reports = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+  const [staffList, setStaffList] = useState([]); // Store all staff data
   
   // Calculate paid and pending amounts from filtered data
   const paidAmount = filteredReportData
@@ -43,6 +47,19 @@ const Reports = () => {
     }
   };
 
+  // Fetch all staff data
+  const fetchStaff = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/staff`
+      );
+      setStaffList(res.data);
+      console.log("Staff data fetched:", res.data); // Debug log
+    } catch (error) {
+      console.error("Failed to fetch staff:", error);
+    }
+  };
+
   const fetchReport = async () => {
     if (!selectedCustomer) return;
 
@@ -55,6 +72,7 @@ const Reports = () => {
         (b) => b.customerId === selectedCustomer._id
       );
 
+      console.log("Bills data:", customerBills); // Debug log to see bill structure
       setReportData(customerBills);
       setCurrentPage(1);
     } catch (err) {
@@ -89,57 +107,181 @@ const Reports = () => {
 
   useEffect(() => {
     fetchCustomers();
+    fetchStaff(); // Fetch staff data when component mounts
   }, []);
 
   useEffect(() => {
     if (selectedCustomer) fetchReport();
   }, [selectedCustomer]);
 
+  // Function to get staff name by matching ID
+  const getStaffNameById = (staffId) => {
+    if (!staffId) return 'N/A';
+    
+    // Handle different possible ID field names
+    const staffIdValue = staffId._id || staffId.id || staffId;
+    
+    // Find staff in staffList by matching ID
+    const staff = staffList.find(s => s._id === staffIdValue || s.id === staffIdValue);
+    
+    if (staff) {
+      return staff.name || staff.staffName || 'Unknown';
+    }
+    
+    console.log("Staff not found for ID:", staffIdValue); // Debug log
+    return 'N/A';
+  };
+
+  // Main function to get staff name from bill
+  const getStaffName = (bill) => {
+    // Debug log to see bill structure
+    console.log("Bill staff data:", {
+      staffId: bill.staffId,
+      createdBy: bill.createdBy,
+      staffName: bill.staffName,
+      staff: bill.staff
+    });
+
+    // Case 1: If staff name is directly available
+    if (bill.staffName) {
+      return bill.staffName;
+    }
+
+    // Case 2: If staff object is populated with name
+    if (bill.staff && bill.staff.name) {
+      return bill.staff.name;
+    }
+
+    // Case 3: If staffId is available, try to find staff name
+    if (bill.staffId) {
+      const staffName = getStaffNameById(bill.staffId);
+      if (staffName !== 'N/A') {
+        return staffName;
+      }
+    }
+
+    // Case 4: If createdBy contains staff ID or name
+    if (bill.createdBy) {
+      // If createdBy is an object with name
+      if (typeof bill.createdBy === 'object' && bill.createdBy.name) {
+        return bill.createdBy.name;
+      }
+      // If createdBy is a string (might be ID or name)
+      if (typeof bill.createdBy === 'string') {
+        // Check if it's an ID (24 character hex string)
+        if (bill.createdBy.length === 24 && /^[0-9a-fA-F]{24}$/.test(bill.createdBy)) {
+          const staffName = getStaffNameById(bill.createdBy);
+          if (staffName !== 'N/A') {
+            return staffName;
+          }
+        } else {
+          // Assume it's already a name
+          return bill.createdBy;
+        }
+      }
+    }
+
+    // Case 5: If staff field contains ID
+    if (bill.staff) {
+      const staffId = typeof bill.staff === 'object' ? bill.staff._id || bill.staff.id : bill.staff;
+      const staffName = getStaffNameById(staffId);
+      if (staffName !== 'N/A') {
+        return staffName;
+      }
+    }
+
+    return 'N/A';
+  };
+
   const PopperContainer = ({ children }) => {
     return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
   };
 
-  const exportPDF = () => {
-    if (!selectedCustomer) return;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(20);
-    doc.setTextColor(44, 62, 80);
-    doc.text(`Report: ${selectedCustomer.name}`, 14, 15);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(127, 140, 141);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-    
-    if (startDate && endDate) {
-      doc.text(`Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`, 14, 28);
-    }
-    
-    doc.setFontSize(12);
-    doc.setTextColor(44, 62, 80);
-    doc.text(`Total Orders: ${filteredReportData.length}`, 14, 38);
-    doc.text(`Total Amount: ₹${totalAmount.toLocaleString('en-IN')}`, 14, 45);
-    
-    const tableColumn = ["S.No", "Order No", "Date", "Amount (₹)"];
-    const tableRows = filteredReportData.map((o, idx) => [
-      idx + 1,
-      `#${o._id.toString().slice(-6)}`,
-      new Date(o.createdAt).toLocaleDateString('en-IN'),
-      (o.totalAmt || 0).toLocaleString('en-IN')
-    ]);
-    
-    doc.autoTable({ 
-      head: [tableColumn], 
-      body: tableRows, 
-      startY: 55,
-      theme: 'striped',
-      headStyles: { fillColor: [52, 73, 94], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 }
-    });
-    
-    doc.save(`${selectedCustomer.name}_Report.pdf`);
-  };
+const exportPDF = () => {
+  if (!selectedCustomer) return;
 
+  const doc = new jsPDF();
+
+  // ===== Title =====
+  doc.setFontSize(18);
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Customer Report`, 14, 18);
+
+  doc.setFontSize(12);
+  doc.text(`Customer: ${selectedCustomer.name}`, 14, 26);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
+
+  if (startDate && endDate) {
+    doc.text(
+      `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
+      14,
+      38
+    );
+  }
+
+  // ===== Summary Section =====
+  doc.setFontSize(11);
+  doc.setTextColor(33);
+  doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
+  doc.text(
+    `Total Amount: Rs. ${totalAmount.toLocaleString("en-IN")}`,
+    14,
+    54
+  );
+  doc.text(
+    `Paid Amount: Rs. ${paidAmount.toLocaleString("en-IN")}`,
+    14,
+    60
+  );
+  doc.text(
+    `Pending Amount: Rs. ${pendingAmount.toLocaleString("en-IN")}`,
+    14,
+    66
+  );
+
+  // ===== Table =====
+  const tableColumn = [
+    "S.No",
+    "Order No",
+    "Date",
+    "Amount (Rs)",
+    "Payment Status",
+    "Staff Name",
+  ];
+
+  const tableRows = filteredReportData.map((o, idx) => [
+    idx + 1,
+    `#${o._id.toString().slice(-6)}`,
+    new Date(o.createdAt).toLocaleDateString("en-IN"),
+    (o.totalAmt || 0).toLocaleString("en-IN"),
+    o.paymentMethod ? "Paid" : "Pending",
+    getStaffName(o),
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 75,
+    theme: "striped",
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    styles: {
+      fontSize: 9,
+    },
+    columnStyles: {
+      3: { halign: "right" }, // Align Amount right
+    },
+  });
+
+  // ===== Save PDF =====
+  doc.save(`${selectedCustomer.name}_Report.pdf`);
+};
   const exportExcel = () => {
     if (!selectedCustomer) return;
     
@@ -149,7 +291,8 @@ const Reports = () => {
       'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
       'Amount (₹)': bill.totalAmt || 0,
       'Payment Status': bill.paymentMethod ? 'Paid' : 'Pending',
-      'Order Status': bill.orderStatus || 'N/A'
+      'Order Status': bill.orderStatus || 'N/A',
+      'Staff Name': getStaffName(bill)
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -287,17 +430,18 @@ const Reports = () => {
       className="export-btn excel ultra-compact"
       disabled={filteredReportData.length === 0}
     >
-      <i className="ni ni-excel"></i>
+      <FaFileExcel />
       <span>Export</span>
     </button>
-    {/* <button
-      onClick={exportPDF}
-      className="export-btn pdf ultra-compact"
-      disabled={filteredReportData.length === 0}
-    >
-      <i className="ni ni-pdf"></i>
-      <span>PDF</span>
-    </button> */}
+    <button
+    onClick={exportPDF}
+    className="export-btn pdf ultra-compact"
+    disabled={filteredReportData.length === 0}
+    title="Export to PDF"
+  >
+    <FaFilePdf size={13} color="sandal" />
+    PDF
+  </button>
   </div>
 </div>
 
@@ -384,47 +528,53 @@ const Reports = () => {
 
                 {currentItems.length > 0 ? (
                   <>
-                    <div className="table-responsive">
-                      <table className="transactions-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Order No</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentItems.map((o, idx) => (
-                            <tr key={o._id}>
-                              <td>{indexOfFirstItem + idx + 1}</td>
-                              <td>
-                                <span className="order-id">#{o._id.toString().slice(-6)}</span>
-                              </td>
-                              <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
-                                day: '2-digit', 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}</td>
-                              <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
-                              <td>
-                                <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
-                                  {o.paymentMethod ? 'Paid' : 'Pending'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colSpan="3" className="text-end fw-bold">Total</td>
-                            <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                   <div className="table-responsive">
+  <table className="transactions-table">
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Order No</th>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Staff Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {currentItems.map((o, idx) => (
+        <tr key={o._id}>
+          <td>{indexOfFirstItem + idx + 1}</td>
+          <td>
+            <span className="order-id">#{o._id.toString().slice(-6)}</span>
+          </td>
+          <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+          })}</td>
+          <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
+          <td>
+            <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
+              {o.paymentMethod ? 'Paid' : 'Pending'}
+            </span>
+          </td>
+          <td>
+            <span className="staff-name">
+              {getStaffName(o)}
+            </span>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colSpan="3" className="text-end fw-bold ">Total</td>
+        <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
+        <td colSpan="2"></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
 
                     {/* Pagination */}
                     {totalPages > 1 && (
