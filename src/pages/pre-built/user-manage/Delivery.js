@@ -5,6 +5,7 @@
   import Head from "../../../layout/head/Head";
   import CustomerLiveMap from "./delivery/CustomerLiveMap";
   import axios from "axios";
+  import { FiRefreshCw } from "react-icons/fi";
   import { 
     Block, 
     BlockHead, 
@@ -583,7 +584,8 @@
                     className="btn btn-primary"
                     onClick={handlesRefresh}
                   >
-                    Refresh
+                    <FiRefreshCw size={18} />
+                    
                   </button>
                 </div>
               </div>
@@ -1187,7 +1189,7 @@
                     className="btn btn-primary"
                     onClick={handleRefresh}
                   >
-                    Refresh
+                    <FiRefreshCw size={18} />
                   </button>
                 </div>
               </div>

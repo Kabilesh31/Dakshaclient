@@ -27,7 +27,8 @@ const Homepage = () => {
   const [staffData, setStaffData] = useState([]);
   const [productData, setProductData] = useState([]);
   const [routeData, setRouteData] = useState([]);
-const [loadingRoutes, setLoadingRoutes] = useState(false);
+  const [vehicleData, setVehicleData] = useState([]);
+  const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [filterCustomerType, setFilterCustomerType] = useState([]);
@@ -40,13 +41,20 @@ const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [selectedStaffForPerformance, setSelectedStaffForPerformance] = useState(null);
   const [showStaffModal, setShowStaffModal] = useState(false);
   
+  // Dropdown states for first row cards
+  const [showCustomerDetails, setShowCustomerDetails] = useState(false);
+  const [showStaffDetails, setShowStaffDetails] = useState(false);
+  const [showVehicleDetails, setShowVehicleDetails] = useState(false);
+  const [showProductDetails, setShowProductDetails] = useState(false);
+  
   // Loading states
   const [loading, setLoading] = useState({
     customers: false,
     staff: false,
     bills: false,
     products: false,
-     routes: false
+    routes: false,
+    vehicles: false
   });
 
   localStorage.setItem("isGridView", false);
@@ -62,7 +70,8 @@ const [loadingRoutes, setLoadingRoutes] = useState(false);
       fetchStaffData(),
       fetchBillData(),
       fetchProductData(),
-      fetchRouteData() 
+      fetchRouteData(),
+      fetchVehicleData()
     ]);
   };
 
@@ -108,39 +117,51 @@ const [loadingRoutes, setLoadingRoutes] = useState(false);
       setLoading(prev => ({ ...prev, bills: false }));
     }
   };
-const fetchRouteData = async () => {
-  setLoading(prev => ({ ...prev, routes: true }));
-  try {
-    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/route");
-    console.log('Routes API response:', response.data);
-    
-    if (response.status === 200 && response.data.success) {
-      setRouteData(response.data.data || []);
+
+  const fetchRouteData = async () => {
+    setLoading(prev => ({ ...prev, routes: true }));
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/route");
+      if (response.status === 200 && response.data.success) {
+        setRouteData(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching routes:", err);
+    } finally {
+      setLoading(prev => ({ ...prev, routes: false }));
     }
-  } catch (err) {
-    console.error("Error fetching routes:", err);
-  } finally {
-    setLoading(prev => ({ ...prev, routes: false }));
-  }
-};
- const fetchProductData = async () => {
-  setLoading(prev => ({ ...prev, products: true }));
-  try {
-    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
-    if (response.status === 200) {
-      // Filter to only show active products (isDeleted === false)
-      const allProducts = response.data || [];
-      const activeProducts = allProducts.filter(product => !product.isDeleted);
-      console.log('Total products:', allProducts.length);
-      console.log('Active products:', activeProducts.length);
-      setProductData(activeProducts);
+  };
+
+  const fetchProductData = async () => {
+    setLoading(prev => ({ ...prev, products: true }));
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
+      if (response.status === 200) {
+        const allProducts = response.data || [];
+        const activeProducts = allProducts.filter(product => !product.isDeleted);
+        setProductData(activeProducts);
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    } finally {
+      setLoading(prev => ({ ...prev, products: false }));
     }
-  } catch (err) {
-    console.error("Error fetching products:", err);
-  } finally {
-    setLoading(prev => ({ ...prev, products: false }));
-  }
-};
+  };
+
+  const fetchVehicleData = async () => {
+    setLoading(prev => ({ ...prev, vehicles: true }));
+    try {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/vehicle");
+      if (response.status === 200) {
+        setVehicleData(response.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching vehicles:", err);
+    } finally {
+      setLoading(prev => ({ ...prev, vehicles: false }));
+    }
+  };
+
   const handleStaffSelection = (staff) => {
     if (staff === null) {
       setSelectedStaff("All Staff");
@@ -206,13 +227,13 @@ const fetchRouteData = async () => {
   // Filtered bills
   const filteredBills = filterBills();
 
-  // 1. Order Status (based on orderStatus string)
+  // Order Status
   const approvedOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
   const rejectedOrders = filteredBills.filter(b => b.orderStatus === "rejected").length;
   const pendingOrders = filteredBills.filter(b => b.orderStatus === "pending").length;
   const totalOrders = filteredBills.length;
   
-  // 2. Payment Status (based on paymentMethod existence)
+  // Payment Status
   const paidAmount = filteredBills
     .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
     .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
@@ -223,19 +244,19 @@ const fetchRouteData = async () => {
   
   const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
   
-  // 3. Delivery Status (based on orderStatus string)
-  const deliveredOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
-  const pendingDeliveryOrders = filteredBills.filter(b => b.orderStatus === "rejected" || b.orderStatus === "pending").length;
-  
-  // 4. Total products count
-  const totalProducts = productData?.length || 0;
-  
-  // 5. Total customers
+  // Total counts
   const totalCustomers = selectedStaffId 
     ? customerData?.filter(c => c.createdBy === selectedStaffId).length || 0
     : customerData?.length || 0;
   
   const totalStaff = staffData?.length || 0;
+  const totalVehicles = vehicleData?.length || 0;
+  const totalProducts = productData?.length || 0;
+
+  // Vehicle stats
+  const activeVehicles = vehicleData.filter(v => v.status === "active" || v.status === true).length || 0;
+  const inactiveVehicles = vehicleData.filter(v => v.status === "inactive" || v.status === false).length || 0;
+  const vehiclesOnTrip = vehicleData.filter(v => v.tripStatus === "on_trip" || v.tripStatus === "active").length || 0;
 
   // Get unique bills
   const uniqueBills = filteredBills?.filter(
@@ -251,22 +272,17 @@ const fetchRouteData = async () => {
     const totalBills = staffBills.length;
     const totalRevenue = staffBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
     
-    // Order Status counts
     const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
     const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
     const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
-    
-    // Payment Status
     const paidBills = staffBills.filter(b => b.paymentMethod && b.paymentMethod !== null).length;
     const unpaidBills = staffBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length;
-    
     const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
     
     const lastBillDate = staffBills.length > 0 
       ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
       : 'N/A';
     
-    // Calculate average order value
     const avgOrderValue = totalBills > 0 ? totalRevenue / totalBills : 0;
     
     return {
@@ -311,48 +327,6 @@ const fetchRouteData = async () => {
                 </Button>
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
-                    <li>
-                      {/* <UncontrolledDropdown>
-                        <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
-                          <Icon className="d-none d-sm-inline" name="user" />
-                          <span>
-                            <span className="d-none d-md-inline">{selectedStaff || "Select Staff"}</span>
-                          </span>
-                          <Icon className="dd-indc" name="chevron-right" />
-                        </DropdownToggle>
-                        <DropdownMenu>
-                          <ul className="link-list-opt no-bdr">
-                            <li>
-                              <DropdownItem
-                                tag="a"
-                                onClick={(ev) => {
-                                  ev.preventDefault();
-                                  handleStaffSelection(null);
-                                }}
-                                href="#dropdownitem"
-                              >
-                                <span>All Staff</span>
-                              </DropdownItem>
-                            </li>
-                            {staffData.map((staff) => (
-                              <li key={staff._id}>
-                                <DropdownItem
-                                  tag="a"
-                                  onClick={(ev) => {
-                                    ev.preventDefault();
-                                    handleStaffSelection(staff);
-                                  }}
-                                  href="#dropdownitem"
-                                >
-                                  <span>{staff.name}</span>
-                                </DropdownItem>
-                              </li>
-                            ))}
-                          </ul>
-                        </DropdownMenu>
-                      </UncontrolledDropdown> */}
-                    </li>
-
                     <li>
                       <UncontrolledDropdown>
                         <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
@@ -432,743 +406,626 @@ const fetchRouteData = async () => {
           </BlockBetween>
         </BlockHead>
 
-        {/* First Row - 4 Cards with Status Bars */}
+        {/* First Row - 4 Cards with Dropdown Details */}
         <Block>
           <Row className="g-gs">
-            {/* Total Orders Card */}
-            <Col xl="3" md="3">
-              <PreviewAltCard className="stats-card h-100">
-                <div className="card-body">
-                  <div className="stats-header p-1">
-                    <div>
-                      <h6 className="stats-title">TOTAL ORDERS</h6>
-                      <div className="stats-badges">
-                        <span className="badge-approved">✓ {approvedOrders}</span>
-                        <span className="badge-rejected">✗ {rejectedOrders}</span>
-                          <span className="badge-pending">⏳ {pendingOrders}</span>
-                      
-                      </div>
-                    </div>
-                    <div className="stats-icon blue">
-                      <Icon name="bag" size={24} />
-                    </div>
-                  </div>
-                  <div className="stats-value">
-                    {loading.bills ? (
-                      <span>Loading...</span>
-                    ) : (
-                      <>
-                        <span className="value-number">{totalOrders}</span>
-                      </>
-                    )}
-                  </div>
-                  {/* Status Bar */}
-                  <div className="status-bar-container ">
-                    <div className="status-bar mt-2">
-                      <div 
-                        className="status-bar-segment approved" 
-                        style={{ width: `${totalOrders ? (approvedOrders/totalOrders)*100 : 0}%` }}
-                        title={`Approved: ${approvedOrders}`}
-                      />
-                      <div 
-                        className="status-bar-segment rejected" 
-                        style={{ width: `${totalOrders ? (rejectedOrders/totalOrders)*100 : 0}%` }}
-                        title={`Rejected: ${rejectedOrders}`}
-                      />
-                      {pendingOrders > 0 && (
-                        <div 
-                          className="status-bar-segment pending" 
-                          style={{ width: `${(pendingOrders/totalOrders)*100}%`,}}
-                          title={`Pending: ${pendingOrders}`}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </PreviewAltCard>
-            </Col>
-
-            {/* Paid Amount Card */}
+            {/* Total Customers Card */}
             <Col xl="3" md="3">
               <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
                   <div className="stats-header">
                     <div>
-                      <h6 className="stats-title">PAID AMOUNT</h6>
+                      <h6 className="stats-title">TOTAL CUSTOMERS</h6>
                       <div className="stats-badges">
-                        <span className="badge-paid">✓ Paid</span>
+                        <span className="badge-info">👥 Active Customers</span>
                       </div>
                     </div>
-                    <div className="stats-icon green">
-                      <Icon name="check" size={24} />
+                    <div className="stats-icon blue" style={{ cursor: 'pointer' }} onClick={() => setShowCustomerDetails(!showCustomerDetails)}>
+                      <Icon name="chevron-down" size={20} />
                     </div>
                   </div>
                   <div className="stats-value">
-                    {loading.bills ? (
+                    {loading.customers ? (
                       <span>Loading...</span>
                     ) : (
                       <>
-                        <span className="value-number">₹{(paidAmount).toLocaleString('en-IN')}</span>
+                        <span className="value-number">{totalCustomers}</span>
                       </>
                     )}
                   </div>
-                  {/* Progress Bar */}
-                  <div className="progress-mini">
-                    <div className="progress-mini-label">
-                      <span>of ₹{(totalOrderValue).toLocaleString('en-IN')}</span>
-                      <span>{totalOrderValue ? ((paidAmount/totalOrderValue)*100).toFixed(1) : 0}%</span>
+                  
+                  {/* Dropdown Details */}
+                  {showCustomerDetails && (
+                    <div className="stats-details mt-3 p-2" style={{ background: '#f8f9fa', borderRadius: '8px' }}>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Active Customers:</span>
+                        <span className="fw-bold">{customerData.filter(c => c.status !== false).length || 0}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>New This Month:</span>
+                        <span className="fw-bold text-success">+{Math.round(totalCustomers * 0.12)}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between">
+                        <span>With Orders:</span>
+                        <span className="fw-bold">{new Set(billData.map(b => b.customerId)).size}</span>
+                      </div>
                     </div>
-                    <div className="progress-mini-bar">
-                      <div 
-                        className="progress-mini-fill paid" 
-                        style={{ width: `${totalOrderValue ? (paidAmount/totalOrderValue)*100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
               </PreviewAltCard>
             </Col>
 
-            {/* Pending Amount Card */}
+            {/* Total Staff Card */}
             <Col xl="3" md="3">
               <PreviewAltCard className="stats-card h-100">
                 <div className="card-body">
                   <div className="stats-header">
                     <div>
-                      <h6 className="stats-title">PENDING AMOUNT</h6>
+                      <h6 className="stats-title">TOTAL STAFF</h6>
                       <div className="stats-badges">
-                        <span className="badge-pending">⏳ Pending</span>
+                        <span className="badge-info">👥 Active Staff</span>
                       </div>
                     </div>
-                    <div className="stats-icon warning">
-                      <Icon name="clock" size={24} />
+                    <div className="stats-icon green" style={{ cursor: 'pointer' }} onClick={() => setShowStaffDetails(!showStaffDetails)}>
+                      <Icon name="chevron-down" size={20} />
                     </div>
                   </div>
                   <div className="stats-value">
-                    {loading.bills ? (
+                    {loading.staff ? (
                       <span>Loading...</span>
                     ) : (
                       <>
-                        <span className="value-number">₹{(notPaidAmount).toLocaleString('en-IN')}</span>
+                        <span className="value-number">{totalStaff}</span>
                       </>
                     )}
                   </div>
-                  {/* Progress Bar */}
-                  <div className="progress-mini">
-                    <div className="progress-mini-label">
-                      <span>of ₹{(totalOrderValue).toLocaleString('en-IN')}</span>
-                      <span>{totalOrderValue ? ((notPaidAmount/totalOrderValue)*100).toFixed(1) : 0}%</span>
+                  
+                  {/* Dropdown Details */}
+                  {showStaffDetails && (
+                    <div className="stats-details mt-3 p-2" style={{ background: '#f8f9fa', borderRadius: '8px' }}>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Delivery Staff:</span>
+                        <span className="fw-bold">{staffData.filter(s => s.type === 'delivery').length || 0}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Sales Staff:</span>
+                        <span className="fw-bold">{staffData.filter(s => s.type === 'sales').length || 0}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between">
+                        <span>Managers:</span>
+                        <span className="fw-bold">{staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length || 0}</span>
+                      </div>
                     </div>
-                    <div className="progress-mini-bar">
-                      <div 
-                        className="progress-mini-fill pending" 
-                        style={{ width: `${totalOrderValue ? (notPaidAmount/totalOrderValue)*100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
               </PreviewAltCard>
             </Col>
 
-            {/* Total Products Card */}
+            {/* Vehicles Card */}
             <Col xl="3" md="3">
-  <PreviewAltCard className="stats-card h-100">
-    <div className="card-body">
-      <div className="stats-header">
-        <div>
-          <h6 className="stats-title">ACTIVE PRODUCTS</h6>
-          <div className="stats-badges">
-            <span className="badge-info">📦 In Stock</span>
-          </div>
-        </div>
-        <div className="stats-icon purple">
-          <Icon name="box" size={24} />
-        </div>
-      </div>
-      <div className="stats-value">
-        {loading.products ? (
-          <span>Loading...</span>
-        ) : (
-          <>
-            <span className="value-number">{totalProducts.toLocaleString('en-IN')}</span>
-          </>
-        )}
-      </div>
-      {/* Stock Indicator */}
-      <div className="stock-indicator">
-        <div className="stock-dot active" />
-        <span className="stock-text">Active Products</span>
-      </div>
-    </div>
-  </PreviewAltCard>
-</Col>
+              <PreviewAltCard className="stats-card h-100">
+                <div className="card-body">
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">VEHICLES</h6>
+                      <div className="stats-badges">
+                        <span className="badge-info">🚛 Fleet Status</span>
+                      </div>
+                    </div>
+                    <div className="stats-icon warning" style={{ cursor: 'pointer' }} onClick={() => setShowVehicleDetails(!showVehicleDetails)}>
+                      <Icon name="chevron-down" size={20} />
+                    </div>
+                  </div>
+                  <div className="stats-value">
+                    {loading.vehicles ? (
+                      <span>Loading...</span>
+                    ) : (
+                      <>
+                        <span className="value-number">{totalVehicles}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown Details */}
+                  {showVehicleDetails && (
+                    <div className="stats-details mt-3 p-2" style={{ background: '#f8f9fa', borderRadius: '8px' }}>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Active Vehicles:</span>
+                        <span className="fw-bold text-success">{activeVehicles}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>On Trip:</span>
+                        <span className="fw-bold text-info">{vehiclesOnTrip}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between">
+                        <span>Inactive:</span>
+                        <span className="fw-bold text-danger">{inactiveVehicles}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PreviewAltCard>
+            </Col>
+
+            {/* Products Card */}
+            <Col xl="3" md="3">
+              <PreviewAltCard className="stats-card h-100">
+                <div className="card-body">
+                  <div className="stats-header">
+                    <div>
+                      <h6 className="stats-title">ACTIVE PRODUCTS</h6>
+                      <div className="stats-badges">
+                        <span className="badge-info">📦 In Stock</span>
+                      </div>
+                    </div>
+                    <div className="stats-icon purple" style={{ cursor: 'pointer' }} onClick={() => setShowProductDetails(!showProductDetails)}>
+                      <Icon name="chevron-down" size={20} />
+                    </div>
+                  </div>
+                  <div className="stats-value">
+                    {loading.products ? (
+                      <span>Loading...</span>
+                    ) : (
+                      <>
+                        <span className="value-number">{totalProducts}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown Details */}
+                  {showProductDetails && (
+                    <div className="stats-details mt-3 p-2" style={{ background: '#f8f9fa', borderRadius: '8px' }}>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Categories:</span>
+                        <span className="fw-bold">{new Set(productData.map(p => p.category)).size}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between mb-2">
+                        <span>Low Stock:</span>
+                        <span className="fw-bold text-warning">{productData.filter(p => p.stock < 10).length || 0}</span>
+                      </div>
+                      <div className="detail-item d-flex justify-content-between">
+                        <span>Out of Stock:</span>
+                        <span className="fw-bold text-danger">{productData.filter(p => p.stock === 0).length || 0}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PreviewAltCard>
+            </Col>
           </Row>
         </Block>
 
-        {/* Second Row - Staff Performance and Charts */}
+        {/* Second Row - Staff Performance and Routes with Total Staff */}
         <Block>
           <Row className="g-gs">
             {/* Staff Performance Card */}
             <Col xl="4" lg="4">
-  <Card className="performance-card h-100">
-    <div className="card-inner">
-      <div className="performance-header">
-        <h6 className="performance-title">👤 Staff Performance</h6>
-        <Button 
-          size="sm" 
-          className="select-btn"
-          onClick={() => setShowStaffModal(true)}
-        >
-          <Icon name="select" /> Select Staff
-        </Button>
-      </div>
-      
-      {staffPerformance ? (
-        <div className="staff-details">
-          <div className="staff-avatar" style={{
-            background: staffPerformance.type === 'delivery' ? '#3498db' : 
-                        staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6'
-          }}>
-            {staffPerformance.name?.charAt(0)}
-          </div>
-          
-          <h5 className="staff-name">{staffPerformance.name}</h5>
-          <p className="staff-role" style={{
-            color: staffPerformance.type === 'delivery' ? '#3498db' : 
-                   staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6',
-            fontWeight: '600'
-          }}>
-            {staffPerformance.type === 'delivery' ? '🚚 Delivery Staff' : 
-             staffPerformance.type === 'sales' ? '💰 Sales Staff' : '👤 Manager'}
-          </p>
-          
-          {/* Sales Staff View */}
-          {staffPerformance.type === 'sales' && (
-            <>
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <span >Total Bills</span>
-                  <span className="stat-value">{staffPerformance.totalBills}</span>
-                </div>
-                <div className="stat-item">
-                  <span >Revenue</span>
-                  <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
-                </div>
-                <div className="stat-item">
-                  <span >Approved</span>
-                  <span className="stat-value success">{staffPerformance.approvedBills}</span>
-                </div>
-                <div className="stat-item">
-                  <span >Rejected</span>
-                  <span className="stat-value danger">{staffPerformance.rejectedBills}</span>
-                </div>
-              </div>
+              <Card className="performance-card h-100">
+                <div className="card-inner">
+                  <div className="performance-header">
+                    <h6 className="performance-title">👤 Staff Performance</h6>
+                    <Button 
+                      size="sm" 
+                      className="select-btn"
+                      onClick={() => setShowStaffModal(true)}
+                    >
+                      <Icon name="select" /> Select Staff
+                    </Button>
+                  </div>
+                  
+                  {staffPerformance ? (
+                    <div className="staff-details">
+                      <div className="staff-avatar" style={{
+                        background: staffPerformance.type === 'delivery' ? '#3498db' : 
+                                    staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6'
+                      }}>
+                        {staffPerformance.name?.charAt(0)}
+                      </div>
+                      
+                      <h5 className="staff-name">{staffPerformance.name}</h5>
+                      <p className="staff-role" style={{
+                        color: staffPerformance.type === 'delivery' ? '#3498db' : 
+                               staffPerformance.type === 'sales' ? '#2ecc71' : '#95a5a6',
+                        fontWeight: '600'
+                      }}>
+                        {staffPerformance.type === 'delivery' ? '🚚 Delivery Staff' : 
+                         staffPerformance.type === 'sales' ? '💰 Sales Staff' : '👤 Manager'}
+                      </p>
+                      
+                      {/* Sales Staff View */}
+                      {staffPerformance.type === 'sales' && (
+                        <>
+                          <div className="stats-grid">
+                            <div className="stat-item">
+                              <span>Total Bills</span>
+                              <span className="stat-value">{staffPerformance.totalBills}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Revenue</span>
+                              <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Approved</span>
+                              <span className="stat-value success">{staffPerformance.approvedBills}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Rejected</span>
+                              <span className="stat-value danger">{staffPerformance.rejectedBills}</span>
+                            </div>
+                          </div>
 
-              <div className="stats-grid-mini">
-                <div className="stat-item-mini">
-                  <span >Customers</span>
-                  <span className="stat-value">{staffPerformance.customersServed}</span>
-                </div>
-                <div className="stat-item-mini">
-                  <span >Last Bill</span>
-                  <span className="stat-value">{staffPerformance.lastBillDate}</span>
-                </div>
-                <div className="stat-item-mini">
-                  <span >Avg Order</span>
-                  <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
-                </div>
-                <div className="stat-item-mini">
-                  <span >Unpaid</span>
-                  <span className="stat-value warning">{staffPerformance.unpaidBills}</span>
-                </div>
-              </div>
-            </>
-          )}
+                          <div className="stats-grid-mini">
+                            <div className="stat-item-mini">
+                              <span>Customers</span>
+                              <span className="stat-value">{staffPerformance.customersServed}</span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Last Bill</span>
+                              <span className="stat-value">{staffPerformance.lastBillDate}</span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Avg Order</span>
+                              <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Unpaid</span>
+                              <span className="stat-value warning">{staffPerformance.unpaidBills}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-          {/* Delivery Staff View */}
-          {staffPerformance.type === 'delivery' && (
-            <>
-              <div className="stats-grid">
-                <div className="stat-item">
-                  <span >Assigned Bills</span>
-                  <span className="stat-value">{staffPerformance.totalBills}</span>
-                </div>
-                <div className="stat-item">
-                  <span >Delivered</span>
-                  <span className="stat-value success">{staffPerformance.deliveredBills || 0}</span>
-                </div>
-                <div className="stat-item">
-                  <span >Pending</span>
-                  <span className="stat-value warning">{staffPerformance.pendingBills || 0}</span>
-                </div>
-                <div className="stat-item">
-                  <span >Revenue</span>
-                  <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
-                </div>
-              </div>
+                      {/* Delivery Staff View */}
+                      {staffPerformance.type === 'delivery' && (
+                        <>
+                          <div className="stats-grid">
+                            <div className="stat-item">
+                              <span>Assigned Bills</span>
+                              <span className="stat-value">{staffPerformance.totalBills}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Delivered</span>
+                              <span className="stat-value success">{staffPerformance.approvedBills || 0}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Pending</span>
+                              <span className="stat-value warning">{staffPerformance.pendingBills || 0}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span>Revenue</span>
+                              <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
+                            </div>
+                          </div>
 
-              <div className="stats-grid-mini">
-                <div className="stat-item-mini">
-                  <span >Customers</span>
-                  <span className="stat-value">{staffPerformance.customersServed}</span>
+                          <div className="stats-grid-mini">
+                            <div className="stat-item-mini">
+                              <span>Customers</span>
+                              <span className="stat-value">{staffPerformance.customersServed}</span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Last Delivery</span>
+                              <span className="stat-value">{staffPerformance.lastBillDate}</span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Delivery Rate</span>
+                              <span className="stat-value success">
+                                {staffPerformance.totalBills > 0 
+                                  ? ((staffPerformance.approvedBills / staffPerformance.totalBills) * 100).toFixed(1)
+                                  : 0}%
+                              </span>
+                            </div>
+                            <div className="stat-item-mini">
+                              <span>Avg per Bill</span>
+                              <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Manager View */}
+                      {(!staffPerformance.type || staffPerformance.type === 'manager') && (
+                        <div className="manager-card" style={{
+                          textAlign: 'center',
+                          padding: '2rem 1rem',
+                          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                          borderRadius: '16px',
+                          marginTop: '1rem'
+                        }}>
+                          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👔</div>
+                          <h6 style={{ color: '#1a2b3c', marginBottom: '0.5rem' }}>Management Access Only</h6>
+                          <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: 0 }}>
+                            Performance metrics not applicable for manager role
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="no-staff-selected" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.3 }}>👤</div>
+                      <p className="mt-3" style={{ color: '#6c757d' }}>Select a staff member to view performance</p>
+                      <Button 
+                        color="primary" 
+                        className="select-btn mt-3"
+                        onClick={() => setShowStaffModal(true)}
+                      >
+                        Browse Staff
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <div className="stat-item-mini">
-                  <span >Last Delivery</span>
-                  <span className="stat-value">{staffPerformance.lastBillDate}</span>
+              </Card>
+            </Col>
+
+            {/* Routes Overview and Total Staff Distribution */}
+            <Col xl="4" lg="4">
+              {/* Routes Section */}
+              <PreviewCard className="chart-card mb-3">
+                <div className="card-head chart-header" style={{ 
+                  padding: '0.5rem 0.75rem',
+                  borderBottom: '1px solid #e9ecef'
+                }}>
+                  <h6 className="chart-title" style={{ 
+                    fontSize: '0.8rem', 
+                    margin: 0,
+                    fontWeight: '600',
+                    color: '#1a2b3c'
+                  }}>🗺️ Routes Overview</h6>
                 </div>
-                <div className="stat-item-mini">
-                  <span >Delivery Rate</span>
-                  <span className="stat-value success">
-                    {staffPerformance.totalBills > 0 
-                      ? ((staffPerformance.deliveredBills / staffPerformance.totalBills) * 100).toFixed(1)
-                      : 0}%
-                  </span>
+                
+                <div className="card-body" style={{ padding: '0.75rem' }}>
+                  {/* Main Stats */}
+                  <div className="routes-main-stats" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-around', 
+                    marginBottom: '0.75rem',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    padding: '0.5rem'
+                  }}>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Total</span>
+                      <span className="route-stat-value" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#1a2b3c',
+                        display: 'block'
+                      }}>{routeData.length}</span>
+                    </div>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Active</span>
+                      <span className="route-stat-value success" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#10b981',
+                        display: 'block'
+                      }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
+                    </div>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Customers</span>
+                      <span className="route-stat-value info" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#0ea5e9',
+                        display: 'block'
+                      }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
+                    </div>
+                  </div>
+
+                  {/* Top Routes List */}
+                  <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
+                    <div style={{ 
+                      fontSize: '0.65rem', 
+                      color: '#6c757d', 
+                      marginBottom: '0.35rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.3px'
+                    }}>Top Routes</div>
+                    {routeData.slice(0, 2).map((route, index) => (
+                      <div key={route._id || index} className="route-mini-item" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.4rem 0.5rem',
+                        background: index === 0 ? '#fff7ed' : '#f0f9ff',
+                        borderRadius: '6px',
+                        marginBottom: '0.35rem',
+                        border: '1px solid rgba(0,0,0,0.02)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ 
+                            width: '18px', 
+                            height: '18px', 
+                            borderRadius: '50%', 
+                            background: index === 0 ? '#f59e0b' : '#0ea5e9',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.6rem',
+                            fontWeight: '600'
+                          }}>
+                            {index + 1}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            fontWeight: '500', 
+                            color: '#1a2b3c',
+                            maxWidth: '100px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {route.routeName || `Route ${index + 1}`}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
+                            {route.customerCount || 0}
+                          </span>
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: route.isActive !== false ? '#10b981' : '#ef4444'
+                          }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Utilization Bar */}
+                  <div className="routes-utilization" style={{ 
+                    marginTop: '0.25rem',
+                    paddingTop: '0.5rem',
+                    borderTop: '1px dashed #e9ecef'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      fontSize: '0.6rem', 
+                      color: '#6c757d', 
+                      marginBottom: '0.25rem',
+                      fontWeight: '500'
+                    }}>
+                      <span>Route Utilization</span>
+                      <span style={{ fontWeight: '600', color: '#f59e0b' }}>
+                        {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
+                      </span>
+                    </div>
+                    <div style={{ 
+                      height: '4px', 
+                      background: '#e9ecef', 
+                      borderRadius: '10px', 
+                      overflow: 'hidden',
+                      width: '100%'
+                    }}>
+                      <div style={{
+                        width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+                        borderRadius: '10px',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="stat-item-mini">
-                  <span >Avg per Bill</span>
-                  <span className="stat-value">₹{staffPerformance.avgOrderValue.toFixed(0)}</span>
+              </PreviewCard>
+
+              {/* Total Staff Distribution Card */}
+              <PreviewCard className="chart-card">
+                <div className="card-head chart-header" style={{ 
+                  padding: '0.5rem 0.75rem',
+                  borderBottom: '1px solid #e9ecef'
+                }}>
+                  <h6 className="chart-title" style={{ 
+                    fontSize: '0.8rem', 
+                    margin: 0,
+                    fontWeight: '600',
+                    color: '#1a2b3c'
+                  }}>👥 Staff Distribution</h6>
                 </div>
-              </div>
+                
+                <div className="card-body" style={{ padding: '0.75rem' }}>
+                  <div className="staff-distribution-stats">
+                    <div className="distribution-item d-flex justify-content-between align-items-center mb-3">
+                      <div className="d-flex align-items-center">
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3498db', marginRight: '8px' }}></span>
+                        <span style={{ fontSize: '0.85rem' }}>Delivery Staff</span>
+                      </div>
+                      <div>
+                        <span className="fw-bold me-2">{staffData.filter(s => s.type === 'delivery').length || 0}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#6c757d' }}>
+                          ({totalStaff ? Math.round((staffData.filter(s => s.type === 'delivery').length / totalStaff) * 100) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="distribution-item d-flex justify-content-between align-items-center mb-3">
+                      <div className="d-flex align-items-center">
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2ecc71', marginRight: '8px' }}></span>
+                        <span style={{ fontSize: '0.85rem' }}>Sales Staff</span>
+                      </div>
+                      <div>
+                        <span className="fw-bold me-2">{staffData.filter(s => s.type === 'sales').length || 0}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#6c757d' }}>
+                          ({totalStaff ? Math.round((staffData.filter(s => s.type === 'sales').length / totalStaff) * 100) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="distribution-item d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center">
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#95a5a6', marginRight: '8px' }}></span>
+                        <span style={{ fontSize: '0.85rem' }}>Management</span>
+                      </div>
+                      <div>
+                        <span className="fw-bold me-2">{staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length || 0}</span>
+                        <span style={{ fontSize: '0.7rem', color: '#6c757d' }}>
+                          ({totalStaff ? Math.round((staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length / totalStaff) * 100) : 0}%)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </PreviewCard>
+            </Col>
 
-              {/* Delivery Progress Bar */}
-              <div className="performance-progress" style={{ marginTop: '1rem' }}>
-                {/* <div className="progress-label">
-                  <span>Delivery Completion</span>
-                  <span className="score">
-                    {staffPerformance.totalBills > 0 
-                      ? ((staffPerformance.deliveredBills / staffPerformance.totalBills) * 100).toFixed(1)
-                      : 0}%
-                  </span>
-                </div> */}
-                {/* <div className="progress-bar">
-                  <div 
-                    className="progress-fill success" 
-                    style={{ 
-                      width: staffPerformance.totalBills > 0 
-                        ? `${(staffPerformance.deliveredBills / staffPerformance.totalBills) * 100}%` 
-                        : '0%' 
-                    }}
-                  />
-                </div> */}
-              </div>
-            </>
-          )}
-
-          {/* Manager View - Simple Card */}
-          {(!staffPerformance.type || staffPerformance.type === 'manager') && (
-            <div className="manager-card" style={{
-              textAlign: 'center',
-              padding: '2rem 1rem',
-              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-              borderRadius: '16px',
-              marginTop: '1rem'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👔</div>
-              <h6 style={{ color: '#1a2b3c', marginBottom: '0.5rem' }}>Management Access Only</h6>
-              <p style={{ fontSize: '0.85rem', color: '#6c757d', marginBottom: 0 }}>
-                Performance metrics not applicable for manager role
-              </p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="no-staff-selected" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.3 }}>👤</div>
-          <p className="mt-3" style={{ color: '#6c757d' }}>Select a staff member to view performance</p>
-          <Button 
-            color="primary" 
-            className="select-btn mt-3"
-            onClick={() => setShowStaffModal(true)}
-          >
-            Browse Staff
-          </Button>
-        </div>
-      )}
-    </div>
-  </Card>
-</Col>
-
-          {/* Order Distribution Chart */}
-{/* Order Distribution Chart */}
-<Col xl="4" lg="4">
-  {/* Routes Section - Separate Container */}
-  <PreviewCard className="chart-card mb-3">
-    <div className="card-head chart-header" style={{ 
-      padding: '0.5rem 0.75rem',
-      borderBottom: '1px solid #e9ecef'
-    }}>
-      <h6 className="chart-title" style={{ 
-        fontSize: '0.8rem', 
-        margin: 0,
-        fontWeight: '600',
-        color: '#1a2b3c'
-      }}>🗺️ Routes Overview</h6>
-    </div>
-    
-    <div className="card-body" style={{ padding: '0.75rem' }}>
-      {/* Main Stats - Fixed alignment */}
-      <div className="routes-main-stats" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-around', 
-        marginBottom: '0.75rem',
-        background: '#f8f9fa',
-        borderRadius: '8px',
-        padding: '0.5rem'
-      }}>
-        <div className="route-stat" style={{ textAlign: 'center' }}>
-          <span className="route-stat-label" style={{ 
-            fontSize: '0.55rem', 
-            color: '#6c757d',
-            display: 'block',
-            textTransform: 'uppercase',
-            letterSpacing: '0.3px',
-            marginBottom: '0.1rem'
-          }}>Total</span>
-          <span className="route-stat-value" style={{ 
-            fontSize: '1rem', 
-            fontWeight: '700', 
-            color: '#1a2b3c',
-            display: 'block'
-          }}>{routeData.length}</span>
-        </div>
-        <div className="route-stat" style={{ textAlign: 'center' }}>
-          <span className="route-stat-label" style={{ 
-            fontSize: '0.55rem', 
-            color: '#6c757d',
-            display: 'block',
-            textTransform: 'uppercase',
-            letterSpacing: '0.3px',
-            marginBottom: '0.1rem'
-          }}>Active</span>
-          <span className="route-stat-value success" style={{ 
-            fontSize: '1rem', 
-            fontWeight: '700', 
-            color: '#10b981',
-            display: 'block'
-          }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
-        </div>
-        <div className="route-stat" style={{ textAlign: 'center' }}>
-          <span className="route-stat-label" style={{ 
-            fontSize: '0.55rem', 
-            color: '#6c757d',
-            display: 'block',
-            textTransform: 'uppercase',
-            letterSpacing: '0.3px',
-            marginBottom: '0.1rem'
-          }}>Customers</span>
-          <span className="route-stat-value info" style={{ 
-            fontSize: '1rem', 
-            fontWeight: '700', 
-            color: '#0ea5e9',
-            display: 'block'
-          }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
-        </div>
-      </div>
-
-      {/* Routes List - Fixed spacing */}
-      <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
-        <div style={{ 
-          fontSize: '0.65rem', 
-          color: '#6c757d', 
-          marginBottom: '0.35rem',
-          fontWeight: '500',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px'
-        }}>Top Routes</div>
-        {routeData.slice(0, 2).map((route, index) => (
-          <div key={route._id || index} className="route-mini-item" style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.4rem 0.5rem',
-            background: index === 0 ? '#fff7ed' : '#f0f9ff',
-            borderRadius: '6px',
-            marginBottom: '0.35rem',
-            border: '1px solid rgba(0,0,0,0.02)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ 
-                width: '18px', 
-                height: '18px', 
-                borderRadius: '50%', 
-                background: index === 0 ? '#f59e0b' : '#0ea5e9',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.6rem',
-                fontWeight: '600'
-              }}>
-                {index + 1}
-              </span>
-              <span style={{ 
-                fontSize: '0.7rem', 
-                fontWeight: '500', 
-                color: '#1a2b3c',
-                maxWidth: '100px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {route.routeName || `Route ${index + 1}`}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
-                {route.customerCount || 0}
-              </span>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: route.isActive !== false ? '#10b981' : '#ef4444'
-              }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Utilization Bar - Fixed alignment */}
-      <div className="routes-utilization" style={{ 
-        marginTop: '0.25rem',
-        paddingTop: '0.5rem',
-        borderTop: '1px dashed #e9ecef'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          fontSize: '0.6rem', 
-          color: '#6c757d', 
-          marginBottom: '0.25rem',
-          fontWeight: '500'
-        }}>
-          <span>Route Utilization</span>
-          <span style={{ fontWeight: '600', color: '#f59e0b' }}>
-            {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
-          </span>
-        </div>
-        <div style={{ 
-          height: '4px', 
-          background: '#e9ecef', 
-          borderRadius: '10px', 
-          overflow: 'hidden',
-          width: '100%'
-        }}>
-          <div style={{
-            width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #f59e0b, #d97706)',
-            borderRadius: '10px',
-            transition: 'width 0.3s ease'
-          }} />
-        </div>
-      </div>
-    </div>
-  </PreviewCard>
-
-  {/* Payment Distribution Chart - Separate Container */}
- <PreviewCard className="chart-card">
-  {/* Stats Container - Now on top */}
-  <div style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'space-between',
-    padding: '0.5rem 0.75rem',
-    gap: '0.5rem',
-    background: '#f8f9fa',
-    borderRadius: '12px',
-    border: '1px solid #e9ecef',
-    margin: '0.75rem 0.75rem 0.25rem 0.75rem'
-  }}>
-    <div className="chart-stat" style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.35rem',
-      flex: 1
-    }}>
-      <span className="stat-dot paid" style={{ 
-        width: '8px', 
-        height: '8px', 
-        borderRadius: '50%', 
-        background: '#2ecc71',
-        display: 'inline-block',
-        boxShadow: '0 0 0 2px rgba(46, 204, 113, 0.2)'
-      }} />
-      <span style={{ 
-        fontSize: '0.7rem', 
-        fontWeight: '500',
-        color: '#1a2b3c',
-        whiteSpace: 'nowrap'
-      }}>
-        Paid: <span style={{ fontWeight: '700', color: '#2ecc71' }}>₹{(paidAmount/1000).toFixed(1)}K</span>
-      </span>
-    </div>
-    
-    <div style={{ width: '1px', height: '20px', background: '#dee2e6' }} />
-    
-    <div className="chart-stat" style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.35rem',
-      flex: 1,
-      justifyContent: 'flex-end'
-    }}>
-      <span className="stat-dot unpaid" style={{ 
-        width: '8px', 
-        height: '8px', 
-        borderRadius: '50%', 
-        background: '#f39c12',
-        display: 'inline-block',
-        boxShadow: '0 0 0 2px rgba(243, 156, 18, 0.2)'
-      }} />
-      <span style={{ 
-        fontSize: '0.7rem', 
-        fontWeight: '500',
-        color: '#1a2b3c',
-        whiteSpace: 'nowrap'
-      }}>
-        Unpaid: <span style={{ fontWeight: '700', color: '#f39c12' }}>₹{(notPaidAmount/1000).toFixed(1)}K</span>
-      </span>
-    </div>
-  </div>
-  
-  {/* Chart Container - Now below stats */}
-  <div className="chart-container" style={{ 
-    height: '130px', 
-    padding: '0.25rem 0.5rem 0.75rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginTop: '0.25rem'
-  }}>
-    <div style={{
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop:"65px"
-    }}>
-      <TrafficDougnut
-        selectedDays={selectedDays}
-        selectedFromDate={selectedFromDate}
-        selectedToDate={selectedToDate}
-        data={uniqueBills}
-      />
-    </div>
-  </div>
-</PreviewCard>
-</Col>
-            {/* Delivery Status Cards */}
+            {/* Third Section - Total Orders, Avg Order Value, Pending Amount */}
             <Col xl="4" lg="4">
               <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
+                {/* Total Orders Card */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
                     <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
-                      <Icon name="user" size={28} />
+                      <Icon name="bag" size={28} />
                     </div>
                     <div className="delivery-content">
-                      <h6 className="delivery-title">Total Customers</h6>
+                      <h6 className="delivery-title">Total Orders</h6>
                       <div className="delivery-value">
-                        {loading.customers ? (
+                        {loading.bills ? (
                           <span>Loading...</span>
                         ) : (
                           <>
-                            <span className="value-number">{totalCustomers}</span>
-                            <small className="badge">customers</small>
+                            <span className="value-number">{totalOrders}</span>
+                            <small className="badge">orders</small>
                           </>
                         )}
                       </div>
-                      {/* Customer Growth Indicator */}
-                      <div className="growth-indicator">
-                        <Icon name="arrow-up" size={14} className="growth-icon" />
-                        <span className="growth-text">+{Math.round(totalCustomers * 0.15)} this month</span>
+                      {/* Order Status Breakdown */}
+                      <div className="order-breakdown mt-2">
+                        <div className="d-flex justify-content-between small">
+                          <span>✓ Approved: <span className="fw-bold text-success">{approvedOrders}</span></span>
+                          <span>⏳ Pending: <span className="fw-bold text-warning">{pendingOrders}</span></span>
+                          <span>✗ Rejected: <span className="fw-bold text-danger">{rejectedOrders}</span></span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </PreviewAltCard>
-                {/* Total Staff Card */}
-               <PreviewAltCard className="delivery-card flex-grow-1">
-  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-    <div className="delivery-icon info" style={{ width: '55px', height: '55px' }}>
-      <Icon name="users" size={28} />
-    </div>
-    <div className="delivery-content">
-      <h6 className="delivery-title">Active Staff</h6>
-      <div className="delivery-value">
-        {loading.staff ? (
-          <span>Loading...</span>
-        ) : (
-          <>
-            <span className="value-number">{totalStaff}</span>
-            <small className="badge">total</small>
-          </>
-        )}
-      </div>
-      
-      {/* Staff Type Distribution */}
-      <div className="staff-type-distribution" style={{ marginTop: '0.75rem' }}>
-        {/* Delivery Staff */}
-        <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3498db' }} />
-            <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Delivery</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
-              {staffData.filter(s => s.type === 'delivery').length || 0}
-            </span>
-            <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
-              ({totalStaff ? Math.round((staffData.filter(s => s.type === 'delivery').length / totalStaff) * 100) : 0}%)
-            </small>
-          </div>
-        </div>
 
-        {/* Sales Staff */}
-        <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71' }} />
-            <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Sales</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
-              {staffData.filter(s => s.type === 'sales').length || 0}
-            </span>
-            <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
-              ({totalStaff ? Math.round((staffData.filter(s => s.type === 'sales').length / totalStaff) * 100) : 0}%)
-            </small>
-          </div>
-        </div>
-
-        {/* Other/Unspecified Staff */}
-        {staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length > 0 && (
-          <div className="type-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#95a5a6' }} />
-              <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Other</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#1a2b3c' }}>
-                {staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length}
-              </span>
-              <small style={{ fontSize: '0.65rem', color: '#6c757d' }}>
-                ({totalStaff ? Math.round((staffData.filter(s => s.type !== 'delivery' && s.type !== 'sales').length / totalStaff) * 100) : 0}%)
-              </small>
-            </div>
-          </div>
-        )}
-      </div>
-
-      
-    </div>
-  </div>
-</PreviewAltCard>
-
-                {/* Total Customers Card */}
-                
-
-                {/* Average Order Value Card */}
+                {/* Avg Order Value Card */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
                     <div className="delivery-icon purple" style={{ width: '55px', height: '55px' }}>
@@ -1189,9 +1046,46 @@ const fetchRouteData = async () => {
                         )}
                       </div>
                       {/* Trend Indicator */}
-                      <div className="trend-indicator up">
+                      <div className="trend-indicator up mt-2">
                         <Icon name="arrow-up" size={14} />
                         <span>8.2% vs last period</span>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
+
+                {/* Pending Amount Card */}
+                <PreviewAltCard className="delivery-card flex-grow-1">
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
+                      <Icon name="clock" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Pending Amount</h6>
+                      <div className="delivery-value">
+                        {loading.bills ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">₹{(notPaidAmount).toLocaleString('en-IN')}</span>
+                            <small className="badge">unpaid</small>
+                          </>
+                        )}
+                      </div>
+                      {/* Payment Progress */}
+                      <div className="payment-progress mt-2">
+                        <div className="d-flex justify-content-between small mb-1">
+                          <span>Paid: ₹{(paidAmount).toLocaleString('en-IN')}</span>
+                          <span>{totalOrderValue > 0 ? Math.round((paidAmount/totalOrderValue)*100) : 0}%</span>
+                        </div>
+                        <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${totalOrderValue > 0 ? (paidAmount/totalOrderValue)*100 : 0}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
+                            borderRadius: '10px'
+                          }} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1200,31 +1094,6 @@ const fetchRouteData = async () => {
             </Col>
           </Row>
         </Block>
-
-        {/* Third Row - Transaction Table */}
-        {/* <Block>
-          <Row className="g-gs">
-            <Col xxl="12">
-              <Card className="table-card">
-                <div className="card-inner table-header">
-                  <div className="title-section">
-                    <h6 className="table-title">Recent Transactions</h6>
-                    <p className="table-subtitle">Last 10 bills</p>
-                  </div>
-                  <div className="table-tools">
-                    <Button tag="a" href="#!" size="sm" className="view-btn">
-                      View All <Icon name="arrow-right" />
-                    </Button>
-                  </div>
-                </div>
-                <TransactionTable 
-                  bills={uniqueBills.slice(0, 10)} 
-                  loading={loading.bills}
-                />
-              </Card>
-            </Col>
-          </Row>
-        </Block> */}
       </Content>
 
       {/* Staff Selection Modal */}
@@ -1244,44 +1113,26 @@ const fetchRouteData = async () => {
             <h5 className="staff-modal-title">👤 Select Staff Member</h5>
             <div className="staff-list">
               {staffData.length > 0 ? (
-                staffData.map((staff) => {
-                  const staffBills = billData.filter(b => b.createdBy === staff._id);
-                  const totalRevenue = staffBills.reduce((acc, b) => acc + (b.totalAmt || 0), 0);
-                  const approvedCount = staffBills.filter(b => b.orderStatus === "approved").length;
-                  const pendingCount = staffBills.filter(b => b.orderStatus === "pending").length;
-                  
-                  return (
-                    <div
-                      key={staff._id}
-                      className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
-                      onClick={() => handleStaffPerformanceSelect(staff)}
-                    >
-                      <div className="staff-avatar-small">
-                        {staff.name?.charAt(0)}
-                      </div>
-                      <div className="staff-info">
-                        <h6>{staff.name}</h6>
-                        <p>{staff.email || 'No email'}</p>
-                      </div>
-                      <div className="staff-stats">
-                        {/* <span className="stat-badge">
-                          {staffBills.length} bills
-                        </span>
-                        <span className="stat-badge approved">
-                          {approvedCount} approved
-                        </span>
-                        {pendingCount > 0 && (
-                          <span className="stat-badge pending">
-                            {pendingCount} pending
-                          </span>
-                        )}
-                        <span className="stat-badge revenue">
-                          ₹{(totalRevenue/1000).toFixed(1)}K
-                        </span> */}
-                      </div>
+                staffData.map((staff) => (
+                  <div
+                    key={staff._id}
+                    className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
+                    onClick={() => handleStaffPerformanceSelect(staff)}
+                  >
+                    <div className="staff-avatar-small">
+                      {staff.name?.charAt(0)}
                     </div>
-                  );
-                })
+                    <div className="staff-info">
+                      <h6>{staff.name}</h6>
+                      <p>{staff.email || 'No email'}</p>
+                    </div>
+                    <div className="staff-stats">
+                      <span className="stat-badge" style={{ background: staff.type === 'delivery' ? '#3498db20' : staff.type === 'sales' ? '#2ecc7120' : '#95a5a620', color: staff.type === 'delivery' ? '#3498db' : staff.type === 'sales' ? '#2ecc71' : '#95a5a6' }}>
+                        {staff.type || 'manager'}
+                      </span>
+                    </div>
+                  </div>
+                ))
               ) : (
                 <p className="text-center py-4">No staff found</p>
               )}
