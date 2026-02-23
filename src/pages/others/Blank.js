@@ -2,7 +2,7 @@ import React, { useState, useEffect, forwardRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
-import { Input, Badge, Button, Table, Card, CardBody, Row, Col, Pagination, PaginationItem, PaginationLink } from "reactstrap";
+import { Input, Badge, Button, Table, Card, CardBody, Row, Col, Pagination, PaginationItem, PaginationLink, Modal, ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { errorToast } from "../../utils/toaster";
 // import jsPDF from "jspdf";
 // import "jspdf-autotable";
@@ -10,7 +10,7 @@ import * as XLSX from "xlsx";
 import "./report.css";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaFileExcel, FaFilePdf } from "react-icons/fa";
+import { FaFileExcel, FaFilePdf, FaEye, FaDownload, FaPrint } from "react-icons/fa";
 
 const Reports = () => {
   const [customers, setCustomers] = useState([]);
@@ -23,6 +23,10 @@ const Reports = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [staffList, setStaffList] = useState([]); // Store all staff data
+  
+  // Invoice modal state
+  const [invoiceModal, setInvoiceModal] = useState(false);
+  const [selectedBill, setSelectedBill] = useState(null);
   
   // Calculate paid and pending amounts from filtered data
   const paidAmount = filteredReportData
@@ -193,95 +197,279 @@ const Reports = () => {
     return 'N/A';
   };
 
-  const PopperContainer = ({ children }) => {
-    return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
+  // Function to open invoice modal
+  const openInvoiceModal = (bill) => {
+    setSelectedBill(bill);
+    setInvoiceModal(true);
   };
 
-const exportPDF = () => {
-  if (!selectedCustomer) return;
+// Function to download invoice as PDF
+const downloadInvoicePDF = () => {
+  if (!selectedBill) return;
 
   const doc = new jsPDF();
 
-  // ===== Title =====
-  doc.setFontSize(18);
+  // ===== Header =====
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(33, 37, 41);
-  doc.text(`Customer Report`, 14, 18);
+  doc.text("Retail Pulse", 105, 20, { align: "center" });
 
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text("Order Invoice", 105, 30, { align: "center" });
+
+  // ===== Order ID and Date =====
   doc.setFontSize(12);
-  doc.text(`Customer: ${selectedCustomer.name}`, 14, 26);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
+  
+  doc.setFont("helvetica", "normal");
+  doc.text(`Date: ${new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  })}`, 14, 52);
 
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
-
-  if (startDate && endDate) {
-    doc.text(
-      `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
-      14,
-      38
-    );
-  }
-
-  // ===== Summary Section =====
+  // ===== Order Status =====
   doc.setFontSize(11);
-  doc.setTextColor(33);
-  doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
-  doc.text(
-    `Total Amount: Rs. ${totalAmount.toLocaleString("en-IN")}`,
-    14,
-    54
-  );
-  doc.text(
-    `Paid Amount: Rs. ${paidAmount.toLocaleString("en-IN")}`,
-    14,
-    60
-  );
-  doc.text(
-    `Pending Amount: Rs. ${pendingAmount.toLocaleString("en-IN")}`,
-    14,
-    66
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(46, 204, 113); // Green color for delivered
+  doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
+
+  // ===== Customer Details =====
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Customer Details", 14, 67);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Name: ${selectedBill.customerName || selectedCustomer?.name || 'N/A'}`, 14, 75);
+  doc.text(`Mobile: ${selectedCustomer?.phone || 'N/A'}`, 14, 82);
+  doc.text(`Address: ${selectedCustomer?.address || 'N/A'}`, 14, 89);
+
+  // ===== Staff Details =====
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Staff Details", 120, 67);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  
+  const staffName = getStaffName(selectedBill);
+  const staffInfo = staffList.find(s => 
+    s._id === selectedBill.deliveredBy || 
+    s._id === selectedBill.paymentCollectedBy ||
+    s._id === selectedBill.createdBy
   );
 
-  // ===== Table =====
-  const tableColumn = [
-    "S.No",
-    "Order No",
-    "Date",
-    "Amount (Rs)",
-    "Payment Status",
-    "Staff Name",
-  ];
+  doc.text(`Name: ${staffName}`, 120, 75);
+  doc.text(`Role: ${staffInfo?.role || 'sales'}`, 120, 82);
+  doc.text(`Contact: ${staffInfo?.phone || 'N/A'}`, 120, 89);
 
-  const tableRows = filteredReportData.map((o, idx) => [
+  // ===== Products Table =====
+  const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
+  const tableRows = selectedBill.orderedProducts?.map((product, idx) => [
     idx + 1,
-    `#${o._id.toString().slice(-6)}`,
-    new Date(o.createdAt).toLocaleDateString("en-IN"),
-    (o.totalAmt || 0).toLocaleString("en-IN"),
-    o.paymentMethod ? "Paid" : "Pending",
-    getStaffName(o),
-  ]);
+    product.productName,
+    product.qty.toString(),
+    product.value?.toString() || '0',
+    (product.value * product.qty).toString()
+  ]) || [];
 
   autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
-    startY: 75,
-    theme: "striped",
+    startY: 105,
+    theme: 'grid',
     headStyles: {
-      fillColor: [41, 128, 185],
+      fillColor: [51, 51, 51],
       textColor: [255, 255, 255],
-      fontStyle: "bold",
+      fontStyle: 'bold',
+      fontSize: 10,
+      halign: 'center'
     },
     styles: {
       fontSize: 9,
+      cellPadding: 5,
+      font: 'helvetica',
+      halign: 'left'
     },
     columnStyles: {
-      3: { halign: "right" }, // Align Amount right
+      0: { cellWidth: 15, halign: 'center' },
+      1: { cellWidth: 70, halign: 'left' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 30, halign: 'right' },
+      4: { cellWidth: 35, halign: 'right' }
     },
+    didDrawPage: function(data) {
+      // Add Rupee symbol to headers after table is drawn
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      
+      // Get the position of the table headers
+      const headersY = data.cursor.y - 8;
+      
+      // Override the header text for Rate and Amount columns with Rupee symbol
+      doc.text("Rate (₹)", 135, headersY, { align: 'right' });
+      doc.text("Amount (₹)", 170, headersY, { align: 'right' });
+    }
   });
 
+  // ===== Totals =====
+  const finalY = doc.lastAutoTable.finalY + 15;
+
+  // Calculate subtotal from orderedProducts
+  const subtotal = selectedBill.orderedProducts?.reduce(
+    (sum, product) => sum + (product.value * product.qty), 
+    0
+  ) || selectedBill.totalAmt || 0;
+
+  // Subtotal
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text("Subtotal", 140, finalY);
+  doc.text(`₹ ${subtotal.toLocaleString('en-IN')}`, 180, finalY, { align: 'right' });
+
+  // Discount
+  doc.text("Discount", 140, finalY + 8);
+  doc.text(`₹ 0`, 180, finalY + 8, { align: 'right' });
+
+  // Tax
+  doc.text("Tax", 140, finalY + 16);
+  doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
+
+  // Total (with bold font)
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Total", 135, finalY + 28);
+  doc.text(`₹ ${(selectedBill.totalAmt || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
+
+  // ===== Payment Information =====
+  if (selectedBill.paymentMethod) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 40);
+    
+    if (selectedBill.paymentCollectedAt) {
+      doc.text(
+        `Payment Collected: ${new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US', {
+          month: '2-digit',
+          day: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`, 
+        14, 
+        finalY + 47
+      );
+    }
+  }
+
   // ===== Save PDF =====
-  doc.save(`${selectedCustomer.name}_Report.pdf`);
+  doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
 };
+
+  const PopperContainer = ({ children }) => {
+    return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
+  };
+
+  const exportPDF = () => {
+    if (!selectedCustomer) return;
+
+    const doc = new jsPDF();
+
+    // ===== Title =====
+    doc.setFontSize(18);
+    doc.setTextColor(33, 37, 41);
+    doc.text(`Customer Report`, 14, 18);
+
+    doc.setFontSize(12);
+    doc.text(`Customer: ${selectedCustomer.name}`, 14, 26);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
+
+    if (startDate && endDate) {
+      doc.text(
+        `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
+        14,
+        38
+      );
+    }
+
+    // ===== Summary Section =====
+    doc.setFontSize(11);
+    doc.setTextColor(33);
+    doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
+    doc.text(
+      `Total Amount: Rs. ${totalAmount.toLocaleString("en-IN")}`,
+      14,
+      54
+    );
+    doc.text(
+      `Paid Amount: Rs. ${paidAmount.toLocaleString("en-IN")}`,
+      14,
+      60
+    );
+    doc.text(
+      `Pending Amount: Rs. ${pendingAmount.toLocaleString("en-IN")}`,
+      14,
+      66
+    );
+
+    // ===== Table =====
+    const tableColumn = [
+      "S.No",
+      "Order No",
+      "Date",
+      "Amount (Rs)",
+      "Payment Status",
+      "Staff Name",
+    ];
+
+    const tableRows = filteredReportData.map((o, idx) => [
+      idx + 1,
+      `#${o._id.toString().slice(-6)}`,
+      new Date(o.createdAt).toLocaleDateString("en-IN"),
+      (o.totalAmt || 0).toLocaleString("en-IN"),
+      o.paymentMethod ? "Paid" : "Pending",
+      getStaffName(o),
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 75,
+      theme: "striped",
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      styles: {
+        fontSize: 9,
+      },
+      columnStyles: {
+        3: { halign: "right" }, // Align Amount right
+      },
+    });
+
+    // ===== Save PDF =====
+    doc.save(`${selectedCustomer.name}_Report.pdf`);
+  };
+  
   const exportExcel = () => {
     if (!selectedCustomer) return;
     
@@ -406,44 +594,44 @@ const exportPDF = () => {
             <>
               {/* Action Bar */}
               <div className="action-bar ultra-compact">
-  <div className="date-picker-wrapper ultra-compact">
-    <DatePicker
-      selectsRange
-      startDate={startDate}
-      endDate={endDate}
-      onChange={(update) => {
-        setDateRange(update);
-        setCurrentPage(1);
-      }}
-      customInput={<CustomDateButton />}
-      popperPlacement="bottom-start"
-      popperContainer={PopperContainer}
-      shouldCloseOnSelect={false}
-      placeholderText="Select Range"
-      isClearable={true}
-    />
-  </div>
+                <div className="date-picker-wrapper ultra-compact">
+                  <DatePicker
+                    selectsRange
+                    startDate={startDate}
+                    endDate={endDate}
+                    onChange={(update) => {
+                      setDateRange(update);
+                      setCurrentPage(1);
+                    }}
+                    customInput={<CustomDateButton />}
+                    popperPlacement="bottom-start"
+                    popperContainer={PopperContainer}
+                    shouldCloseOnSelect={false}
+                    placeholderText="Select Range"
+                    isClearable={true}
+                  />
+                </div>
 
-  <div className="export-buttons ultra-compact">
-    <button
-      onClick={exportExcel}
-      className="export-btn excel ultra-compact"
-      disabled={filteredReportData.length === 0}
-    >
-      <FaFileExcel />
-      <span>Export</span>
-    </button>
-    <button
-    onClick={exportPDF}
-    className="export-btn pdf ultra-compact"
-    disabled={filteredReportData.length === 0}
-    title="Export to PDF"
-  >
-    <FaFilePdf size={13} color="sandal" />
-    PDF
-  </button>
-  </div>
-</div>
+                <div className="export-buttons ultra-compact">
+                  <button
+                    onClick={exportExcel}
+                    className="export-btn excel ultra-compact"
+                    disabled={filteredReportData.length === 0}
+                  >
+                    <FaFileExcel />
+                    <span>Export</span>
+                  </button>
+                  <button
+                    onClick={exportPDF}
+                    className="export-btn pdf ultra-compact"
+                    disabled={filteredReportData.length === 0}
+                    title="Export to PDF"
+                  >
+                    <FaFilePdf size={13} color="sandal" />
+                    PDF
+                  </button>
+                </div>
+              </div>
 
               {/* Customer Header */}
               <div className="customer-header">
@@ -528,53 +716,63 @@ const exportPDF = () => {
 
                 {currentItems.length > 0 ? (
                   <>
-                   <div className="table-responsive">
-  <table className="transactions-table">
-    <thead>
-      <tr>
-        <th>S.No</th>
-        <th>Order No</th>
-        <th>Date</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Staff Name</th>
-      </tr>
-    </thead>
-    <tbody>
-      {currentItems.map((o, idx) => (
-        <tr key={o._id}>
-          <td>{indexOfFirstItem + idx + 1}</td>
-          <td>
-            <span className="order-id">#{o._id.toString().slice(-6)}</span>
-          </td>
-          <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
-            day: '2-digit', 
-            month: 'short', 
-            year: 'numeric' 
-          })}</td>
-          <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
-          <td>
-            <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
-              {o.paymentMethod ? 'Paid' : 'Pending'}
-            </span>
-          </td>
-          <td>
-            <span className="staff-name">
-              {getStaffName(o)}
-            </span>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colSpan="3" className="text-end fw-bold ">Total</td>
-        <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
-        <td colSpan="2"></td>
-      </tr>
-    </tfoot>
-  </table>
-</div>
+                    <div className="table-responsive">
+                      <table className="transactions-table">
+                        <thead>
+                          <tr>
+                            <th>S.No</th>
+                            <th>Order No</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Staff Name</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentItems.map((o, idx) => (
+                            <tr key={o._id}>
+                              <td>{indexOfFirstItem + idx + 1}</td>
+                              <td>
+                                <span className="order-id">#{o._id.toString().slice(-6)}</span>
+                              </td>
+                              <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
+                                day: '2-digit', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}</td>
+                              <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
+                              <td>
+                                <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
+                                  {o.paymentMethod ? 'Paid' : 'Pending'}
+                                </span>
+                              </td>
+                              <td>
+                                <span className="staff-name">
+                                  {getStaffName(o)}
+                                </span>
+                              </td>
+                              <td>
+                                <button 
+                                  className="action-btn view-btn"
+                                  onClick={() => openInvoiceModal(o)}
+                                  title="View Invoice"
+                                >
+                                  <i className="ni ni-eye"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan="3" className="text-end fw-bold "></td>
+                            <td className="amount fw-bold ml-1">₹ {totalAmount.toLocaleString('en-IN')}</td>
+                            <td colSpan="3"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
 
                     {/* Pagination */}
                     {totalPages > 1 && (
@@ -630,6 +828,161 @@ const exportPDF = () => {
           )}
         </div>
       </div>
+
+
+<Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
+ <ModalHeader toggle={() => setInvoiceModal(false)}>
+    <div className="modal-header-content">
+      <h4 className="modal-title">Retail Pulse</h4>
+      <span className="invoice-number">Order Invoice</span>
+    </div>
+    <button className="close" onClick={() => setInvoiceModal(false)}>
+      <span>×</span>
+    </button>
+  </ModalHeader>
+  <ModalBody>
+    {selectedBill && (
+      <div className="invoice-container">
+        {/* Order ID and Date */}
+        <div className="invoice-header">
+          <div className="order-info">
+            <h2 className="order-id">Order ID: #{selectedBill._id.toString().slice(-6)}</h2>
+            <p className="order-date">Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
+              month: '2-digit',
+              day: '2-digit',
+              year: 'numeric'
+            })}</p>
+          </div>
+          <div className={`order-status-badge ${selectedBill.orderStatus?.toLowerCase() || 'delivered'}`}>
+            {selectedBill.orderStatus || 'delivered'}
+          </div>
+        </div>
+
+        {/* Customer and Staff Details Grid */}
+        <div className="details-grid">
+          {/* Customer Details */}
+          <div className="details-section">
+            <h6 className="section-title">Customer Details</h6>
+            <div className="detail-item">
+              <span className="detail-label">Name:</span>
+              <span className="detail-value">{selectedBill.customerName || selectedCustomer?.name || 'N/A'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Mobile:</span>
+              <span className="detail-value">{selectedCustomer?.phone || 'N/A'}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Address:</span>
+              <span className="detail-value">{selectedCustomer?.address || 'N/A'}</span>
+            </div>
+          </div>
+
+          {/* Staff Details */}
+          <div className="details-section">
+            <h6 className="section-title">Staff Details</h6>
+            <div className="detail-item">
+              <span className="detail-label">Name:</span>
+              <span className="detail-value">{getStaffName(selectedBill)}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Role:</span>
+              <span className="detail-value">
+                {staffList.find(s => 
+                  s._id === selectedBill.deliveredBy || 
+                  s._id === selectedBill.paymentCollectedBy ||
+                  s._id === selectedBill.createdBy
+                )?.role || 'sales'}
+              </span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Contact:</span>
+              <span className="detail-value">
+                {staffList.find(s => 
+                  s._id === selectedBill.deliveredBy || 
+                  s._id === selectedBill.paymentCollectedBy ||
+                  s._id === selectedBill.createdBy
+                )?.phone || 'N/A'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+       {/* Products Table - Updated to use orderedProducts */}
+<div className="products-table-container">
+  <table className="products-table">
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Rate </th>
+        <th>Amount </th>
+      </tr>
+    </thead>
+    <tbody>
+      {selectedBill.orderedProducts?.map((product, idx) => (
+        <tr key={product._id || idx}>
+          <td>{idx + 1}</td>
+          <td>{product.productName}</td>
+          <td>{product.qty}</td>
+          <td>₹ {product.value?.toLocaleString('en-IN') || 0}</td>
+          <td>₹ {(product.value * product.qty).toLocaleString('en-IN')}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+{/* Totals Section */}
+<div className="totals-section">
+  <div className="total-row">
+    <span className="total-label">Subtotal</span>
+    <span className="total-value">
+      ₹ {selectedBill.orderedProducts?.reduce(
+        (sum, product) => sum + (product.value * product.qty), 
+        0
+      ).toLocaleString('en-IN') || selectedBill.totalAmt?.toLocaleString('en-IN') || '0'}
+    </span>
+  </div>
+  <div className="total-row">
+    <span className="total-label">Discount</span>
+    <span className="total-value">₹ 0</span>
+  </div>
+  <div className="total-row">
+    <span className="total-label">Tax</span>
+    <span className="total-value">₹ 0</span>
+  </div>
+  <div className="total-row grand-total">
+    <span className="total-label">Total</span>
+    <span className="total-value">₹ {(selectedBill.totalAmt || 0).toLocaleString('en-IN')}</span>
+  </div>
+</div>
+
+        {/* Payment Information */}
+        {selectedBill.paymentMethod && (
+          <div className="payment-info-section">
+            <p className="payment-method">
+              <strong>Payment Method:</strong> {selectedBill.paymentMethod}
+            </p>
+            {selectedBill.paymentCollectedAt && (
+              <p className="payment-time">
+                <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US')}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+  </ModalBody>
+  <ModalFooter>
+    <Button color="primary" onClick={downloadInvoicePDF} className="download-btn">
+      <FaDownload /> Download PDF
+    </Button>
+    <Button color="secondary" onClick={() => setInvoiceModal(false)}>
+      Close
+    </Button>
+  </ModalFooter>
+</Modal>
     </div>
   );
 };
