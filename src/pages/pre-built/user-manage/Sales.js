@@ -499,7 +499,7 @@
   );
 
   const firstPendingCustomer = sortedCustomers.find(
-    (customer) => customer.orderPending === true
+    (customer) => customer.isVisited === false
   );
 
   const currentLineNo = firstPendingCustomer
@@ -1074,7 +1074,7 @@
 
       const completedCustomers =
       assinedCustomerDatas?.filter(
-        (c) => c.orderPending === false
+        (c) => c.isVisited === true
       ).length || 0;
 
 
@@ -1376,24 +1376,22 @@
                               selectedCustomerForMap?._id === customer._id;
                                                   let rowStatus = "upcoming";
 
-                          if (customer.orderPending === false) {
+                          if (customer.isVisited === true) {
                             rowStatus = "completed";
-                          } else if (customer.orderPending === true) {
+                          } else if (customer.isVisited === false) {
                             const hasPreviousPending = assinedCustomerDatas
                               .sort((a, b) => a.lineNo - b.lineNo)
                               .some(
                                 (c) =>
                                   c.lineNo < customer.lineNo &&
-                                  c.orderPending === true
+                                  c.isVisited === false
                               );
 
                             if (!hasPreviousPending) {
                               rowStatus = "current";
                             }
                           }
-
-
-
+                          
                           return (
                             <div
                               className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
