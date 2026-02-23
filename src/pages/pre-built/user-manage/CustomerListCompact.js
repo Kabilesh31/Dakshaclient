@@ -690,7 +690,7 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="4">
+            {/* <Col md="4">
               <FormGroup>
                 <label className="form-label">Line No *</label>
                 <input
@@ -699,10 +699,10 @@ const CustomerListCompact = () => {
                   value={formData.lineNo}
                   placeholder="Enter line no"
                   onChange={(e) => setFormData({ ...formData, lineNo: e.target.value })}
-                  required
+                  
                 />
               </FormGroup>
-            </Col>
+            </Col> */}
 
             <Col md="4">
               <FormGroup>
@@ -935,18 +935,18 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="4">
+            {/* <Col md="4">
               <FormGroup>
                 <label className="form-label">Line No *</label>
                 <input
                   type="number"
                   className="form-control"
                   value={formData.lineNo}
-                  required
+                 
                   onChange={(e) => setFormData({ ...formData, lineNo: e.target.value })}
                 />
               </FormGroup>
-            </Col>
+            </Col> */}
 
             <Col md="4">
               <FormGroup>

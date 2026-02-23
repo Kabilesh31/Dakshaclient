@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
+
 import {
   Block,
   BlockBetween,
@@ -486,51 +487,70 @@ const getSelectedDateRecord = () => {
             </div>
 
             {/* Right side - Month/Year Select */}
-            <div style={{ 
-              display: "flex", 
-              gap: "10px",
-              alignItems: "center"
-            }}>
-              <select
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  backgroundColor: "#fff",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  minWidth: "120px"
-                }}
-              >
-                {months.map((m, i) => (
-                  <option key={m} value={i}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+            {/* Right side - Month/Year Select with DashLite UI */}
+<div style={{ 
+  display: "flex", 
+  gap: "10px",
+  alignItems: "center"
+}}>
+  {/* Month Dropdown */}
+  <UncontrolledDropdown>
+    <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+      <Icon className="d-none d-sm-inline" name="calender-date" />
+      <span>
+        <span className="d-none d-md-inline">{months[month]}</span>
+      </span>
+      <Icon className="dd-indc" name="chevron-right" />
+    </DropdownToggle>
+    <DropdownMenu>
+      <ul className="link-list-opt no-bdr" style={{ maxHeight: "300px", overflowY: "auto" }}>
+        {months.map((m, i) => (
+          <li key={m}>
+            <DropdownItem
+              tag="a"
+              href="#!"
+              onClick={(ev) => {
+                ev.preventDefault();
+                setMonth(i);
+              }}
+            >
+              <span>{m}</span>
+            </DropdownItem>
+          </li>
+        ))}
+      </ul>
+    </DropdownMenu>
+  </UncontrolledDropdown>
 
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  backgroundColor: "#fff",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  minWidth: "100px"
-                }}
-              >
-                {[2023, 2024, 2025, 2026].map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
+  {/* Year Dropdown */}
+  <UncontrolledDropdown>
+    <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+      <Icon className="d-none d-sm-inline" name="calender-date" />
+      <span>
+        <span className="d-none d-md-inline">{year}</span>
+      </span>
+      <Icon className="dd-indc" name="chevron-right" />
+    </DropdownToggle>
+    <DropdownMenu>
+      <ul className="link-list-opt no-bdr">
+        {[2023, 2024, 2025, 2026].map((y) => (
+          <li key={y}>
+            <DropdownItem
+              tag="a"
+              href="#!"
+              onClick={(ev) => {
+                ev.preventDefault();
+                setYear(y);
+              }}
+            >
+              <span>{y}</span>
+            </DropdownItem>
+          </li>
+        ))}
+      </ul>
+    </DropdownMenu>
+  </UncontrolledDropdown>
+</div>
           </div>
 
           {/* Main Container with Left and Right Sections */}
