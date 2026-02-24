@@ -48,9 +48,15 @@
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
 
-    const fetchCustomersByAssignedStaff = async() => {
+    
+    const fetchCustomersByAssignedStaff = async(id) => {
+      const today = new Date().toISOString().split("T")[0];
       try{
-        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedStaffId}/assignedCustomer`)
+        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${id}/assignedCustomer`,
+          {
+          params: { date: today },
+        },
+        )
         if(response.status === 200) {
           setAssignedCustomerDatas(response.data.customers)
         }
@@ -86,41 +92,41 @@ const fetchAvailableVehicles = async (date) => {
     setVehicles([]);
   }
 };
-  useEffect(() => {
-    const loadAssignedCustomers = async () => {
-      if (!selectedStaffId) {
-        setAssignedCustomerDatas([]);
-        return;
-      }
+  // useEffect(() => {
+  //   const loadAssignedCustomers = async () => {
+  //     if (!selectedStaffId) {
+  //       setAssignedCustomerDatas([]);
+  //       return;
+  //     }
       
-      const staffAssignments = routeAssignments.filter(
-        (assignment) =>
-          assignment.staffId?._id?.toString() === selectedStaffId.toString() &&
-          assignment.date === selectedDate
-      );
+  //     const staffAssignments = routeAssignments.filter(
+  //       (assignment) =>
+  //         assignment.staffId?._id?.toString() === selectedStaffId.toString() &&
+  //         assignment.date === selectedDate
+  //     );
 
-      if (staffAssignments.length === 0) {
-        setAssignedCustomerDatas([]);
-        return;
-      }
+  //     if (staffAssignments.length === 0) {
+  //       setAssignedCustomerDatas([]);
+  //       return;
+  //     }
 
-      // If assigned → fetch customers
-      try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedStaffId}/assignedCustomer`
-        );
+  //     // If assigned → fetch customers
+  //     try {
+  //       const response = await axios.get(
+  //         `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedStaffId}/assignedCustomer`
+  //       );
         
-        if (response.status === 200) {
-          setAssignedCustomerDatas(response.data.customers || []);
-        }
-      } catch (err) {
-        console.log(err);
-        setAssignedCustomerDatas([]);
-      }
-    };
+  //       if (response.status === 200) {
+  //         setAssignedCustomerDatas(response.data.customers || []);
+  //       }
+  //     } catch (err) {
+  //       console.log(err);
+  //       setAssignedCustomerDatas([]);
+  //     }
+  //   };
 
-    loadAssignedCustomers();
-  }, [selectedStaffId, routeAssignments, selectedDate]);
+  //   loadAssignedCustomers();
+  // }, [selectedStaffId, routeAssignments, selectedDate]);
 
 
     useEffect(() => {
@@ -613,9 +619,9 @@ const fetchAvailableVehicles = async (date) => {
                       const canAssign = canAssignMoreRoutes(staff._id);
 
                       // Get already assigned vehicle for this staff on selected date
-const existingVehicleNo = staffAssignments.length > 0
-  ? staffAssignments[0]?.vehicleNo
-  : null;
+                      const existingVehicleNo = staffAssignments.length > 0
+                        ? staffAssignments[0]?.vehicleNo
+                        : null;
                       
                       return (
                         <tr key={staff._id}>
@@ -680,137 +686,137 @@ const existingVehicleNo = staffAssignments.length > 0
                           <td>
                             <div className="d-flex gap-3 align-items-center">
 
-  {/* Route Select */}
-  <div className="form-group mt-5 mr-2" style={{ width: "120px" }}>
-    <select
-      className="form-control"
-      value={staff.selectedRoute || ""}
-      onChange={(e) => {
-        setDeliveryStaff(prev =>
-          prev.map(s =>
-            s._id === staff._id
-              ? { ...s, selectedRoute: e.target.value }
-              : s
-          )
-        );
-      }}
-    >
-      <option value="">Route</option>
-      {Array.isArray(getAvailableRoutes()) &&
-        getAvailableRoutes().map(route => (
-          <option key={route._id} value={route._id}>
-            {route.routeName}
-          </option>
-        ))}
-    </select>
-  </div>
+                            {/* Route Select */}
+                            <div className="form-group mt-5 mr-2" style={{ width: "120px" }}>
+                              <select
+                                className="form-control"
+                                value={staff.selectedRoute || ""}
+                                onChange={(e) => {
+                                  setDeliveryStaff(prev =>
+                                    prev.map(s =>
+                                      s._id === staff._id
+                                        ? { ...s, selectedRoute: e.target.value }
+                                        : s
+                                    )
+                                  );
+                                }}
+                              >
+                                <option value="">Route</option>
+                                {Array.isArray(getAvailableRoutes()) &&
+                                  getAvailableRoutes().map(route => (
+                                    <option key={route._id} value={route._id}>
+                                      {route.routeName}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
 
-  {/* Vehicle Select */}
-  <div className="form-group mt-5 mr-2" style={{ width: "150px" }}>
-    <select
-      className="form-control"
-      disabled={!!existingVehicleNo}
-      value={
-        existingVehicleNo?.vehicleNumber ||
-        staff.selectedVehicle ||
-        ""
-      }
-      onChange={(e) => {
-        setDeliveryStaff(prev =>
-          prev.map(s =>
-            s._id === staff._id
-              ? { ...s, selectedVehicle: e.target.value }
-              : s
-          )
-        );
-      }}
-    >
-      <option value="">Vehicle</option>
-      {Array.isArray(vehicles) &&
-        vehicles.map(vehicle => (
-          <option key={vehicle._id} value={vehicle._id}>
-            {vehicle.vehicleNumber} ({vehicle.vehicleType})
-          </option>
-        ))}
-    </select>
-  </div>
+                            {/* Vehicle Select */}
+                            <div className="form-group mt-5 mr-2" style={{ width: "150px" }}>
+                              <select
+                                className="form-control"
+                                disabled={!!existingVehicleNo}
+                                value={
+                                  existingVehicleNo?.vehicleNumber ||
+                                  staff.selectedVehicle ||
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  setDeliveryStaff(prev =>
+                                    prev.map(s =>
+                                      s._id === staff._id
+                                        ? { ...s, selectedVehicle: e.target.value }
+                                        : s
+                                    )
+                                  );
+                                }}
+                              >
+                                <option value="">Vehicle</option>
+                                {Array.isArray(vehicles) &&
+                                  vehicles.map(vehicle => (
+                                    <option key={vehicle._id} value={vehicle._id}>
+                                      {vehicle.vehicleNumber} ({vehicle.vehicleType})
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
 
-  {/* Assign Button */}
-  <Button
-    color="primary"
-    size="md"
-    style={{marginTop:"30px"}}
-    disabled={!staff.selectedRoute || loading}
-    onClick={async () => {
-      try {
-        setLoading(true);
-        setError(null);
+                            {/* Assign Button */}
+                            <Button
+                              color="primary"
+                              size="md"
+                              style={{marginTop:"30px"}}
+                              disabled={!staff.selectedRoute || loading}
+                              onClick={async () => {
+                                try {
+                                  setLoading(true);
+                                  setError(null);
 
-        const route = findRoute(staff.selectedRoute);
-        if (!route) {
-          setError("Selected route not found");
-          return;
-        }
+                                  const route = findRoute(staff.selectedRoute);
+                                  if (!route) {
+                                    setError("Selected route not found");
+                                    return;
+                                  }
 
-        // 🔥 FIXED VEHICLE LOGIC
-        let vehicleToSend = null;
+                                  // 🔥 FIXED VEHICLE LOGIC
+                                  let vehicleToSend = null;
 
-        if (existingVehicleNo?.vehicleNumber) {
-          vehicleToSend = existingVehicleNo.vehicleNumber;
-        } else {
-          const selectedVehicleData = vehicles.find(
-            v => v._id === staff.selectedVehicle
-          );
-          vehicleToSend = selectedVehicleData?.vehicleNumber;
-        }
+                                  if (existingVehicleNo?.vehicleNumber) {
+                                    vehicleToSend = existingVehicleNo.vehicleNumber;
+                                  } else {
+                                    const selectedVehicleData = vehicles.find(
+                                      v => v._id === staff.selectedVehicle
+                                    );
+                                    vehicleToSend = selectedVehicleData?.vehicleNumber;
+                                  }
 
-        if (!vehicleToSend) {
-          setError("Please select vehicle");
-          return;
-        }
+                                  if (!vehicleToSend) {
+                                    setError("Please select vehicle");
+                                    return;
+                                  }
 
-        await axios.post(
-          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
-          {
-            date: selectedDate,
-            staffId: staff._id,
-            routeId: route._id,
-            routeName: route.routeName,
-            vehicleNo: vehicleToSend,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+                                  await axios.post(
+                                    `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
+                                    {
+                                      date: selectedDate,
+                                      staffId: staff._id,
+                                      routeId: route._id,
+                                      routeName: route.routeName,
+                                      vehicleNo: vehicleToSend,
+                                    },
+                                    {
+                                      headers: {
+                                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                      },
+                                    }
+                                  );
 
-        setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
-        setTimeout(() => setSuccess(null), 3000);
+                                  setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
+                                  setTimeout(() => setSuccess(null), 3000);
 
-        fetchAssignmentsByDate(selectedDate);
+                                  fetchAssignmentsByDate(selectedDate);
 
-        // reset only route
-        setDeliveryStaff(prev =>
-          prev.map(s =>
-            s._id === staff._id
-              ? { ...s, selectedRoute: "" }
-              : s
-          )
-        );
+                                  // reset only route
+                                  setDeliveryStaff(prev =>
+                                    prev.map(s =>
+                                      s._id === staff._id
+                                        ? { ...s, selectedRoute: "" }
+                                        : s
+                                    )
+                                  );
 
-      } catch (err) {
-        console.error("Assign error:", err.response?.data);
-        setError(err.response?.data?.message || "Failed to assign route");
-      } finally {
-        setLoading(false);
-      }
-    }}
-  >
-    {loading ? "Assigning..." : "Assign"}
-  </Button>
+                                } catch (err) {
+                                  console.error("Assign error:", err.response?.data);
+                                  setError(err.response?.data?.message || "Failed to assign route");
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }}
+                            >
+                              {loading ? "Assigning..." : "Assign"}
+                            </Button>
 
-</div>
+                          </div>
                           </td>
                         </tr>
                       );
@@ -1189,7 +1195,7 @@ const existingVehicleNo = staffAssignments.length > 0
     return <Icon name="clock" className="text-muted" />;
   };
     const handleRefresh = () => {
-      fetchCustomersByAssignedStaff()
+      fetchCustomersByAssignedStaff(selectedStaffId)
       fetchCustomers()
       fetchStaff()
     };
@@ -1261,8 +1267,10 @@ const existingVehicleNo = staffAssignments.length > 0
                               key={staff._id}
                               className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
                               onClick={() => {
-                                setSelectedTrackStaff(staff);
+                                fetchCustomersByAssignedStaff(staff._id)
+                                setSelectedTrackStaff(staff);                                
                                 setSelectedStaffId(staff._id)
+                                
                               }}
                               style={{ 
                                 cursor: 'pointer',
