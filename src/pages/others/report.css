@@ -48,7 +48,7 @@
 }
 
 .panel-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1a2b3c;
   margin: 0;
@@ -1847,4 +1847,165 @@ font-size: small;
 .download-btn svg {
   width: 16px;
   height: 16px;
+}
+/* Add these styles to your existing report.css */
+
+/* Role badges */
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.role-badge.manager {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.role-badge.delivery {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.role-badge.sales {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+/* Staff phone in customer details */
+.staff-phone {
+  font-size: 11px;
+  color: #6c757d;
+  margin-left: 8px;
+}
+
+/* Order status badges in table */
+.order-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.order-status-badge.delivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.order-status-badge.pending,
+.order-status-badge.processing {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.order-status-badge.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Adjustments for staff reports */
+.customer-details {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Make sure the table fits well */
+.transactions-table th,
+.transactions-table td {
+  white-space: nowrap;
+  padding: 8px 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stats-row .col-md-3 {
+    width: 50%;
+  }
+  
+  .transactions-table {
+    font-size: 12px;
+  }
+  
+  .transactions-table th,
+  .transactions-table td {
+    padding: 6px 8px;
+  }
+}
+/* Staff Type Filter */
+.staff-type-filter {
+  padding: 1px 10px 10px 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.staff-type-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #495057;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.staff-type-select:hover {
+  border-color: #adb5bd;
+}
+
+.staff-type-select:focus {
+  outline: none;
+  border-color: #4e73df;
+  box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+}
+
+/* Additional stat card color */
+.stat-icon.info {
+  background: rgba(23, 162, 184, 0.1);
+  color: #17a2b8;
+}
+
+.stat-icon.info.compact {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+}
+
+/* Adjustments for delivery table */
+.transactions-table td {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transactions-table td:nth-child(4) { /* Address column */
+  max-width: 150px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .transactions-table {
+    font-size: 11px;
+  }
+  
+  .transactions-table th,
+  .transactions-table td {
+    padding: 6px;
+  }
 }

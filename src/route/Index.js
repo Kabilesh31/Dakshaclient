@@ -121,6 +121,8 @@ import VehicleListCompact from "../pages/pre-built/user-manage/VehicleListCompac
 import VehicleDetails from "../pages/pre-built/user-manage/VehicleDetails";
 import Delivery from "../pages/pre-built/user-manage/Delivery";
 import Sales from "../pages/pre-built/user-manage/Sales";
+import StaffReport from "../pages/others/StaffReport";
+
 
 
 const Pages = () => {
@@ -246,6 +248,7 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+       
 
 
          <Route //Context Api added
@@ -254,6 +257,15 @@ const Pages = () => {
           render={() => (
             <UserContextProvider>
             <BlankPage/>
+            </UserContextProvider>
+          )}
+        ></Route>
+         <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/staff-report`}
+          render={() => (
+            <UserContextProvider>
+         <StaffReport/>
             </UserContextProvider>
           )}
         ></Route>
