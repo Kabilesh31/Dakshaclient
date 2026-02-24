@@ -52,10 +52,22 @@ const menu = [
     link: "/Orders"
 
   },
-  {
-    icon: "reports",       // ni ni-reports
+   {
+    icon: "reports",
     text: "Reports",
-    link: "/reports",
+    active: false,
+    subMenu: [
+      {
+        icon: "user-alt",
+        text: "Customers",
+        link: "/reports", // existing page
+      },
+      {
+        icon: "user-list",
+        text: "Staffs",
+        link: "/staff-report", // new page (we will create later)
+      }
+    ],
   },
 
   {
