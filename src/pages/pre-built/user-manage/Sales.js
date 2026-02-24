@@ -1461,7 +1461,7 @@ const fetchAvailableVehicles = async (date) => {
                         .map((customer, index) => {
                           const isActiveCustomer =
                               selectedCustomerForMap?._id === customer._id;
-                                                  let rowStatus = "upcoming";
+                                let rowStatus = "upcoming";
 
                           if (customer.isVisited === true) {
                             rowStatus = "completed";
