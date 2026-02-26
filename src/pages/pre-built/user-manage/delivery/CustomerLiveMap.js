@@ -163,7 +163,7 @@ const CustomerLiveMap = ({
             }
           } else {
             console.error("Route calculation failed:", status);
-            alert(`Route calculation failed: ${status}`);
+            
           }
         }
       );
