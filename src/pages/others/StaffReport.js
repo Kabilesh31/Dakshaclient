@@ -677,7 +677,7 @@ const StaffReport = () => {
                     disabled={filteredBills.length === 0}
                   >
                     <FaFileExcel />
-                    <span>Export</span>
+                    
                   </button>
                   <button
                     onClick={exportPDF}
@@ -686,7 +686,7 @@ const StaffReport = () => {
                     title="Export to PDF"
                   >
                     <FaFilePdf size={13} />
-                    PDF
+                    
                   </button>
                 </div>
               </div>
@@ -1025,7 +1025,40 @@ const StaffReport = () => {
                   </div>
                 </div>
               </div>
-
+{/* Paid Stamp with Real Cement/Uneven Ink Effect */}
+{selectedBill?.paymentMethod && (
+  <div className="paid-stamp-round-container">
+    <div className="paid-stamp-round distressed">
+      {/* Paper texture background */}
+      <div className="paper-texture"></div>
+      
+      {/* Ink bleed effects */}
+      <div className="ink-bleed"></div>
+      <div className="ink-bleed"></div>
+      <div className="ink-bleed"></div>
+      
+      {/* Stamp inner content */}
+      <div className="stamp-inner">
+        <div className="stamp-text">PAID</div>
+      </div>
+      
+      {/* Decorative dots with uneven distribution */}
+      <div className="stamp-dots">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="stamp-dot"
+            style={{
+              top: `${20 + Math.random() * 60}%`,
+              left: `${20 + Math.random() * 60}%`,
+              transform: `rotate(${Math.random() * 360}deg)`
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+)}
               {/* Products Table */}
               <div className="products-table-container">
                 <table className="products-table">
