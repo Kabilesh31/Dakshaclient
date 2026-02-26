@@ -48,7 +48,7 @@ import { FiClock } from 'react-icons/fi';
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
 
-    
+  
     const fetchCustomersByAssignedStaff = async(id) => {
       const today = new Date().toISOString().split("T")[0];
       try{
@@ -1125,7 +1125,8 @@ const fetchAvailableVehicles = async (date) => {
       );
     };
     // Render Live Track Tab
- const renderLiveTrack = () => {
+ // Render Live Track Tab
+const renderLiveTrack = () => {
   if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
     return (
       <Alert color="danger">
@@ -1142,26 +1143,18 @@ const fetchAvailableVehicles = async (date) => {
   const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
     activeDeliveries.some(delivery => 
     String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
-  )
+  ));
 
-  );
-  
   const selectedStaffDelivery = selectedTrackStaff
-  ? activeDeliveries.find(delivery =>
-      String(delivery.staffId?._id || delivery.staffId) ===
-      String(selectedTrackStaff._id)
-    )
-  : null;
+    ? activeDeliveries.find(delivery =>
+        String(delivery.staffId?._id || delivery.staffId) ===
+        String(selectedTrackStaff._id)
+      )
+    : null;
 
   const totalCustomers = assinedCustomerDatas?.length || 0;
-
-  const completedCustomers =
-  assinedCustomerDatas?.filter(
-    (c) => c.isVisited === true
-  ).length || 0;
-
-  const isRouteCompleted =
-  totalCustomers > 0 && completedCustomers === totalCustomers;
+  const completedCustomers = assinedCustomerDatas?.filter((c) => c.isVisited === true).length || 0;
+  const isRouteCompleted = totalCustomers > 0 && completedCustomers === totalCustomers;
 
   // Helper function to calculate time difference between visits
   const calculateTimeBetweenVisits = (currentCustomer, allCustomers) => {
@@ -1186,12 +1179,69 @@ const fetchAvailableVehicles = async (date) => {
     };
   };
 
-  // Calculate total route time
-  const calculateTotalRouteTime = (customers) => {
-    const visitedCustomers = customers.filter(c => c.isVisited && c.visitedAt);
+  // Calculate warehouse to first customer time using selectedTrackStaff
+  const calculateWarehouseToFirstCustomerTime = () => {
+    // Check if we have selectedTrackStaff with startedAt
+    if (!selectedTrackStaff?.startedAt) {
+      console.log("No startedAt for selectedTrackStaff:", selectedTrackStaff);
+      return null;
+    }
+    
+    // Check if we have assigned customer data
+    if (!assinedCustomerDatas || assinedCustomerDatas.length === 0) {
+      console.log("No assigned customer data");
+      return null;
+    }
+    
+    // Get visited customers sorted by visit time
+    const visitedCustomers = assinedCustomerDatas.filter(c => c.isVisited === true && c.visitedAt);
+    if (visitedCustomers.length === 0) {
+      console.log("No visited customers yet");
+      return null;
+    }
+    
+    // Sort by visitedAt time
+    const sortedVisits = [...visitedCustomers].sort((a, b) => 
+      new Date(a.visitedAt) - new Date(b.visitedAt)
+    );
+    
+    const firstCustomer = sortedVisits[0];
+    const startTime = new Date(selectedTrackStaff.startedAt).getTime();
+    const firstVisitTime = new Date(firstCustomer.visitedAt).getTime();
+    
+    console.log("Calculating warehouse to first customer:", {
+      staffName: selectedTrackStaff.name,
+      startedAt: selectedTrackStaff.startedAt,
+      firstCustomer: firstCustomer.name,
+      firstVisitTime: firstCustomer.visitedAt,
+      startTime,
+      firstVisitTime
+    });
+    
+    // If first visit happened before start time (shouldn't happen, but just in case)
+    if (firstVisitTime < startTime) return null;
+    
+    const diffMinutes = Math.round((firstVisitTime - startTime) / (1000 * 60));
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    
+    return {
+      minutes: diffMinutes,
+      formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+      startTime: selectedTrackStaff.startedAt,
+      firstVisitTime: firstCustomer.visitedAt,
+      firstCustomerName: firstCustomer.name
+    };
+  };
+
+  // Calculate total route time between first and last visit
+  const calculateTotalRouteTime = () => {
+    if (!assinedCustomerDatas) return null;
+    
+    const visitedCustomers = assinedCustomerDatas.filter(c => c.isVisited && c.visitedAt);
     if (visitedCustomers.length < 2) return null;
     
-    const sortedVisits = visitedCustomers.sort((a, b) => 
+    const sortedVisits = [...visitedCustomers].sort((a, b) => 
       new Date(a.visitedAt) - new Date(b.visitedAt)
     );
     
@@ -1210,16 +1260,60 @@ const fetchAvailableVehicles = async (date) => {
     };
   };
 
-  const routeTimeStats = calculateTotalRouteTime(assinedCustomerDatas || []);
+  // Calculate total route duration from start to end (if endedAt exists)
+  const calculateTotalRouteDuration = () => {
+    if (!selectedTrackStaff?.startedAt) return null;
+    
+    const startTime = new Date(selectedTrackStaff.startedAt).getTime();
+    
+    // If staff has endedAt, use that
+    if (selectedTrackStaff?.endedAt) {
+      const endTime = new Date(selectedTrackStaff.endedAt).getTime();
+      const diffMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      
+      return {
+        minutes: diffMinutes,
+        formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        type: 'complete'
+      };
+    }
+    
+    // Otherwise use last visited customer if available
+    const visitedCustomers = assinedCustomerDatas?.filter(c => c.isVisited && c.visitedAt) || [];
+    if (visitedCustomers.length > 0) {
+      const sortedVisits = [...visitedCustomers].sort((a, b) => 
+        new Date(a.visitedAt) - new Date(b.visitedAt)
+      );
+      const lastVisitTime = new Date(sortedVisits[sortedVisits.length - 1].visitedAt).getTime();
+      const diffMinutes = Math.round((lastVisitTime - startTime) / (1000 * 60));
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      
+      return {
+        minutes: diffMinutes,
+        formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        type: 'partial'
+      };
+    }
+    
+    return null;
+  };
+
+  // Calculate these values only when selectedTrackStaff exists
+  const warehouseToFirstCustomer = selectedTrackStaff ? calculateWarehouseToFirstCustomerTime() : null;
+  const routeTimeStats = calculateTotalRouteTime();
+  const totalDuration = selectedTrackStaff ? calculateTotalRouteDuration() : null;
 
   const getCustomerStatusClass = (status) => {
     switch (status) {
       case "completed":
-        return "text-success";   // Delivered
+        return "text-success";
       case "current":
-        return "text-primary";   // Arriving
+        return "text-primary";
       case "upcoming":
-        return "text-warning";   // Expected
+        return "text-warning";
       default:
         return "text-muted";
     }
@@ -1231,11 +1325,7 @@ const fetchAvailableVehicles = async (date) => {
     }
 
     if (status === "current") {
-      return selectedTrackStaff?.type === "delivery" ? (
-        <Icon name="truck" className="text-primary" />
-      ) : (
-        <Icon name="truck" className="text-primary" />
-      );
+      return <Icon name="truck" className="text-primary" />;
     }
 
     return <Icon name="clock" className="text-muted" />;
@@ -1252,9 +1342,11 @@ const fetchAvailableVehicles = async (date) => {
   };
 
   const handleRefresh = () => {
-    fetchCustomersByAssignedStaff(selectedStaffId)
-    fetchCustomers()
-    fetchStaff()
+    if (selectedStaffId) {
+      fetchCustomersByAssignedStaff(selectedStaffId);
+    }
+    fetchCustomers();
+    fetchStaff();
   };
   
   return (
@@ -1271,7 +1363,6 @@ const fetchAvailableVehicles = async (date) => {
 
             <div className="d-flex gap-2 align-items-end">
               <div style={{marginRight : "10px"}} >
-              
                 <Input
                   type="date"
                   value={selectedDate}
@@ -1302,7 +1393,6 @@ const fetchAvailableVehicles = async (date) => {
                   
                   <div className="mb-3">
                     <div className="input-group input-group-sm">
-                      
                       <Input
                         type="text"
                         placeholder="Search staff..."
@@ -1313,21 +1403,20 @@ const fetchAvailableVehicles = async (date) => {
 
                   <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                     {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
-                    const staffDelivery = activeDeliveries.find(d =>
+                      const staffDelivery = activeDeliveries.find(d =>
                         String(d.staffId?._id || d.staffId) === String(staff._id)
                       );
 
-                    const isSelected = selectedTrackStaff?._id === staff._id;
+                      const isSelected = selectedTrackStaff?._id === staff._id;
                       
                       return (
                         <div 
                           key={staff._id}
                           className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
                           onClick={() => {
-                            fetchCustomersByAssignedStaff(staff._id)
+                            fetchCustomersByAssignedStaff(staff._id);
                             setSelectedTrackStaff(staff);                                
-                            setSelectedStaffId(staff._id)
-                            
+                            setSelectedStaffId(staff._id);
                           }}
                           style={{ 
                             cursor: 'pointer',
@@ -1368,6 +1457,11 @@ const fetchAvailableVehicles = async (date) => {
                                   {staffDelivery.routeName}
                                 </span>
                               </small>
+                              {staff.startedAt && (
+                                <small className="text-muted fs-11 d-block">
+                                  Started: {formatVisitedTime(staff.startedAt)}
+                                </small>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1430,6 +1524,14 @@ const fetchAvailableVehicles = async (date) => {
                         })}
                       </p>
                     )}
+                    
+                    {/* Debug info - remove in production */}
+                    {selectedTrackStaff && (
+                      <div className="small text-muted mt-1">
+                        <div>Started: {selectedTrackStaff.startedAt ? formatVisitedTime(selectedTrackStaff.startedAt) : 'Not started'}</div>
+                        <div>First customer time: {warehouseToFirstCustomer ? warehouseToFirstCustomer.formatted : 'Not available'}</div>
+                      </div>
+                    )}
                   </div>
 
                   <CustomerLiveMap
@@ -1454,40 +1556,63 @@ const fetchAvailableVehicles = async (date) => {
                           className="me-1"
                           style={{ fontSize: "27px", lineHeight: 1 }}
                         >
-                          {selectedTrackStaff?.type === "delivery" ? "🚚" : "🚚"}
+                          🚚
                         </span>
 
-                        {selectedTrackStaff?.type === "delivery"
-                          ? "Delivery Vehicle"
-                          : "Sales Vehicle"}{" "}
+                        Sales Vehicle{" "}
                         <Badge
                           color={isRouteCompleted ? "success" : "primary"}
-                          className="fs-11"
+                          className="fs-11 ms-2"
                         >
                           Status : {isRouteCompleted ? "Completed" : "Running"}
                         </Badge>
                       </h6>
 
-                      {/* SECOND LINE */}
-                      <div className="mt-1">
-                        {/* Route Time Stats */}
-                        {routeTimeStats && (
-                          <div className="small text-muted">
-                            <span className="fw-medium">Total Route Time:</span> {routeTimeStats.formatted}
-                            <span className="ms-2">({routeTimeStats.totalMinutes} minutes between first and last visit)</span>
+                      {/* Time Statistics */}
+                      {/* <div className="mt-2">
+                        {warehouseToFirstCustomer && (
+                          <div className="small text-primary mb-1">
+                            <FiClock size={12} className="me-1" />
+                            <span className="fw-medium">Warehouse to 1st:</span> {warehouseToFirstCustomer.formatted}
                           </div>
                         )}
-                      </div>
+                        
+                        {routeTimeStats && (
+                          <div className="small text-info mb-1">
+                            <FiClock size={12} className="me-1" />
+                            <span className="fw-medium">Time between visits:</span> {routeTimeStats.formatted}
+                          </div>
+                        )}
+
+                        {totalDuration && (
+                          <div className="small text-success mb-1">
+                            <FiClock size={12} className="me-1" />
+                            <span className="fw-medium">Total duration:</span> {totalDuration.formatted}
+                          </div>
+                        )}
+                      </div> */}
                     </div>
 
-                    <small className="text-muted">
-                      Started 08:30 • ETA 12:30 • 65 km
+                    <small className="text-muted d-block mt-2">
+                      {selectedTrackStaff?.startedAt && (
+                        <span className="me-3">
+                          <span className="fw-medium">Started:</span> {formatVisitedTime(selectedTrackStaff.startedAt)}
+                        </span>
+                      )}
+                      {selectedTrackStaff?.endedAt && (
+                        <span className="me-3">
+                          <span className="fw-medium">Ended:</span> {formatVisitedTime(selectedTrackStaff.endedAt)}
+                        </span>
+                      )}
+                      {/* <span className="me-3">
+                        <span className="fw-medium">Distance:</span> 65 km
+                      </span> */}
                     </small>
                   </div>
 
                   {/* RAIL STATUS */}
                   <div className="rail-status">
-                    {/* START POINT */}
+                    {/* START POINT - Warehouse */}
                     <div className="rail-row completed">
                       <div className="rail-left">
                         <div className="rail-dot"></div>
@@ -1496,10 +1621,19 @@ const fetchAvailableVehicles = async (date) => {
                       <div className="rail-content">
                         <div className="d-flex justify-content-between">
                           <strong>Central Warehouse</strong>
-                          <span className="time">08:30</span>
+                          <span className="time">
+                            {selectedTrackStaff?.startedAt 
+                              ? formatVisitedTime(selectedTrackStaff.startedAt) 
+                              : '--:--'}
+                          </span>
                         </div>
                         <small className="text-muted">
                           Trip Started • 0 km
+                          {warehouseToFirstCustomer && (
+                            <span className="text-primary ms-2">
+                              → 1st in {warehouseToFirstCustomer.formatted}
+                            </span>
+                          )}
                         </small>
                       </div>
                     </div>
@@ -1508,8 +1642,7 @@ const fetchAvailableVehicles = async (date) => {
                     {assinedCustomerDatas
                       .sort((a, b) => a.lineNo - b.lineNo)
                       .map((customer, index) => {
-                        const isActiveCustomer =
-                            selectedCustomerForMap?._id === customer._id;
+                        const isActiveCustomer = selectedCustomerForMap?._id === customer._id;
                         let rowStatus = "upcoming";
 
                         if (customer.isVisited === true) {
@@ -1532,6 +1665,9 @@ const fetchAvailableVehicles = async (date) => {
                         const timeBetweenVisits = rowStatus === "completed" 
                           ? calculateTimeBetweenVisits(customer, assinedCustomerDatas)
                           : null;
+                        
+                        // Check if this is the first customer (by lineNo) and it's visited
+                        const isFirstCustomer = index === 0 && rowStatus === "completed" && warehouseToFirstCustomer;
                         
                         return (
                           <div
@@ -1557,47 +1693,58 @@ const fetchAvailableVehicles = async (date) => {
 
                             <div className="rail-content">
                               <div className="d-flex justify-content-between">
-                                <strong>{customer.name}</strong>
+                                <div>
+                                  <strong>
+                                    {customer.name}
+                                    {isFirstCustomer && (
+                                      <Badge color="primary" className="ms-2 ml-2" pill>
+                                        ⏱️ +{warehouseToFirstCustomer.formatted}
+                                      </Badge>
+                                    )}
+                                    {timeBetweenVisits && !isFirstCustomer && (
+                                      <Badge color="info" className="ms-2 ml-2" pill>
+                                        ⏱️ +{timeBetweenVisits.minutes}m
+                                      </Badge>
+                                    )}
+                                  </strong>
+                                </div>
                                 <div className="text-end">
                                   <span className={`time ${getCustomerStatusClass(rowStatus)} d-block`}>
                                     {rowStatus === "completed" && "Visited"}
                                     {rowStatus === "current" && "Arriving"}
                                     {rowStatus === "upcoming" && "Expected"}
                                   </span>
-                                
                                 </div>
                               </div>
 
-                              <div className="d-flex justify-content-between align-items-center">
-                                <small
-                                  className={
-                                    rowStatus === "current" ? "text-primary" : "text-muted"
-                                  }
-                                >
-                                  Line No: {customer.lineNo} {timeBetweenVisits && (
-                                  <small className="text-info">
-                                    <span className="badge bg-light ml-2 text-info border border-info">
-                                      ⏱️ + {timeBetweenVisits.minutes} min
-                                    </span>
-                                  </small>
-                                )}
+                              <div className="d-flex justify-content-between align-items-center mt-1">
+                                <small className={rowStatus === "current" ? "text-primary" : "text-muted"}>
+                                  Line No: {customer.lineNo} • {customer.routeName}
                                 </small>
                                 
-                                {/* Time Between Visits Indicator */}
-                                  {rowStatus === "completed" && customer.visitedAt && (
-                                    <span className="text-muted small">
-                                      {formatVisitedTime(customer.visitedAt)}
-                                    </span>
-                                  )}
+                                {rowStatus === "completed" && customer.visitedAt && (
+                                  <span className="text-muted small">
+                                    {formatVisitedTime(customer.visitedAt)}
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Time taken from previous customer */}
-                              {/* {timeBetweenVisits && timeBetweenVisits.minutes > 0 && (
-                                <div className="mt-1 small text-muted border-top pt-1">
-                                  <span className="text-info">
-                                    <FiClock size={12} className="me-1" />
-                                    {timeBetweenVisits.minutes} min from {timeBetweenVisits.fromCustomer}
+                              {/* Show warehouse to first customer detail */}
+                              {/* {isFirstCustomer && (
+                                <div className="mt-1 small text-primary">
+                                  <FiClock size={12} className="me-1" />
+                                  From warehouse: {warehouseToFirstCustomer.formatted}
+                                  <span className="text-muted ms-2">
+                                    (Started: {formatVisitedTime(selectedTrackStaff?.startedAt)})
                                   </span>
+                                </div>
+                              )} */}
+
+                              {/* Show time from previous customer */}
+                              {/* {timeBetweenVisits && timeBetweenVisits.minutes > 0 && !isFirstCustomer && (
+                                <div className="mt-1 small text-info">
+                                  <FiClock size={12} className="me-1" />
+                                  From {timeBetweenVisits.fromCustomer}: {timeBetweenVisits.minutes}m
                                 </div>
                               )} */}
                             </div>
@@ -1605,7 +1752,7 @@ const fetchAvailableVehicles = async (date) => {
                         );
                       })}
 
-                    {/* END POINT */}
+                    {/* END POINT - Warehouse */}
                     <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
                       <div className="rail-left">
                         <div className="rail-dot"></div>
@@ -1613,19 +1760,31 @@ const fetchAvailableVehicles = async (date) => {
                       <div className="rail-content">
                         <div className="d-flex justify-content-between">
                           <strong>Route End (Warehouse)</strong>
-                          <span className="time">12:30</span>
+                          <span className="time">
+                            {selectedTrackStaff?.endedAt 
+                              ? formatVisitedTime(selectedTrackStaff.endedAt) 
+                              : '--:--'}
+                          </span>
                         </div>
                         <small className="text-muted">
                           Trip Completion
+                          {totalDuration && (
+                            <span className="text-success ms-2">
+                              Total: {totalDuration.formatted}
+                            </span>
+                          )}
                         </small>
                       </div>
                     </div>
 
-                
-
                     {isRouteCompleted && (
                       <div className="alert alert-success py-2 mb-3">
                         🎉 All Customers Visited – Route Completed Successfully
+                        {totalDuration && (
+                          <span className="d-block mt-1 small">
+                            Total time: {totalDuration.formatted}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

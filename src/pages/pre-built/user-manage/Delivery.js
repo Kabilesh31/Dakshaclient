@@ -25,7 +25,7 @@
     const [activeTab, setActiveTab] = useState("alignment");
     const [vehicles, setVehicles] = useState([])
     const [existingAssignments, setExistingAssignments] = useState([]);
-const [selectedVehicle, setSelectedVehicle] = useState("");
+    const [selectedVehicle, setSelectedVehicle] = useState("");
     const [deliveryStaff, setDeliveryStaff] = useState([]);
     const [routes, setRoutes] = useState([]);
     const [routeAssignments, setRouteAssignments] = useState([]);
@@ -750,131 +750,131 @@ const assignedVehicleNumbers = routeAssignments
                           <td>
                             <div className="d-flex gap-3 align-items-center flex-wrap">
 
-  {/* Route Select */}
-  <div className="form-group mt-1 mr-1 " style={{ minWidth: '180px' }}>
-    <select
-      className="form-control"
-      value={staff.selectedRoute || ""}
-      onChange={(e) => {
-        setDeliveryStaff(prev =>
-          prev.map(s =>
-            s._id === staff._id
-              ? { ...s, selectedRoute: e.target.value }
-              : s
-          )
-        );
-      }}
-    >
-      <option value="">Select Route</option>
-      {getAvailableRoutes().map(route => (
-        <option key={route._id} value={route._id}>
-          {route.routeName}
-        </option>
-      ))}
-    </select>
-  </div>
+                              {/* Route Select */}
+                              <div className="form-group mt-1 mr-1 " style={{ minWidth: '180px' }}>
+                                <select
+                                  className="form-control"
+                                  value={staff.selectedRoute || ""}
+                                  onChange={(e) => {
+                                    setDeliveryStaff(prev =>
+                                      prev.map(s =>
+                                        s._id === staff._id
+                                          ? { ...s, selectedRoute: e.target.value }
+                                          : s
+                                      )
+                                    );
+                                  }}
+                                >
+                                  <option value="">Select Route</option>
+                                  {getAvailableRoutes().map(route => (
+                                    <option key={route._id} value={route._id}>
+                                      {route.routeName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
 
-  {/* Vehicle Select */}
-  <div className="form-group mt-1" style={{ minWidth: '180px' }}>
- <select
-  className="form-control"
-  disabled={!!existingVehicleNo}
-  value={existingVehicleNo || staff.selectedVehicle || ""}
-  onChange={(e) => {
-    setDeliveryStaff(prev =>
-      prev.map(s =>
-        s._id === staff._id
-          ? { ...s, selectedVehicle: e.target.value }
-          : s
-      )
-    );
-  }}
->
-  <option value="">Select Vehicle</option>
+                              {/* Vehicle Select */}
+                              <div className="form-group mt-1" style={{ minWidth: '180px' }}>
+                            <select
+                              className="form-control"
+                              disabled={!!existingVehicleNo}
+                              value={existingVehicleNo || staff.selectedVehicle || ""}
+                              onChange={(e) => {
+                                setDeliveryStaff(prev =>
+                                  prev.map(s =>
+                                    s._id === staff._id
+                                      ? { ...s, selectedVehicle: e.target.value }
+                                      : s
+                                  )
+                                );
+                              }}
+                            >
+                              <option value="">Select Vehicle</option>
 
- {vehicles
-  .filter(vehicle => {
-    if (existingVehicleNo) {
-      return vehicle.vehicleNumber === existingVehicleNo;
-    }
-    return !assignedVehicleNumbers.includes(vehicle.vehicleNumber);
-  })
-  .map(vehicle => (
-    <option key={vehicle._id} value={vehicle._id}>
-      {vehicle.vehicleNumber} ({vehicle.vehicleType?.charAt(0).toUpperCase() + vehicle.vehicleType?.slice(1).toLowerCase()})
-    </option>
-  ))}
-</select>
-  </div>
+                            {vehicles
+                              .filter(vehicle => {
+                                if (existingVehicleNo) {
+                                  return vehicle.vehicleNumber === existingVehicleNo;
+                                }
+                                return !assignedVehicleNumbers.includes(vehicle.vehicleNumber);
+                              })
+                              .map(vehicle => (
+                                <option key={vehicle._id} value={vehicle._id}>
+                                  {vehicle.vehicleNumber} ({vehicle.vehicleType?.charAt(0).toUpperCase() + vehicle.vehicleType?.slice(1).toLowerCase()})
+                                </option>
+                              ))}
+                            </select>
+                              </div>
 
-  {/* Assign Button */}
-  <Button
-    color="primary gap-1"
-    style={{height:"35px",marginLeft:"8px",marginTop:"-10px"}}
-    size="md"
-    disabled={
-  !staff.selectedRoute ||
-  (!existingVehicleNo && !staff.selectedVehicle) ||
-  !canAssignMoreRoutes(staff._id) ||
-  loading
-}
-    onClick={async () => {
-      try {
-        setLoading(true);
-        setError(null);
+                              {/* Assign Button */}
+                              <Button
+                                color="primary gap-1"
+                                style={{height:"35px",marginLeft:"8px",marginTop:"-10px"}}
+                                size="md"
+                                disabled={
+                              !staff.selectedRoute ||
+                              (!existingVehicleNo && !staff.selectedVehicle) ||
+                              !canAssignMoreRoutes(staff._id) ||
+                              loading
+                            }
+                                onClick={async () => {
+                                  try {
+                                    setLoading(true);
+                                    setError(null);
 
-        const route = findRoute(staff.selectedRoute);
-        if (!route) {
-          setError("Selected route not found");
-          return;
-        }
+                                    const route = findRoute(staff.selectedRoute);
+                                    if (!route) {
+                                      setError("Selected route not found");
+                                      return;
+                                    }
 
-        let vehicleToSend = existingVehicleNo;
+                                    let vehicleToSend = existingVehicleNo;
 
-if (!vehicleToSend) {
-  const selectedVehicleData = vehicles.find(
-    v => v._id === staff.selectedVehicle
-  );
-  vehicleToSend = selectedVehicleData?.vehicleNumber || null;
-}
-     await axios.post(
-  `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
-  {
-    date: selectedDate,
-    staffId: staff._id,
-    routeId: route._id,
-    routeName: route.routeName,
-    vehicleNo: vehicleToSend,   // 🔥 USE THIS
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  }
-);
+                            if (!vehicleToSend) {
+                              const selectedVehicleData = vehicles.find(
+                                v => v._id === staff.selectedVehicle
+                              );
+                              vehicleToSend = selectedVehicleData?.vehicleNumber || null;
+                            }
+                                await axios.post(
+                              `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
+                              {
+                                date: selectedDate,
+                                staffId: staff._id,
+                                routeId: route._id,
+                                routeName: route.routeName,
+                                vehicleNo: vehicleToSend,   // 🔥 USE THIS
+                              },
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                },
+                              }
+                            );
 
-        setSuccess(`Route assigned to ${staff.name}`);
-        fetchAssignmentsByDate(selectedDate);
+                                    setSuccess(`Route assigned to ${staff.name}`);
+                                    fetchAssignmentsByDate(selectedDate);
 
-        setDeliveryStaff(prev =>
-          prev.map(s =>
-            s._id === staff._id
-              ? { ...s, selectedRoute: "", selectedVehicle: "" }
-              : s
-          )
-        );
+                                    setDeliveryStaff(prev =>
+                                      prev.map(s =>
+                                        s._id === staff._id
+                                          ? { ...s, selectedRoute: "", selectedVehicle: "" }
+                                          : s
+                                      )
+                                    );
 
-      } catch (err) {
-        setError(err.response?.data?.message || "Failed to assign route");
-      } finally {
-        setLoading(false);
-      }
-    }}
-  >
-    {loading ? "Assigning..." : "Assign"}
-  </Button>
+                                  } catch (err) {
+                                    setError(err.response?.data?.message || "Failed to assign route");
+                                  } finally {
+                                    setLoading(false);
+                                  }
+                                }}
+                              >
+                                {loading ? "Assigning..." : "Assign"}
+                              </Button>
 
-</div>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -900,11 +900,11 @@ if (!vehicleToSend) {
                         <div>
                           <h6 className="mb-1">{assignment.routeId?.routeName || assignment.routeName}
                             {assignment.vehicleNo && (
-  <small className="text-muted">
-    🚗 {assignment.vehicleNo}
-  </small>
-)}
-                          </h6>
+                              <small className="text-muted">
+                                🚗 {assignment.vehicleNo}
+                              </small>
+                            )}
+                                                      </h6>
                           <p className="mb-0 small text-primary">
                             Assigned to: {assignment.staffId?.name || assignment.staffId}
                           </p>
@@ -1190,236 +1190,408 @@ if (!vehicleToSend) {
 
     
     // Render Live Track Tab
-    const renderLiveTrack = () => {
-      if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
-        return (
-          <Alert color="danger">
-            Data is not available. Please try refreshing the page.
-          </Alert>
-        );
-      }
+  // Render Live Track Tab
+const renderLiveTrack = () => {
+  if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
+    return (
+      <Alert color="danger">
+        Data is not available. Please try refreshing the page.
+      </Alert>
+    );
+  }
 
-      // Get active deliveries (IN_PROGRESS) for selected date
-      const activeDeliveries = routeAssignments
-        .filter(a => a.date === selectedDate && a.status === 'IN_PROGRESS');
-      
-      // Get staff with active deliveries
-      const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
-            activeDeliveries.some(delivery => 
-        String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
-      )
-
-      );
-      
-      const selectedStaffDelivery = selectedTrackStaff
+  // Get active deliveries (IN_PROGRESS) for selected date
+  const activeDeliveries = routeAssignments
+    .filter(a => a.date === selectedDate && a.status === 'IN_PROGRESS');
+  
+  // Get staff with active deliveries
+  const staffWithActiveDeliveries = filteredDeliveryStaff.filter(staff => 
+    activeDeliveries.some(delivery => 
+      String(delivery.staffId?._id || delivery.staffId) === String(staff._id)
+    )
+  );
+  
+  const selectedStaffDelivery = selectedTrackStaff
     ? activeDeliveries.find(delivery =>
         String(delivery.staffId?._id || delivery.staffId) ===
         String(selectedTrackStaff._id)
       )
     : null;
 
-  const liveRouteCustomers = selectedTrackStaff && selectedStaffDelivery
-    ? customers.filter(
-        (c) =>
-          String(c.routeId) ===
-          String(
-            selectedStaffDelivery.routeId?._id ||
-            selectedStaffDelivery.routeId ||
-            selectedStaffDelivery.routeName
-          )
-      )
-    : [];
-
-  const totalCustomers = filterAssignedCustomer?.length || 0;
-
-  const completedCustomers =
-  filterAssignedCustomer?.filter(
-    (c) => c.orderPending === false
-  ).length || 0;
-
-
-  const isRouteCompleted =
-  totalCustomers > 0 && completedCustomers === totalCustomers;
-
+  // Use filterAssignedCustomer for the customer list
+  const displayCustomers = filterAssignedCustomer || [];
+  const totalCustomers = displayCustomers?.length || 0;
   
+  // For delivery, we need to check bills to see which customers are delivered
+  const getCustomerDeliveryStatus = (customer) => {
+    // Find bills for this customer that are delivered
+    const customerBills = bills.filter(
+      bill => String(bill.customerId) === String(customer._id) && 
+              bill.orderStatus === 'delivered'
+    );
+    
+    return {
+      isDelivered: customerBills.length > 0,
+      deliveredAt: customerBills.length > 0 ? customerBills[0].updatedAt : null
+    };
+  };
+
+  const completedCustomers = displayCustomers?.filter((c) => {
+    const { isDelivered } = getCustomerDeliveryStatus(c);
+    return isDelivered;
+  }).length || 0;
+  
+  const isRouteCompleted = totalCustomers > 0 && completedCustomers === totalCustomers;
+
+  // Helper function to calculate time difference between deliveries
+  const calculateTimeBetweenDeliveries = (currentCustomer, allCustomers) => {
+    const { deliveredAt: currentDeliveredAt } = getCustomerDeliveryStatus(currentCustomer);
+    if (!currentDeliveredAt) return null;
+    
+    const deliveredCustomers = allCustomers
+      .map(c => ({
+        ...c,
+        deliveredAt: getCustomerDeliveryStatus(c).deliveredAt
+      }))
+      .filter(c => c.deliveredAt)
+      .sort((a, b) => new Date(a.deliveredAt) - new Date(b.deliveredAt));
+    
+    const currentIndex = deliveredCustomers.findIndex(c => c._id === currentCustomer._id);
+    if (currentIndex <= 0) return null; // First delivered customer
+    
+    const prevCustomer = deliveredCustomers[currentIndex - 1];
+    const prevTime = new Date(prevCustomer.deliveredAt).getTime();
+    const currentTime = new Date(currentDeliveredAt).getTime();
+    const diffMinutes = Math.round((currentTime - prevTime) / (1000 * 60));
+    
+    return {
+      minutes: diffMinutes,
+      fromCustomer: prevCustomer.name,
+      toCustomer: currentCustomer.name
+    };
+  };
+
+  // Calculate warehouse to first customer time using selectedTrackStaff
+  const calculateWarehouseToFirstCustomerTime = () => {
+    // Check if we have selectedTrackStaff with startedAt
+    if (!selectedTrackStaff?.startedAt) {
+      console.log("No startedAt for selectedTrackStaff:", selectedTrackStaff);
+      return null;
+    }
+    
+    // Check if we have customer data
+    if (!displayCustomers || displayCustomers.length === 0) {
+      console.log("No customer data");
+      return null;
+    }
+    
+    // Get delivered customers with their delivery times from bills
+    const deliveredCustomers = displayCustomers
+      .map(c => ({
+        ...c,
+        deliveredAt: getCustomerDeliveryStatus(c).deliveredAt
+      }))
+      .filter(c => c.deliveredAt)
+      .sort((a, b) => new Date(a.deliveredAt) - new Date(b.deliveredAt));
+    
+    if (deliveredCustomers.length === 0) {
+      console.log("No delivered customers yet");
+      return null;
+    }
+    
+    const firstCustomer = deliveredCustomers[0];
+    const startTime = new Date(selectedTrackStaff.startedAt).getTime();
+    const firstDeliveryTime = new Date(firstCustomer.deliveredAt).getTime();
+    
+    console.log("Calculating warehouse to first customer:", {
+      staffName: selectedTrackStaff.name,
+      startedAt: selectedTrackStaff.startedAt,
+      firstCustomer: firstCustomer.name,
+      firstDeliveryTime: firstCustomer.deliveredAt
+    });
+    
+    // If first delivery happened before start time (shouldn't happen, but just in case)
+    if (firstDeliveryTime < startTime) return null;
+    
+    const diffMinutes = Math.round((firstDeliveryTime - startTime) / (1000 * 60));
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    
+    return {
+      minutes: diffMinutes,
+      formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+      startTime: selectedTrackStaff.startedAt,
+      firstDeliveryTime: firstCustomer.deliveredAt,
+      firstCustomerName: firstCustomer.name
+    };
+  };
+
+  // Calculate total route time between first and last delivery
+  const calculateTotalRouteTime = () => {
+    if (!displayCustomers) return null;
+    
+    const deliveredCustomers = displayCustomers
+      .map(c => ({
+        ...c,
+        deliveredAt: getCustomerDeliveryStatus(c).deliveredAt
+      }))
+      .filter(c => c.deliveredAt)
+      .sort((a, b) => new Date(a.deliveredAt) - new Date(b.deliveredAt));
+    
+    if (deliveredCustomers.length < 2) return null;
+    
+    const firstDeliveryTime = new Date(deliveredCustomers[0].deliveredAt).getTime();
+    const lastDeliveryTime = new Date(deliveredCustomers[deliveredCustomers.length - 1].deliveredAt).getTime();
+    const totalMinutes = Math.round((lastDeliveryTime - firstDeliveryTime) / (1000 * 60));
+    
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    return {
+      totalMinutes,
+      formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+      firstCustomer: deliveredCustomers[0].name,
+      lastCustomer: deliveredCustomers[deliveredCustomers.length - 1].name
+    };
+  };
+
+  // Calculate total route duration from start to end (if endedAt exists)
+  const calculateTotalRouteDuration = () => {
+    if (!selectedTrackStaff?.startedAt) return null;
+    
+    const startTime = new Date(selectedTrackStaff.startedAt).getTime();
+    
+    // If staff has endedAt, use that
+    if (selectedTrackStaff?.endedAt) {
+      const endTime = new Date(selectedTrackStaff.endedAt).getTime();
+      const diffMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      
+      return {
+        minutes: diffMinutes,
+        formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        type: 'complete'
+      };
+    }
+    
+    // Otherwise use last delivered customer if available
+    const deliveredCustomers = displayCustomers
+      .map(c => ({
+        ...c,
+        deliveredAt: getCustomerDeliveryStatus(c).deliveredAt
+      }))
+      .filter(c => c.deliveredAt)
+      .sort((a, b) => new Date(a.deliveredAt) - new Date(b.deliveredAt));
+    
+    if (deliveredCustomers.length > 0) {
+      const lastDeliveryTime = new Date(deliveredCustomers[deliveredCustomers.length - 1].deliveredAt).getTime();
+      const diffMinutes = Math.round((lastDeliveryTime - startTime) / (1000 * 60));
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      
+      return {
+        minutes: diffMinutes,
+        formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
+        type: 'partial'
+      };
+    }
+    
+    return null;
+  };
+
+  // Calculate these values only when selectedTrackStaff exists
+  const warehouseToFirstCustomer = selectedTrackStaff ? calculateWarehouseToFirstCustomerTime() : null;
+  const routeTimeStats = calculateTotalRouteTime();
+  const totalDuration = selectedTrackStaff ? calculateTotalRouteDuration() : null;
+
   const getCustomerStatusClass = (status) => {
     switch (status) {
       case "completed":
-        return "text-success";   // Delivered
+        return "text-success";
       case "current":
-        return "text-primary";   // Arriving
+        return "text-primary";
       case "upcoming":
-        return "text-warning";   // Expected
+        return "text-warning";
       default:
         return "text-muted";
     }
   };
+  
   const getRailIcon = (status) => {
     if (status === "completed") {
       return <Icon name="check-circle-fill" className="text-success" />;
     }
 
     if (status === "current") {
-      return selectedTrackStaff?.type === "delivery" ? (
-        <Icon name="truck" className="text-primary" />
-      ) : (
-        <Icon name="truck" className="text-primary" />
-      );
+      return <Icon name="truck" className="text-primary" />;
     }
 
     return <Icon name="clock" className="text-muted" />;
   };
-    const handleRefresh = () => {
-      fetchCustomersByAssignedStaff()
-      fetchCustomers()
-      fetchStaff()
-    };
-      return (
-        <div className="row g-4">
-          <div className="col-12">
-            <PreviewCard>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                  <h5 className="title">Live Delivery Tracking</h5>
-                  <p className="text-soft mb-0">
-                    Track deliveries in real-time on the map
-                  </p>
-                </div>
+  
+  const formatTime = (timestamp) => {
+    if (!timestamp) return null;
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
-                <div className="d-flex gap-2 align-items-end">
-                  <div style={{marginRight : "10px"}} >
-                
-                    <Input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="form-control"
-                    />
-                  </div>
+  const handleRefresh = () => {
+    if (selectedStaffId) {
+      fetchCustomersByAssignedStaff();
+    }
+    fetchCustomers();
+    fetchStaff();
+    fetchBills(); // Make sure to fetch bills to get delivery status
+  };
+  
+  return (
+    <div className="row g-4">
+      <div className="col-12">
+        <PreviewCard>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h5 className="title">Live Delivery Tracking</h5>
+              <p className="text-soft mb-0">
+                Track deliveries in real-time on the map
+              </p>
+            </div>
 
-                  {/* Refresh Button */}
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleRefresh}
-                  >
-                    <FiRefreshCw size={18} />
-                  </button>
-                </div>
+            <div className="d-flex gap-2 align-items-end">
+              <div style={{marginRight : "10px"}} >
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="form-control"
+                />
               </div>
 
-              <div className="row g-1">
-                {/* Left Side - Staff Selection */}
-                <div className="col-lg-2">
-                  <div className="card card-bordered h-100">
-                    <div className="card-inner">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="title">Active Delivery Staff</h6>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <div className="input-group input-group-sm">
-                          
-                          <Input
-                            type="text"
-                            placeholder="Search staff..."
-                            className="form-control form-control-sm"
-                          />
-                        </div>
-                      </div>
+              {/* Refresh Button */}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleRefresh}
+              >
+                <FiRefreshCw size={18} />
+              </button>
+            </div>
+          </div>
 
-
-                      <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                        {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
-                        const staffDelivery = activeDeliveries.find(d =>
-                            String(d.staffId?._id || d.staffId) === String(staff._id)
-                          );
-
-                        const isSelected = selectedTrackStaff?._id === staff._id;
-                          
-                          return (
-                            <div 
-                              key={staff._id}
-                              className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
-                              onClick={() => {
-                                setSelectedTrackStaff(staff);
-                                setSelectedStaffId(staff._id)
-                              }}
-                              style={{ 
-                                cursor: 'pointer',
-                                borderColor: isSelected ? '#6576ff' : '#e5e9f2',
-                                backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.04)' : '#fff'
-                              }}
-                            >
-                              {/* Top Row */}
-                              <div className="d-flex align-items-center justify-content-between">
-                                <div className="d-flex align-items-center">
-                                  <div className="avatar avatar-xxs mr-1 bg-primary me-2 d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '50%' }}>
-                              <span>{staff.name?.charAt(0) || 'S'}</span>
-                            </div>
-
-
-                                  <div className="lh-1">
-                                    <div className="fw-medium fs-13">{staff.name}</div>
-                                    <div className="text-muted fs-11">{staff.phone}</div>
-                                  </div>
-                                </div>
-
-                                {staffDelivery && (
-                                  <Badge
-                                    size="sm"
-                                    color={getStatusBadge(staffDelivery.status)}
-                                    className="fs-10"
-                                  >
-                                    {staffDelivery.status?.replace('_', ' ')}
-                                  </Badge>
-                                )}
-                              </div>
-
-                              {/* Route Info */}
-                              {staffDelivery && (
-                                <div className="mt-1">
-                                  <small className="text-muted fs-11">
-                                    Route:
-                                    <span className="fw-medium text-dark ms-1">
-                                      {staffDelivery.routeName}
-                                    </span>
-                                  </small>
-                                </div>
-                              )}
-
-                            
-                            </div>
-
-                          );
-                        })}
-                        
-                        {(!showAllStaff && staffWithActiveDeliveries.length === 0) && (
-                          <div className="text-center py-5">
-                            <Icon name="clock" className="icon-xl text-muted mb-3"></Icon>
-                            <p className="text-muted">No active deliveries</p>
-                            <Button 
-                              color="primary" 
-                              size="sm" 
-                              onClick={() => setShowAllStaff(true)}
-                            >
-                              Show All Staff
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+          <div className="row g-1">
+            {/* Left Side - Staff Selection */}
+            <div className="col-lg-2">
+              <div className="card card-bordered h-100">
+                <div className="card-inner">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="title">Active Delivery Staff</h6>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="input-group input-group-sm">
+                      <Input
+                        type="text"
+                        placeholder="Search staff..."
+                        className="form-control form-control-sm"
+                      />
                     </div>
                   </div>
+
+                  <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                    {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
+                      const staffDelivery = activeDeliveries.find(d =>
+                        String(d.staffId?._id || d.staffId) === String(staff._id)
+                      );
+
+                      const isSelected = selectedTrackStaff?._id === staff._id;
+                      
+                      return (
+                        <div 
+                          key={staff._id}
+                          className={`staff-card mb-2 p-2 border rounded cursor-pointer ${isSelected ? 'selected-staff' : ''}`}
+                          onClick={() => {
+                            setSelectedTrackStaff(staff);
+                            setSelectedStaffId(staff._id);
+                          }}
+                          style={{ 
+                            cursor: 'pointer',
+                            borderColor: isSelected ? '#6576ff' : '#e5e9f2',
+                            backgroundColor: isSelected ? 'rgba(101, 118, 255, 0.04)' : '#fff'
+                          }}
+                        >
+                          {/* Top Row */}
+                          <div className="d-flex align-items-center justify-content-between">
+                            <div className="d-flex align-items-center">
+                              <div className="avatar avatar-xxs mr-1 bg-primary me-2 d-flex align-items-center justify-content-center" style={{ width: '20px', height: '20px', borderRadius: '50%' }}>
+                                <span>{staff.name?.charAt(0) || 'S'}</span>
+                              </div>
+
+                              <div className="lh-1">
+                                <div className="fw-medium fs-13">{staff.name}</div>
+                                <div className="text-muted fs-11">{staff.phone}</div>
+                              </div>
+                            </div>
+
+                            {staffDelivery && (
+                              <Badge
+                                size="sm"
+                                color={getStatusBadge(staffDelivery.status)}
+                                className="fs-10"
+                              >
+                                {staffDelivery.status?.replace('_', ' ')}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Route Info */}
+                          {staffDelivery && (
+                            <div className="mt-1">
+                              <small className="text-muted fs-11">
+                                Route:
+                                <span className="fw-medium text-dark ms-1">
+                                  {staffDelivery.routeName}
+                                </span>
+                              </small>
+                              {staff.startedAt && (
+                                <small className="text-muted fs-11 d-block">
+                                  Started: {formatTime(staff.startedAt)}
+                                </small>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {(!showAllStaff && staffWithActiveDeliveries.length === 0) && (
+                      <div className="text-center py-5">
+                        <Icon name="clock" className="icon-xl text-muted mb-3"></Icon>
+                        <p className="text-muted">No active deliveries</p>
+                        <Button 
+                          color="primary" 
+                          size="sm" 
+                          onClick={() => setShowAllStaff(true)}
+                        >
+                          Show All Staff
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </div>
+            </div>
 
             <div className="col-lg-6">
               <div className="card card-bordered h-100">
                 <div className="card-inner">
-
                   {/* HEADER */}
                   <div className="mb-3">
                     <h6 className="title">
-                    {selectedTrackStaff ? (
+                      {selectedTrackStaff ? (
                         <>
                           Tracking: {selectedTrackStaff.name}
                           <span className="text-muted ml-1 ms-2">
@@ -1429,7 +1601,6 @@ if (!vehicleToSend) {
                       ) : (
                         "Live Map View (All Staff)"
                       )}
-
 
                       {selectedTrackStaff && selectedStaffDelivery && (
                         <Badge color="primary" className="ms-2">
@@ -1448,15 +1619,23 @@ if (!vehicleToSend) {
                         ).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
-                          hour12: true, // remove if you want 24-hour format
+                          hour12: true,
                         })}
                       </p>
+                    )}
+                    
+                    {/* Debug info - remove in production */}
+                    {selectedTrackStaff && (
+                      <div className="small text-muted mt-1">
+                        <div>Started: {selectedTrackStaff.startedAt ? formatTime(selectedTrackStaff.startedAt) : 'Not started'}</div>
+                        <div>First delivery time: {warehouseToFirstCustomer ? warehouseToFirstCustomer.formatted : 'Not available'}</div>
+                      </div>
                     )}
                   </div>
 
                   <CustomerLiveMap
                     staff={selectedTrackStaff ? { ...selectedTrackStaff, location: liveLocation } : null}
-                    customers={filterAssignedCustomer}
+                    customers={displayCustomers}
                     selectedCustomer={selectedCustomerForMap}
                     travelMode="DRIVING"
                   />
@@ -1464,15 +1643,13 @@ if (!vehicleToSend) {
               </div>
             </div>
 
-                        
-                <div className="col-lg-4">
-                <div className="card card-bordered h-100">
-                  <div className="card-inner">
-
-                    {/* HEADER */}
-                    <div className="mb-3">
-                      <div className="mb-1">
-    {/* FIRST LINE */}
+            <div className="col-lg-4">
+              <div className="card card-bordered h-100">
+                <div className="card-inner">
+                  {/* HEADER */}
+                  <div className="mb-3">
+                    <div className="mb-1">
+                      {/* FIRST LINE */}
                       <h6 className="title d-flex align-items-center mb-0">
                         <span
                           className="me-1"
@@ -1481,156 +1658,247 @@ if (!vehicleToSend) {
                           {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
                         </span>
 
-                        {selectedTrackStaff?.type === "delivery"
-                          ? "Delivery Vehicle"
-                          : "Sales Vehicle"}{" "}
-                        – Route #{selectedStaffDelivery?.routeCode || "DL-204"}
+                        Delivery Vehicle{" "}
+                        <Badge
+                          color={isRouteCompleted ? "success" : "primary"}
+                          className="fs-11 ms-2"
+                        >
+                          Status : {isRouteCompleted ? "Completed" : "Running"}
+                        </Badge>
                       </h6>
 
-                      {/* SECOND LINE */}
-                      <div className="mt-1">
-                        <Badge
-                    color={isRouteCompleted ? "success" : "primary"}
-                    className="fs-11"
-                  >
-                    Status : {isRouteCompleted ? "Completed" : "Running"}
-                  </Badge>
-
-                      </div>
-                    </div>
-
-
-
-                      <small className="text-muted">
-                        Started 08:30 • ETA 12:30 • 65 km
-                      </small>
-                    </div>
-
-                    {/* RAIL STATUS */}
-                
-
-                    <div className="rail-status">
-                      {/* START POINT */}
-                      <div className="rail-row completed">
-                        <div className="rail-left">
-                          <div className="rail-dot"></div>
-                          <div className="rail-line"></div>
-                        </div>
-                        <div className="rail-content">
-                          <div className="d-flex justify-content-between">
-                            <strong>Central Warehouse</strong>
-                            <span className="time">08:30</span>
+                      {/* Time Statistics */}
+                      <div className="mt-2">
+                        {/* {warehouseToFirstCustomer && (
+                          <div className="small text-primary mb-1">
+                            <FiRefreshCw size={12} className="me-1" />
+                            <span className="fw-medium">Warehouse to 1st:</span> {warehouseToFirstCustomer.formatted}
                           </div>
-                          <small className="text-muted">
-                            Trip Started • 0 km
-                          </small>
-                        </div>
+                        )}
+                        
+                        {routeTimeStats && (
+                          <div className="small text-info mb-1">
+                            <FiRefreshCw size={12} className="me-1" />
+                            <span className="fw-medium">Time between deliveries:</span> {routeTimeStats.formatted}
+                          </div>
+                        )} */}
+
+                        {/* {totalDuration && (
+                          <div className="small text-success mb-1">
+                            <FiRefreshCw size={12} className="me-1" />
+                            <span className="fw-medium">Total duration:</span> {totalDuration.formatted}
+                          </div>
+                        )} */}
                       </div>
-                    
-                      {/* CUSTOMERS */}
-                      {filterAssignedCustomer
-                        .sort((a, b) => a.lineNo - b.lineNo)
-                        .map((customer, index) => {
-                          const isActiveCustomer =
-                                selectedCustomerForMap?._id === customer._id;
-                                                    let rowStatus = "upcoming";
+                    </div>
 
-                            if (customer.orderPending === false) {
-                              rowStatus = "completed";
-                            } else if (customer.orderPending === true) {
-                              const hasPreviousPending = assinedCustomerDatas
-                                .sort((a, b) => a.lineNo - b.lineNo)
-                                .some(
-                                  (c) =>
-                                    c.lineNo < customer.lineNo &&
-                                    c.orderPending === true
-                                );
+                    <small className="text-muted d-block mt-2">
+                      {selectedTrackStaff?.startedAt && (
+                        <span className="me-3">
+                          <span className="fw-medium">Started:</span> {formatTime(selectedTrackStaff.startedAt)}
+                        </span>
+                      )}
+                      {selectedTrackStaff?.endedAt && (
+                        <span className="me-3">
+                          <span className="fw-medium">Ended:</span> {formatTime(selectedTrackStaff.endedAt)}
+                        </span>
+                      )}
+                      {/* <span className="me-3">
+                        <span className="fw-medium">Distance:</span> 65 km
+                      </span> */}
+                    </small>
+                  </div>
 
-                              if (!hasPreviousPending) {
-                                rowStatus = "current";
+                  {/* RAIL STATUS */}
+                  <div className="rail-status">
+                    {/* START POINT - Warehouse */}
+                    <div className="rail-row completed">
+                      <div className="rail-left">
+                        <div className="rail-dot"></div>
+                        <div className="rail-line"></div>
+                      </div>
+                      <div className="rail-content">
+                        <div className="d-flex justify-content-between">
+                          <strong>Central Warehouse</strong>
+                          <span className="time">
+                            {selectedTrackStaff?.startedAt 
+                              ? formatTime(selectedTrackStaff.startedAt) 
+                              : '--:--'}
+                          </span>
+                        </div>
+                        <small className="text-muted">
+                          Trip Started • 0 km
+                          {warehouseToFirstCustomer && (
+                            <span className="text-primary ms-2">
+                              → 1st in {warehouseToFirstCustomer.formatted}
+                            </span>
+                          )}
+                        </small>
+                      </div>
+                    </div>
+
+                    {/* CUSTOMERS */}
+                    {displayCustomers
+                      .sort((a, b) => a.lineNo - b.lineNo)
+                      .map((customer, index) => {
+                        const isActiveCustomer = selectedCustomerForMap?._id === customer._id;
+                        const { isDelivered, deliveredAt } = getCustomerDeliveryStatus(customer);
+                        
+                        let rowStatus = "upcoming";
+
+                        if (isDelivered) {
+                          rowStatus = "completed";
+                        } else {
+                          const hasPreviousPending = displayCustomers
+                            .sort((a, b) => a.lineNo - b.lineNo)
+                            .some(
+                              (c) => {
+                                const { isDelivered: prevDelivered } = getCustomerDeliveryStatus(c);
+                                return c.lineNo < customer.lineNo && !prevDelivered;
                               }
-                            }
+                            );
 
-                          return (
-                            <div
-                              className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
-                              key={customer._id}
-                              onClick={() => setSelectedCustomerForMap(customer)}
-                            >
-
-                              <div className="rail-left">
-                                {rowStatus === "current" ? (
-                                  <div className="rail-van">
-                                    <div className="rail-icon">
+                          if (!hasPreviousPending) {
+                            rowStatus = "current";
+                          }
+                        }
+                        
+                        // Calculate time between deliveries
+                        const timeBetweenDeliveries = rowStatus === "completed" 
+                          ? calculateTimeBetweenDeliveries(customer, displayCustomers)
+                          : null;
+                        
+                        // Check if this is the first customer (by lineNo) and it's delivered
+                        const isFirstCustomer = index === 0 && rowStatus === "completed" && warehouseToFirstCustomer;
+                        
+                        return (
+                          <div
+                            className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+                            key={customer._id}
+                            onClick={() => setSelectedCustomerForMap(customer)}
+                          >
+                            <div className="rail-left">
+                              {rowStatus === "current" ? (
+                                <div className="rail-van">
+                                  <div className="rail-icon">
                                     {getRailIcon(rowStatus)}
                                   </div>
+                                </div>
+                              ) : (
+                                <div className="rail-dot"></div>
+                              )}
 
-                                  </div>
-                                ) : (
-                                  <div className="rail-dot"></div>
-                                )}
+                              {index !== displayCustomers.length - 1 && (
+                                <div className="rail-line"></div>
+                              )}
+                            </div>
 
-                                {index !== assinedCustomerDatas.length - 1 && (
-                                  <div className="rail-line"></div>
-                                )}
-                              </div>
-
-                              <div className="rail-content">
-                                <div className="d-flex justify-content-between">
-                                  <strong>{customer.name}</strong>
-                                  <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
+                            <div className="rail-content">
+                              <div className="d-flex justify-content-between">
+                                <div>
+                                  <strong>
+                                    {customer.name}
+                                    {isFirstCustomer && (
+                                      <Badge color="primary" className="ms-2 ml-2" pill>
+                                        ⏱️ +{warehouseToFirstCustomer.formatted}
+                                      </Badge>
+                                    )}
+                                    {timeBetweenDeliveries && !isFirstCustomer && (
+                                      <Badge color="info" className="ms-2 ml-2" pill>
+                                        ⏱️ +{timeBetweenDeliveries.minutes}m
+                                      </Badge>
+                                    )}
+                                  </strong>
+                                </div>
+                                <div className="text-end">
+                                  <span className={`time ${getCustomerStatusClass(rowStatus)} d-block`}>
                                     {rowStatus === "completed" && "Delivered"}
                                     {rowStatus === "current" && "Arriving"}
                                     {rowStatus === "upcoming" && "Expected"}
                                   </span>
                                 </div>
+                              </div>
 
-                                <small
-                                  className={
-                                    rowStatus === "current" ? "text-primary" : "text-muted"
-                                  }
-                                >
+                              <div className="d-flex justify-content-between align-items-center mt-1">
+                                <small className={rowStatus === "current" ? "text-primary" : "text-muted"}>
                                   Line No: {customer.lineNo} • {customer.routeName}
                                 </small>
+                                
+                                {rowStatus === "completed" && deliveredAt && (
+                                  <span className="text-muted small">
+                                    {formatTime(deliveredAt)}
+                                  </span>
+                                )}
                               </div>
+
+                              {/* Show warehouse to first customer detail */}
+                              {/* {isFirstCustomer && (
+                                <div className="mt-1 small text-primary">
+                                  <FiRefreshCw size={12} className="me-1" />
+                                  From warehouse: {warehouseToFirstCustomer.formatted}
+                                  <span className="text-muted ms-2">
+                                    (Started: {formatTime(selectedTrackStaff?.startedAt)})
+                                  </span>
+                                </div>
+                              )} */}
+
+                              {/* Show time from previous customer */}
+                              {/* {timeBetweenDeliveries && timeBetweenDeliveries.minutes > 0 && !isFirstCustomer && (
+                                <div className="mt-1 small text-info">
+                                  <FiRefreshCw size={12} className="me-1" />
+                                  From {timeBetweenDeliveries.fromCustomer}: {timeBetweenDeliveries.minutes}m
+                                </div>
+                              )} */}
                             </div>
-                          );
-                        })}
-
-                      {/* END POINT */}
-                        
-
-                      <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
-                        <div className="rail-left">
-                          <div className="rail-dot"></div>
-                        </div>
-                        <div className="rail-content">
-                          <div className="d-flex justify-content-between">
-                            <strong>Route End (Warehouse)</strong>
-                            <span className="time">12:30</span>
                           </div>
-                          <small className="text-muted">
-                            Trip Completion
-                          </small>
-                        </div>
+                        );
+                      })}
+
+                    {/* END POINT - Warehouse */}
+                    <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
+                      <div className="rail-left">
+                        <div className="rail-dot"></div>
                       </div>
-                      {isRouteCompleted && (
-                        <div className="alert alert-success py-2 mb-3">
-                          🎉 All Customers Delivered – Route Completed Successfully
+                      <div className="rail-content">
+                        <div className="d-flex justify-content-between">
+                          <strong>Route End (Warehouse)</strong>
+                          <span className="time">
+                            {selectedTrackStaff?.endedAt 
+                              ? formatTime(selectedTrackStaff.endedAt) 
+                              : '--:--'}
+                          </span>
                         </div>
-                      )}
+                        <small className="text-muted">
+                          Trip Completion
+                          {totalDuration && (
+                            <span className="text-success ms-2">
+                              Total: {totalDuration.formatted}
+                            </span>
+                          )}
+                        </small>
+                      </div>
                     </div>
 
+                    {isRouteCompleted && (
+                      <div className="alert alert-success py-2 mb-3">
+                        🎉 All Customers Delivered – Route Completed Successfully
+                        {totalDuration && (
+                          <span className="d-block mt-1 small">
+                            Total time: {totalDuration.formatted}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </PreviewCard>
-        </div>
+          </div>
+        </PreviewCard>
       </div>
-    );
-  };
-
+    </div>
+  );
+};
 
   if (loading && routes.length === 0 && routeAssignments.length === 0) {
     return (
