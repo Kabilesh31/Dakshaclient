@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { errorToast, successToast } from "../../utils/toaster";
 import "./Login.css";
-
+import Logo from "../../assets/images/image.png"
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [passState, setPassState] = useState(false);
@@ -115,9 +115,7 @@ const Login = () => {
               <div className="hero-text">
                 <div className="hero-logo">
                   {/* <span className="hero-logo-icon">📊</span> */}
-                  <h1 className="hero-title">
-                    Retail<span className="hero-highlight">Pulse</span>
-                  </h1>
+                 <img src={Logo}></img>
                 </div>
                 {/* <h2 className="hero-subtitle">
                   Where Data Meets Retail Excellence
