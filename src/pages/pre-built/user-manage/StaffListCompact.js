@@ -433,6 +433,12 @@ const exportToExcel = () => {
                     Email
                   </span>
                 </DataTableRow>
+                 <DataTableRow>
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Mobile
+                  </span>
+                </DataTableRow>
+
                 <DataTableRow>
                   <span style={{ fontWeight: "bold" }} className="sub-text">
                     Duty
@@ -474,13 +480,19 @@ const exportToExcel = () => {
 
                   </DataTableRow>
 
-                  <DataTableRow>
-                    <Link className="tb-lead" to={`${process.env.PUBLIC_URL}/staff/${item._id}`}>
-                      {item.name}
-                    </Link>
-                  </DataTableRow>
+                 <DataTableRow>
+  <Link
+    className="tb-lead"
+    to={`${process.env.PUBLIC_URL}/staff/${item._id}`}
+  >
+    {item.name && item.name.length > 20
+      ? item.name.slice(0, 20) + "..."
+      : item.name}
+  </Link>
+</DataTableRow>
 
                   <DataTableRow>{item.email}</DataTableRow>
+                  <DataTableRow>{item.mobile}</DataTableRow>
                   <DataTableRow>
                     <span className={`tb-status text-${item.dutyStatus === "active" ? "success" : "danger"}`}>
                       {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
@@ -566,23 +578,38 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Add Staff</h5>
             <Form className="row gy-4" onSubmit={onAddSubmit}>
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">* Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter Name"
-                    value={formData.name}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const capitalized = value.charAt(0).toUpperCase() + value.slice(1);
-                      setFormData({ ...formData, name: capitalized });
-                    }}
-                    required
-                  />
-                </FormGroup>
-              </Col>
+             <Col md="6">
+  <FormGroup>
+    <label className="form-label">* Name</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Name"
+      value={formData.name}
+      onChange={(e) => {
+        let value = e.target.value;
+
+        // Allow only letters, dot and space
+        value = value.replace(/[^a-zA-Z.\s]/g, "");
+
+        // Allow only one space total
+        const spaceCount = (value.match(/\s/g) || []).length;
+        if (spaceCount > 1) return;
+
+        // Prevent space at beginning
+        if (value.startsWith(" ")) return;
+
+        // Capitalize first letter
+        if (value.length > 0) {
+          value = value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
+        setFormData({ ...formData, name: value });
+      }}
+      required
+    />
+  </FormGroup>
+</Col>
 
               <Col md="6">
                 <FormGroup>
@@ -773,19 +800,38 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Edit Staff</h5>
             <Form className="row gy-4" onSubmit={onEditSubmit}>
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">* Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter Name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </FormGroup>
-              </Col>
+             <Col md="6">
+  <FormGroup>
+    <label className="form-label">* Name</label>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Enter Name"
+      value={formData.name}
+      onChange={(e) => {
+        let value = e.target.value;
+
+        // Allow only letters, dot and space
+        value = value.replace(/[^a-zA-Z.\s]/g, "");
+
+        // Prevent space at beginning
+        if (value.startsWith(" ")) return;
+
+        // Allow only one space total
+        const spaces = (value.match(/\s/g) || []).length;
+        if (spaces > 1) return;
+
+        // Capitalize first letter
+        if (value.length > 0) {
+          value = value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
+        setFormData({ ...formData, name: value });
+      }}
+      required
+    />
+  </FormGroup>
+</Col>
 
               <Col md="6">
                 <FormGroup>

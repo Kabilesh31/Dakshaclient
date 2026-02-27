@@ -688,12 +688,21 @@ const assignedVehicleNumbers = routeAssignments
                             <div className="d-flex align-items-center">
                               <div className="user-avatar bg-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                  <img
-                                    src={staff.img}
-                                    alt="profile"
-                                    style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
-                                  />
-                                </div>
+  <img
+    src={staff.img ? staff.img : "/default-avatar.png"}
+    alt="profile"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = "/default-avatar";
+    }}
+    style={{
+      width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      objectFit: "cover"
+    }}
+  />
+</div>
                               </div>
                               <div>
                                 <div className="fw-bold">{staff.name}</div>
@@ -1628,7 +1637,7 @@ const renderLiveTrack = () => {
                     {selectedTrackStaff && (
                       <div className="small text-muted mt-1">
                         <div>Started: {selectedTrackStaff.startedAt ? formatTime(selectedTrackStaff.startedAt) : 'Not started'}</div>
-                        <div>First delivery time: {warehouseToFirstCustomer ? warehouseToFirstCustomer.formatted : 'Not available'}</div>
+                        {/* <div>First delivery time: {warehouseToFirstCustomer ? warehouseToFirstCustomer.formatted : 'Not available'}</div> */}
                       </div>
                     )}
                   </div>
@@ -1710,186 +1719,149 @@ const renderLiveTrack = () => {
                   </div>
 
                   {/* RAIL STATUS */}
-                  <div className="rail-status">
-                    {/* START POINT - Warehouse */}
-                    <div className="rail-row completed">
-                      <div className="rail-left">
-                        <div className="rail-dot"></div>
-                        <div className="rail-line"></div>
-                      </div>
-                      <div className="rail-content">
-                        <div className="d-flex justify-content-between">
-                          <strong>Central Warehouse</strong>
-                          <span className="time">
-                            {selectedTrackStaff?.startedAt 
-                              ? formatTime(selectedTrackStaff.startedAt) 
-                              : '--:--'}
-                          </span>
-                        </div>
-                        <small className="text-muted">
-                          Trip Started • 0 km
-                          {warehouseToFirstCustomer && (
-                            <span className="text-primary ms-2">
-                              → 1st in {warehouseToFirstCustomer.formatted}
-                            </span>
-                          )}
-                        </small>
-                      </div>
-                    </div>
+                  {/* RAIL STATUS */}
+{!displayCustomers || displayCustomers.length === 0 ? (
+  <div className="text-center py-5">
+    <div style={{ fontSize: "40px" }}>📍</div>
+    <h6 className="mt-3 mb-1">No Routes Assigned</h6>
+    <p className="text-muted mb-0">
+      This staff has no routes assigned for today.
+    </p>
+  </div>
+) : (
+  <div className="rail-status">
 
-                    {/* CUSTOMERS */}
-                    {displayCustomers
-                      .sort((a, b) => a.lineNo - b.lineNo)
-                      .map((customer, index) => {
-                        const isActiveCustomer = selectedCustomerForMap?._id === customer._id;
-                        const { isDelivered, deliveredAt } = getCustomerDeliveryStatus(customer);
-                        
-                        let rowStatus = "upcoming";
+    {/* START POINT - Warehouse */}
+    <div className="rail-row completed">
+      <div className="rail-left">
+        <div className="rail-dot"></div>
+        <div className="rail-line"></div>
+      </div>
+      <div className="rail-content">
+        <div className="d-flex justify-content-between">
+          <strong>Central Warehouse</strong>
+          <span className="time">
+            {selectedTrackStaff?.startedAt 
+              ? formatTime(selectedTrackStaff.startedAt) 
+              : '--:--'}
+          </span>
+        </div>
+        <small className="text-muted">
+          Trip Started • 0 km
+        </small>
+      </div>
+    </div>
 
-                        if (isDelivered) {
-                          rowStatus = "completed";
-                        } else {
-                          const hasPreviousPending = displayCustomers
-                            .sort((a, b) => a.lineNo - b.lineNo)
-                            .some(
-                              (c) => {
-                                const { isDelivered: prevDelivered } = getCustomerDeliveryStatus(c);
-                                return c.lineNo < customer.lineNo && !prevDelivered;
-                              }
-                            );
+    {/* CUSTOMERS */}
+    {displayCustomers
+      .sort((a, b) => a.lineNo - b.lineNo)
+      .map((customer, index) => {
+        const isActiveCustomer = selectedCustomerForMap?._id === customer._id;
+        const { isDelivered, deliveredAt } = getCustomerDeliveryStatus(customer);
 
-                          if (!hasPreviousPending) {
-                            rowStatus = "current";
-                          }
-                        }
-                        
-                        // Calculate time between deliveries
-                        const timeBetweenDeliveries = rowStatus === "completed" 
-                          ? calculateTimeBetweenDeliveries(customer, displayCustomers)
-                          : null;
-                        
-                        // Check if this is the first customer (by lineNo) and it's delivered
-                        const isFirstCustomer = index === 0 && rowStatus === "completed" && warehouseToFirstCustomer;
-                        
-                        return (
-                          <div
-                            className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
-                            key={customer._id}
-                            onClick={() => setSelectedCustomerForMap(customer)}
-                          >
-                            <div className="rail-left">
-                              {rowStatus === "current" ? (
-                                <div className="rail-van">
-                                  <div className="rail-icon">
-                                    {getRailIcon(rowStatus)}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="rail-dot"></div>
-                              )}
+        let rowStatus = "upcoming";
 
-                              {index !== displayCustomers.length - 1 && (
-                                <div className="rail-line"></div>
-                              )}
-                            </div>
+        if (isDelivered) {
+          rowStatus = "completed";
+        } else {
+          const hasPreviousPending = displayCustomers
+            .sort((a, b) => a.lineNo - b.lineNo)
+            .some((c) => {
+              const { isDelivered: prevDelivered } = getCustomerDeliveryStatus(c);
+              return c.lineNo < customer.lineNo && !prevDelivered;
+            });
 
-                            <div className="rail-content">
-                              <div className="d-flex justify-content-between">
-                                <div>
-                                  <strong>
-                                    {customer.name}
-                                    {isFirstCustomer && (
-                                      <Badge color="primary" className="ms-2 ml-2" pill>
-                                        ⏱️ +{warehouseToFirstCustomer.formatted}
-                                      </Badge>
-                                    )}
-                                    {timeBetweenDeliveries && !isFirstCustomer && (
-                                      <Badge color="info" className="ms-2 ml-2" pill>
-                                        ⏱️ +{timeBetweenDeliveries.minutes}m
-                                      </Badge>
-                                    )}
-                                  </strong>
-                                </div>
-                                <div className="text-end">
-                                  <span className={`time ${getCustomerStatusClass(rowStatus)} d-block`}>
-                                    {rowStatus === "completed" && "Delivered"}
-                                    {rowStatus === "current" && "Arriving"}
-                                    {rowStatus === "upcoming" && "Expected"}
-                                  </span>
-                                </div>
-                              </div>
+          if (!hasPreviousPending) {
+            rowStatus = "current";
+          }
+        }
 
-                              <div className="d-flex justify-content-between align-items-center mt-1">
-                                <small className={rowStatus === "current" ? "text-primary" : "text-muted"}>
-                                  Line No: {customer.lineNo} • {customer.routeName}
-                                </small>
-                                
-                                {rowStatus === "completed" && deliveredAt && (
-                                  <span className="text-muted small">
-                                    {formatTime(deliveredAt)}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Show warehouse to first customer detail */}
-                              {/* {isFirstCustomer && (
-                                <div className="mt-1 small text-primary">
-                                  <FiRefreshCw size={12} className="me-1" />
-                                  From warehouse: {warehouseToFirstCustomer.formatted}
-                                  <span className="text-muted ms-2">
-                                    (Started: {formatTime(selectedTrackStaff?.startedAt)})
-                                  </span>
-                                </div>
-                              )} */}
-
-                              {/* Show time from previous customer */}
-                              {/* {timeBetweenDeliveries && timeBetweenDeliveries.minutes > 0 && !isFirstCustomer && (
-                                <div className="mt-1 small text-info">
-                                  <FiRefreshCw size={12} className="me-1" />
-                                  From {timeBetweenDeliveries.fromCustomer}: {timeBetweenDeliveries.minutes}m
-                                </div>
-                              )} */}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                    {/* END POINT - Warehouse */}
-                    <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
-                      <div className="rail-left">
-                        <div className="rail-dot"></div>
-                      </div>
-                      <div className="rail-content">
-                        <div className="d-flex justify-content-between">
-                          <strong>Route End (Warehouse)</strong>
-                          <span className="time">
-                            {selectedTrackStaff?.endedAt 
-                              ? formatTime(selectedTrackStaff.endedAt) 
-                              : '--:--'}
-                          </span>
-                        </div>
-                        <small className="text-muted">
-                          Trip Completion
-                          {totalDuration && (
-                            <span className="text-success ms-2">
-                              Total: {totalDuration.formatted}
-                            </span>
-                          )}
-                        </small>
-                      </div>
-                    </div>
-
-                    {isRouteCompleted && (
-                      <div className="alert alert-success py-2 mb-3">
-                        🎉 All Customers Delivered – Route Completed Successfully
-                        {totalDuration && (
-                          <span className="d-block mt-1 small">
-                            Total time: {totalDuration.formatted}
-                          </span>
-                        )}
-                      </div>
-                    )}
+        return (
+          <div
+            className={`rail-row ${rowStatus} ${isActiveCustomer ? "active-customer" : ""}`}
+            key={customer._id}
+            onClick={() => setSelectedCustomerForMap(customer)}
+          >
+            <div className="rail-left">
+              {rowStatus === "current" ? (
+                <div className="rail-van">
+                  <div className="rail-icon">
+                    {getRailIcon(rowStatus)}
                   </div>
+                </div>
+              ) : (
+                <div className="rail-dot"></div>
+              )}
+
+              {index !== displayCustomers.length - 1 && (
+                <div className="rail-line"></div>
+              )}
+            </div>
+
+            <div className="rail-content">
+              <div className="d-flex justify-content-between">
+                <strong>{customer.name}</strong>
+                <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
+                  {rowStatus === "completed" && "Delivered"}
+                  {rowStatus === "current" && "Arriving"}
+                  {rowStatus === "upcoming" && "Expected"}
+                </span>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center mt-1">
+                <small className={rowStatus === "current" ? "text-primary" : "text-muted"}>
+                  Line No: {customer.lineNo} • {customer.routeName}
+                </small>
+
+                {rowStatus === "completed" && deliveredAt && (
+                  <span className="text-muted small">
+                    {formatTime(deliveredAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+    {/* END POINT - Warehouse */}
+    <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
+      <div className="rail-left">
+        <div className="rail-dot"></div>
+      </div>
+      <div className="rail-content">
+        <div className="d-flex justify-content-between">
+          <strong>Route End (Warehouse)</strong>
+          <span className="time">
+            {selectedTrackStaff?.endedAt 
+              ? formatTime(selectedTrackStaff.endedAt) 
+              : '--:--'}
+          </span>
+        </div>
+        <small className="text-muted">
+          Trip Completion
+          {totalDuration && (
+            <span className="text-success ms-2">
+              Total: {totalDuration.formatted}
+            </span>
+          )}
+        </small>
+      </div>
+    </div>
+
+    {isRouteCompleted && (
+      <div className="alert alert-success py-2 mb-3">
+        🎉 All Customers Delivered – Route Completed Successfully
+        {totalDuration && (
+          <span className="d-block mt-1 small">
+            Total time: {totalDuration.formatted}
+          </span>
+        )}
+      </div>
+    )}
+
+  </div>
+)}
                 </div>
               </div>
             </div>

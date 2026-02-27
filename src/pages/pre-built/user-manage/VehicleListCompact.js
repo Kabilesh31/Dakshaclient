@@ -34,6 +34,7 @@ import Dropzone from "react-dropzone";
 import DatePicker from "react-datepicker";
 import axios from "axios";
 import DataContext from "../../../utils/DataContext";
+import "./vehicle-details.css";
 import { successToast, errorToast } from "../../../utils/toaster";
 import { Link } from "react-router-dom/cjs/react-router-dom.min";
 
@@ -607,10 +608,13 @@ const isExpiringSoon = (date, days = 7) => {
   type="text"
   placeholder="Enter Vehicle Number"
   value={formData.vehicleNumber}
+  maxLength={10}   // ✅ limit to 10 chars
   onChange={(e) => {
     let value = e.target.value
       .toUpperCase()
-      .replace(/[^A-Z0-9\s]/g, ""); // Allow only letters, numbers, space
+      .replace(/[^A-Z0-9\s]/g, "");
+
+    if (value.length > 10) return;   // extra safety
 
     setFormData({
       ...formData,
@@ -625,21 +629,24 @@ const isExpiringSoon = (date, days = 7) => {
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Vehicle Type</label>
-                  <input
+                  <select
   className="form-control"
-  type="text"
-  placeholder="Enter Vehicle Type"
   value={formData.vehicleType}
-  onChange={(e) => {
-    let value = e.target.value.replace(/[^a-zA-Z\s]/g, ""); // Letters + space only
-
+  onChange={(e) =>
     setFormData({
       ...formData,
-      vehicleType: value,
-    });
-  }}
+      vehicleType: e.target.value,
+    })
+  }
   required
-/>
+>
+  <option value="">Select Vehicle Type</option>
+  <option value="Car">Car</option>
+  <option value="Van">Van</option>
+  <option value="Truck">Truck</option>
+  <option value="Bike">Bike</option>
+  <option value="Auto">Auto</option>
+</select>
   
                 </FormGroup>
               </Col>
@@ -774,26 +781,48 @@ const isExpiringSoon = (date, days = 7) => {
                 <FormGroup>
                   <label className="form-label">* Vehicle Number</label>
                   <input
-                    className="form-control"
-                    type="text"
-                    placeholder="Enter Vehicle Number"
-                    value={formData.vehicleNumber}
-                    onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-                    required
-                  />
+  className="form-control"
+  type="text"
+  placeholder="Enter Vehicle Number"
+  value={formData.vehicleNumber}
+  maxLength={10}   // ✅ limit
+  onChange={(e) => {
+    let value = e.target.value
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, "");
+
+    if (value.length > 10) return;
+
+    setFormData({
+      ...formData,
+      vehicleNumber: value,
+    });
+  }}
+  required
+/>
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Vehicle Type</label>
-                  <input
-                    className="form-control"
-                    type="text"
-                    placeholder="Enter Vehicle Type"
-                    value={formData.vehicleType}
-                    onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-                    required
-                  />
+                 <select
+  className="form-control"
+  value={formData.vehicleType}
+  onChange={(e) =>
+    setFormData({
+      ...formData,
+      vehicleType: e.target.value,
+    })
+  }
+  required
+>
+  <option value="">Select Vehicle Type</option>
+  <option value="Car">Car</option>
+  <option value="Van">Van</option>
+  <option value="Truck">Truck</option>
+  <option value="Bike">Bike</option>
+  <option value="Auto">Auto</option>
+</select>
                 </FormGroup>
               </Col>
               <Col md="6">
@@ -855,13 +884,13 @@ const isExpiringSoon = (date, days = 7) => {
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">FC Upto</label>
-                  <DatePicker
-                    selected={formData.fcUpto}
-                    className="form-control"
-                    onChange={(d) => setFormData({ ...formData, fcUpto: d })}
-                    placeholderText="FC Upto"
-                    required
-                  />
+                 <DatePicker
+  selected={formData.fcUpto}
+  onChange={(d) => setFormData({ ...formData, fcUpto: d })}
+  className="form-control"
+  placeholderText="FC Upto"
+  popperPlacement="bottom-end"   // ✅ aligns to input ending side
+/>
                 </FormGroup>
               </Col>
               <Col md="12">

@@ -115,7 +115,7 @@ const Login = () => {
               <div className="hero-text">
                 <div className="hero-logo">
                   {/* <span className="hero-logo-icon">📊</span> */}
-                 <img src={Logo}></img>
+                 <img src={Logo} alt="Retail Pulse Logo" className="hero-logo-img" />
                 </div>
                 {/* <h2 className="hero-subtitle">
                   Where Data Meets Retail Excellence
