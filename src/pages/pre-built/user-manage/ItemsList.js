@@ -65,6 +65,8 @@ const [editLoading, setEditLoading] = useState(false);
     productName: "",
     productCode: "",
     value: "",
+    packing: "",
+    gst: "",
     boxPacking: false,
     ptr1: "",
     ptr2: "",
@@ -76,6 +78,8 @@ const [editLoading, setEditLoading] = useState(false);
   const [actionText, setActionText] = useState("");
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [suppliers, setSuppliers] = useState([]);
+const [categories, setCategories] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
@@ -202,21 +206,22 @@ useEffect(() => {
     setActionText(e.value);
   };
 
-  const resetForm = () => {
-    setFormData({
-      brand: "",
-      productName: "",
-      productCode: "",
-      value: "",
-      boxPacking: false,
-      ptr1: "",
-      ptr2: "",
-      ptr3: "",
-      notes: "",
-      img: null,
-    });
-    setSelectedId(null);
-  };
+const resetForm = () => {
+  setFormData({
+    brand: "",
+    productName: "",
+    productCode: "",
+    value: "",
+    packing: "",
+    gst: "",
+    boxPacking: false,
+    ptr1: "",
+    ptr2: "",
+    ptr3: "",
+    notes: "",
+    img: null,
+  });
+};
 
   const onFormCancel = () => {
     setModal({ edit: false, add: false });
@@ -233,6 +238,10 @@ useEffect(() => {
     return;
   }
      setAddLoading(true);
+     if (!packingRegex.test(formData.packing)) {
+  warningToast("Packing must be in format: 10 x 2");
+  return;
+}
     const fd = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -241,6 +250,7 @@ useEffect(() => {
       }
     });
     fd.append("createdBy", userData._id);
+    
 
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/product`, fd);
@@ -278,6 +288,10 @@ useEffect(() => {
   const onEditSubmit = async (e) => {
     e.preventDefault();
     setEditLoading(true);
+    if (!packingRegex.test(formData.packing)) {
+  warningToast("Packing must be in format: 10 x 2");
+  return;
+}
     const fd = new FormData();
 
     Object.keys(formData).forEach((key) => {
@@ -318,22 +332,24 @@ useEffect(() => {
   }
   };
 
-  const onEditClick = (item) => {
-    setSelectedId(item._id);
-    setFormData({
-      brand: item.brand,
-      productName: item.productName,
-      productCode: item.productCode,
-      value: item.value,
-      boxPacking: item.boxPacking,
-      ptr1: item.ptr1,
-      ptr2: item.ptr2,
-      ptr3: item.ptr3,
-      notes: item.notes,
-      img: item.img,
-    });
-    setModalEdit(true);
-  };
+const onEditClick = (item) => {
+  setSelectedId(item._id);
+  setFormData({
+    brand: item.brand,
+    productName: item.productName,
+    productCode: item.productCode,
+    value: item.value,
+    packing: item.packing || "",
+    gst: item.gst || "",
+    boxPacking: item.boxPacking,
+    ptr1: item.ptr1,
+    ptr2: item.ptr2,
+    ptr3: item.ptr3,
+    notes: item.notes,
+    img: item.img,
+  });
+  setModalEdit(true);
+};
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -355,6 +371,8 @@ useEffect(() => {
   const currentItems = filteredProducts?.slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const packingRegex = /^\d+\s?x\s?\d+$/i;
 
   const compressImage = async (file) => {
     const options = {
@@ -789,6 +807,7 @@ useEffect(() => {
                   />
                 </FormGroup>
               </Col>
+              
 
               <Col md="6">
                 <FormGroup>
@@ -839,6 +858,44 @@ useEffect(() => {
                   <label className="form-label ms-2">Box Packing Available</label>
                 </FormGroup>
               </Col>
+              <Col md="6">
+  <FormGroup>
+    <label className="form-label">Packing</label>
+    <input
+      type="text"
+      className={`form-control ${
+        formData.packing && !packingRegex.test(formData.packing)
+          ? "is-invalid"
+          : ""
+      }`}
+      placeholder="1 x 1"
+      value={formData.packing}
+      onChange={(e) =>
+        setFormData({ ...formData, packing: e.target.value })
+      }
+    />
+    {formData.packing &&
+      !packingRegex.test(formData.packing) && (
+        <div className="invalid-feedback">
+          Format must be like: 10 x 2
+        </div>
+      )}
+  </FormGroup>
+</Col>
+<Col md="6">
+  <FormGroup>
+    <label className="form-label">GST (%)</label>
+    <input
+      type="number"
+      className="form-control"
+      value={formData.gst}
+      onChange={(e) =>
+        setFormData({ ...formData, gst: e.target.value })
+      }
+      min="0"
+    />
+  </FormGroup>
+</Col>
 
               {[1, 2, 3].map((n) => (
                 <Col md="4" key={n}>
@@ -856,13 +913,13 @@ useEffect(() => {
 
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Notes <span className="text-danger ml-1 ">*</span></label>
+                  <label className="form-label">Notes </label>
                   <textarea
                     className="form-control"
                     rows="2"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    required
+                    
                   />
                 </FormGroup>
               </Col>
@@ -972,6 +1029,44 @@ useEffect(() => {
                   <label className="form-label ms-2">Box Packing Available</label>
                 </FormGroup>
               </Col>
+              <Col md="6">
+  <FormGroup>
+    <label className="form-label">Packing</label>
+    <input
+      type="text"
+      className={`form-control ${
+        formData.packing && !packingRegex.test(formData.packing)
+          ? "is-invalid"
+          : ""
+      }`}
+      placeholder="1 x 1"
+      value={formData.packing}
+      onChange={(e) =>
+        setFormData({ ...formData, packing: e.target.value })
+      }
+    />
+    {formData.packing &&
+      !packingRegex.test(formData.packing) && (
+        <div className="invalid-feedback">
+          Format must be like: 10 x 2
+        </div>
+      )}
+  </FormGroup>
+</Col>
+<Col md="6">
+  <FormGroup>
+    <label className="form-label">GST (%)</label>
+    <input
+      type="number"
+      className="form-control"
+      value={formData.gst}
+      onChange={(e) =>
+        setFormData({ ...formData, gst: e.target.value })
+      }
+      min="0"
+    />
+  </FormGroup>
+</Col>
 
               {[1, 2, 3].map((n) => (
                 <Col md="4" key={n}>
@@ -988,13 +1083,13 @@ useEffect(() => {
 
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Notes<span className="text-danger ml-1 ">*</span></label>
+                  <label className="form-label">Notes</label>
                   <textarea
                     className="form-control"
                     rows="2"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    required
+                    
                   />
                 </FormGroup>
               </Col>
