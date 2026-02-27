@@ -752,7 +752,7 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="6">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Latitude *</label>
                 <input
@@ -767,7 +767,7 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="6">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Longitude *</label>
                 <input
@@ -992,7 +992,7 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="6">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Latitude *</label>
                 <input
@@ -1006,7 +1006,7 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            <Col md="6">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Longitude *</label>
                 <input

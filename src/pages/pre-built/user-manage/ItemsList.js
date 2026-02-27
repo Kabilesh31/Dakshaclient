@@ -647,9 +647,9 @@ useEffect(() => {
                       {/* <DataTableRow size="sm">
                         <span className="sub-text">Stock</span>
                       </DataTableRow> */}
-                      <DataTableRow size="md">
+                      {/* <DataTableRow size="md">
                         <span className="sub-text">Notes</span>
-                      </DataTableRow>
+                      </DataTableRow> */}
                       <DataTableRow className="nk-tb-col-tools text-right">
                         <span className="sub-text">Actions</span>
                       </DataTableRow>
@@ -697,9 +697,9 @@ useEffect(() => {
                               {item.stock}
                             </span>
                           </DataTableRow> */}
-                          <DataTableRow size="md">
+                          {/* <DataTableRow size="md">
                             <span className="text-soft small">{item.notes || "No notes"}</span>
-                          </DataTableRow>
+                          </DataTableRow> */}
                           <DataTableRow className="nk-tb-col-tools">
                             <ul className="nk-tb-actions gx-1">
                               <li onClick={() => onEditClick(item)}>
@@ -1087,7 +1087,7 @@ useEffect(() => {
         }
 
         .brand-item.active {
-          background-color: #6576ff;
+          background-color: #b172e0;
           color: #ffffff;
         }
 
