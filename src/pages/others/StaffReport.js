@@ -214,253 +214,282 @@ const StaffReport = () => {
   };
 
   // Download invoice PDF
-  const downloadInvoicePDF = () => {
-    if (!selectedBill) return;
+const downloadInvoicePDF = () => {
+  if (!selectedBill) return;
 
-    const doc = new jsPDF();
+  const doc = new jsPDF();
 
-    // Header
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(33, 37, 41);
-    doc.text("Retail Pulse", 105, 20, { align: "center" });
+  // Header
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Retail Pulse", 105, 20, { align: "center" });
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text("Order Invoice", 105, 30, { align: "center" });
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text("Order Invoice", 105, 30, { align: "center" });
 
-    // Order ID and Date
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(33, 37, 41);
-    doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
+  // Order ID and Date
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
+  
+  doc.setFont("helvetica", "normal");
+  const orderDate = new Date(selectedBill.createdAt);
+  const formattedDate = `${orderDate.getMonth()+1}/${orderDate.getDate()}/${orderDate.getFullYear()}`;
+  doc.text(`Date: ${formattedDate}`, 14, 52);
+
+  // Order Status
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(46, 204, 113);
+  doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
+
+  // Customer Details
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Customer Details", 14, 67);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Name: ${getCustomerName(selectedBill)}`, 14, 75);
+  doc.text(`Mobile: ${selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}`, 14, 82);
+  doc.text(`Address: ${selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}`, 14, 89);
+
+  // Staff Details
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(33, 37, 41);
+  doc.text("Staff Details", 120, 67);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  
+  doc.text(`Name: ${selectedStaff?.name || selectedBill.staffName || 'N/A'}`, 120, 75);
+  doc.text(`Type: ${selectedStaff?.type || 'staff'}`, 120, 82);
+  doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}`, 120, 89);
+
+  // Calculate subtotal
+  const subtotal = selectedBill.orderedProducts?.reduce(
+    (sum, product) => sum + (Number(product.value) * Number(product.qty)), 
+    0
+  ) || Number(selectedBill.totalAmt) || 0;
+
+  // Products Table
+  const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
+  const tableRows = selectedBill.orderedProducts?.map((product, idx) => {
+    const qty = Number(product.qty) || 0;
+    const rate = Number(product.value) || 0;
+    const amount = rate * qty;
     
-    doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    })}`, 14, 52);
-
-    // Order Status
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(46, 204, 113);
-    doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
-
-    // Customer Details
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(33, 37, 41);
-    doc.text("Customer Details", 14, 67);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Name: ${getCustomerName(selectedBill)}`, 14, 75);
-    doc.text(`Mobile: ${selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}`, 14, 82);
-    doc.text(`Address: ${selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}`, 14, 89);
-
-    // Staff Details
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(33, 37, 41);
-    doc.text("Staff Details", 120, 67);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    
-    doc.text(`Name: ${selectedStaff?.name || selectedBill.staffName || 'N/A'}`, 120, 75);
-    doc.text(`Type: ${selectedStaff?.type || 'staff'}`, 120, 82);
-    doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}`, 120, 89);
-
-    // Products Table
-    const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
-    const tableRows = selectedBill.orderedProducts?.map((product, idx) => [
+    return [
       idx + 1,
-      product.productName,
-      product.qty.toString(),
-      product.value?.toString() || '0',
-      (product.value * product.qty).toString()
-    ]) || [];
+      product.productName || '',
+      qty.toString(),
+      rate.toString(),
+      amount.toString()
+    ];
+  }) || [];
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 105,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [51, 51, 51],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 10,
+      halign: 'center'
+    },
+    styles: {
+      fontSize: 9,
+      cellPadding: 5,
+      font: 'helvetica',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { cellWidth: 15, halign: 'center' },
+      1: { cellWidth: 70, halign: 'left' },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 30, halign: 'right' },
+      4: { cellWidth: 35, halign: 'right' }
+    }
+  });
+
+  // Totals section - FIXED
+// Totals section - MOVED JUST A TINY BIT MORE LEFT
+const finalY = doc.lastAutoTable.finalY + 15;
+
+// Format numbers
+const subtotalFormatted = subtotal.toString();
+const totalFormatted = (Number(selectedBill.totalAmt) || 0).toString();
+
+doc.setFontSize(10);
+doc.setFont("helvetica", "normal");
+doc.setTextColor(80, 80, 80);
+
+// Align totals - FINE-TUNED POSITION
+const startX = 128;  // Changed from 130 to 128
+const valueX = 178;  // Changed from 180 to 178
+
+doc.text("Subtotal:", startX, finalY);
+doc.text(subtotalFormatted, valueX, finalY, { align: 'right' });
+
+doc.text("Discount:", startX, finalY + 8);
+doc.text("0", valueX, finalY + 8, { align: 'right' });
+
+doc.text("Tax:", startX, finalY + 16);
+doc.text("0", valueX, finalY + 16, { align: 'right' });
+
+doc.setFontSize(12);
+doc.setFont("helvetica", "bold");
+doc.setTextColor(33, 37, 41);
+doc.text("Total:", startX - 5, finalY + 28);  // Total label at 123 (128-5)
+doc.text(totalFormatted, valueX, finalY + 28, { align: 'right' });
+  // Payment info
+  if (selectedBill.paymentMethod) {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 35);
+    
+    if (selectedBill.paymentCollectedAt) {
+      const paymentDate = new Date(selectedBill.paymentCollectedAt);
+      const formattedPaymentDate = `${paymentDate.getMonth()+1}/${paymentDate.getDate()}/${paymentDate.getFullYear()}, ${paymentDate.getHours()}:${paymentDate.getMinutes()}:${paymentDate.getSeconds()} ${paymentDate.getHours() >= 12 ? 'PM' : 'AM'}`;
+      doc.text(`Payment Collected: ${formattedPaymentDate}`, 14, finalY + 42);
+    }
+  }
+
+  doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
+};
+
+const exportPDF = () => {
+  if (!selectedStaff) return;
+
+  const doc = new jsPDF();
+
+  // Title
+  doc.setFontSize(18);
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Staff Performance Report`, 14, 18);
+
+  doc.setFontSize(12);
+  doc.text(`Staff: ${selectedStaff.name} (${selectedStaff.type})`, 14, 26);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
+
+  if (startDate && endDate) {
+    doc.text(
+      `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
+      14,
+      38
+    );
+  }
+
+  // Summary Section - Different for Sales vs Delivery
+  doc.setFontSize(11);
+  doc.setTextColor(33);
+  
+  if (selectedStaff.type?.toLowerCase() === 'delivery') {
+    doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
+    doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+    doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
+    doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
+    doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
+    
+    // Table for delivery
+    const tableColumn = [
+      "S.No",
+      "Order No",
+      "Customer",
+      "Date",
+      "Amount (Rs)",
+      "Status",
+    ];
+
+    const tableRows = filteredBills.map((bill, idx) => [
+      idx + 1,
+      `#${bill._id.toString().slice(-6)}`,
+      getCustomerName(bill),
+      new Date(bill.createdAt).toLocaleDateString("en-IN"),
+      (bill.totalAmt || 0).toLocaleString("en-IN"),
+      bill.orderStatus || 'Pending',
+    ]);
 
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 105,
-      theme: 'grid',
+      startY: 85,
+      theme: "striped",
       headStyles: {
-        fillColor: [51, 51, 51],
+        fillColor: [41, 128, 185],
         textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 10,
-        halign: 'center'
+        fontStyle: "bold",
       },
       styles: {
         fontSize: 9,
-        cellPadding: 5,
-        font: 'helvetica'
       },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 70, halign: 'left' },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 35, halign: 'right' }
-      }
+        4: { halign: "right" },
+      },
     });
-
-    // Totals
-    const finalY = doc.lastAutoTable.finalY + 15;
-
-    const subtotal = selectedBill.orderedProducts?.reduce(
-      (sum, product) => sum + (product.value * product.qty), 
-      0
-    ) || selectedBill.totalAmt || 0;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(80, 80, 80);
-    doc.text("Subtotal", 140, finalY);
-    doc.text(`₹ ${subtotal.toLocaleString('en-IN')}`, 180, finalY, { align: 'right' });
-
-    doc.text("Discount", 140, finalY + 8);
-    doc.text(`₹ 0`, 180, finalY + 8, { align: 'right' });
-
-    doc.text("Tax", 140, finalY + 16);
-    doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(33, 37, 41);
-    doc.text("Total", 135, finalY + 28);
-    doc.text(`₹ ${(selectedBill.totalAmt || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
-
-    doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
-  };
-
-  const exportPDF = () => {
-    if (!selectedStaff) return;
-
-    const doc = new jsPDF();
-
-    // Title
-    doc.setFontSize(18);
-    doc.setTextColor(33, 37, 41);
-    doc.text(`Staff Performance Report`, 14, 18);
-
-    doc.setFontSize(12);
-    doc.text(`Staff: ${selectedStaff.name} (${selectedStaff.type})`, 14, 26);
-
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
-
-    if (startDate && endDate) {
-      doc.text(
-        `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
-        14,
-        38
-      );
-    }
-
-    // Summary Section - Different for Sales vs Delivery
-    doc.setFontSize(11);
-    doc.setTextColor(33);
+  } else {
+    doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
+    doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+    doc.text(`Collected Amount: Rs. ${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
+    doc.text(`Pending Amount: Rs. ${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
     
-    if (selectedStaff.type?.toLowerCase() === 'delivery') {
-      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
-      doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
-      doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
-      
-      // Table for delivery
-      const tableColumn = [
-        "S.No",
-        "Order No",
-        "Customer",
-        "Date",
-        "Amount (Rs)",
-        "Status",
-      ];
+    // Table for sales/manager
+    const tableColumn = [
+      "S.No",
+      "Order No",
+      "Customer",
+      "Date",
+      "Amount (Rs)",
+      "Payment Status",
+      "Order Status",
+    ];
 
-      const tableRows = filteredBills.map((bill, idx) => [
-        idx + 1,
-        `#${bill._id.toString().slice(-6)}`,
-        getCustomerName(bill),
-        new Date(bill.createdAt).toLocaleDateString("en-IN"),
-        (bill.totalAmt || 0).toLocaleString("en-IN"),
-        bill.orderStatus || 'Pending',
-      ]);
+    const tableRows = filteredBills.map((bill, idx) => [
+      idx + 1,
+      `#${bill._id.toString().slice(-6)}`,
+      getCustomerName(bill),
+      new Date(bill.createdAt).toLocaleDateString("en-IN"),
+      (bill.totalAmt || 0).toLocaleString("en-IN"),
+      bill.paymentMethod ? "Paid" : "Pending",
+      bill.orderStatus || 'Pending',
+    ]);
 
-      autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 85,
-        theme: "striped",
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        styles: {
-          fontSize: 9,
-        },
-        columnStyles: {
-          4: { halign: "right" },
-        },
-      });
-    } else {
-      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Collected Amount: Rs. ${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
-      doc.text(`Pending Amount: Rs. ${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
-      
-      // Table for sales/manager
-      const tableColumn = [
-        "S.No",
-        "Order No",
-        "Customer",
-        "Date",
-        "Amount (Rs)",
-        "Payment Status",
-        "Order Status",
-      ];
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 75,
+      theme: "striped",
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      styles: {
+        fontSize: 9,
+      },
+      columnStyles: {
+        4: { halign: "right" },
+      },
+    });
+  }
 
-      const tableRows = filteredBills.map((bill, idx) => [
-        idx + 1,
-        `#${bill._id.toString().slice(-6)}`,
-        getCustomerName(bill),
-        new Date(bill.createdAt).toLocaleDateString("en-IN"),
-        (bill.totalAmt || 0).toLocaleString("en-IN"),
-        bill.paymentMethod ? "Paid" : "Pending",
-        bill.orderStatus || 'Pending',
-      ]);
-
-      autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 75,
-        theme: "striped",
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        styles: {
-          fontSize: 9,
-        },
-        columnStyles: {
-          4: { halign: "right" },
-        },
-      });
-    }
-
-    doc.save(`${selectedStaff.name}_Report.pdf`);
-  };
+  doc.save(`${selectedStaff.name}_Report.pdf`);
+};
   
   const exportExcel = () => {
     if (!selectedStaff) return;
@@ -864,7 +893,11 @@ const StaffReport = () => {
                               <td>
                                 <span className="order-id">#{bill._id.toString().slice(-6)}</span>
                               </td>
-                              <td>{getCustomerName(bill)}</td>
+                              <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+  {getCustomerName(bill).length > 15 
+    ? getCustomerName(bill).substring(0, 15) + '...' 
+    : getCustomerName(bill)}
+</td>
                               <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
                                 day: '2-digit', 
                                 month: 'short', 
