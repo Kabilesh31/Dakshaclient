@@ -21,8 +21,7 @@ import { Modal, ModalBody, UncontrolledDropdown, DropdownToggle, DropdownMenu, D
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-const [selectedDates, setSelectedDates] = useState([]);
-
+  const [selectedDates, setSelectedDates] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -31,18 +30,21 @@ const [selectedDates, setSelectedDates] = useState([]);
   const [onSearch, setOnSearch] = useState(false);
   const [pdfOrder, setPdfOrder] = useState(null);
   const itemPerPage = 10;
-const [currentPage, setCurrentPage] = useState(1);
-const [confirmModal, setConfirmModal] = useState(false);
-const [actionType, setActionType] = useState(null); 
-const [actionOrderId, setActionOrderId] = useState(null);
-const [activeHighlight, setActiveHighlight] = useState(null);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [confirmModal, setConfirmModal] = useState(false);
+  const [actionType, setActionType] = useState(null); 
+  const [actionOrderId, setActionOrderId] = useState(null);
+  const [activeHighlight, setActiveHighlight] = useState(null);
+  const [uploadModal, setUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [finalAmount, setFinalAmount] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
 
   const location = useLocation();
-const highlightOrderId = location.state?.highlightOrderId;
+  const highlightOrderId = location.state?.highlightOrderId;
 
   const downloadPDF = () => {
     if (!modalRef.current) return;
@@ -69,60 +71,60 @@ const highlightOrderId = location.state?.highlightOrderId;
       .save()
       .then(() => modalRef.current.classList.remove("pdf-mode"));
   };
-const downloadOrderDirect = (order) => {
-  setPdfOrder(order);
+  const downloadOrderDirect = (order) => {
+    setPdfOrder(order);
 
-  setTimeout(() => {
-    if (!hiddenPdfRef.current) return;
+    setTimeout(() => {
+      if (!hiddenPdfRef.current) return;
 
-    hiddenPdfRef.current.classList.add("pdf-mode");
+      hiddenPdfRef.current.classList.add("pdf-mode");
 
-    html2pdf()
-      .set({
-        filename: `Order_${order._id}.pdf`,
-        margin: 0,
-        html2canvas: {
-          scale: 2.5,
-          scrollY: 0,
-          windowWidth: 794,
-        },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait",
-        },
-      })
-      .from(hiddenPdfRef.current)
-      .save()
-      .then(() => {
-        hiddenPdfRef.current.classList.remove("pdf-mode");
-        setPdfOrder(null); // cleanup
-      });
-  }, 100); // 👈 allow DOM to render
-};
+      html2pdf()
+        .set({
+          filename: `Order_${order._id}.pdf`,
+          margin: 0,
+          html2canvas: {
+            scale: 2.5,
+            scrollY: 0,
+            windowWidth: 794,
+          },
+          jsPDF: {
+            unit: "mm",
+            format: "a4",
+            orientation: "portrait",
+          },
+        })
+        .from(hiddenPdfRef.current)
+        .save()
+        .then(() => {
+          hiddenPdfRef.current.classList.remove("pdf-mode");
+          setPdfOrder(null); 
+        });
+    }, 100);
+  };
 
   useEffect(() => {
     fetchOrders();
   }, []);
-useEffect(() => {
-  if (highlightOrderId) {
-    setActiveHighlight(highlightOrderId);
+    useEffect(() => {
+      if (highlightOrderId) {
+        setActiveHighlight(highlightOrderId);
 
-    setTimeout(() => {
-      setActiveHighlight(null);
-    }, 5000); // highlight for 5 seconds
-  }
-}, [highlightOrderId]);
+        setTimeout(() => {
+          setActiveHighlight(null);
+        }, 5000); // highlight for 5 seconds
+      }
+    }, [highlightOrderId]);
 
-useEffect(() => {
-  if (activeHighlight) {
-    const element = document.getElementById(activeHighlight);
-    element?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }
-}, [activeHighlight]);
+    useEffect(() => {
+      if (activeHighlight) {
+        const element = document.getElementById(activeHighlight);
+        element?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, [activeHighlight]);
 
   const fetchOrders = async () => {
     try {
@@ -224,14 +226,46 @@ const confirmAction = async () => {
 };
 
 
-const indexOfLastItem = currentPage * itemPerPage;
-const indexOfFirstItem = indexOfLastItem - itemPerPage;
+  const indexOfLastItem = currentPage * itemPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemPerPage;
 
-const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
-useEffect(() => {
-  setCurrentPage(1);
-}, [search, statusFilter, selectedDates]);
-const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, selectedDates]);
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+ const handleUploadSubmit = async () => {
+  if (!uploadFile || !finalAmount || !selectedOrder) return;
+
+  try {
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("pdf", uploadFile);
+    formData.append("finalAmt", finalAmount);
+
+    const res = await axios.patch(
+      `${process.env.REACT_APP_BACKENDURL}/api/bills/${selectedOrder._id}/upload`, formData);
+    const updatedBill = res.data.data;
+
+    setOrders(prev =>
+      prev.map(o =>
+        o._id === updatedBill._id
+          ? updatedBill
+          : o
+      )
+    );
+
+    setUploadModal(false);
+    setSelectedOrder(null);
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
     <>
@@ -370,131 +404,130 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
                 {/* Table Body */}
                <tbody>
-  {currentItems.length > 0 ? (
-    currentItems.map((order, index) => {
-      const isHighlighted = order._id === activeHighlight;
+                {currentItems.length > 0 ? (
+                  currentItems.map((order, index) => {
+                    const isHighlighted = order._id === activeHighlight;
 
-      return (
-        <tr
-          key={order._id}
-          id={order._id}
-          className={`align-middle ${
-            isHighlighted ? "highlight-row" : ""
-          }`}
-          style={{
-            borderTop: "1px solid #e0e0e0",
-            borderBottom: "1px solid #e0e0e0",
-            textAlign: "left",
-          }}
-        >
-          <td className="px-3 py-2 text-center">
-            {indexOfFirstItem + index + 1}
-          </td>
+                    return (
+                      <tr
+                        key={order._id}
+                        id={order._id}
+                        className={`align-middle ${
+                          isHighlighted ? "highlight-row" : ""
+                        }`}
+                        style={{
+                          borderTop: "1px solid #e0e0e0",
+                          borderBottom: "1px solid #e0e0e0",
+                          textAlign: "left",
+                        }}
+                      >
+                        <td className="px-3 py-2 text-center">
+                          {indexOfFirstItem + index + 1}
+                        </td>
 
-          <td className="px-4 py-2 text-start">
-            {new Date(order.createdAt).toLocaleDateString("en-IN")}
-          </td>
+                        <td className="px-4 py-2 text-start">
+                          {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                        </td>
 
-          <td className="py-2 text-start">
-            {order.customerName}
-          </td>
+                        <td className="py-2 text-start">
+                          {order.customerName}
+                        </td>
 
-          <td
-            className="px-4 py-2 text-start"
-            title={order._id}
-          >
-            #{order._id.slice(0, 4)}...{order._id.slice(-4)}
-          </td>
+                        <td
+                          className="px-4 py-2 text-start"
+                          title={order._id}
+                        >
+                          #{order._id.slice(-6)}
+                        </td>
 
-          <td
-            className="px-4 py-2 text-end"
-            style={{ color: "#66BB6A", fontWeight: 600 }}
-          >
-            ₹ {order.totalAmt}
-          </td>
+                        <td
+                          className="px-4 py-2 text-end"
+                          style={{ color: "#66BB6A", fontWeight: 600 }}
+                        >
+                           {`${order.finalAmt ? "₹ " + order.finalAmt : "-" }`}
+                        </td>
 
-          <td className="px-4 py-2 text-center">
-            <span
-              className={`tb-status text-${statusColor(
-                order.orderStatus
-              )}`}
-            >
-              {order.orderStatus}
-            </span>
-          </td>
+                        <td className="px-4 py-2 text-center">
+                          <span
+                            className={`tb-status text-${statusColor(
+                              order.orderStatus
+                            )}`}
+                          >
+                           {order.orderStatus.charAt(0).toUpperCase()}{order.orderStatus.slice(1)}
+                          </span>
+                        </td>
 
-          <td className="px-4 py-2 text-center">
-            <UncontrolledDropdown>
-              <DropdownToggle
-                tag="a"
-                className="btn btn-icon btn-trigger"
-              >
-                <Icon name="more-h" />
-              </DropdownToggle>
+                        <td className="px-4 py-2 text-center">
+                          <UncontrolledDropdown>
+                            <DropdownToggle
+                              tag="a"
+                              className="btn btn-icon btn-trigger"
+                            >
+                              <Icon name="more-h" />
+                            </DropdownToggle>
 
-              <DropdownMenu right>
-                {order.orderStatus === "pending" && (
-                  <>
-                    <DropdownItem
-                      onClick={() =>
-                        openConfirmModal(order._id, "approved")
-                      }
-                    >
-                      <Icon name="check-circle" /> Approve
-                    </DropdownItem>
+                            <DropdownMenu right>
+                              {order.orderStatus === "pending" && (
+                                <>
+                                  {/* <DropdownItem
+                                    onClick={() =>
+                                      openConfirmModal(order._id, "approved")
+                                    }
+                                  >
+                                    <Icon name="check-circle" /> Approve
+                                  </DropdownItem> */}
 
-                    <DropdownItem
-                      onClick={() =>
-                        openConfirmModal(order._id, "rejected")
-                      }
-                    >
-                      <Icon name="cross-circle" /> Reject
-                    </DropdownItem>
-                  </>
+                                  <DropdownItem
+                                    onClick={() =>
+                                      openConfirmModal(order._id, "rejected")
+                                    }
+                                  >
+                                    <Icon name="cross-circle" /> Reject
+                                  </DropdownItem>
+                                </>
+                              )}
+
+                              <DropdownItem
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                <Icon name="eye" /> View Details
+                              </DropdownItem>
+
+                              <DropdownItem
+                                onClick={() => downloadOrderDirect(order)}
+                              >
+                                <Icon name="download" /> Download PDF
+                              </DropdownItem>
+                            </DropdownMenu>
+                          </UncontrolledDropdown>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4 text-muted">
+                      No orders found for selected date
+                    </td>
+                  </tr>
                 )}
+              </tbody>
 
-                <DropdownItem
-                  onClick={() => setSelectedOrder(order)}
-                >
-                  <Icon name="eye" /> View Details
-                </DropdownItem>
-
-                <DropdownItem
-                  onClick={() => downloadOrderDirect(order)}
-                >
-                  <Icon name="download" /> Download PDF
-                </DropdownItem>
-              </DropdownMenu>
-            </UncontrolledDropdown>
-          </td>
-        </tr>
-      );
-    })
-  ) : (
-    <tr>
-      <td colSpan="7" className="text-center py-4 text-muted">
-        No orders found for selected date
-      </td>
-    </tr>
-  )}
-</tbody>
-
-              </table>
-              <div className="card-inner">
-  {currentItems.length > 0 ? (
-    <PaginationComponent
-      itemPerPage={itemPerPage}
-      totalItems={filtered.length}
-      paginate={paginate}
-      currentPage={currentPage}
-    />
-  ) : (
-    <div className="text-center">
-      <span className="text-silent">No data found</span>
-    </div>
-  )}
-</div>
-
+            </table>
+            <div className="card-inner">
+                {currentItems.length > 0 ? (
+                  <PaginationComponent
+                    itemPerPage={itemPerPage}
+                    totalItems={filtered.length}
+                    paginate={paginate}
+                    currentPage={currentPage}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <span className="text-silent">No data found</span>
+                  </div>
+                )}
+              </div>
             </DataTable>
           )}
         </Block>
@@ -529,7 +562,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                     <strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}
                   </p>
                   <span className={`tb-status text-${statusColor(selectedOrder.orderStatus)}`}>
-                    {selectedOrder.orderStatus}
+                    {selectedOrder.orderStatus.slice(0, 1).toUpperCase()}{selectedOrder.orderStatus.slice(1)}
                   </span>
                 </div>
               </div>
@@ -559,20 +592,22 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                   <thead>
                     <tr>
                       <th>S.No</th>
+                      <th>Product Code</th>
                       <th>Product</th>
                       <th>Qty</th>
                       <th>Rate</th>
-                      <th>Amount</th>
+                      {/* <th>Amount</th> */}
                     </tr>
                   </thead>
                   <tbody>
                     {selectedOrder.orderedProducts?.map((item, i) => (
                       <tr key={i}>
                         <td>{i + 1}</td>
+                        <td>{item.productCode}</td>
                         <td>{item.productName}</td>
                         <td>{item.qty}</td>
                         <td>₹ {item.value}</td>
-                        <td>₹ {item.qty * item.value}</td>
+                        {/* <td>₹ {item.qty * item.value}</td> */}
                       </tr>
                     )) || (
                       <tr>
@@ -587,7 +622,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
               </div>
 
               {/* TOTALS */}
-              <div className="totals d-flex justify-content-between flex-column align-items-end">
+              {/* <div className="totals d-flex justify-content-between flex-column align-items-end">
                 <div className="d-flex justify-content-between w-50 mb-1">
                   <span>Subtotal</span>
                   <span>₹ {selectedOrder.totalAmt}</span>
@@ -605,186 +640,251 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                   <span>Total</span>
                   <span>₹ {selectedOrder.totalAmt}</span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* PDF Button */}
             <div className="text-end mt-3">
-              <Button color="primary" size="sm" onClick={downloadPDF}>
-                <Icon name="download" /> Download PDF
+              <Button color="primary" className="mr-1" size="sm" onClick={downloadPDF}>
+                <Icon name="download" /> 
+                
               </Button>
+              {selectedOrder.orderStatus === "pending" && (
+              <Button
+                color="primary"
+                size="sm"
+                onClick={() => {
+                  setUploadModal(true);
+                  setUploadFile(null);
+                  setFinalAmount("");
+                }}
+              >
+                <Icon name="upload" />
+              </Button>
+              )}
             </div>
           </ModalBody>
         </Modal>
       )}
+
+      <Modal isOpen={uploadModal} centered>
+        <ModalBody className="p-4">
+
+          <h5 className="fw-bold mb-3">Upload Bill & Approve</h5>
+
+          {/* PDF Upload */}
+          <div className="mb-3">
+            <label className="form-label">Upload PDF</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              className="form-control"
+              onChange={(e) => setUploadFile(e.target.files[0])}
+            />
+          </div>
+
+          {/* Final Amount */}
+          <div className="mb-3">
+            <label className="form-label">Final Total Amount</label>
+            <input
+              type="number"
+              className="form-control"
+              value={finalAmount}
+              onChange={(e) => setFinalAmount(e.target.value)}
+              placeholder="Enter final amount"
+            />
+          </div>
+
+          <div className="d-flex justify-content-end gap-3 mb-3">
+            <Button
+              color="light"
+              className="mr-1 p-3"
+              size="sm"
+              onClick={() => setUploadModal(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              size="sm"
+              className="mr-1 p-3"
+              color="primary"
+              disabled={!uploadFile || !finalAmount || uploading}
+              onClick={handleUploadSubmit}
+            >
+              {uploading ? "Submitting..." : "Submit & Approve"}
+            </Button>
+          </div>
+
+        </ModalBody>
+      </Modal>
+
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-  <div ref={hiddenPdfRef} className="order-invoice-pdf">
-    {pdfOrder && (
-      <>
-        {/* HEADER */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-          <div>
-            <h4 style={{ margin: 0 }}>Retail Pulse</h4>
-            <small>Order Invoice</small>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ margin: 0 }}>
-              <strong>Order ID:</strong> #{pdfOrder._id.slice(-6)}
-            </p>
-            <p style={{ margin: 0 }}>
-              <strong>Date:</strong>{" "}
-              {new Date(pdfOrder.createdAt).toLocaleDateString("en-IN")}
-            </p>
-            <p style={{ margin: 0 }}>
-              <strong>Status:</strong>{" "}
-              <span style={{ textTransform: "capitalize" }}>
-                {pdfOrder.orderStatus}
-              </span>
-            </p>
-          </div>
+        <div ref={hiddenPdfRef} className="order-invoice-pdf">
+          {pdfOrder && (
+            <>
+              {/* HEADER */}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                <div>
+                  <h4 style={{ margin: 0 }}>Retail Pulse</h4>
+                  <small>Order Invoice</small>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ margin: 0 }}>
+                    <strong>Order ID:</strong> #{pdfOrder._id.slice(-6)}
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    <strong>Date:</strong>{" "}
+                    {new Date(pdfOrder.createdAt).toLocaleDateString("en-IN")}
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    <strong>Status:</strong>{" "}
+                    <span style={{ textTransform: "capitalize" }}>
+                      {pdfOrder.orderStatus}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <hr />
+
+              {/* CUSTOMER & STAFF */}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                {/* CUSTOMER */}
+                <div style={{ width: "48%" }}>
+                  <h6 style={{ marginBottom: "4px" }}>Customer Details</h6>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Name:</strong>{" "}
+                    {pdfOrder.customerDetails?.name || pdfOrder.customerName || "-"}
+                  </p>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Mobile:</strong>{" "}
+                    {pdfOrder.customerDetails?.mobile || "-"}
+                  </p>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Address:</strong>{" "}
+                    {pdfOrder.customerDetails?.address || "-"}
+                  </p>
+                </div>
+
+                {/* STAFF */}
+                <div style={{ width: "48%", marginLeft: "350px" }}>
+                  <h6 style={{ marginBottom: "4px" }}>Staff Details</h6>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Name:</strong>{" "}
+                    {pdfOrder.staffDetails?.name || "Unassigned"}
+                  </p>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Role:</strong>{" "}
+                    {pdfOrder.staffDetails?.type || "-"}
+                  </p>
+                  <p style={{ margin: "2px 0" }}>
+                    <strong>Mobile:</strong>{" "}
+                    {pdfOrder.staffDetails?.mobile || "-"}
+                  </p>
+                </div>
+              </div>
+
+              {/* PRODUCT TABLE */}
+              <table
+                width="100%"
+                border="1"
+                cellPadding="6"
+                style={{ borderCollapse: "collapse", marginTop: "10px" }}
+              >
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th align="left">Product</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pdfOrder.orderedProducts?.map((p, i) => (
+                    <tr key={i}>
+                      <td align="center">{i + 1}</td>
+                      <td>{p.productName}</td>
+                      <td align="center">{p.qty}</td>
+                      <td align="right">₹ {p.value}</td>
+                      <td align="right">₹ {p.qty * p.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* TOTALS */}
+              <div style={{ marginTop: "10px", width: "100%", textAlign: "right" }}>
+                <p style={{ margin: "4px 0" }}>
+                  <strong>Subtotal:</strong> ₹ {pdfOrder.totalAmt}
+                </p>
+                <p style={{ margin: "4px 0" }}>
+                  <strong>Discount:</strong> ₹ {pdfOrder.discount || 0}
+                </p>
+                <p style={{ margin: "4px 0" }}>
+                  <strong>Tax:</strong> ₹ {pdfOrder.tax || 0}
+                </p>
+                <hr />
+                <h5 style={{ margin: 0 }}>
+                  <strong>Total:</strong> ₹ {pdfOrder.totalAmt}
+                </h5>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    <Modal isOpen={confirmModal} centered>
+      <ModalBody className="p-4">
+
+        <h5 className="fw-bold mb-3">
+          {actionType === "approved"
+            ? "Approve Order"
+            : "Reject Order"}
+        </h5>
+
+        <p className="mb-4">
+          Are you sure you want to{" "}
+          <span className="fw-bold">
+            {actionType === "approved" ? "approve" : "reject"}
+          </span>{" "}
+          this order?
+        </p>
+
+        <div className="d-flex justify-content-end" style={{ gap: "18px" }}>
+          <Button
+            style={{
+              backgroundColor: "#eeeeee",
+              border: "1px solid #dddddd",
+              color: "#333",
+              fontWeight: "600",
+              padding: "10px 32px",
+              borderRadius: "0",
+              fontSize: "15px",
+            }}
+            onClick={() => setConfirmModal(false)}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            style={{
+              backgroundColor: "#888890",
+              border: "1px solid #888888",
+              color: "#fff",
+              fontWeight: "600",
+              padding: "10px 36px",
+              borderRadius: "0",
+              fontSize: "15px",
+            }}
+            onClick={confirmAction}
+          >
+            Confirm
+          </Button>
         </div>
 
-        <hr />
-
-        {/* CUSTOMER & STAFF */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-          {/* CUSTOMER */}
-          <div style={{ width: "48%" }}>
-            <h6 style={{ marginBottom: "4px" }}>Customer Details</h6>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Name:</strong>{" "}
-              {pdfOrder.customerDetails?.name || pdfOrder.customerName || "-"}
-            </p>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Mobile:</strong>{" "}
-              {pdfOrder.customerDetails?.mobile || "-"}
-            </p>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Address:</strong>{" "}
-              {pdfOrder.customerDetails?.address || "-"}
-            </p>
-          </div>
-
-          {/* STAFF */}
-          <div style={{ width: "48%", marginLeft: "350px" }}>
-            <h6 style={{ marginBottom: "4px" }}>Staff Details</h6>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Name:</strong>{" "}
-              {pdfOrder.staffDetails?.name || "Unassigned"}
-            </p>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Role:</strong>{" "}
-              {pdfOrder.staffDetails?.type || "-"}
-            </p>
-            <p style={{ margin: "2px 0" }}>
-              <strong>Mobile:</strong>{" "}
-              {pdfOrder.staffDetails?.mobile || "-"}
-            </p>
-          </div>
-        </div>
-
-        {/* PRODUCT TABLE */}
-        <table
-          width="100%"
-          border="1"
-          cellPadding="6"
-          style={{ borderCollapse: "collapse", marginTop: "10px" }}
-        >
-          <thead>
-            <tr>
-              <th>#</th>
-              <th align="left">Product</th>
-              <th>Qty</th>
-              <th>Rate</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pdfOrder.orderedProducts?.map((p, i) => (
-              <tr key={i}>
-                <td align="center">{i + 1}</td>
-                <td>{p.productName}</td>
-                <td align="center">{p.qty}</td>
-                <td align="right">₹ {p.value}</td>
-                <td align="right">₹ {p.qty * p.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* TOTALS */}
-        <div style={{ marginTop: "10px", width: "100%", textAlign: "right" }}>
-          <p style={{ margin: "4px 0" }}>
-            <strong>Subtotal:</strong> ₹ {pdfOrder.totalAmt}
-          </p>
-          <p style={{ margin: "4px 0" }}>
-            <strong>Discount:</strong> ₹ {pdfOrder.discount || 0}
-          </p>
-          <p style={{ margin: "4px 0" }}>
-            <strong>Tax:</strong> ₹ {pdfOrder.tax || 0}
-          </p>
-          <hr />
-          <h5 style={{ margin: 0 }}>
-            <strong>Total:</strong> ₹ {pdfOrder.totalAmt}
-          </h5>
-        </div>
-      </>
-    )}
-  </div>
-</div>
-<Modal isOpen={confirmModal} centered>
-  <ModalBody className="p-4">
-
-    <h5 className="fw-bold mb-3">
-      {actionType === "approved"
-        ? "Approve Order"
-        : "Reject Order"}
-    </h5>
-
-    <p className="mb-4">
-      Are you sure you want to{" "}
-      <span className="fw-bold">
-        {actionType === "approved" ? "approve" : "reject"}
-      </span>{" "}
-      this order?
-    </p>
-
-    <div className="d-flex justify-content-end" style={{ gap: "18px" }}>
-      <Button
-        style={{
-          backgroundColor: "#eeeeee",
-          border: "1px solid #dddddd",
-          color: "#333",
-          fontWeight: "600",
-          padding: "10px 32px",
-          borderRadius: "0",
-          fontSize: "15px",
-        }}
-        onClick={() => setConfirmModal(false)}
-      >
-        Cancel
-      </Button>
-
-      <Button
-        style={{
-          backgroundColor: "#888890",
-          border: "1px solid #888888",
-          color: "#fff",
-          fontWeight: "600",
-          padding: "10px 36px",
-          borderRadius: "0",
-          fontSize: "15px",
-        }}
-        onClick={confirmAction}
-      >
-        Confirm
-      </Button>
-    </div>
-
-  </ModalBody>
-</Modal>
-
-
+      </ModalBody>
+    </Modal>
 
     </>
   );
