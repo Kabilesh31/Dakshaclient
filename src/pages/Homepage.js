@@ -33,7 +33,7 @@ const Homepage = () => {
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [filterCustomerType, setFilterCustomerType] = useState([]);
   const [billData, setBillData] = useState([]);
-  const [selectedDays, setSelectedDays] = useState("All");
+  const [selectedDays, setSelectedDays] = useState("Today"); // Changed default to "Today"
   const [customSelected, setCustomSelected] = useState(false);
   const [modal, setModal] = useState(false);
   const [selectedFromDate, setSelectedFromDate] = useState("");
@@ -189,6 +189,16 @@ const Homepage = () => {
     setShowStaffModal(false);
   };
 
+  // Get today's date range
+  const getTodayRange = () => {
+    const today = new Date();
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+    return { startOfDay, endOfDay };
+  };
+
   // Filter bills by date AND staff
   const filterBills = () => {
     if (!billData || billData.length === 0) return [];
@@ -219,6 +229,12 @@ const Homepage = () => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
       filtered = filtered.filter((item) => new Date(item.createdAt) >= startDate);
+    } else if (selectedDays === "Today") {
+      const { startOfDay, endOfDay } = getTodayRange();
+      filtered = filtered.filter((item) => {
+        const createdAt = new Date(item.createdAt);
+        return createdAt >= startOfDay && createdAt <= endOfDay;
+      });
     }
 
     return filtered;
@@ -238,11 +254,16 @@ const Homepage = () => {
     .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
     .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
   
-  const notPaidAmount = filteredBills
+  const outstandingAmount = filteredBills  // Changed from notPaidAmount to outstandingAmount
     .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
     .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
   
   const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+  
+  // Business value (total approved orders amount)
+  const businessValue = filteredBills
+    .filter(b => b.orderStatus === "approved")
+    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
   
   // Total counts
   const totalCustomers = selectedStaffId 
@@ -344,13 +365,13 @@ const Homepage = () => {
                                 href="#!"
                                 onClick={(ev) => {
                                   ev.preventDefault();
-                                  setSelectedDays("All");
+                                  setSelectedDays("Today");
                                   setCustomSelected(false);
                                   setSelectedFromDate("");
                                   setSelectedToDate("");
                                 }}
                               >
-                                <span>All Time</span>
+                                <span>Today</span>
                               </DropdownItem>
                             </li>
                             <li>
@@ -992,82 +1013,92 @@ const Homepage = () => {
               </PreviewCard>
             </Col>
 
-            {/* Third Section - Total Orders, Avg Order Value, Pending Amount */}
+            {/* Third Section - Total Orders, Business Value, Outstanding Amount */}
             <Col xl="4" lg="4">
               <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
                 {/* Total Orders Card */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
-                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-                    <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
-                      <Icon name="bag" size={28} />
-                    </div>
-                    <div className="delivery-content">
-                      <h6 className="delivery-title">Total Orders</h6>
-                      <div className="delivery-value">
-                        {loading.bills ? (
-                          <span>Loading...</span>
-                        ) : (
-                          <>
-                            <span className="value-number">{totalOrders}</span>
-                            <small className="badge">orders</small>
-                          </>
-                        )}
-                      </div>
-                      {/* Order Status Breakdown */}
-                      <div className="order-breakdown mt-2">
-                        <div className="d-flex justify-content-between small">
-                          <span>✓ Approved: <span className="fw-bold text-success">{approvedOrders}</span></span>
-                          <span>⏳ Pending: <span className="fw-bold text-warning">{pendingOrders}</span></span>
-                          <span>✗ Rejected: <span className="fw-bold text-danger">{rejectedOrders}</span></span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </PreviewAltCard>
+  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+    <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
+      <Icon name="bag" size={28} />
+    </div>
+    <div className="delivery-content">
+      <h6 className="delivery-title">Total Orders</h6>
+      <div className="delivery-value">
+        {loading.bills ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="value-number">{approvedOrders}</span>
+            <small className="badge">approved orders</small>
+          </>
+        )}
+      </div>
+      {/* Total Orders Count (for reference) */}
+      <div className="order-breakdown mt-2">
+        <div className="d-flex justify-content-between small">
+          <span>Total Orders (All):</span>
+          <span className="fw-bold">{totalOrders}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</PreviewAltCard>
 
-                {/* Avg Order Value Card */}
+                {/* Business Value Card (Replaced Avg Order Value) */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-                    <div className="delivery-icon purple" style={{ width: '55px', height: '55px' }}>
+                    <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
                       <Icon name="trend-up" size={28} />
                     </div>
                     <div className="delivery-content">
-                      <h6 className="delivery-title">Avg Order Value</h6>
+                      <h6 className="delivery-title">Business Value</h6>
                       <div className="delivery-value">
                         {loading.bills ? (
                           <span>Loading...</span>
                         ) : (
                           <>
-                            <span className="value-number">
-                              ₹{totalOrders > 0 ? (totalOrderValue/totalOrders).toFixed(0) : 0}
-                            </span>
-                            <small className="badge">per order</small>
+                            <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
+                            <small className="badge">approved orders</small>
                           </>
                         )}
+                      </div>
+                      {/* Approved Bills Total */}
+                      <div className="approved-breakdown mt-2">
+                        <div className="d-flex justify-content-between small">
+                          <span>Approved Bills:</span>
+                          <span className="fw-bold text-success">{approvedOrders}</span>
+                        </div>
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Avg per Bill:</span>
+                          <span className="fw-bold">
+                            ₹{approvedOrders > 0 ? (businessValue/approvedOrders).toFixed(0) : 0}
+                          </span>
+                        </div>
                       </div>
                       {/* Trend Indicator */}
                       <div className="trend-indicator up mt-2">
                         <Icon name="arrow-up" size={14} />
-                        <span>8.2% vs last period</span>
+                        <span>12.5% vs last period</span>
                       </div>
                     </div>
                   </div>
                 </PreviewAltCard>
 
-                {/* Pending Amount Card */}
+                {/* Outstanding Amount Card (Renamed from Pending Amount) */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
                     <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
                       <Icon name="clock" size={28} />
                     </div>
                     <div className="delivery-content">
-                      <h6 className="delivery-title">Pending Amount</h6>
+                      <h6 className="delivery-title">Outstanding Amount</h6>
                       <div className="delivery-value">
                         {loading.bills ? (
                           <span>Loading...</span>
                         ) : (
                           <>
-                            <span className="value-number">₹{(notPaidAmount).toLocaleString('en-IN')}</span>
+                            <span className="value-number">₹{outstandingAmount.toLocaleString('en-IN')}</span>
                             <small className="badge">unpaid</small>
                           </>
                         )}
@@ -1075,7 +1106,7 @@ const Homepage = () => {
                       {/* Payment Progress */}
                       <div className="payment-progress mt-2">
                         <div className="d-flex justify-content-between small mb-1">
-                          <span>Paid: ₹{(paidAmount).toLocaleString('en-IN')}</span>
+                          <span>Paid: ₹{paidAmount.toLocaleString('en-IN')}</span>
                           <span>{totalOrderValue > 0 ? Math.round((paidAmount/totalOrderValue)*100) : 0}%</span>
                         </div>
                         <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
@@ -1085,6 +1116,10 @@ const Homepage = () => {
                             background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
                             borderRadius: '10px'
                           }} />
+                        </div>
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Pending Bills:</span>
+                          <span className="fw-bold text-warning">{filteredBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length}</span>
                         </div>
                       </div>
                     </div>

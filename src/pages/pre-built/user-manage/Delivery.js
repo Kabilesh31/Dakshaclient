@@ -118,25 +118,31 @@ const fetchAvailableVehicles = async (date) => {
     setVehicles([]); // safety fallback
   }
 };
-    const fetchBills = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`);
-        if (response.status === 200) {
-          // Store bills in state
-          setBills(response.data.bills || []);
-        }
-      } catch (err) {
-        console.log(err);
-        setBills([]);
-      }
-    };
+  const fetchBills = async () => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`);
+    if (response.status === 200) {
+      // Filter out rejected bills right when fetching
+      const allBills = response.data.bills || [];
+      const filteredBills = allBills.filter(bill => 
+        bill.orderStatus !== "rejected"
+      );
+      setBills(filteredBills);
+    }
+  } catch (err) {
+    console.log(err);
+    setBills([]);
+  }
+};
 
-    const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+   const threeDaysAgo = new Date();
+threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-    const last3DaysBills = bills.filter((bill) => {
-        return new Date(bill.createdAt) >= threeDaysAgo;
-    });
+const last3DaysBills = bills.filter((bill) => {
+  // Already filtered at fetch level, but double-check for safety
+  return new Date(bill.createdAt) >= threeDaysAgo && 
+         (bill.orderStatus === "approved" || bill.orderStatus === "delivered");
+});
 
     const filterAssignedCustomer = assinedCustomerDatas.filter((customer) =>
       last3DaysBills.some(
@@ -1232,18 +1238,38 @@ const renderLiveTrack = () => {
   const totalCustomers = displayCustomers?.length || 0;
   
   // For delivery, we need to check bills to see which customers are delivered
-  const getCustomerDeliveryStatus = (customer) => {
-    // Find bills for this customer that are delivered
-    const customerBills = bills.filter(
-      bill => String(bill.customerId) === String(customer._id) && 
-              bill.orderStatus === 'delivered'
-    );
-    
-    return {
-      isDelivered: customerBills.length > 0,
-      deliveredAt: customerBills.length > 0 ? customerBills[0].updatedAt : null
-    };
+const getCustomerDeliveryStatus = (customer) => {
+  // Find bills for this customer that are delivered (using filtered bills)
+  const customerBills = bills.filter(
+    bill => String(bill.customerId) === String(customer._id)
+  );
+  
+  // Check for delivered status
+  const hasDeliveredBill = customerBills.some(bill => bill.orderStatus === 'delivered');
+  
+  // Check for approved status
+  const hasApprovedBill = customerBills.some(bill => bill.orderStatus === 'approved');
+  
+  // Get the most recent approved/delivered bill
+  const relevantBills = customerBills.filter(
+    bill => bill.orderStatus === 'approved' || bill.orderStatus === 'delivered'
+  );
+  
+  // Sort by updatedAt to get the most recent
+  const mostRecentBill = relevantBills.sort(
+    (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+  )[0];
+  
+  return {
+    isDelivered: hasDeliveredBill,
+    hasApprovedBill: hasApprovedBill,
+    deliveredAt: hasDeliveredBill ? mostRecentBill?.updatedAt : null,
+    approvedAt: hasApprovedBill ? mostRecentBill?.updatedAt : null,
+    billStatus: mostRecentBill?.orderStatus || null,
+    paymentStatus: mostRecentBill?.paidStatus || false,
+    paymentMethod: mostRecentBill?.paymentMethod || null
   };
+};
 
   const completedCustomers = displayCustomers?.filter((c) => {
     const { isDelivered } = getCustomerDeliveryStatus(c);
@@ -1664,7 +1690,7 @@ const renderLiveTrack = () => {
                           className="me-1"
                           style={{ fontSize: "27px", lineHeight: 1 }}
                         >
-                          {selectedTrackStaff?.type === "delivery" ? "🚚" : "🏍️"}
+                          {selectedTrackStaff?.type === "delivery" ? "🚚" : "🚚"}
                         </span>
 
                         Delivery Vehicle{" "}
