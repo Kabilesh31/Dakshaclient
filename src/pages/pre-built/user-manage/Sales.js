@@ -1565,7 +1565,7 @@ const renderLiveTrack = () => {
                           className="me-1"
                           style={{ fontSize: "27px", lineHeight: 1 }}
                         >
-                          🚚
+                          🏍️
                         </span>
 
                         Sales Vehicle{" "}
