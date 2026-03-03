@@ -74,6 +74,7 @@ const NotificationItem = ({
 };
 
 const Notification = () => {
+  const history = useHistory();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -218,9 +219,15 @@ const Notification = () => {
         </div>
 
         <div className="dropdown-foot center">
-          <a href="#viewall" onClick={(e) => e.preventDefault()}>
-            View All
-          </a>
+          <a
+  href="#viewall"
+  onClick={(e) => {
+    e.preventDefault();
+    history.push("/orders");
+  }}
+>
+  View All
+</a>
         </div>
       </DropdownMenu>
     </UncontrolledDropdown>

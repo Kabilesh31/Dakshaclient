@@ -396,22 +396,29 @@ const onEditClick = (item) => {
     <React.Fragment>
       <Head title="Products List"></Head>
       <Content>
-        <div style={{ margin: "-15px" }}></div>
+       <div
+  style={{
+    position: "sticky",
+    top: "0",
+    zIndex: 1000,
+    marginBottom: "18px",
+   
+  }}
+>
+  <BlockHead size="sm">
+    <BlockBetween>
+      <BlockHeadContent>
+        <BlockTitle tag="h3" page>
+          Products Management
+        </BlockTitle>
+        <BlockDes className="text-soft">
+          <p>
+            Total Products: {data?.length} | Showing: {filteredProducts.length}
+          </p>
+        </BlockDes>
+      </BlockHeadContent>
 
-        <BlockHead size="sm">
-          <BlockBetween>
-            <div style={{ margin: "-385px" }}></div>
-            <BlockHeadContent>
-              <BlockTitle tag="h3" page>
-                Products Management
-              </BlockTitle>
-              <BlockDes className="text-soft">
-                <p>
-                  Total Products: {data?.length} | Showing: {filteredProducts.length}
-                </p>
-              </BlockDes>
-            </BlockHeadContent>
-            <BlockHeadContent>
+      <BlockHeadContent>
               <div className="toggle-wrap nk-block-tools-toggle">
                 <Button
                   className={`btn-icon btn-trigger toggle-expand mr-n1 ${sm ? "active" : ""}`}
@@ -468,6 +475,7 @@ const onEditClick = (item) => {
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>
+        </div>
 
         <Block>
           <Row>
@@ -760,19 +768,69 @@ const onEditClick = (item) => {
                 )}
 
                 <div className="card-inner">
-                  {currentItems.length > 0 ? (
-                    <PaginationComponent
-                      itemPerPage={itemPerPage}
-                      totalItems={filteredProducts.length}
-                      paginate={paginate}
-                      currentPage={currentPage}
-                    />
-                  ) : (
-                    <div className="text-center">
-                      <span className="text-silent">No data found</span>
-                    </div>
-                  )}
-                </div>
+  {currentItems.length > 0 ? (
+    <div className="d-flex justify-content-center align-items-center">
+
+      {/* Previous */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={currentPage === 1}
+        onClick={() => paginate(currentPage - 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-left"></em>
+      </button>
+
+      {/* Page Numbers */}
+      {[...Array(Math.ceil(filteredProducts.length / itemPerPage))].map((_, index) => {
+        const pageNumber = index + 1;
+
+        if (
+          pageNumber === currentPage ||
+          pageNumber === currentPage - 1 ||
+          pageNumber === currentPage + 1
+        ) {
+          return (
+            <button
+              key={pageNumber}
+              onClick={() => paginate(pageNumber)}
+              className={`btn btn-sm mx-1 ${
+                currentPage === pageNumber
+                  ? "btn-primary"
+                  : "btn-outline-light"
+              }`}
+              style={{
+                minWidth: "36px",
+                borderRadius: "6px",
+                fontWeight: 500
+              }}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+        return null;
+      })}
+
+      {/* Next */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={
+          currentPage === Math.ceil(filteredProducts.length / itemPerPage)
+        }
+        onClick={() => paginate(currentPage + 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-right"></em>
+      </button>
+
+    </div>
+  ) : (
+    <div className="text-center">
+      <span className="text-silent">No data found</span>
+    </div>
+  )}
+</div>
               </DataTable>
             </Col>
           </Row>

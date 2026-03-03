@@ -553,14 +553,64 @@ const CustomerListCompact = () => {
               ))}
             </DataTableBody>
 
-            <div className="card-inner">
-              <PaginationComponent
-                itemPerPage={itemPerPage}
-                totalItems={data.length}
-                paginate={setCurrentPage}
-                currentPage={currentPage}
-              />
-            </div>
+           <div className="card-inner">
+  <div className="d-flex justify-content-center align-items-center">
+
+    {/* Previous */}
+    <button
+      className="btn btn-icon btn-sm btn-outline-light mx-1"
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage(currentPage - 1)}
+      style={{ borderRadius: "6px" }}
+    >
+      <em className="icon ni ni-chevron-left"></em>
+    </button>
+
+    {/* Page Numbers */}
+    {[...Array(Math.ceil(data.length / itemPerPage))].map((_, index) => {
+      const pageNumber = index + 1;
+
+      if (
+        pageNumber === currentPage ||
+        pageNumber === currentPage - 1 ||
+        pageNumber === currentPage + 1
+      ) {
+        return (
+          <button
+            key={pageNumber}
+            onClick={() => setCurrentPage(pageNumber)}
+            className={`btn btn-sm mx-1 ${
+              currentPage === pageNumber
+                ? "btn-primary"
+                : "btn-outline-light"
+            }`}
+            style={{
+              minWidth: "36px",
+              borderRadius: "6px",
+              fontWeight: 500
+            }}
+          >
+            {pageNumber}
+          </button>
+        );
+      }
+      return null;
+    })}
+
+    {/* Next */}
+    <button
+      className="btn btn-icon btn-sm btn-outline-light mx-1"
+      disabled={
+        currentPage === Math.ceil(data.length / itemPerPage)
+      }
+      onClick={() => setCurrentPage(currentPage + 1)}
+      style={{ borderRadius: "6px" }}
+    >
+      <em className="icon ni ni-chevron-right"></em>
+    </button>
+
+  </div>
+</div>
           </DataTable>
         </Block>
       </Content>

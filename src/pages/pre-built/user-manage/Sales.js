@@ -666,7 +666,14 @@ const fetchAvailableVehicles = async (date) => {
                                       <Badge className="m-1" color={getStatusBadge(assignment.status)}>
                                         {assignment.status?.replace('_', ' ') || 'ASSIGNED'}
                                       </Badge>
+                                       {assignment.vehicleNo && (
+                                      <Badge color="info" className="me-2" pill>
+                                        
+                                        {assignment.vehicleNo}
+                                      </Badge>
+                                    )}
                                     </div>
+                                    
                                     <Button
                                       size="xs"
                                       color="danger"
@@ -852,6 +859,9 @@ const fetchAvailableVehicles = async (date) => {
                           <h6 className="mb-1">{assignment.routeId?.routeName || assignment.routeName}</h6>
                           <p className="mb-0 small text-primary">
                             Assigned to: {assignment.staffId?.name || assignment.staffId}
+                          </p>
+                          <p className="mb-0 small text-primary">
+                            Assigned vehicle: {assignment.vehicleNo || "N/A"}
                           </p>
                         </div>
 

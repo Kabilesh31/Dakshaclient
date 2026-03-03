@@ -28,16 +28,16 @@ const Reports = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   
-  // Calculate paid and pending amounts from filtered data
+  // Calculate paid and pending amounts from filtered data - Using finalAmt
   const paidAmount = filteredReportData
     .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
   const pendingAmount = filteredReportData
     .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
-    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
 
-  const totalAmount = filteredReportData.reduce((acc, o) => acc + (o.totalAmt || 0), 0);
+  const totalAmount = filteredReportData.reduce((acc, o) => acc + (Number(o.finalAmt) || 0), 0);
 
   const fetchCustomers = async () => {
     try {
@@ -72,8 +72,16 @@ const Reports = () => {
         `${process.env.REACT_APP_BACKENDURL}/api/bills`
       );
 
-      const customerBills = res.data.bills.filter(
-        (b) => b.customerId === selectedCustomer._id
+      // Handle different response structures
+      let bills = [];
+      if (Array.isArray(res.data)) {
+        bills = res.data;
+      } else if (res.data.bills && Array.isArray(res.data.bills)) {
+        bills = res.data.bills;
+      }
+
+      const customerBills = bills.filter(
+        (b) => b.customerId === selectedCustomer._id || b.customerId?._id === selectedCustomer._id
       );
 
       console.log("Bills data:", customerBills); // Debug log to see bill structure
@@ -203,7 +211,7 @@ const Reports = () => {
     setInvoiceModal(true);
   };
 
-// Function to download invoice as PDF
+// Function to download invoice as PDF - Using finalAmt
 const downloadInvoicePDF = () => {
   if (!selectedBill) return;
 
@@ -279,8 +287,8 @@ const downloadInvoicePDF = () => {
     idx + 1,
     product.productName,
     product.qty.toString(),
-    product.value?.toString() || '0',
-    (product.value * product.qty).toString()
+    (Number(product.value) || 0).toString(),
+    ((Number(product.value) || 0) * (Number(product.qty) || 0)).toString()
   ]) || [];
 
   autoTable(doc, {
@@ -323,14 +331,14 @@ const downloadInvoicePDF = () => {
     }
   });
 
-  // ===== Totals =====
+  // ===== Totals - Using finalAmt =====
   const finalY = doc.lastAutoTable.finalY + 15;
 
   // Calculate subtotal from orderedProducts
   const subtotal = selectedBill.orderedProducts?.reduce(
-    (sum, product) => sum + (product.value * product.qty), 
+    (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
     0
-  ) || selectedBill.totalAmt || 0;
+  ) || Number(selectedBill.finalAmt) || 0;
 
   // Subtotal
   doc.setFontSize(10);
@@ -347,12 +355,12 @@ const downloadInvoicePDF = () => {
   doc.text("Tax", 140, finalY + 16);
   doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
 
-  // Total (with bold font)
+  // Total (with bold font) - Using finalAmt
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(33, 37, 41);
   doc.text("Total", 135, finalY + 28);
-  doc.text(`₹ ${(selectedBill.totalAmt || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
+  doc.text(`₹ ${(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
 
   // ===== Payment Information =====
   if (selectedBill.paymentMethod) {
@@ -384,6 +392,7 @@ const downloadInvoicePDF = () => {
     return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
   };
 
+  // Export PDF - Using finalAmt
   const exportPDF = () => {
     if (!selectedCustomer) return;
 
@@ -409,7 +418,7 @@ const downloadInvoicePDF = () => {
       );
     }
 
-    // ===== Summary Section =====
+    // ===== Summary Section - Using finalAmt =====
     doc.setFontSize(11);
     doc.setTextColor(33);
     doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
@@ -429,7 +438,7 @@ const downloadInvoicePDF = () => {
       66
     );
 
-    // ===== Table =====
+    // ===== Table - Using finalAmt =====
     const tableColumn = [
       "S.No",
       "Order No",
@@ -443,7 +452,7 @@ const downloadInvoicePDF = () => {
       idx + 1,
       `#${o._id.toString().slice(-6)}`,
       new Date(o.createdAt).toLocaleDateString("en-IN"),
-      (o.totalAmt || 0).toLocaleString("en-IN"),
+      (Number(o.finalAmt) || 0).toLocaleString("en-IN"),
       o.paymentMethod ? "Paid" : "Pending",
       getStaffName(o),
     ]);
@@ -470,6 +479,7 @@ const downloadInvoicePDF = () => {
     doc.save(`${selectedCustomer.name}_Report.pdf`);
   };
   
+  // Export Excel - Using finalAmt
   const exportExcel = () => {
     if (!selectedCustomer) return;
     
@@ -477,7 +487,7 @@ const downloadInvoicePDF = () => {
       'S.No': idx + 1,
       'Order No': `#${bill._id.toString().slice(-6)}`,
       'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-      'Amount (₹)': bill.totalAmt || 0,
+      'Amount (₹)': Number(bill.finalAmt) || 0,
       'Payment Status': bill.paymentMethod ? 'Paid' : 'Pending',
       'Order Status': bill.orderStatus || 'N/A',
       'Staff Name': getStaffName(bill)
@@ -657,7 +667,7 @@ const downloadInvoicePDF = () => {
                 )}
               </div>
 
-              {/* Stats Cards */}
+              {/* Stats Cards - Using finalAmt */}
               <Row className="stats-row g-2">
                 <Col md="3">
                   <div className="stat-card compact">
@@ -741,7 +751,7 @@ const downloadInvoicePDF = () => {
                                 month: 'short', 
                                 year: 'numeric' 
                               })}</td>
-                              <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
+                              <td className="amount">₹ {(Number(o.finalAmt) || 0).toLocaleString('en-IN')}</td>
                               <td>
                                 <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
                                   {o.paymentMethod ? 'Paid' : 'Pending'}
@@ -766,7 +776,7 @@ const downloadInvoicePDF = () => {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan="3" className="text-end fw-bold "></td>
+                            <td colSpan="3" className="text-end fw-bold ">Total:</td>
                             <td className="amount fw-bold ml-1">₹ {totalAmount.toLocaleString('en-IN')}</td>
                             <td colSpan="3"></td>
                           </tr>
@@ -925,8 +935,8 @@ const downloadInvoicePDF = () => {
           <td>{idx + 1}</td>
           <td>{product.productName}</td>
           <td>{product.qty}</td>
-          <td>₹ {product.value?.toLocaleString('en-IN') || 0}</td>
-          <td>₹ {(product.value * product.qty).toLocaleString('en-IN')}</td>
+          <td>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
+          <td>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
         </tr>
       ))}
     </tbody>
@@ -966,15 +976,15 @@ const downloadInvoicePDF = () => {
     </div>
   </div>
 )}
-{/* Totals Section */}
+{/* Totals Section - Using finalAmt */}
 <div className="totals-section">
   <div className="total-row">
     <span className="total-label">Subtotal</span>
     <span className="total-value">
       ₹ {selectedBill.orderedProducts?.reduce(
-        (sum, product) => sum + (product.value * product.qty), 
+        (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
         0
-      ).toLocaleString('en-IN') || selectedBill.totalAmt?.toLocaleString('en-IN') || '0'}
+      ).toLocaleString('en-IN') || (Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}
     </span>
   </div>
   <div className="total-row">
@@ -987,7 +997,7 @@ const downloadInvoicePDF = () => {
   </div>
   <div className="total-row grand-total">
     <span className="total-label">Total</span>
-    <span className="total-value">₹ {(selectedBill.totalAmt || 0).toLocaleString('en-IN')}</span>
+    <span className="total-value">₹ {(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}</span>
   </div>
 </div>
 
