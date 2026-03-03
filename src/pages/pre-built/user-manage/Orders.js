@@ -281,42 +281,38 @@ const confirmAction = async () => {
 
           
             <div className="d-flex align-items-center gap-5">
-<div className="position-relative">
- 
-  <DatePicker
-  multiple
-  value={selectedDates}
-  onChange={setSelectedDates}
-  format="YYYY-MM-DD"
-   placeholder="Select dates"
-  style={{
-    width: "110px",
-    borderRadius: "8px",
-    border: "1px solid #dbdfea",
-    height: "31px",
-    fontSize: "14px",
-  }}
-  inputClass="form-control form-control-sm ps-5"
-/>
+              <div className="position-relative">
+              
+                <DatePicker
+                  multiple
+                  value={selectedDates}
+                  onChange={setSelectedDates}
+                  format="YYYY-MM-DD"
+                  placeholder="Select dates"
+                  style={{
+                    width: "110px",
+                    borderRadius: "8px",
+                    border: "1px solid #dbdfea",
+                    height: "31px",
+                    fontSize: "14px",
+                  }}
+                inputClass="form-control form-control-sm ps-5"
+              />
+            </div>
 
-</div>
-
- 
-
-    {/* STATUS FILTER */}
-    <div className="btn-group btn-group-sm ml-3">
-      {["all", "pending", "approved", "rejected"].map((s) => (
-        <Button
-          key={s}
-          color={statusFilter === s ? "primary" : "light"}
-          className="px-3"
-          onClick={() => setStatusFilter(s)}
-        >
-          {s.toUpperCase()}
-        </Button>
-      ))}
-    </div>
-  </div>
+            <div className="btn-group btn-group-sm ml-3">
+                {["all", "pending", "approved", "rejected"].map((s) => (
+                  <Button
+                    key={s}
+                    color={statusFilter === s ? "primary" : "light"}
+                    className="px-3"
+                    onClick={() => setStatusFilter(s)}
+                  >
+                    {s.toUpperCase()}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </BlockBetween>
         </BlockHead>
 
@@ -426,9 +422,20 @@ const confirmAction = async () => {
                         </td>
 
                         <td className="px-4 py-2 text-start">
-                          {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 10px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              backgroundColor: "#e0f2fe",
+                              color: "#0369a1",
+                              borderRadius: "20px"
+                            }}
+                          >
+                            {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                          </span>
                         </td>
-
                         <td className="py-2 text-start">
                           {order.customerName}
                         </td>
@@ -643,38 +650,9 @@ const confirmAction = async () => {
               </div> */}
             </div>
 
-            {/* PDF Button */}
-            <div className="text-end mt-3">
-              <Button color="primary" className="mr-1" size="sm" onClick={downloadPDF}>
-                <Icon name="download" /> 
-                
-              </Button>
-              {selectedOrder.orderStatus === "pending" && (
-              <Button
-                color="primary"
-                size="sm"
-                onClick={() => {
-                  setUploadModal(true);
-                  setUploadFile(null);
-                  setFinalAmount("");
-                }}
-              >
-                <Icon name="upload" />
-              </Button>
-              )}
-            </div>
-          </ModalBody>
-        </Modal>
-      )}
-
-      <Modal isOpen={uploadModal} centered>
-        <ModalBody className="p-4">
-
-          <h5 className="fw-bold mb-3">Upload Bill & Approve</h5>
-
-          {/* PDF Upload */}
-          <div className="mb-3">
-            <label className="form-label">Upload PDF</label>
+            {uploadModal && (<>
+                <div className="mb-3">
+            <label className="form-label">Upload Bill</label>
             <input
               type="file"
               accept="application/pdf"
@@ -715,9 +693,32 @@ const confirmAction = async () => {
               {uploading ? "Submitting..." : "Submit & Approve"}
             </Button>
           </div>
+            </>)}
 
-        </ModalBody>
-      </Modal>
+            {/* PDF Button */}
+            <div className="text-end mt-3">
+              <Button color="primary" className="mr-1" size="sm" onClick={downloadPDF}>
+                <Icon name="download" /> 
+                
+              </Button>
+              {selectedOrder.orderStatus === "pending" && (
+              <Button
+                color="primary"
+                size="sm"
+                onClick={() => {
+                  setUploadModal(true);
+                  setUploadFile(null);
+                  setFinalAmount("");
+                }}
+              >
+                <Icon name="upload" />
+              </Button>
+              )}
+            </div>
+          </ModalBody>
+        </Modal>
+      )}
+
 
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         <div ref={hiddenPdfRef} className="order-invoice-pdf">
