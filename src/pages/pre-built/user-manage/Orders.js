@@ -38,6 +38,7 @@ const Orders = () => {
   const [uploadModal, setUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [finalAmount, setFinalAmount] = useState("");
+  const [billId, setBillId] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const modalRef = useRef();
@@ -236,7 +237,7 @@ const confirmAction = async () => {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
  const handleUploadSubmit = async () => {
-  if (!uploadFile || !finalAmount || !selectedOrder) return;
+  if (!uploadFile || !finalAmount || !selectedOrder || !billId) return;
 
   try {
     setUploading(true);
@@ -244,7 +245,8 @@ const confirmAction = async () => {
     const formData = new FormData();
     formData.append("pdf", uploadFile);
     formData.append("finalAmt", finalAmount);
-
+    formData.append("billId", billId);
+    
     const res = await axios.patch(
       `${process.env.REACT_APP_BACKENDURL}/api/bills/${selectedOrder._id}/upload`, formData);
     const updatedBill = res.data.data;
@@ -661,6 +663,17 @@ const confirmAction = async () => {
             />
           </div>
 
+          <div className="mb-3">
+            <label className="form-label">Enter Bill ID</label>
+            <input
+              type="text"
+              className="form-control"
+              value={billId}
+              onChange={(e) => setBillId(e.target.value)}
+              placeholder="Enter Bill ID"
+            />
+          </div>
+
           {/* Final Amount */}
           <div className="mb-3">
             <label className="form-label">Final Total Amount</label>
@@ -672,6 +685,8 @@ const confirmAction = async () => {
               placeholder="Enter final amount"
             />
           </div>
+
+          
 
           <div className="d-flex justify-content-end gap-3 mb-3">
             <Button
@@ -687,7 +702,7 @@ const confirmAction = async () => {
               size="sm"
               className="mr-1 p-3"
               color="primary"
-              disabled={!uploadFile || !finalAmount || uploading}
+              disabled={!uploadFile || !finalAmount || uploading ||!billId}
               onClick={handleUploadSubmit}
             >
               {uploading ? "Submitting..." : "Submit & Approve"}
@@ -709,6 +724,7 @@ const confirmAction = async () => {
                   setUploadModal(true);
                   setUploadFile(null);
                   setFinalAmount("");
+                  setBillId("")
                 }}
               >
                 <Icon name="upload" />
