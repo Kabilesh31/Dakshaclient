@@ -40,7 +40,7 @@ const StaffReport = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
 
-  // Calculate statistics based on staff type
+  // Calculate statistics based on staff type - Using finalAmt
   const calculateStats = () => {
     if (!filteredBills.length) return {
       totalOrders: 0,
@@ -53,22 +53,22 @@ const StaffReport = () => {
     };
 
     const totalOrders = filteredBills.length;
-    const totalAmount = filteredBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    const totalAmount = filteredBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
     
     // For sales staff: payments collected vs pending
     const collectedAmount = filteredBills
       .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-      .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+      .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
     
     const pendingAmount = totalAmount - collectedAmount;
 
     // For delivery staff: delivery status
     const deliveredOrders = filteredBills.filter(b => 
-      b.orderStatus?.toLowerCase() === 'delivered'
+      b.orderStatus?.toLowerCase() === 'delivered' || b.orderStatus === "approved"
     ).length;
     
     const pendingDelivery = filteredBills.filter(b => 
-      !b.orderStatus || b.orderStatus?.toLowerCase() !== 'delivered'
+      !b.orderStatus || (b.orderStatus?.toLowerCase() !== 'delivered' && b.orderStatus !== "approved")
     ).length;
 
     // For delivery staff: assigned customers (unique customers)
@@ -108,7 +108,14 @@ const StaffReport = () => {
       const res = await axios.get(
         `${process.env.REACT_APP_BACKENDURL}/api/bills`
       );
-      setAllBills(res.data.bills || []);
+      // Handle different response structures
+      if (Array.isArray(res.data)) {
+        setAllBills(res.data);
+      } else if (res.data.bills && Array.isArray(res.data.bills)) {
+        setAllBills(res.data.bills);
+      } else {
+        setAllBills([]);
+      }
     } catch (err) {
       console.error("Failed to fetch bills:", err);
       errorToast("Failed to fetch bills data");
@@ -213,284 +220,285 @@ const StaffReport = () => {
     setInvoiceModal(true);
   };
 
-  // Download invoice PDF
-const downloadInvoicePDF = () => {
-  if (!selectedBill) return;
+  // Download invoice PDF - Using finalAmt
+  const downloadInvoicePDF = () => {
+    if (!selectedBill) return;
 
-  const doc = new jsPDF();
+    const doc = new jsPDF();
 
-  // Header
-  doc.setFontSize(24);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Retail Pulse", 105, 20, { align: "center" });
+    // Header
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Retail Pulse", 105, 20, { align: "center" });
 
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text("Order Invoice", 105, 30, { align: "center" });
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text("Order Invoice", 105, 30, { align: "center" });
 
-  // Order ID and Date
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
-  
-  doc.setFont("helvetica", "normal");
-  const orderDate = new Date(selectedBill.createdAt);
-  const formattedDate = `${orderDate.getMonth()+1}/${orderDate.getDate()}/${orderDate.getFullYear()}`;
-  doc.text(`Date: ${formattedDate}`, 14, 52);
-
-  // Order Status
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(46, 204, 113);
-  doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
-
-  // Customer Details
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Customer Details", 14, 67);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Name: ${getCustomerName(selectedBill)}`, 14, 75);
-  doc.text(`Mobile: ${selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}`, 14, 82);
-  doc.text(`Address: ${selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}`, 14, 89);
-
-  // Staff Details
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Staff Details", 120, 67);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  
-  doc.text(`Name: ${selectedStaff?.name || selectedBill.staffName || 'N/A'}`, 120, 75);
-  doc.text(`Type: ${selectedStaff?.type || 'staff'}`, 120, 82);
-  doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}`, 120, 89);
-
-  // Calculate subtotal
-  const subtotal = selectedBill.orderedProducts?.reduce(
-    (sum, product) => sum + (Number(product.value) * Number(product.qty)), 
-    0
-  ) || Number(selectedBill.totalAmt) || 0;
-
-  // Products Table
-  const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
-  const tableRows = selectedBill.orderedProducts?.map((product, idx) => {
-    const qty = Number(product.qty) || 0;
-    const rate = Number(product.value) || 0;
-    const amount = rate * qty;
+    // Order ID and Date
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
     
-    return [
-      idx + 1,
-      product.productName || '',
-      qty.toString(),
-      rate.toString(),
-      amount.toString()
-    ];
-  }) || [];
+    doc.setFont("helvetica", "normal");
+    const orderDate = new Date(selectedBill.createdAt);
+    const formattedDate = `${orderDate.getMonth()+1}/${orderDate.getDate()}/${orderDate.getFullYear()}`;
+    doc.text(`Date: ${formattedDate}`, 14, 52);
 
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: 105,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [51, 51, 51],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 10,
-      halign: 'center'
-    },
-    styles: {
-      fontSize: 9,
-      cellPadding: 5,
-      font: 'helvetica',
-      halign: 'center'
-    },
-    columnStyles: {
-      0: { cellWidth: 15, halign: 'center' },
-      1: { cellWidth: 70, halign: 'left' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right' },
-      4: { cellWidth: 35, halign: 'right' }
-    }
-  });
+    // Order Status
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(46, 204, 113);
+    doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
 
-  // Totals section - FIXED
-// Totals section - MOVED JUST A TINY BIT MORE LEFT
-const finalY = doc.lastAutoTable.finalY + 15;
+    // Customer Details
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Customer Details", 14, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Name: ${getCustomerName(selectedBill)}`, 14, 75);
+    doc.text(`Mobile: ${selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}`, 14, 82);
+    doc.text(`Address: ${selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}`, 14, 89);
 
-// Format numbers
-const subtotalFormatted = subtotal.toString();
-const totalFormatted = (Number(selectedBill.totalAmt) || 0).toString();
+    // Staff Details
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Staff Details", 120, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    
+    doc.text(`Name: ${selectedStaff?.name || selectedBill.staffName || 'N/A'}`, 120, 75);
+    doc.text(`Type: ${selectedStaff?.type || 'staff'}`, 120, 82);
+    doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}`, 120, 89);
 
-doc.setFontSize(10);
-doc.setFont("helvetica", "normal");
-doc.setTextColor(80, 80, 80);
+    // Calculate subtotal - Using finalAmt as fallback
+    const subtotal = selectedBill.orderedProducts?.reduce(
+      (sum, product) => sum + (Number(product.value) * Number(product.qty)), 
+      0
+    ) || Number(selectedBill.finalAmt) || 0;
 
-// Align totals - FINE-TUNED POSITION
-const startX = 128;  // Changed from 130 to 128
-const valueX = 178;  // Changed from 180 to 178
+    // Products Table
+    const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
+    const tableRows = selectedBill.orderedProducts?.map((product, idx) => {
+      const qty = Number(product.qty) || 0;
+      const rate = Number(product.value) || 0;
+      const amount = rate * qty;
+      
+      return [
+        idx + 1,
+        product.productName || '',
+        qty.toString(),
+        rate.toString(),
+        amount.toString()
+      ];
+    }) || [];
 
-doc.text("Subtotal:", startX, finalY);
-doc.text(subtotalFormatted, valueX, finalY, { align: 'right' });
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 105,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [51, 51, 51],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10,
+        halign: 'center'
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 5,
+        font: 'helvetica',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 70, halign: 'left' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 35, halign: 'right' }
+      }
+    });
 
-doc.text("Discount:", startX, finalY + 8);
-doc.text("0", valueX, finalY + 8, { align: 'right' });
+    // Totals section - Using finalAmt
+    const finalY = doc.lastAutoTable.finalY + 15;
 
-doc.text("Tax:", startX, finalY + 16);
-doc.text("0", valueX, finalY + 16, { align: 'right' });
+    // Format numbers
+    const subtotalFormatted = subtotal.toString();
+    const totalFormatted = (Number(selectedBill.finalAmt) || 0).toString();
 
-doc.setFontSize(12);
-doc.setFont("helvetica", "bold");
-doc.setTextColor(33, 37, 41);
-doc.text("Total:", startX - 5, finalY + 28);  // Total label at 123 (128-5)
-doc.text(totalFormatted, valueX, finalY + 28, { align: 'right' });
-  // Payment info
-  if (selectedBill.paymentMethod) {
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 35);
-    
-    if (selectedBill.paymentCollectedAt) {
-      const paymentDate = new Date(selectedBill.paymentCollectedAt);
-      const formattedPaymentDate = `${paymentDate.getMonth()+1}/${paymentDate.getDate()}/${paymentDate.getFullYear()}, ${paymentDate.getHours()}:${paymentDate.getMinutes()}:${paymentDate.getSeconds()} ${paymentDate.getHours() >= 12 ? 'PM' : 'AM'}`;
-      doc.text(`Payment Collected: ${formattedPaymentDate}`, 14, finalY + 42);
+
+    const startX = 128;
+    const valueX = 178;
+
+    doc.text("Subtotal:", startX, finalY);
+    doc.text(subtotalFormatted, valueX, finalY, { align: 'right' });
+
+    doc.text("Discount:", startX, finalY + 8);
+    doc.text("0", valueX, finalY + 8, { align: 'right' });
+
+    doc.text("Tax:", startX, finalY + 16);
+    doc.text("0", valueX, finalY + 16, { align: 'right' });
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Total:", startX - 5, finalY + 28);
+    doc.text(totalFormatted, valueX, finalY + 28, { align: 'right' });
+
+    // Payment info
+    if (selectedBill.paymentMethod) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 35);
+      
+      if (selectedBill.paymentCollectedAt) {
+        const paymentDate = new Date(selectedBill.paymentCollectedAt);
+        const formattedPaymentDate = `${paymentDate.getMonth()+1}/${paymentDate.getDate()}/${paymentDate.getFullYear()}, ${paymentDate.getHours()}:${paymentDate.getMinutes()}:${paymentDate.getSeconds()} ${paymentDate.getHours() >= 12 ? 'PM' : 'AM'}`;
+        doc.text(`Payment Collected: ${formattedPaymentDate}`, 14, finalY + 42);
+      }
     }
-  }
 
-  doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
-};
+    doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
+  };
 
-const exportPDF = () => {
-  if (!selectedStaff) return;
+  // Export PDF - Using finalAmt
+  const exportPDF = () => {
+    if (!selectedStaff) return;
 
-  const doc = new jsPDF();
+    const doc = new jsPDF();
 
-  // Title
-  doc.setFontSize(18);
-  doc.setTextColor(33, 37, 41);
-  doc.text(`Staff Performance Report`, 14, 18);
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(33, 37, 41);
+    doc.text(`Staff Performance Report`, 14, 18);
 
-  doc.setFontSize(12);
-  doc.text(`Staff: ${selectedStaff.name} (${selectedStaff.type})`, 14, 26);
+    doc.setFontSize(12);
+    doc.text(`Staff: ${selectedStaff.name} (${selectedStaff.type})`, 14, 26);
 
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
 
-  if (startDate && endDate) {
-    doc.text(
-      `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
-      14,
-      38
-    );
-  }
+    if (startDate && endDate) {
+      doc.text(
+        `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
+        14,
+        38
+      );
+    }
 
-  // Summary Section - Different for Sales vs Delivery
-  doc.setFontSize(11);
-  doc.setTextColor(33);
-  
-  if (selectedStaff.type?.toLowerCase() === 'delivery') {
-    doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-    doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-    doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
-    doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
-    doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
+    // Summary Section - Using finalAmt
+    doc.setFontSize(11);
+    doc.setTextColor(33);
     
-    // Table for delivery
-    const tableColumn = [
-      "S.No",
-      "Order No",
-      "Customer",
-      "Date",
-      "Amount (Rs)",
-      "Status",
-    ];
+    if (selectedStaff.type?.toLowerCase() === 'delivery') {
+      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
+      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
+      doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
+      doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
+      
+      // Table for delivery - Using finalAmt
+      const tableColumn = [
+        "S.No",
+        "Order No",
+        "Customer",
+        "Date",
+        "Amount (Rs)",
+        "Status",
+      ];
 
-    const tableRows = filteredBills.map((bill, idx) => [
-      idx + 1,
-      `#${bill._id.toString().slice(-6)}`,
-      getCustomerName(bill),
-      new Date(bill.createdAt).toLocaleDateString("en-IN"),
-      (bill.totalAmt || 0).toLocaleString("en-IN"),
-      bill.orderStatus || 'Pending',
-    ]);
+      const tableRows = filteredBills.map((bill, idx) => [
+        idx + 1,
+        `#${bill._id.toString().slice(-6)}`,
+        getCustomerName(bill),
+        new Date(bill.createdAt).toLocaleDateString("en-IN"),
+        (Number(bill.finalAmt) || 0).toLocaleString("en-IN"),
+        bill.orderStatus || 'Pending',
+      ]);
 
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 85,
-      theme: "striped",
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-      },
-      styles: {
-        fontSize: 9,
-      },
-      columnStyles: {
-        4: { halign: "right" },
-      },
-    });
-  } else {
-    doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-    doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-    doc.text(`Collected Amount: Rs. ${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
-    doc.text(`Pending Amount: Rs. ${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
-    
-    // Table for sales/manager
-    const tableColumn = [
-      "S.No",
-      "Order No",
-      "Customer",
-      "Date",
-      "Amount (Rs)",
-      "Payment Status",
-      "Order Status",
-    ];
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 85,
+        theme: "striped",
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        styles: {
+          fontSize: 9,
+        },
+        columnStyles: {
+          4: { halign: "right" },
+        },
+      });
+    } else {
+      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
+      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Collected Amount: Rs. ${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
+      doc.text(`Pending Amount: Rs. ${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
+      
+      // Table for sales/manager - Using finalAmt
+      const tableColumn = [
+        "S.No",
+        "Order No",
+        "Customer",
+        "Date",
+        "Amount (Rs)",
+        "Payment Status",
+        "Order Status",
+      ];
 
-    const tableRows = filteredBills.map((bill, idx) => [
-      idx + 1,
-      `#${bill._id.toString().slice(-6)}`,
-      getCustomerName(bill),
-      new Date(bill.createdAt).toLocaleDateString("en-IN"),
-      (bill.totalAmt || 0).toLocaleString("en-IN"),
-      bill.paymentMethod ? "Paid" : "Pending",
-      bill.orderStatus || 'Pending',
-    ]);
+      const tableRows = filteredBills.map((bill, idx) => [
+        idx + 1,
+        `#${bill._id.toString().slice(-6)}`,
+        getCustomerName(bill),
+        new Date(bill.createdAt).toLocaleDateString("en-IN"),
+        (Number(bill.finalAmt) || 0).toLocaleString("en-IN"),
+        bill.paymentMethod ? "Paid" : "Pending",
+        bill.orderStatus || 'Pending',
+      ]);
 
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 75,
-      theme: "striped",
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-      },
-      styles: {
-        fontSize: 9,
-      },
-      columnStyles: {
-        4: { halign: "right" },
-      },
-    });
-  }
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 75,
+        theme: "striped",
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        styles: {
+          fontSize: 9,
+        },
+        columnStyles: {
+          4: { halign: "right" },
+        },
+      });
+    }
 
-  doc.save(`${selectedStaff.name}_Report.pdf`);
-};
+    doc.save(`${selectedStaff.name}_Report.pdf`);
+  };
   
+  // Export Excel - Using finalAmt
   const exportExcel = () => {
     if (!selectedStaff) return;
     
@@ -502,7 +510,7 @@ const exportPDF = () => {
         'Order No': `#${bill._id.toString().slice(-6)}`,
         'Customer': getCustomerName(bill),
         'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': bill.totalAmt || 0,
+        'Amount (₹)': Number(bill.finalAmt) || 0,
         'Delivery Status': bill.orderStatus || 'Pending',
       }));
     } else {
@@ -511,7 +519,7 @@ const exportPDF = () => {
         'Order No': `#${bill._id.toString().slice(-6)}`,
         'Customer': getCustomerName(bill),
         'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': bill.totalAmt || 0,
+        'Amount (₹)': Number(bill.finalAmt) || 0,
         'Payment Status': bill.paymentMethod ? 'Paid' : 'Pending',
         'Order Status': bill.orderStatus || 'Pending',
       }));
@@ -747,7 +755,7 @@ const exportPDF = () => {
                 )}
               </div>
 
-              {/* Stats Cards - Different for Sales vs Delivery */}
+              {/* Stats Cards - Using finalAmt */}
               {selectedStaff.type?.toLowerCase() === 'delivery' ? (
                 /* Delivery Staff Stats */
                 <Row className="stats-row g-2">
@@ -762,17 +770,6 @@ const exportPDF = () => {
                       </div>
                     </div>
                   </Col>
-                  {/* <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon green compact">
-                        <i className="ni ni-money"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Total Amount</span>
-                        <span className="stat-value">₹{stats.totalAmount.toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  </Col> */}
                   <Col md="3">
                     <div className="stat-card compact">
                       <div className="stat-icon success compact">
@@ -894,16 +891,16 @@ const exportPDF = () => {
                                 <span className="order-id">#{bill._id.toString().slice(-6)}</span>
                               </td>
                               <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-  {getCustomerName(bill).length > 15 
-    ? getCustomerName(bill).substring(0, 15) + '...' 
-    : getCustomerName(bill)}
-</td>
+                                {getCustomerName(bill).length > 15 
+                                  ? getCustomerName(bill).substring(0, 15) + '...' 
+                                  : getCustomerName(bill)}
+                              </td>
                               <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
                                 day: '2-digit', 
                                 month: 'short', 
                                 year: 'numeric' 
                               })}</td>
-                              <td className="amount">₹ {bill.totalAmt?.toLocaleString('en-IN')}</td>
+                              <td className="amount">₹ {(Number(bill.finalAmt) || 0).toLocaleString('en-IN')}</td>
                               {selectedStaff.type?.toLowerCase() !== 'delivery' && (
                                 <td>
                                   <span className={`status-badge ${bill.paymentMethod ? 'paid' : 'pending'}`}>
@@ -930,9 +927,11 @@ const exportPDF = () => {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end fw-bold"></td>
+                            <td colSpan="4" className="text-end fw-bold">Total Amount:</td>
                             <td className="amount fw-bold">₹ {stats.totalAmount.toLocaleString('en-IN')}</td>
-                            <td colSpan="2"></td>
+                            {selectedStaff.type?.toLowerCase() !== 'delivery' && <td></td>}
+                            <td></td>
+                            <td></td>
                           </tr>
                         </tfoot>
                       </table>
@@ -993,7 +992,7 @@ const exportPDF = () => {
         </div>
       </div>
 
-      {/* Invoice Modal */}
+      {/* Invoice Modal - Using finalAmt */}
       <Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
         <ModalHeader toggle={() => setInvoiceModal(false)}>
           <div className="modal-header-content">
@@ -1058,40 +1057,35 @@ const exportPDF = () => {
                   </div>
                 </div>
               </div>
-{/* Paid Stamp with Real Cement/Uneven Ink Effect */}
-{selectedBill?.paymentMethod && (
-  <div className="paid-stamp-round-container">
-    <div className="paid-stamp-round distressed">
-      {/* Paper texture background */}
-      <div className="paper-texture"></div>
-      
-      {/* Ink bleed effects */}
-      <div className="ink-bleed"></div>
-      <div className="ink-bleed"></div>
-      <div className="ink-bleed"></div>
-      
-      {/* Stamp inner content */}
-      <div className="stamp-inner">
-        <div className="stamp-text">PAID</div>
-      </div>
-      
-      {/* Decorative dots with uneven distribution */}
-      <div className="stamp-dots">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="stamp-dot"
-            style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${20 + Math.random() * 60}%`,
-              transform: `rotate(${Math.random() * 360}deg)`
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+
+              {/* Paid Stamp */}
+              {selectedBill?.paymentMethod && (
+                <div className="paid-stamp-round-container">
+                  <div className="paid-stamp-round distressed">
+                    <div className="paper-texture"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="stamp-inner">
+                      <div className="stamp-text">PAID</div>
+                    </div>
+                    <div className="stamp-dots">
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="stamp-dot"
+                          style={{
+                            top: `${20 + Math.random() * 60}%`,
+                            left: `${20 + Math.random() * 60}%`,
+                            transform: `rotate(${Math.random() * 360}deg)`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Products Table */}
               <div className="products-table-container">
                 <table className="products-table">
@@ -1110,23 +1104,23 @@ const exportPDF = () => {
                         <td>{idx + 1}</td>
                         <td>{product.productName}</td>
                         <td>{product.qty}</td>
-                        <td>₹ {product.value?.toLocaleString('en-IN') || 0}</td>
-                        <td>₹ {(product.value * product.qty).toLocaleString('en-IN')}</td>
+                        <td>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
+                        <td>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Totals Section */}
+              {/* Totals Section - Using finalAmt */}
               <div className="totals-section">
                 <div className="total-row">
                   <span className="total-label">Subtotal</span>
                   <span className="total-value">
                     ₹ {selectedBill.orderedProducts?.reduce(
-                      (sum, product) => sum + (product.value * product.qty), 
+                      (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
                       0
-                    ).toLocaleString('en-IN') || selectedBill.totalAmt?.toLocaleString('en-IN') || '0'}
+                    ).toLocaleString('en-IN') || (Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="total-row">
@@ -1139,7 +1133,7 @@ const exportPDF = () => {
                 </div>
                 <div className="total-row grand-total">
                   <span className="total-label">Total</span>
-                  <span className="total-value">₹ {(selectedBill.totalAmt || 0).toLocaleString('en-IN')}</span>
+                  <span className="total-value">₹ {(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 

@@ -33,7 +33,7 @@ const Homepage = () => {
   const [selectedStaffId, setSelectedStaffId] = useState(null);
   const [filterCustomerType, setFilterCustomerType] = useState([]);
   const [billData, setBillData] = useState([]);
-  const [selectedDays, setSelectedDays] = useState("Today"); // Changed default to "Today"
+  const [selectedDays, setSelectedDays] = useState("Today");
   const [customSelected, setCustomSelected] = useState(false);
   const [modal, setModal] = useState(false);
   const [selectedFromDate, setSelectedFromDate] = useState("");
@@ -109,7 +109,16 @@ const Homepage = () => {
     try {
       const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/bills");
       if (response.status === 200) {
-        setBillData(response.data.bills || []);
+        // Handle different response structures
+        let bills = [];
+        if (Array.isArray(response.data)) {
+          bills = response.data;
+        } else if (response.data.bills && Array.isArray(response.data.bills)) {
+          bills = response.data.bills;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          bills = response.data.data;
+        }
+        setBillData(bills);
       }
     } catch (err) {
       console.error("Error fetching bills:", err);
@@ -243,27 +252,27 @@ const Homepage = () => {
   // Filtered bills
   const filteredBills = filterBills();
 
-  // Order Status
+  // Order Status - Using finalAmt for all calculations
   const approvedOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
   const rejectedOrders = filteredBills.filter(b => b.orderStatus === "rejected").length;
   const pendingOrders = filteredBills.filter(b => b.orderStatus === "pending").length;
   const totalOrders = filteredBills.length;
   
-  // Payment Status
+  // Payment Status - Using finalAmt
   const paidAmount = filteredBills
     .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
-  const outstandingAmount = filteredBills  // Changed from notPaidAmount to outstandingAmount
+  const outstandingAmount = filteredBills
     .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
-    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
-  const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+  const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
-  // Business value (total approved orders amount)
+  // Business value (total approved orders amount) - Using finalAmt
   const businessValue = filteredBills
     .filter(b => b.orderStatus === "approved")
-    .reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
   // Total counts
   const totalCustomers = selectedStaffId 
@@ -284,14 +293,14 @@ const Homepage = () => {
     (item, index, self) => index === self.findIndex((t) => t._id === item._id)
   );
 
-  // Get selected staff performance details
+  // Get selected staff performance details - Using finalAmt
   const getSelectedStaffPerformance = () => {
     if (!selectedStaffForPerformance) return null;
     
     const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
     
     const totalBills = staffBills.length;
-    const totalRevenue = staffBills.reduce((acc, bill) => acc + (bill.totalAmt || 0), 0);
+    const totalRevenue = staffBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
     
     const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
     const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
@@ -1018,34 +1027,34 @@ const Homepage = () => {
               <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
                 {/* Total Orders Card */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
-  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-    <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
-      <Icon name="bag" size={28} />
-    </div>
-    <div className="delivery-content">
-      <h6 className="delivery-title">Total Orders</h6>
-      <div className="delivery-value">
-        {loading.bills ? (
-          <span>Loading...</span>
-        ) : (
-          <>
-            <span className="value-number">{approvedOrders}</span>
-            <small className="badge">approved orders</small>
-          </>
-        )}
-      </div>
-      {/* Total Orders Count (for reference) */}
-      <div className="order-breakdown mt-2">
-        <div className="d-flex justify-content-between small">
-          <span>Total Orders (All):</span>
-          <span className="fw-bold">{totalOrders}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</PreviewAltCard>
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon primary" style={{ width: '55px', height: '55px' }}>
+                      <Icon name="bag" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Total Orders</h6>
+                      <div className="delivery-value">
+                        {loading.bills ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">{approvedOrders}</span>
+                            <small className="badge">approved orders</small>
+                          </>
+                        )}
+                      </div>
+                      {/* Total Orders Count (for reference) */}
+                      <div className="order-breakdown mt-2">
+                        <div className="d-flex justify-content-between small">
+                          <span>Total Orders (All):</span>
+                          <span className="fw-bold">{totalOrders}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
 
-                {/* Business Value Card (Replaced Avg Order Value) */}
+                {/* Business Value Card - Using finalAmt */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
                     <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
@@ -1059,7 +1068,7 @@ const Homepage = () => {
                         ) : (
                           <>
                             <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
-                            <small className="badge">approved orders</small>
+                            <small className="badge">final amount</small>
                           </>
                         )}
                       </div>
@@ -1085,7 +1094,7 @@ const Homepage = () => {
                   </div>
                 </PreviewAltCard>
 
-                {/* Outstanding Amount Card (Renamed from Pending Amount) */}
+                {/* Outstanding Amount Card - Using finalAmt */}
                 <PreviewAltCard className="delivery-card flex-grow-1">
                   <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
                     <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
