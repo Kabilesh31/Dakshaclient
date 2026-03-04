@@ -39,7 +39,7 @@ const Orders = () => {
   const [uploadFile, setUploadFile] = useState(null);
   const [finalAmount, setFinalAmount] = useState("");
   const [billId, setBillId] = useState("");
-  const [uploading, setUploading] = useState(false);
+  
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
@@ -234,40 +234,8 @@ const confirmAction = async () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, selectedDates]);
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
- const handleUploadSubmit = async () => {
-  if (!uploadFile || !finalAmount || !selectedOrder || !billId) return;
-
-  try {
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append("pdf", uploadFile);
-    formData.append("finalAmt", finalAmount);
-    formData.append("billId", billId);
-    
-    const res = await axios.patch(
-      `${process.env.REACT_APP_BACKENDURL}/api/bills/${selectedOrder._id}/upload`, formData);
-    const updatedBill = res.data.data;
-
-    setOrders(prev =>
-      prev.map(o =>
-        o._id === updatedBill._id
-          ? updatedBill
-          : o
-      )
-    );
-
-    setUploadModal(false);
-    setSelectedOrder(null);
-
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setUploading(false);
-  }
-};
+ 
 
   return (
     <>
@@ -453,7 +421,7 @@ const confirmAction = async () => {
                           className="px-4 py-2 text-end"
                           style={{ color: "#66BB6A", fontWeight: 600 }}
                         >
-                           {`${order.finalAmt ? "₹ " + order.finalAmt : "-" }`}
+                           ₹ {order.totalAmt}
                         </td>
 
                         <td className="px-4 py-2 text-center">
@@ -478,13 +446,13 @@ const confirmAction = async () => {
                             <DropdownMenu right>
                               {order.orderStatus === "pending" && (
                                 <>
-                                  {/* <DropdownItem
+                                  <DropdownItem
                                     onClick={() =>
                                       openConfirmModal(order._id, "approved")
                                     }
                                   >
                                     <Icon name="check-circle" /> Approve
-                                  </DropdownItem> */}
+                                  </DropdownItem>
 
                                   <DropdownItem
                                     onClick={() =>
@@ -594,7 +562,7 @@ const confirmAction = async () => {
       </Content>
 
       {selectedOrder && (
-        <Modal isOpen={!!selectedOrder} centered size="lg" contentClassName="order-modal">
+        <Modal isOpen={!!selectedOrder} centered size="xl" contentClassName="order-modal">
           <ModalBody>
             <div ref={modalRef}>
               <a
@@ -682,7 +650,7 @@ const confirmAction = async () => {
               </div>
 
               {/* TOTALS */}
-              {/* <div className="totals d-flex justify-content-between flex-column align-items-end">
+              <div className="totals d-flex justify-content-between flex-column align-items-end">
                 <div className="d-flex justify-content-between w-50 mb-1">
                   <span>Subtotal</span>
                   <span>₹ {selectedOrder.totalAmt}</span>
@@ -700,66 +668,9 @@ const confirmAction = async () => {
                   <span>Total</span>
                   <span>₹ {selectedOrder.totalAmt}</span>
                 </div>
-              </div> */}
+              </div>
             </div>
 
-            {uploadModal && (<>
-                <div className="mb-3">
-            <label className="form-label">Upload Bill</label>
-            <input
-              type="file"
-              accept="application/pdf"
-              className="form-control"
-              onChange={(e) => setUploadFile(e.target.files[0])}
-            />
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label">Enter Bill ID</label>
-            <input
-              type="text"
-              className="form-control"
-              value={billId}
-              onChange={(e) => setBillId(e.target.value)}
-              placeholder="Enter Bill ID"
-            />
-          </div>
-
-          {/* Final Amount */}
-          <div className="mb-3">
-            <label className="form-label">Final Total Amount</label>
-            <input
-              type="number"
-              className="form-control"
-              value={finalAmount}
-              onChange={(e) => setFinalAmount(e.target.value)}
-              placeholder="Enter final amount"
-            />
-          </div>
-
-          
-
-          <div className="d-flex justify-content-end gap-3 mb-3">
-            <Button
-              color="light"
-              className="mr-1 p-3"
-              size="sm"
-              onClick={() => setUploadModal(false)}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              size="sm"
-              className="mr-1 p-3"
-              color="primary"
-              disabled={!uploadFile || !finalAmount || uploading ||!billId}
-              onClick={handleUploadSubmit}
-            >
-              {uploading ? "Submitting..." : "Submit & Approve"}
-            </Button>
-          </div>
-            </>)}
 
             {/* PDF Button */}
             <div className="text-end mt-3">
@@ -767,20 +678,7 @@ const confirmAction = async () => {
                 <Icon name="download" /> 
                 
               </Button>
-              {selectedOrder.orderStatus === "pending" && (
-              <Button
-                color="primary"
-                size="sm"
-                onClick={() => {
-                  setUploadModal(true);
-                  setUploadFile(null);
-                  setFinalAmount("");
-                  setBillId("")
-                }}
-              >
-                <Icon name="upload" />
-              </Button>
-              )}
+             
             </div>
           </ModalBody>
         </Modal>
