@@ -1202,7 +1202,6 @@ const assignedVehicleNumbers = routeAssignments
 
     
     // Render Live Track Tab
-// Render Live Track Tab
 const renderLiveTrack = () => {
   if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
     return (
@@ -1273,10 +1272,10 @@ const renderLiveTrack = () => {
       bill => String(bill.customerId) === String(customer._id)
     );
     
-    // If customer has no bills, show them (they might be new)
+    // If customer has no bills, DON'T show them (since we need to check bill status)
     if (customerBills.length === 0) {
-      console.log(`Customer ${customer.name} has no bills - showing`);
-      return true;
+      console.log(`Customer ${customer.name} has no bills - NOT showing`);
+      return false;
     }
     
     // Sort bills by createdAt/updatedAt to get the most recent
@@ -1287,23 +1286,39 @@ const renderLiveTrack = () => {
     // Get the most recent bill
     const lastBill = sortedBills[0];
     
+    // Check if the last bill status is either 'delivered' or 'approved'
+    const isValidBillStatus = ['delivered', 'approved'].includes(lastBill.orderStatus);
+    
     console.log(`Customer ${customer.name}:`, {
       totalBills: customerBills.length,
       lastBillStatus: lastBill.orderStatus,
       lastBillDate: lastBill.createdAt || lastBill.updatedAt,
-      showCustomer: lastBill.orderStatus !== 'rejected'
+      isValidBillStatus,
+      orderPending: customer.orderPending,
+      showCustomer: isValidBillStatus
     });
     
-    // SHOW customer ONLY if the last bill is NOT rejected
-    return lastBill.orderStatus !== 'rejected';
+    // SHOW customer ONLY if the last bill is either delivered OR approved
+    return isValidBillStatus;
   });
   
   console.log("Final display customers:", displayCustomers.map(c => ({
     name: c.name,
     routeId: c.routeId,
-    orderPending: c.orderPending
+    orderPending: c.orderPending,
+    lastBillStatus: (() => {
+      const customerBills = bills.filter(bill => String(bill.customerId) === String(c._id));
+      if (customerBills.length > 0) {
+        const sortedBills = customerBills.sort((a, b) => 
+          new Date(b.createdAt || b.updatedAt) - new Date(a.createdAt || a.updatedAt)
+        );
+        return sortedBills[0].orderStatus;
+      }
+      return 'no bills';
+    })()
   })));
   
+  // Define totalCustomers HERE, before it's used
   const totalCustomers = displayCustomers?.length || 0;
   
   // For delivery status based on orderPending flag
