@@ -798,6 +798,7 @@ const CustomerListCompact = () => {
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
+                  <option value="Hardware">Hardware</option>
                 </select>
               </FormGroup>
             </Col>
@@ -1038,6 +1039,7 @@ const CustomerListCompact = () => {
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
+                  <option value="Hardware">Hardware</option>
                 </select>
               </FormGroup>
             </Col>

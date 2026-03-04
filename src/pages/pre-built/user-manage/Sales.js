@@ -49,21 +49,22 @@ import { FiClock } from 'react-icons/fi';
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
 
   
-    const fetchCustomersByAssignedStaff = async(id) => {
-      const today = new Date().toISOString().split("T")[0];
-      try{
-        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${id}/assignedCustomer`,
-          {
-          params: { date: today },
-        },
-        )
-        if(response.status === 200) {
-          setAssignedCustomerDatas(response.data.customers)
-        }
-      }catch(err){
-        console.log(err)
+  const fetchCustomersByAssignedStaff = async (id) => {
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${id}/assignedCustomer`,
+      {
+        params: { date: selectedDate }
       }
+    );
+
+    if (response.status === 200) {
+      setAssignedCustomerDatas(response.data.customers);
     }
+  } catch (err) {
+    console.log(err);
+  }
+};
 
     useEffect(() => {
       fetchStaff();
@@ -286,14 +287,13 @@ const fetchAvailableVehicles = async (date) => {
   };
 
 
-  const filteredDeliveryStaff = Array.isArray(deliveryStaff)
-    ? deliveryStaff.filter(
-        (staff) =>
-          staff.staffStatus === "active" &&
-          staff.dutyStatus === "active" &&   // 👈 IMPORTANT
-          staff.isDeleted === false
-      )
-    : [];
+ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
+  ? deliveryStaff.filter(
+      (staff) =>
+        staff.staffStatus === "active" &&
+        staff.isDeleted === false
+    )
+  : [];
 
 
     // Get routes already assigned to a specific staff member on selected date
