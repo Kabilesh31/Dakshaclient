@@ -82,7 +82,7 @@ const [editLoading, setEditLoading] = useState(false);
 const [categories, setCategories] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemPerPage, setItemPerPage] = useState(10);
+  const [itemPerPage, setItemPerPage] = useState(20);
 
   const [sort, setSortState] = useState("");
   const [assignModal, setAssignModal] = useState(false);
