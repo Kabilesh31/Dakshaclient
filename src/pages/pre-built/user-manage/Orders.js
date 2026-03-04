@@ -523,20 +523,71 @@ const confirmAction = async () => {
               </tbody>
 
             </table>
-            <div className="card-inner">
-                {currentItems.length > 0 ? (
-                  <PaginationComponent
-                    itemPerPage={itemPerPage}
-                    totalItems={filtered.length}
-                    paginate={paginate}
-                    currentPage={currentPage}
-                  />
-                ) : (
-                  <div className="text-center">
-                    <span className="text-silent">No data found</span>
-                  </div>
-                )}
-              </div>
+           <div className="card-inner">
+  {currentItems.length > 0 ? (
+    <div className="d-flex justify-content-center align-items-center">
+
+      {/* Previous */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage((prev) => prev - 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-left"></em>
+      </button>
+
+      {/* Page Numbers */}
+      {[...Array(Math.ceil(filtered.length / itemPerPage))].map((_, index) => {
+        const pageNumber = index + 1;
+        const totalPages = Math.ceil(filtered.length / itemPerPage);
+
+        if (
+          pageNumber === currentPage ||
+          pageNumber === currentPage - 1 ||
+          pageNumber === currentPage + 1
+        ) {
+          return (
+            <button
+              key={pageNumber}
+              onClick={() => setCurrentPage(pageNumber)}
+              className={`btn btn-sm mx-1 ${
+                currentPage === pageNumber
+                  ? "btn-primary"
+                  : "btn-outline-light"
+              }`}
+              style={{
+                minWidth: "36px",
+                borderRadius: "6px",
+                fontWeight: 500,
+              }}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+        return null;
+      })}
+
+      {/* Next */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={
+          currentPage === Math.ceil(filtered.length / itemPerPage)
+        }
+        onClick={() => setCurrentPage((prev) => prev + 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-right"></em>
+      </button>
+
+    </div>
+  ) : (
+    <div className="text-center">
+      <span className="text-silent">No data found</span>
+    </div>
+  )}
+</div>
             </DataTable>
           )}
         </Block>
