@@ -36,14 +36,55 @@ const VehicleDetails = ({ match }) => {
   }, [data]);
 
   // fetch users list
-  const fetchVehicleData = async () => {
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/vehicle`);
-      setData(response.data);
-    } catch (err) {
-      console.log(err);
+const fetchVehicleData = async () => {
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
     }
-  };
+
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/vehicle`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      setData(response.data);
+    }
+
+  } catch (err) {
+
+    console.log("Fetch vehicle data error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    } else {
+      console.log("Network error");
+    }
+  }
+};
 
   // grabs the id of the url and loads the corresponding data
   useEffect(() => {

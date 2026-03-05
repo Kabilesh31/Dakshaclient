@@ -51,17 +51,7 @@
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
     const [bills, setBills] = useState([]);
     
-    const fetchCustomersByAssignedStaff = async() => {
-      try{
-        const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`)
-        if(response.status === 200) {
-          setAssignedCustomerDatas(response.data.customers)
-          console.log(response.data.customers)
-        }
-      }catch(err){
-        console.log(err)
-      }
-    }
+
 
     useEffect(() => {
       fetchStaff();
@@ -77,61 +67,167 @@
     fetchAvailableVehicles(selectedDate);
   }
 }, [selectedDate]);
+
 const fetchVehicles = async () => {
   try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setVehicles([]);
+      return;
+    }
+
     const res = await axios.get(
       `${process.env.REACT_APP_BACKENDURL}/api/vehicle`,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
         },
       }
     );
 
     if (Array.isArray(res.data)) {
       setVehicles(res.data);
-    } else if (Array.isArray(res.data.data)) {
+    } else if (Array.isArray(res.data?.data)) {
       setVehicles(res.data.data);
     } else {
       setVehicles([]);
     }
+
   } catch (err) {
+
     console.error("Vehicle fetch error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
     setVehicles([]);
+
   }
 };
+
 const fetchAvailableVehicles = async (date) => {
   try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
     const res = await axios.get(
       `${process.env.REACT_APP_BACKENDURL}/api/vehicle/getAvailableVehicle`,
       {
         params: { date },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
         },
       }
     );
 
-    setVehicles(res.data.data || []);   // ✅ FIXED
+    if (res.status === 200) {
+      setVehicles(res.data.data || []);
+    }
+
   } catch (error) {
+
     console.error("Vehicle fetch error:", error);
-    setVehicles([]); // safety fallback
+
+    if (error.response) {
+
+      if (error.response.status === 401) {
+
+        console.log(
+          error.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
+    setVehicles([]);
   }
 };
 const fetchBills = async () => {
   try {
-    const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`);
-    if (response.status === 200) {
-      // Keep ALL bills, including rejected ones
-      const allBills = response.data.bills || [];
-      setBills(allBills);  // ← Don't filter here
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setBills([]);
+      return;
     }
+
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/bills`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      const allBills = response.data?.bills || [];
+      setBills(allBills); // keep all bills including rejected
+    }
+
   } catch (err) {
-    console.log(err);
+
+    console.log("FETCH BILLS ERROR:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
     setBills([]);
+
   }
 };
-
    const threeDaysAgo = new Date();
 threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
@@ -166,20 +262,26 @@ const last3DaysBills = bills.filter((bill) => {
       }
 
       // If assigned → fetch customers
-      try {
+    try {
         const response = await axios.get(
-  `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`,
-  {
-    params: { date: selectedDate }
-  }
-);
-        console.log(response.data.customers)
+          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`,
+          {
+            params: { date: selectedDate },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              "session-token": localStorage.getItem("sessionToken"),
+            },
+          }
+        );
+
+        console.log(response.data.customers);
+
         if (response.status === 200) {
           setAssignedCustomerDatas(response.data.customers || []);
-          
         }
+
       } catch (err) {
-         setAssignedCustomerDatas([]);
+        setAssignedCustomerDatas([]);
       }
     };
 
@@ -193,7 +295,14 @@ const last3DaysBills = bills.filter((bill) => {
     const fetchLocation = async () => {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
+          `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`,
+          {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+          
         );
       
         setLiveLocation({
@@ -213,14 +322,14 @@ const last3DaysBills = bills.filter((bill) => {
 
 
       fetchLocation();
-      const interval = setInterval(fetchLocation, 20000);
+        const interval = setInterval(fetchLocation, 20000);
 
-      return () => clearInterval(interval);
-    }, [selectedTrackStaff]);
+        return () => clearInterval(interval);
+      }, [selectedTrackStaff]);
 
-    useEffect(() => {
-      fetchAssignmentsByDate(selectedDate);
-    }, [selectedDate]);
+      useEffect(() => {
+        fetchAssignmentsByDate(selectedDate);
+      }, [selectedDate]);
 
 
     // Helper function to safely find a route
@@ -241,10 +350,11 @@ const last3DaysBills = bills.filter((bill) => {
         const res = await axios.get(
           `${process.env.REACT_APP_BACKENDURL}/api/staff`,
           {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`, 
-            },
-          }
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                "session-token": localStorage.getItem("sessionToken"),
+              },
+            }
         );
 
         if (Array.isArray(res.data)) {
@@ -273,10 +383,11 @@ const last3DaysBills = bills.filter((bill) => {
         const res = await axios.get(
           `${process.env.REACT_APP_BACKENDURL}/api/route-assignment?date=${date}`,
           {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
+        }
         );
 
         // Ensure we set an array
@@ -303,9 +414,14 @@ const last3DaysBills = bills.filter((bill) => {
         setLoading(true);
         setError(null);
 
-        const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
+        const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`,
+          {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
 
         // Check if the response is an array
         let routesData = res.data;
@@ -332,16 +448,31 @@ const last3DaysBills = bills.filter((bill) => {
       }
     };
   // After fetching customers
-  const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-      setCustomers(res.data.filter(c => !c.isDeleted && c.status));
-    } catch (err) {
-      console.error(err);
-      errorToast("Failed to fetch customers");
-    }
-  };
+    const fetchCustomers = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              "session-token": localStorage.getItem("sessionToken"),
+            },
+          }
+        );
 
+        setCustomers(res.data.filter(c => !c.isDeleted && c.status));
+
+      } catch (err) {
+
+        if (err.response?.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+        }
+
+        console.error(err);
+        errorToast("Failed to fetch customers");
+      }
+    };
 
 const filteredDeliveryStaff = Array.isArray(deliveryStaff)
   ? deliveryStaff.filter(
@@ -464,7 +595,10 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
         await axios.delete(
           `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedAssignmentId}`,
           {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+              "session-token": localStorage.getItem("sessionToken"),
+            },
           }
         );
 
@@ -557,9 +691,10 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
             customers: customersToUpdate 
           },
           {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`
-            }
+           headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
           }
         );
 
@@ -977,7 +1112,8 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
             },
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                "session-token": localStorage.getItem("sessionToken"),
               },
             }
           );

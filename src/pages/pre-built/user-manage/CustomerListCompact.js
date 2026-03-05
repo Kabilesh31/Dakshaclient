@@ -75,18 +75,36 @@ const CustomerListCompact = () => {
     img: null,
   });
 
-  const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-      const filtered = res.data.filter((c) => !c.isDeleted);
-      const sorted = filtered.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      setData(sorted);
-    } catch {
-      errorToast("Failed to fetch customers");
+const fetchCustomers = async () => {
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+    );
+
+    const filtered = res.data.filter((c) => !c.isDeleted);
+
+    const sorted = filtered.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    setData(sorted);
+
+  } catch (err) {
+
+    if (err.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("sessionToken");
     }
-  };
+
+    errorToast("Failed to fetch customers");
+  }
+};
 
   useEffect(() => {
     fetchCustomers();
@@ -105,7 +123,14 @@ const CustomerListCompact = () => {
   const fetchRoutes = async () => {
     try {
       setLoadingRoutes(true);
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`);
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, 
+         {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       const options = res.data.data.map((r) => ({
         value: r._id,
         label: r.routeName,
@@ -124,7 +149,14 @@ const CustomerListCompact = () => {
 
   const createRoute = async (routeName) => {
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/route`, { routeName });
+      const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/route`, { routeName },
+         {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       const newRoute = {
         value: res.data.data._id,
         label: res.data.data.routeName,
@@ -232,7 +264,13 @@ const CustomerListCompact = () => {
     fd.append("createdBy", userData._id);
 
     try {
-      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/customer`, fd);
+      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/customer`, fd, 
+       {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
       successToast("Customer added successfully");
       setModalAdd(false);
       resetForm();
@@ -294,7 +332,13 @@ const CustomerListCompact = () => {
     if (uploadedFile) fd.append("img", uploadedFile);
 
     try {
-      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`, fd);
+      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`, fd,
+       {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
       successToast("Customer updated");
       setModalEdit(false);
       resetForm();
@@ -308,7 +352,13 @@ const CustomerListCompact = () => {
 
   const onDeleteConfirm = async () => {
     try {
-      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`);
+      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`,
+       {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
       successToast("Customer deleted");
       setModalDelete(false);
       fetchCustomers();

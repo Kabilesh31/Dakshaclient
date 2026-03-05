@@ -69,14 +69,58 @@ const [editLoading, setEditLoading] = useState(false);
   });
 
   /* ================= FETCH ================= */
-  const fetchStaff = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/staff`);
-      setData(res.data);
-    } catch {
-      errorToast("Failed to fetch staff");
+const fetchStaff = async () => {
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
     }
-  };
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (res.status === 200) {
+      setData(res.data);
+    }
+
+  } catch (err) {
+
+    console.log("Fetch staff error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Failed to fetch staff");
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+  }
+};
 
   useEffect(() => {
     fetchStaff();
@@ -130,39 +174,92 @@ const [editLoading, setEditLoading] = useState(false);
     setModalAdd(true);
   };
 
-  const onAddSubmit = async (e) => {
-    e.preventDefault();
-    setAddLoading(true);
-    const fd = new FormData();
+ const onAddSubmit = async (e) => {
+  e.preventDefault();
+  setAddLoading(true);
 
-    Object.keys(formData).forEach((k) => {
-      if (k === "documents" && formData.documents.length > 0) {
-        formData.documents.forEach((file) => fd.append("documents", file));
-      } else if (formData[k] !== undefined && formData[k] !== null && formData[k] !== "")
- {
-        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+  const fd = new FormData();
+
+  Object.keys(formData).forEach((k) => {
+    if (k === "documents" && formData.documents.length > 0) {
+      formData.documents.forEach((file) => fd.append("documents", file));
+    } else if (
+      formData[k] !== undefined &&
+      formData[k] !== null &&
+      formData[k] !== ""
+    ) {
+      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+    }
+  });
+
+  fd.append("createdBy", userData._id);
+
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+      fd,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
       }
-    });
+    );
 
-    fd.append("createdBy", userData._id);
+    if (response.status === 201 || response.status === 200) {
 
-    try {
-      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/staff`, fd);
       successToast("Staff added successfully");
+
       setModalAdd(false);
       resetForm();
       fetchStaff();
-    }catch (err) {
-  const message =
-    err.response?.data?.message ||
-    err.response?.data?.error ||
-    "Add staff failed";
+    }
 
-  errorToast(message);
-}finally {
+  } catch (err) {
+
+    console.log("Add staff error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+
+        const message =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Add staff failed";
+
+        errorToast(message);
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+
+  } finally {
     setAddLoading(false);
   }
-  };
+};
 
   // ================= EDIT STAFF =================
   const onEditClick = (item) => {
@@ -182,44 +279,141 @@ const [editLoading, setEditLoading] = useState(false);
     setModalEdit(true);
   };
 
-  const onEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditLoading(true);
-    const fd = new FormData();
+ const onEditSubmit = async (e) => {
+  e.preventDefault();
+  setEditLoading(true);
 
-    Object.keys(formData).forEach((k) => {
-      if (k === "documents" && formData.documents.length > 0) {
-        formData.documents.forEach((file) => fd.append("documents", file));
-      } else if (formData[k]) {
-        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+  const fd = new FormData();
+
+  Object.keys(formData).forEach((k) => {
+    if (k === "documents" && formData.documents.length > 0) {
+      formData.documents.forEach((file) => fd.append("documents", file));
+    } else if (formData[k]) {
+      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+    }
+  });
+
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.put(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
+      fd,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
       }
-    });
+    );
 
-    try {
-      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`, fd);
+    if (response.status === 200) {
+
       successToast("Staff updated successfully");
+
       setModalEdit(false);
       resetForm();
       fetchStaff();
-    } catch (err) {
-      console.error(err);
-      errorToast("Update failed");
-    }finally {
+    }
+
+  } catch (err) {
+
+    console.log("Update staff error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+
+        const message =
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Update failed";
+
+        errorToast(message);
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+
+  } finally {
     setEditLoading(false);
   }
-  };
-
+};
   // ================= DELETE STAFF =================
   const onDeleteConfirm = async () => {
-    try {
-      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`);
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.delete(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
       successToast("Staff deleted successfully");
       setModalDelete(false);
       fetchStaff();
-    } catch {
-      errorToast("Delete failed");
     }
-  };
+
+  } catch (err) {
+
+    console.log("Delete staff error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Delete failed");
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+  }
+};
 const exportToExcel = () => {
   if (!data || data.length === 0) {
     errorToast("No data to export");

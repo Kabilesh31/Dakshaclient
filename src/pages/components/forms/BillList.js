@@ -77,7 +77,14 @@ const BillList = ({selectedProduct, isSelected, phone}) => {
 
   const getInvoiceDataByPhone = async()=> {
     try{
-      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/bill/getAllBillByPhone/"+phone)
+      const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/bill/getAllBillByPhone/"+phone, 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      )
       const resData = await response.json()
       if(response.ok){
         setBillData(resData)

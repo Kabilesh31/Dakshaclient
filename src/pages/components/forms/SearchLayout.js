@@ -40,7 +40,12 @@ const SearchLayout = ({ ...props }) => {
   // fetch users list
   const fetchProductData = async() => {
     try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/product")
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/product", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      })
       setData(response.data)
       } catch (err){
         console.log(err)

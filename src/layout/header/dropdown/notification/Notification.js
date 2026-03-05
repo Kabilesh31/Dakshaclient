@@ -83,7 +83,14 @@ const Notification = () => {
   // ======================
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/notifications`);
+      const res = await axios.get(`${BACKEND_URL}/api/notifications`, 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
 
       const data = res.data.map((n) => ({
         ...n,
@@ -138,7 +145,14 @@ const Notification = () => {
   // ======================
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`${BACKEND_URL}/api/notifications/${id}/read`);
+      await axios.patch(`${BACKEND_URL}/api/notifications/${id}/read`, 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
 
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, seen: true } : n))
@@ -150,7 +164,14 @@ const Notification = () => {
 
   const markAllAsRead = async () => {
     try {
-      await axios.patch(`${BACKEND_URL}/api/notifications/read-all`);
+      await axios.patch(`${BACKEND_URL}/api/notifications/read-all`, 
+         {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
 
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, seen: true }))

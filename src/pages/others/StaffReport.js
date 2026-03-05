@@ -110,7 +110,13 @@ const StaffReport = () => {
   const fetchStaff = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/staff`
+        `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+         {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
       );
       setStaffList(res.data);
     } catch (error) {
@@ -123,7 +129,13 @@ const StaffReport = () => {
   const fetchAllBills = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/bills`
+        `${process.env.REACT_APP_BACKENDURL}/api/bills`,
+         {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
       );
       if (Array.isArray(res.data)) {
         setAllBills(res.data);

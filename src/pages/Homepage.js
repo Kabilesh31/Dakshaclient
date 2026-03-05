@@ -75,25 +75,51 @@ const Homepage = () => {
     ]);
   };
 
-  const fetchCustomerData = async () => {
-    setLoading(prev => ({ ...prev, customers: true }));
-    try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer");
-      if (response.status === 200) {
-        setCustomerData(response.data);
-        setFilterCustomerType(response.data);
-      }
-    } catch (err) {
-      console.error("Error fetching customers:", err);
-    } finally {
-      setLoading(prev => ({ ...prev, customers: false }));
-    }
-  };
+ const fetchCustomerData = async () => {
+  setLoading(prev => ({ ...prev, customers: true }));
 
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      setCustomerData(response.data);
+      setFilterCustomerType(response.data);
+    }
+
+  } catch (err) {
+
+    if (err.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("sessionToken");
+      window.location.href = "/login";
+      return;
+    }
+
+    console.error("Error fetching customers:", err);
+
+  } finally {
+    setLoading(prev => ({ ...prev, customers: false }));
+  }
+};
   const fetchStaffData = async () => {
     setLoading(prev => ({ ...prev, staff: true }));
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/staff");
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/staff", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       if (response.status === 200) {
         setStaffData(response.data);
       }
@@ -107,7 +133,14 @@ const Homepage = () => {
   const fetchBillData = async () => {
     setLoading(prev => ({ ...prev, bills: true }));
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/bills");
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/bills", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       if (response.status === 200) {
         // Handle different response structures
         let bills = [];
@@ -130,7 +163,14 @@ const Homepage = () => {
   const fetchRouteData = async () => {
     setLoading(prev => ({ ...prev, routes: true }));
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/route");
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/route", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       if (response.status === 200 && response.data.success) {
         setRouteData(response.data.data || []);
       }
@@ -144,7 +184,14 @@ const Homepage = () => {
   const fetchProductData = async () => {
     setLoading(prev => ({ ...prev, products: true }));
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product");
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/product", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       if (response.status === 200) {
         const allProducts = response.data || [];
         const activeProducts = allProducts.filter(product => !product.isDeleted);
@@ -160,7 +207,14 @@ const Homepage = () => {
   const fetchVehicleData = async () => {
     setLoading(prev => ({ ...prev, vehicles: true }));
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/vehicle");
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/vehicle", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      );
       if (response.status === 200) {
         setVehicleData(response.data || []);
       }
