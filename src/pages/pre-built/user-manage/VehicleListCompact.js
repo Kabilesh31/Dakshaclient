@@ -69,16 +69,58 @@ const [editLoading, setEditLoading] = useState(false);
   });
 
   /* ================= FETCH ================= */
-  const fetchVehicles = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/vehicle`);
-      setData(res.data);
-    } catch {
-      errorToast("Failed to fetch vehicles");
-    }
-  };
+const fetchVehicles = async () => {
+  try {
 
- useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/vehicle`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
+
+      const vehicles = response.data || [];
+
+      setData(vehicles);
+    }
+
+  } catch (err) {
+
+    console.log("Fetch vehicles error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+      }
+
+    } else {
+      console.log("Network error");
+    }
+  }
+};
+
+useEffect(() => {
   fetchVehicles();
 }, []);
 
@@ -131,30 +173,48 @@ const resetForm = () => {
     setModalAdd(true);
   };
 
-  const onAddSubmit = async (e) => {
-    e.preventDefault();
-    setAddLoading(true);
+const onAddSubmit = async (e) => {
+  e.preventDefault();
+  setAddLoading(true);
 
-    const fd = new FormData();
+  const fd = new FormData();
 
-    Object.keys(formData).forEach((k) => {
-      let value = formData[k];
+  Object.keys(formData).forEach((k) => {
+    let value = formData[k];
 
-      if (k === "vehicleNumber" && value) value = value.toUpperCase();
+    if (k === "vehicleNumber" && value) value = value.toUpperCase();
 
-      if (value) {
-        fd.append(k, value instanceof Date ? value.toISOString() : value);
+    if (value) {
+      fd.append(k, value instanceof Date ? value.toISOString() : value);
+    }
+  });
+
+  if (uploadedFile) fd.append("img", uploadedFile);
+
+  fd.append("createdBy", userData._id);
+
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/vehicle`,
+      fd,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
       }
-    });
+    );
 
-    if (uploadedFile) fd.append("img", uploadedFile);
-
-    fd.append("createdBy", userData._id);
-
-    try {
-      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/vehicle`, fd, {
-        headers: {},
-      });
+    if (response.status === 201 || response.status === 200) {
 
       successToast("Vehicle added successfully");
 
@@ -162,64 +222,189 @@ const resetForm = () => {
       resetForm();
 
       fetchVehicles();
-    } catch (err) {
-      console.error(err);
-      errorToast("Add vehicle failed");
-    }finally {
+    }
+
+  } catch (err) {
+
+    console.log("Add vehicle error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Add vehicle failed");
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+
+  } finally {
     setAddLoading(false);
   }
-  };
-
+};
   // ================= EDIT VEHICLE =================
-  const onEditClick = (item) => {
-    setSelectedId(item._id);
-    setFormData({
-  vehicleNumber: item.vehicleNumber,
-  vehicleType: item.vehicleType,
-  makeYear: item.makeYear,
-  insuranceExpiry: item.insuranceExpiry ? new Date(item.insuranceExpiry) : null,
-  fcUpto: item.fcUpto ? new Date(item.fcUpto) : null,
-  img: item.img || "",
-});
+const onEditClick = (item) => {
+  setSelectedId(item._id);
 
-    setUploadedFile(null);
-    setModalEdit(true);
-  };
+  setFormData({
+    vehicleNumber: item.vehicleNumber,
+    vehicleType: item.vehicleType,
+    makeYear: item.makeYear,
+    insuranceExpiry: item.insuranceExpiry ? new Date(item.insuranceExpiry) : null,
+    fcUpto: item.fcUpto ? new Date(item.fcUpto) : null,
+    img: item.img || "",
+  });
 
-  const onEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditLoading(true);
+  setUploadedFile(null);
+  setModalEdit(true);
+};
 
-    const fd = new FormData();
-    Object.keys(formData).forEach((k) => {
-      if (formData[k]) fd.append(k, formData[k] instanceof Date ? formData[k].toISOString() : formData[k]);
-    });
-    if (uploadedFile) fd.append("img", uploadedFile);
+const onEditSubmit = async (e) => {
+  e.preventDefault();
+  setEditLoading(true);
 
-    try {
-      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/vehicle/${selectedId}`, fd);
+  const fd = new FormData();
+
+  Object.keys(formData).forEach((k) => {
+    if (formData[k]) {
+      fd.append(
+        k,
+        formData[k] instanceof Date
+          ? formData[k].toISOString()
+          : formData[k]
+      );
+    }
+  });
+
+  if (uploadedFile) fd.append("img", uploadedFile);
+
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.put(
+      `${process.env.REACT_APP_BACKENDURL}/api/vehicle/${selectedId}`,
+      fd,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
       successToast("Vehicle updated");
       setModalEdit(false);
       resetForm();
       fetchVehicles();
-    } catch {
-      errorToast("Update failed");
-    }finally {
+    }
+
+  } catch (err) {
+
+    console.log("Update vehicle error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+            "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Update failed");
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+
+  } finally {
     setEditLoading(false);
   }
-  };
-
+};
   // ================= DELETE VEHICLE =================
-  const onDeleteConfirm = async () => {
-    try {
-      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/vehicle/${selectedId}`);
+ const onDeleteConfirm = async () => {
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.delete(
+      `${process.env.REACT_APP_BACKENDURL}/api/vehicle/${selectedId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 200) {
       successToast("Vehicle deleted successfully");
       setModalDelete(false);
       fetchVehicles();
-    } catch {
-      errorToast("Delete failed");
     }
-  };
+
+  } catch (err) {
+
+    console.log("Delete vehicle error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Delete failed");
+      }
+
+    } else {
+      console.log("Network error");
+      errorToast("Network error. Please check your connection");
+    }
+  }
+};
+
 const exportToExcel = () => {
   if (!data || data.length === 0) {
     errorToast("No data to export");

@@ -97,7 +97,12 @@ const BillingLayout = () => {``
 
   const fetchStaffData = async() => {
       try{
-        const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/staff")
+        const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/staff", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      })
         setStaffData(response.data)
         } catch (err){
           console.log(err)

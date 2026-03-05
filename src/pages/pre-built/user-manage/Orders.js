@@ -35,11 +35,7 @@ const Orders = () => {
   const [actionType, setActionType] = useState(null); 
   const [actionOrderId, setActionOrderId] = useState(null);
   const [activeHighlight, setActiveHighlight] = useState(null);
-  const [uploadModal, setUploadModal] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [finalAmount, setFinalAmount] = useState("");
-  const [billId, setBillId] = useState("");
-  
+
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
@@ -127,20 +123,65 @@ const Orders = () => {
       }
     }, [activeHighlight]);
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`);
-      const data = Array.isArray(res.data.bills) ? res.data.bills : [];
+const fetchOrders = async () => {
+  try {
+    setLoading(true);
 
-      setOrders(data);
-      setFiltered(data);
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setOrders([]);
+      setFiltered([]);
       setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
+      return;
     }
-  };
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/bills`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    const data = Array.isArray(res.data?.bills) ? res.data.bills : [];
+
+    setOrders(data);
+    setFiltered(data);
+
+  } catch (err) {
+
+    console.error("FETCH ORDERS ERROR:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
+    setOrders([]);
+    setFiltered([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
 
  useEffect(() => {
   let data = [...orders];
@@ -211,10 +252,10 @@ const confirmAction = async () => {
       )
     );
 
-    return true; // ✅ important
+    return true; 
   } catch (err) {
     console.error(err);
-    return false; // ✅ important
+    return false; 
   }
 };
 

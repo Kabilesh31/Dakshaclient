@@ -76,7 +76,14 @@ const DetailsList = ({selectedProduct, isSelected, id}) => {
   
   const getActivityStatus = async() => {
     try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/activity")
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL+"/api/activity", 
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+      )
       setActivityData(response.data.data)
       
     }catch(err){

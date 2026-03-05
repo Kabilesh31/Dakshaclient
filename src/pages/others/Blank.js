@@ -44,26 +44,53 @@ const Reports = () => {
   .reduce((acc, o) => acc + (Number(o.totalAmt) || 0), 0);
 
   const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/customer`
-      );
-      setCustomers(res.data);
-    } catch (error) {
-      console.error(error);
-      errorToast("Failed to fetch customers");
-    }
-  };
+  try {
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
+    );
 
+    setCustomers(res.data);
+
+  } catch (error) {
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("sessionToken");
+      window.location.href = "/login";
+      return;
+    }
+
+    console.error(error);
+    errorToast("Failed to fetch customers");
+  }
+};
   // Fetch all staff data
   const fetchStaff = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/staff`
+        `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
       );
       setStaffList(res.data);
       console.log("Staff data fetched:", res.data); // Debug log
     } catch (error) {
+       if (error.response?.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("sessionToken");
+      window.location.href = "/login";
+      return;
+    }
       console.error("Failed to fetch staff:", error);
     }
   };
@@ -73,7 +100,13 @@ const Reports = () => {
 
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/bills`
+        `${process.env.REACT_APP_BACKENDURL}/api/bills`,
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      }
       );
 
       // Handle different response structures

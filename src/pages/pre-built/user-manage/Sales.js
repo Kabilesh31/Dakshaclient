@@ -49,22 +49,56 @@ import { FiClock } from 'react-icons/fi';
     const [selectedCustomerForMap, setSelectedCustomerForMap] = useState(null);
 
   
-  const fetchCustomersByAssignedStaff = async (id) => {
-  try {
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${id}/assignedCustomer`,
-      {
-        params: { date: selectedDate }
-      }
-    );
+    const fetchCustomersByAssignedStaff = async (id) => {
+      try {
 
-    if (response.status === 200) {
-      setAssignedCustomerDatas(response.data.customers);
-    }
-  } catch (err) {
-    console.log(err);
-  }
-};
+        const token = localStorage.getItem("accessToken");
+        const sessionToken = localStorage.getItem("sessionToken");
+
+        if (!token || !sessionToken) {
+          console.log("User not authenticated");
+          return;
+        }
+
+        const response = await axios.get(
+          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${id}/assignedCustomer`,
+          {
+            params: { date: selectedDate },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "session-token": sessionToken,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          setAssignedCustomerDatas(response.data.customers);
+        }
+
+      } catch (err) {
+
+        console.log("Fetch assigned customers error:", err);
+
+        if (err.response) {
+
+          if (err.response.status === 401) {
+
+            console.log(
+              err.response.data?.message || "Session expired. Please login again"
+            );
+
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("sessionToken");
+
+            window.location.href = "/login";
+
+          }
+
+        } else {
+          console.log("Network error");
+        }
+      }
+    };
 
     useEffect(() => {
       fetchStaff();
@@ -75,84 +109,120 @@ import { FiClock } from 'react-icons/fi';
   fetchAssignmentsByDate(selectedDate);
   fetchAvailableVehicles(selectedDate);
 }, [selectedDate]);
+
 const fetchAvailableVehicles = async (date) => {
   try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
     const res = await axios.get(
       `${process.env.REACT_APP_BACKENDURL}/api/vehicle/getAvailableVehicle`,
       {
         params: { date },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
         },
       }
     );
 
-    setVehicles(res.data.data || []);
+    if (res.status === 200) {
+      setVehicles(res.data.data || []);
+    }
+
   } catch (error) {
+
     console.error("Vehicle fetch error:", error);
+
+    if (error.response) {
+
+      if (error.response.status === 401) {
+
+        console.log(
+          error.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
     setVehicles([]);
   }
 };
-  // useEffect(() => {
-  //   const loadAssignedCustomers = async () => {
-  //     if (!selectedStaffId) {
-  //       setAssignedCustomerDatas([]);
-  //       return;
-  //     }
-      
-  //     const staffAssignments = routeAssignments.filter(
-  //       (assignment) =>
-  //         assignment.staffId?._id?.toString() === selectedStaffId.toString() &&
-  //         assignment.date === selectedDate
-  //     );
-
-  //     if (staffAssignments.length === 0) {
-  //       setAssignedCustomerDatas([]);
-  //       return;
-  //     }
-
-  //     // If assigned → fetch customers
-  //     try {
-  //       const response = await axios.get(
-  //         `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedStaffId}/assignedCustomer`
-  //       );
-        
-  //       if (response.status === 200) {
-  //         setAssignedCustomerDatas(response.data.customers || []);
-  //       }
-  //     } catch (err) {
-  //       console.log(err);
-  //       setAssignedCustomerDatas([]);
-  //     }
-  //   };
-
-  //   loadAssignedCustomers();
-  // }, [selectedStaffId, routeAssignments, selectedDate]);
+  
 
 
     useEffect(() => {
       if (!selectedTrackStaff) return;
 
-    const fetchLocation = async () => {
-      try {
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`
-        );
-      
-        setLiveLocation({
-          lat: res.data.latitude,
-          lng: res.data.longitude,
-          updatedAt: res.data.updatedAt,
-          batteryLevel: res.data.batteryLevel,
-          gpsStatus: res.data.gpsStatus,
-          networkStatus: res.data.networkStatus,
-          isOnline: res.data.isOnline,
-        });
+   const fetchLocation = async () => {
+  try {
 
-      } catch (err) {
-        console.error("Live tracking error", err);
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
       }
-    };
+    );
+
+    if (res.status === 200) {
+
+      setLiveLocation({
+        lat: res.data.latitude,
+        lng: res.data.longitude,
+        updatedAt: res.data.updatedAt,
+        batteryLevel: res.data.batteryLevel,
+        gpsStatus: res.data.gpsStatus,
+        networkStatus: res.data.networkStatus,
+        isOnline: res.data.isOnline,
+      });
+
+    }
+
+  } catch (err) {
+
+    console.error("Live tracking error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+  }
+};
 
 
       fetchLocation();
@@ -181,110 +251,275 @@ const fetchAvailableVehicles = async (date) => {
         setLoading(true);
         setError(null);
 
+        const token = localStorage.getItem("accessToken");
+        const sessionToken = localStorage.getItem("sessionToken");
+
+        if (!token || !sessionToken) {
+          console.log("User not authenticated");
+          setDeliveryStaff([]);
+          return;
+        }
+
         const res = await axios.get(
           `${process.env.REACT_APP_BACKENDURL}/api/staff`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`, 
+              Authorization: `Bearer ${token}`,
+              "session-token": sessionToken,
             },
           }
         );
 
         if (Array.isArray(res.data)) {
-          const datas = res.data
-          const filteredStaffDatas = datas.filter((item)=> item.type === "sales")
+
+          const datas = res.data;
+
+          const filteredStaffDatas = datas.filter(
+            (item) => item.type === "sales"
+          );
+
           setDeliveryStaff(filteredStaffDatas);
+
         } else {
+
           console.warn("Staff data is not in expected format:", res.data);
           setDeliveryStaff([]);
+
         }
 
       } catch (err) {
+
         console.error("STAFF FETCH ERROR 👉", err);
-        setError("Failed to load staff");
+
+        if (err.response) {
+
+          if (err.response.status === 401) {
+
+            console.log(
+              err.response.data?.message ||
+              "Session expired. Please login again"
+            );
+
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("sessionToken");
+
+            window.location.href = "/login";
+
+          } else {
+            setError(err.response.data?.message || "Failed to load staff");
+          }
+
+        } else {
+          setError("Network error");
+        }
+
         setDeliveryStaff([]);
+
       } finally {
         setLoading(false);
       }
     };
-
     const fetchAssignmentsByDate = async (date) => {
-      try {
-        setLoading(true);
+  try {
+    setLoading(true);
 
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales?date=${date}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setRouteAssignments([]);
+      return;
+    }
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
+      {
+        params: { date },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    let assignmentsData = res.data;
+
+    if (assignmentsData && Array.isArray(assignmentsData.data)) {
+      setRouteAssignments(assignmentsData.data);
+    } else if (Array.isArray(assignmentsData)) {
+      setRouteAssignments(assignmentsData);
+    } else {
+      console.warn(
+        "Assignments data is not in expected format:",
+        assignmentsData
+      );
+      setRouteAssignments([]);
+    }
+
+  } catch (err) {
+
+    console.error("Assignments fetch error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
         );
 
-        // Ensure we set an array
-        let assignmentsData = res.data;
-        if (assignmentsData && Array.isArray(assignmentsData.data)) {
-          setRouteAssignments(assignmentsData.data);
-        } else if (Array.isArray(assignmentsData)) {
-          setRouteAssignments(assignmentsData);
-        } else {
-          console.warn("Assignments data is not in expected format:", assignmentsData);
-          setRouteAssignments([]);
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load route assignments");
-        setRouteAssignments([]);
-      } finally {
-        setLoading(false);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        setError(err.response.data?.message || "Failed to load route assignments");
       }
-    };
 
-    const fetchRoutes = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-
-        console.log("ROUTES API RESPONSE 👉", res.data);
-
-        // Check if the response is an array
-        let routesData = res.data;
-        
-        // If it's an object with a data property that's an array
-        if (routesData && routesData.data && Array.isArray(routesData.data)) {
-          setRoutes(routesData.data);
-        } 
-        // If the response itself is an array
-        else if (Array.isArray(routesData)) {
-          setRoutes(routesData);
-        }
-        // Otherwise set empty array
-        else {
-          console.warn("Routes data is not in expected format:", routesData);
-          setRoutes([]);
-        }
-      } catch (err) {
-        console.error("ROUTES FETCH ERROR 👉", err);
-        setError("Failed to load routes");
-        setRoutes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-  // After fetching customers
-  const fetchCustomers = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`);
-      setCustomers(res.data.filter(c => !c.isDeleted && c.status));
-    } catch (err) {
-      console.error(err);
-      errorToast("Failed to fetch customers");
+    } else {
+      setError("Network error");
     }
-  };
+
+    setRouteAssignments([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
+  const fetchRoutes = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setRoutes([]);
+      return;
+    }
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/route`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    let routesData = res.data;
+
+    // If response is { data: [] }
+    if (routesData && routesData.data && Array.isArray(routesData.data)) {
+      setRoutes(routesData.data);
+    }
+    // If response itself is []
+    else if (Array.isArray(routesData)) {
+      setRoutes(routesData);
+    }
+    // Unexpected format
+    else {
+      console.warn("Routes data is not in expected format:", routesData);
+      setRoutes([]);
+    }
+
+  } catch (err) {
+
+    console.error("ROUTES FETCH ERROR 👉", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        setError(err.response.data?.message || "Failed to load routes");
+      }
+
+    } else {
+      setError("Network error");
+    }
+
+    setRoutes([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
+  // After fetching customers
+const fetchCustomers = async () => {
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setCustomers([]);
+      return;
+    }
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (Array.isArray(res.data)) {
+      setCustomers(res.data.filter((c) => !c.isDeleted && c.status));
+    } else {
+      console.warn("Customers data is not in expected format:", res.data);
+      setCustomers([]);
+    }
+
+  } catch (err) {
+
+    console.error("CUSTOMERS FETCH ERROR 👉", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Failed to fetch customers");
+      }
+
+    } else {
+      errorToast("Network error");
+    }
+
+    setCustomers([]);
+  }
+};
 
 
  const filteredDeliveryStaff = Array.isArray(deliveryStaff)
@@ -401,37 +636,75 @@ const fetchAvailableVehicles = async (date) => {
       }
     };
 
-    const handleUnassignRoute = async () => {
-      if (!selectedAssignmentId) return;
+   const handleUnassignRoute = async () => {
+  if (!selectedAssignmentId) return;
 
-      try {
-        setLoading(true);
+  try {
+    setLoading(true);
 
-        await axios.delete(
-          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedAssignmentId}`,
-          {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-          }
-        );
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
 
-        // Remove from state
-        setRouteAssignments(prev =>
-          Array.isArray(prev) ? prev.filter(a => a._id !== selectedAssignmentId) : []
-        );
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
 
-        setSuccess("Route unassigned successfully");
-        setTimeout(() => setSuccess(null), 3000);
-
-        setConfirmOpen(false);
-        setSelectedAssignmentId(null);
-      } catch (err) {
-        console.error("Unassign Error:", err.response?.data || err.message);
-        setError("Failed to unassign route");
-        setTimeout(() => setError(null), 3000);
-      } finally {
-        setLoading(false);
+    await axios.delete(
+      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedAssignmentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
       }
-    };
+    );
+
+    // Remove from state
+    setRouteAssignments((prev) =>
+      Array.isArray(prev)
+        ? prev.filter((a) => a._id !== selectedAssignmentId)
+        : []
+    );
+
+    setSuccess("Route unassigned successfully");
+    setTimeout(() => setSuccess(null), 3000);
+
+    setConfirmOpen(false);
+    setSelectedAssignmentId(null);
+
+  } catch (err) {
+
+    console.error("Unassign Error:", err.response?.data || err.message);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        setError(err.response.data?.message || "Failed to unassign route");
+      }
+
+    } else {
+      setError("Network error");
+    }
+
+    setTimeout(() => setError(null), 3000);
+
+  } finally {
+    setLoading(false);
+  }
+};
 
     const openUnassignConfirm = (assignmentId) => {
       setSelectedAssignmentId(assignmentId);
@@ -472,51 +745,84 @@ const fetchAvailableVehicles = async (date) => {
     setCustomers([...otherCustomers, ...updated]);
   };
 
-  const handleSaveAlignment = async () => {
-    if (!selectedRouteForAlignment) {
-      errorToast("Please select a route first");
+ const handleSaveAlignment = async () => {
+  if (!selectedRouteForAlignment) {
+    errorToast("Please select a route first");
+    return;
+  }
+
+  try {
+    setIsSavingAlignment(true);
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
       return;
     }
 
-    try {
-      setIsSavingAlignment(true);
+    const routeId = selectedRouteForAlignment;
 
-      const routeId = selectedRouteForAlignment;
-      const customersToUpdate = customers
-        .filter(c => String(c.routeId) === String(routeId))
-        .map((c, index) => ({
-          _id: c._id,
-          lineNo: index + 1
-        }));
+    const customersToUpdate = customers
+      .filter((c) => String(c.routeId) === String(routeId))
+      .map((c, index) => ({
+        _id: c._id,
+        lineNo: index + 1,
+      }));
 
-    
-      const res = await axios.put(
-        `${process.env.REACT_APP_BACKENDURL}/api/delivery/update-line-order`,
-        {
-          routeId,
-          customers: customersToUpdate   
+    const res = await axios.put(
+      `${process.env.REACT_APP_BACKENDURL}/api/delivery/update-line-order`,
+      {
+        routeId,
+        customers: customersToUpdate,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        }
-      );
+      }
+    );
 
-      if (res.data.status === "success") {
-        successToast("Alignment saved successfully");
-        fetchCustomers();
+    if (res.data.status === "success") {
+      successToast("Alignment saved successfully");
+      fetchCustomers();
+    } else {
+      errorToast("Failed to save alignment");
+    }
+
+  } catch (err) {
+
+    console.error("SAVE ALIGNMENT ERROR 👉", err.response?.data || err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
       } else {
-        errorToast("Failed to save alignment");
+        errorToast(err.response.data?.message || "Save failed");
       }
 
-    } catch (err) {
-      console.error("SAVE ALIGNMENT ERROR 👉", err.response?.data || err);
-      // errorToast(err.response?.data?.error || "Save failed");
-    } finally {
-      setIsSavingAlignment(false);
+    } else {
+      errorToast("Network error");
     }
-  };
+
+  } finally {
+    setIsSavingAlignment(false);
+  }
+};
+
   const handleViewCustomer = (customer) => {
     setSelectedCustomer(customer);
     setViewCustomerModal(true);
@@ -889,70 +1195,100 @@ const fetchAvailableVehicles = async (date) => {
                   }}
                   disabled={!staff.selectedRoute || loading}
                   onClick={async () => {
-                    try {
-                      setLoading(true);
-                      setError(null);
+                      try {
+                        setLoading(true);
+                        setError(null);
 
-                      const route = findRoute(staff.selectedRoute);
-                      if (!route) {
-                        setError("Selected route not found");
-                        return;
-                      }
+                        const token = localStorage.getItem("accessToken");
+                        const sessionToken = localStorage.getItem("sessionToken");
 
-                      // 🔥 FIXED VEHICLE LOGIC
-                      let vehicleToSend = null;
-
-                      if (existingVehicleNo?.vehicleNumber) {
-                        vehicleToSend = existingVehicleNo.vehicleNumber;
-                      } else {
-                        const selectedVehicleData = vehicles.find(
-                          v => v._id === staff.selectedVehicle
-                        );
-                        vehicleToSend = selectedVehicleData?.vehicleNumber;
-                      }
-
-                      if (!vehicleToSend) {
-                        setError("Please select vehicle");
-                        return;
-                      }
-
-                      await axios.post(
-                        `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
-                        {
-                          date: selectedDate,
-                          staffId: staff._id,
-                          routeId: route._id,
-                          routeName: route.routeName,
-                          vehicleNo: vehicleToSend,
-                        },
-                        {
-                          headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`,
-                          },
+                        if (!token || !sessionToken) {
+                          console.log("User not authenticated");
+                          return;
                         }
-                      );
 
-                      setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
-                      setTimeout(() => setSuccess(null), 3000);
+                        const route = findRoute(staff.selectedRoute);
+                        if (!route) {
+                          setError("Selected route not found");
+                          return;
+                        }
 
-                      fetchAssignmentsByDate(selectedDate);
+                        // 🔥 VEHICLE LOGIC
+                        let vehicleToSend = null;
 
-                      // reset only route
-                      setDeliveryStaff(prev =>
-                        prev.map(s =>
-                          s._id === staff._id
-                            ? { ...s, selectedRoute: "" }
-                            : s
-                        )
-                      );
+                        if (existingVehicleNo?.vehicleNumber) {
+                          vehicleToSend = existingVehicleNo.vehicleNumber;
+                        } else {
+                          const selectedVehicleData = vehicles.find(
+                            (v) => v._id === staff.selectedVehicle
+                          );
+                          vehicleToSend = selectedVehicleData?.vehicleNumber;
+                        }
 
-                    } catch (err) {
-                      console.error("Assign error:", err.response?.data);
-                      setError(err.response?.data?.message || "Failed to assign route");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
+                        if (!vehicleToSend) {
+                          setError("Please select vehicle");
+                          return;
+                        }
+
+                        await axios.post(
+                          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
+                          {
+                            date: selectedDate,
+                            staffId: staff._id,
+                            routeId: route._id,
+                            routeName: route.routeName,
+                            vehicleNo: vehicleToSend,
+                          },
+                          {
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                              "session-token": sessionToken,
+                            },
+                          }
+                        );
+
+                        setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
+                        setTimeout(() => setSuccess(null), 3000);
+
+                        fetchAssignmentsByDate(selectedDate);
+
+                        // reset only route
+                        setDeliveryStaff((prev) =>
+                          prev.map((s) =>
+                            s._id === staff._id ? { ...s, selectedRoute: "" } : s
+                          )
+                        );
+
+                      } catch (err) {
+
+                        console.error("Assign error:", err.response?.data || err);
+
+                        if (err.response) {
+
+                          if (err.response.status === 401) {
+
+                            console.log(
+                              err.response.data?.message ||
+                              "Session expired. Please login again"
+                            );
+
+                            localStorage.removeItem("accessToken");
+                            localStorage.removeItem("sessionToken");
+
+                            window.location.href = "/login";
+
+                          } else {
+                            setError(err.response.data?.message || "Failed to assign route");
+                          }
+
+                        } else {
+                          setError("Network error");
+                        }
+
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
                   onMouseEnter={(e) => {
                     if (!(!staff.selectedRoute || loading)) {
                       e.currentTarget.style.backgroundColor = '#1e4f72';

@@ -75,15 +75,57 @@ const ReportsList = () => {
   }, [data]);
 
   // fetch users list
-  const fetchUserData = async () => {
-    try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer");
-      setData(response.data.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+const fetchUserData = async () => {
+  try {
 
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      setData([]);
+      return;
+    }
+
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken
+        }
+      }
+    );
+
+    if (response.status === 200) {
+      setData(response.data?.data || []);
+    }
+
+  } catch (err) {
+
+    console.log("CUSTOMER FETCH ERROR:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    }
+
+    setData([]);
+
+  }
+};
   // Sorting data
   const sortFunc = (params) => {
     let defaultData = data;
@@ -116,18 +158,6 @@ const ReportsList = () => {
     setSearchText(e.target.value);
   };
 
-  // function to change the selected property of an item
-  const onSelectChange = (e, id) => {
-    let newData = data;
-    let index = newData.findIndex((item) => item._id === id);
-    newData[index].checked = e.currentTarget.checked;
-    setData([...newData]);
-  };
-
-  // function to set the action to be taken in table header
-  const onActionText = (e) => {
-    setActionText(e.value);
-  };
 
   // function to reset the form
   const resetForm = () => {
@@ -147,57 +177,142 @@ const ReportsList = () => {
   };
 
   // submit function to add a new item
-  const onFormSubmit = async (submitData) => {
-    const { name, email, role, phone, status } = submitData;
-    let submittedData = {
-      name: name,
-      role: formData.role,
-      email: email,
-      phone: phone,
-      status: formData.status,
-      password: phone,
-      confirmPassword: phone,
-      createdBy: "userData._id",
-    };
-    try {
-      const response = await axios.post(process.env.REACT_APP_BACKENDURL + "/api/user/signup", submittedData);
-      if (response.status === 201) {
-        successToast("User Created Successfully");
-        resetForm();
-        setModal({ edit: false, add: false });
-        fetchUserData();
-      } else {
-        warningToast();
-      }
-    } catch (err) {
-      errorToast("Please Provide All Details");
-    }
+ const onFormSubmit = async (submitData) => {
+  const { name, email, role, phone, status } = submitData;
+
+  const submittedData = {
+    name,
+    role: formData.role,
+    email,
+    phone,
+    status: formData.status,
+    password: phone,
+    confirmPassword: phone,
+    createdBy: userData._id,
   };
+
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKENDURL}/api/user/signup`,
+      submittedData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (response.status === 201) {
+      successToast("User Created Successfully");
+      resetForm();
+      setModal({ edit: false, add: false });
+      fetchUserData();
+    } else {
+      warningToast();
+    }
+
+  } catch (err) {
+
+    console.log("CREATE USER ERROR:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message ||
+          "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      } else {
+        errorToast(err.response.data?.message || "Please Provide All Details");
+      }
+
+    } else {
+      errorToast("Network error");
+    }
+  }
+};
 
   // submit function to update a new item
   const onEditSubmit = async (submitData) => {
     const { name, phone } = submitData;
-    let submittedData;
-    let newitems = data;
-    newitems.forEach((item) => {
-      if (item._id === editId) {
-        submittedData = {
-          name: name,
-          role: formData.role,
-          status: formData.status,
-          phone: phone,
-        };
-      }
-    });
+
+    const submittedData = {
+      name,
+      role: formData.role,
+      status: formData.status,
+      phone,
+    };
+
     try {
-      const response = await axios.put(process.env.REACT_APP_BACKENDURL + "/api/user/" + editId, submittedData);
+
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
+
+      const response = await axios.put(
+        `${process.env.REACT_APP_BACKENDURL}/api/user/${editId}`,
+        submittedData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
+
       if (response.status === 200) {
         successToast("Updated Successfully");
         setModal({ edit: false });
         fetchUserData();
       }
+
     } catch (err) {
-      errorToast("Something Went Wrong");
+
+      console.log("UPDATE USER ERROR:", err);
+
+      if (err.response) {
+
+        if (err.response.status === 401) {
+
+          console.log(
+            err.response.data?.message ||
+            "Session expired. Please login again"
+          );
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+
+        } else {
+          errorToast(err.response.data?.message || "Something Went Wrong");
+        }
+
+      } else {
+        errorToast("Network error");
+      }
+
     }
   };
 

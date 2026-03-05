@@ -70,17 +70,59 @@ const capitalizeFirst = (text) => {
 
   // ================= FETCH STAFF =================
   const fetchStaff = async () => {
-    try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/staff`
-      );
-      setStaffs(res.data);
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      console.log("User not authenticated");
       setLoading(false);
-    } catch (err) {
-      console.log(err);
-      setLoading(false);
+      return;
     }
-  };
+
+    const res = await axios.get(
+      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      }
+    );
+
+    if (res.status === 200) {
+      setStaffs(res.data);
+    }
+
+    setLoading(false);
+
+  } catch (err) {
+
+    console.log("Fetch staff error:", err);
+
+    if (err.response) {
+
+      if (err.response.status === 401) {
+
+        console.log(
+          err.response.data?.message || "Session expired. Please login again"
+        );
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+
+        window.location.href = "/login";
+
+      }
+
+    } else {
+      console.log("Network error");
+    }
+
+    setLoading(false);
+  }
+};
 const sortFunc = (order) => {
   const sorted = [...staffs].sort((a, b) => {
     if (order === "asc") {
@@ -116,24 +158,40 @@ const filteredStaff = staffs.filter(
 );
 
 // Pagination Logic
-const indexOfLastItem = currentPage * itemPerPage;
-const indexOfFirstItem = indexOfLastItem - itemPerPage;
-const currentItems = filteredStaff.slice(
-  indexOfFirstItem,
-  indexOfLastItem
-);
+  const indexOfLastItem = currentPage * itemPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemPerPage;
+  const currentItems = filteredStaff.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
 
   // ================= FETCH ATTENDANCE =================
   const fetchAttendance = async () => {
     try {
+
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
+
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/attendance`
+        `${process.env.REACT_APP_BACKENDURL}/api/attendance`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
       );
 
       const structured = {};
 
       res.data.forEach((record) => {
+
         const dateObj = new Date(record.date);
         const y = dateObj.getFullYear();
         const m = months[dateObj.getMonth()];
@@ -146,29 +204,49 @@ const currentItems = filteredStaff.slice(
 
         if (!structured[y]) structured[y] = {};
         if (!structured[y][m]) structured[y][m] = {};
-        if (!structured[y][m][staffId])
-          structured[y][m][staffId] = {};
+        if (!structured[y][m][staffId]) structured[y][m][staffId] = {};
 
         structured[y][m][staffId][d] = {
           status:
             record.currentStatus === "checked-in"
               ? "working"
               : "present",
-checkIn: record.startTime || null,
-checkOut: record.endTime || null,
-
+          checkIn: record.startTime || null,
+          checkOut: record.endTime || null,
           hours: record.totalHours
             ? record.totalHours.toFixed(2)
             : 0,
         };
+
       });
 
       setAttendance(structured);
 
     } catch (err) {
-      console.log(err);
+
+      console.log("Fetch attendance error:", err);
+
+      if (err.response) {
+
+        if (err.response.status === 401) {
+
+          console.log(
+            err.response.data?.message || "Session expired. Please login again"
+          );
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+
+        }
+
+      } else {
+        console.log("Network error");
+      }
     }
   };
+
   const formatDateTime = (date) => {
     if (!date) return "-";
     return new Date(date).toLocaleString("en-IN", {
