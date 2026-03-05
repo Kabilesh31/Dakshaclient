@@ -14,7 +14,6 @@ import {
   ModalFooter,
   Row,
   Col,
-  Label,
   FormGroup
 } from "reactstrap";
 import { errorToast } from "../../utils/toaster";
@@ -22,7 +21,7 @@ import * as XLSX from "xlsx";
 import "./report.css";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaFileExcel, FaFilePdf, FaEye, FaDownload } from "react-icons/fa";
+import { FaFileExcel, FaFilePdf, FaDownload } from "react-icons/fa";
 
 const StaffReport = () => {
   const [staffList, setStaffList] = useState([]);
@@ -32,7 +31,7 @@ const StaffReport = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [search, setSearch] = useState("");
-  const [staffTypeFilter, setStaffTypeFilter] = useState("all"); // 'all', 'sales', 'delivery', 'manager'
+  const [staffTypeFilter, setStaffTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   
@@ -40,38 +39,54 @@ const StaffReport = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
 
-  // Calculate statistics based on staff type - Using finalAmt
+  // Calculate statistics based on staff type - Using totalAmt ONLY
   const calculateStats = () => {
     if (!filteredBills.length) return {
       totalOrders: 0,
       totalAmount: 0,
       collectedAmount: 0,
       pendingAmount: 0,
+      rejectedAmount: 0,
       deliveredOrders: 0,
       pendingDelivery: 0,
       assignedCustomers: 0
     };
 
-    const totalOrders = filteredBills.length;
-    const totalAmount = filteredBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+    const totalOrders = filteredBills.filter(b => b.orderStatus !== "rejected").length;
     
-    // For sales staff: payments collected vs pending
+    // Total amount excludes rejected bills
+    const totalAmount = filteredBills
+      .filter(b => b.orderStatus !== "rejected")
+      .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
+    
+    // Collected amount (paid, non-rejected)
     const collectedAmount = filteredBills
-      .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-      .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+      .filter(b => b.orderStatus !== "rejected" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
+      .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
     
-    const pendingAmount = totalAmount - collectedAmount;
+    // Rejected amount
+    const rejectedAmount = filteredBills
+      .filter(b => b.orderStatus === "rejected")
+      .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
+    
+    // Pending amount (non-rejected, unpaid)
+    const pendingAmount = filteredBills
+      .filter(b => b.orderStatus !== "rejected" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"))
+      .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
-    // For delivery staff: delivery status
+    // Delivery stats
     const deliveredOrders = filteredBills.filter(b => 
-      b.orderStatus?.toLowerCase() === 'delivered' || b.orderStatus === "approved"
+      b.orderStatus !== "rejected" && (b.orderStatus?.toLowerCase() === 'delivered' || b.orderStatus === "approved")
     ).length;
+    
+    const rejectedOrders = filteredBills.filter(b => b.orderStatus === "rejected").length;
     
     const pendingDelivery = filteredBills.filter(b => 
-      !b.orderStatus || (b.orderStatus?.toLowerCase() !== 'delivered' && b.orderStatus !== "approved")
+      b.orderStatus !== "rejected" && 
+      (!b.orderStatus || (b.orderStatus?.toLowerCase() !== 'delivered' && b.orderStatus !== "approved"))
     ).length;
 
-    // For delivery staff: assigned customers (unique customers)
+    // Assigned customers
     const assignedCustomers = [...new Set(filteredBills.map(bill => 
       bill.customerId?._id || bill.customerId
     ))].filter(id => id).length;
@@ -81,12 +96,14 @@ const StaffReport = () => {
       totalAmount,
       collectedAmount,
       pendingAmount,
+      rejectedAmount,
       deliveredOrders,
+      rejectedOrders,
       pendingDelivery,
       assignedCustomers
     };
   };
-
+  
   const stats = calculateStats();
 
   // Fetch all staff
@@ -108,7 +125,6 @@ const StaffReport = () => {
       const res = await axios.get(
         `${process.env.REACT_APP_BACKENDURL}/api/bills`
       );
-      // Handle different response structures
       if (Array.isArray(res.data)) {
         setAllBills(res.data);
       } else if (res.data.bills && Array.isArray(res.data.bills)) {
@@ -131,28 +147,22 @@ const StaffReport = () => {
 
     let staffBills = [];
     
-    // Filter based on staff type
     switch(selectedStaff.type?.toLowerCase()) {
       case 'manager':
-        // Managers can see bills they created
         staffBills = allBills.filter(bill => 
           bill.createdBy === selectedStaff._id || 
           bill.createdBy === selectedStaff.name
         );
         break;
-      
       case 'delivery':
-        // Delivery personnel see bills assigned to them for delivery
         staffBills = allBills.filter(bill => 
           bill.deliveredBy === selectedStaff._id ||
           bill.deliveryPersonId === selectedStaff._id ||
           bill.staffId === selectedStaff._id
         );
         break;
-      
       case 'sales':
       default:
-        // Sales personnel see bills they created or collected payment for
         staffBills = allBills.filter(bill => 
           bill.createdBy === selectedStaff._id ||
           bill.paymentCollectedBy === selectedStaff._id ||
@@ -174,7 +184,6 @@ const StaffReport = () => {
     }
 
     let staffBills = allBills.filter(bill => {
-      // Staff filter logic
       const isStaffBill = 
         bill.createdBy === selectedStaff._id ||
         bill.paymentCollectedBy === selectedStaff._id ||
@@ -185,7 +194,6 @@ const StaffReport = () => {
       return isStaffBill;
     });
     
-    // Apply date filter
     if (startDate && endDate) {
       const from = new Date(startDate);
       from.setHours(0, 0, 0, 0);
@@ -220,7 +228,7 @@ const StaffReport = () => {
     setInvoiceModal(true);
   };
 
-  // Download invoice PDF - Using finalAmt
+  // Download invoice PDF - Using totalAmt
   const downloadInvoicePDF = () => {
     if (!selectedBill) return;
 
@@ -251,7 +259,8 @@ const StaffReport = () => {
     // Order Status
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(46, 204, 113);
+    const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
     doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
 
     // Customer Details
@@ -281,11 +290,11 @@ const StaffReport = () => {
     doc.text(`Type: ${selectedStaff?.type || 'staff'}`, 120, 82);
     doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}`, 120, 89);
 
-    // Calculate subtotal - Using finalAmt as fallback
+    // Calculate subtotal
     const subtotal = selectedBill.orderedProducts?.reduce(
       (sum, product) => sum + (Number(product.value) * Number(product.qty)), 
       0
-    ) || Number(selectedBill.finalAmt) || 0;
+    ) || Number(selectedBill.totalAmt) || 0;
 
     // Products Table
     const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
@@ -298,8 +307,8 @@ const StaffReport = () => {
         idx + 1,
         product.productName || '',
         qty.toString(),
-        rate.toString(),
-        amount.toString()
+        `₹${rate.toLocaleString('en-IN')}`,
+        `₹${amount.toLocaleString('en-IN')}`
       ];
     }) || [];
 
@@ -330,12 +339,8 @@ const StaffReport = () => {
       }
     });
 
-    // Totals section - Using finalAmt
+    // Totals section - Using totalAmt
     const finalY = doc.lastAutoTable.finalY + 15;
-
-    // Format numbers
-    const subtotalFormatted = subtotal.toString();
-    const totalFormatted = (Number(selectedBill.finalAmt) || 0).toString();
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -345,22 +350,22 @@ const StaffReport = () => {
     const valueX = 178;
 
     doc.text("Subtotal:", startX, finalY);
-    doc.text(subtotalFormatted, valueX, finalY, { align: 'right' });
+    doc.text(`₹${subtotal.toLocaleString('en-IN')}`, valueX, finalY, { align: 'right' });
 
     doc.text("Discount:", startX, finalY + 8);
-    doc.text("0", valueX, finalY + 8, { align: 'right' });
+    doc.text("₹0", valueX, finalY + 8, { align: 'right' });
 
     doc.text("Tax:", startX, finalY + 16);
-    doc.text("0", valueX, finalY + 16, { align: 'right' });
+    doc.text("₹0", valueX, finalY + 16, { align: 'right' });
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Total:", startX - 5, finalY + 28);
-    doc.text(totalFormatted, valueX, finalY + 28, { align: 'right' });
+    doc.text(`₹${(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}`, valueX, finalY + 28, { align: 'right' });
 
     // Payment info
-    if (selectedBill.paymentMethod) {
+    if (selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected") {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
@@ -376,7 +381,7 @@ const StaffReport = () => {
     doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
   };
 
-  // Export PDF - Using finalAmt
+  // Export PDF - Using totalAmt
   const exportPDF = () => {
     if (!selectedStaff) return;
 
@@ -402,40 +407,39 @@ const StaffReport = () => {
       );
     }
 
-    // Summary Section - Using finalAmt
+    // Summary Section
     doc.setFontSize(11);
     doc.setTextColor(33);
     
     if (selectedStaff.type?.toLowerCase() === 'delivery') {
       doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Total Amount: ₹${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
       doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
       doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
       doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
       
-      // Table for delivery - Using finalAmt
-      const tableColumn = [
-        "S.No",
-        "Order No",
-        "Customer",
-        "Date",
-        "Amount (Rs)",
-        "Status",
-      ];
+      if (stats.rejectedOrders > 0) {
+        doc.text(`Rejected Orders: ${stats.rejectedOrders} (₹${stats.rejectedAmount.toLocaleString("en-IN")})`, 14, 78);
+      }
+      
+      // Table for delivery
+      const tableColumn = ["S.No", "Order No", "Customer", "Date", "Amount (₹)", "Status"];
 
-      const tableRows = filteredBills.map((bill, idx) => [
-        idx + 1,
-        `#${bill._id.toString().slice(-6)}`,
-        getCustomerName(bill),
-        new Date(bill.createdAt).toLocaleDateString("en-IN"),
-        (Number(bill.finalAmt) || 0).toLocaleString("en-IN"),
-        bill.orderStatus || 'Pending',
-      ]);
+      const tableRows = filteredBills.map((bill, idx) => {
+        return [
+          idx + 1,
+          `#${bill._id.toString().slice(-6)}`,
+          getCustomerName(bill),
+          new Date(bill.createdAt).toLocaleDateString("en-IN"),
+          `₹${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
+          bill.orderStatus || 'Pending',
+        ];
+      });
 
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
-        startY: 85,
+        startY: stats.rejectedOrders > 0 ? 85 : 79,
         theme: "striped",
         headStyles: {
           fillColor: [41, 128, 185],
@@ -451,35 +455,48 @@ const StaffReport = () => {
       });
     } else {
       doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Collected Amount: Rs. ${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
-      doc.text(`Pending Amount: Rs. ${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
+      doc.text(`Total Amount: ₹${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Collected Amount: ₹${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
+      doc.text(`Pending Amount: ₹${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
       
-      // Table for sales/manager - Using finalAmt
+      if (stats.rejectedAmount > 0) {
+        doc.text(`Rejected Amount: ₹${stats.rejectedAmount.toLocaleString("en-IN")}`, 14, 72);
+      }
+      
+      // Table for sales/manager
       const tableColumn = [
         "S.No",
         "Order No",
         "Customer",
         "Date",
-        "Amount (Rs)",
+        "Amount (₹)",
         "Payment Status",
         "Order Status",
       ];
 
-      const tableRows = filteredBills.map((bill, idx) => [
-        idx + 1,
-        `#${bill._id.toString().slice(-6)}`,
-        getCustomerName(bill),
-        new Date(bill.createdAt).toLocaleDateString("en-IN"),
-        (Number(bill.finalAmt) || 0).toLocaleString("en-IN"),
-        bill.paymentMethod ? "Paid" : "Pending",
-        bill.orderStatus || 'Pending',
-      ]);
+      const tableRows = filteredBills.map((bill, idx) => {
+        let paymentStatus = 'Pending';
+        if (bill.orderStatus === "rejected") {
+          paymentStatus = 'Rejected';
+        } else if (bill.paymentMethod) {
+          paymentStatus = 'Paid';
+        }
+        
+        return [
+          idx + 1,
+          `#${bill._id.toString().slice(-6)}`,
+          getCustomerName(bill),
+          new Date(bill.createdAt).toLocaleDateString("en-IN"),
+          `₹${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
+          paymentStatus,
+          bill.orderStatus || 'Pending',
+        ];
+      });
 
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
-        startY: 75,
+        startY: stats.rejectedAmount > 0 ? 80 : 74,
         theme: "striped",
         headStyles: {
           fillColor: [41, 128, 185],
@@ -498,7 +515,7 @@ const StaffReport = () => {
     doc.save(`${selectedStaff.name}_Report.pdf`);
   };
   
-  // Export Excel - Using finalAmt
+  // Export Excel - Using totalAmt
   const exportExcel = () => {
     if (!selectedStaff) return;
     
@@ -510,19 +527,28 @@ const StaffReport = () => {
         'Order No': `#${bill._id.toString().slice(-6)}`,
         'Customer': getCustomerName(bill),
         'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': Number(bill.finalAmt) || 0,
+        'Amount (₹)': Number(bill.totalAmt) || 0,
         'Delivery Status': bill.orderStatus || 'Pending',
       }));
     } else {
-      exportData = filteredBills.map((bill, idx) => ({
-        'S.No': idx + 1,
-        'Order No': `#${bill._id.toString().slice(-6)}`,
-        'Customer': getCustomerName(bill),
-        'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': Number(bill.finalAmt) || 0,
-        'Payment Status': bill.paymentMethod ? 'Paid' : 'Pending',
-        'Order Status': bill.orderStatus || 'Pending',
-      }));
+      exportData = filteredBills.map((bill, idx) => {
+        let paymentStatus = 'Pending';
+        if (bill.orderStatus === "rejected") {
+          paymentStatus = 'Rejected';
+        } else if (bill.paymentMethod) {
+          paymentStatus = 'Paid';
+        }
+        
+        return {
+          'S.No': idx + 1,
+          'Order No': `#${bill._id.toString().slice(-6)}`,
+          'Customer': getCustomerName(bill),
+          'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
+          'Amount (₹)': Number(bill.totalAmt) || 0,
+          'Payment Status': paymentStatus,
+          'Order Status': bill.orderStatus || 'Pending',
+        };
+      });
     }
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -538,6 +564,10 @@ const StaffReport = () => {
         { 'Summary': 'Pending Delivery', 'Value': stats.pendingDelivery },
         { 'Summary': 'Assigned Customers', 'Value': stats.assignedCustomers }
       ];
+      if (stats.rejectedOrders > 0) {
+        summaryData.push({ 'Summary': 'Rejected Orders', 'Value': stats.rejectedOrders });
+        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${stats.rejectedAmount.toLocaleString('en-IN')}` });
+      }
     } else {
       summaryData = [
         { 'Summary': 'Total Orders', 'Value': stats.totalOrders },
@@ -545,6 +575,9 @@ const StaffReport = () => {
         { 'Summary': 'Collected Amount', 'Value': `₹${stats.collectedAmount.toLocaleString('en-IN')}` },
         { 'Summary': 'Pending Amount', 'Value': `₹${stats.pendingAmount.toLocaleString('en-IN')}` }
       ];
+      if (stats.rejectedAmount > 0) {
+        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${stats.rejectedAmount.toLocaleString('en-IN')}` });
+      }
     }
     
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "Summary");
@@ -608,10 +641,8 @@ const StaffReport = () => {
             <span className="customer-count">{filteredStaff.length} of {staffList.length}</span>
           </div>
           
-          {/* Staff Type Filter */}
           <div className="staff-type-filter">
             <FormGroup>
-              
               <Input
                 type="select"
                 name="staffType"
@@ -687,7 +718,6 @@ const StaffReport = () => {
         <div className="reports-panel">
           {selectedStaff ? (
             <>
-              {/* Action Bar */}
               <div className="action-bar ultra-compact">
                 <div className="date-picker-wrapper ultra-compact">
                   <DatePicker
@@ -714,7 +744,6 @@ const StaffReport = () => {
                     disabled={filteredBills.length === 0}
                   >
                     <FaFileExcel />
-                    
                   </button>
                   <button
                     onClick={exportPDF}
@@ -723,12 +752,10 @@ const StaffReport = () => {
                     title="Export to PDF"
                   >
                     <FaFilePdf size={13} />
-                    
                   </button>
                 </div>
               </div>
 
-              {/* Staff Header */}
               <div className="customer-header">
                 <div className="customer-header-info">
                   <div className="customer-header-avatar">
@@ -755,9 +782,8 @@ const StaffReport = () => {
                 )}
               </div>
 
-              {/* Stats Cards - Using finalAmt */}
+              {/* Stats Cards - Using totalAmt */}
               {selectedStaff.type?.toLowerCase() === 'delivery' ? (
-                /* Delivery Staff Stats */
                 <Row className="stats-row g-2">
                   <Col md="3">
                     <div className="stat-card compact">
@@ -803,9 +829,21 @@ const StaffReport = () => {
                       </div>
                     </div>
                   </Col>
+                  {stats.rejectedOrders > 0 && (
+                    <Col md="3">
+                      <div className="stat-card compact">
+                        <div className="stat-icon danger compact">
+                          <i className="ni ni-fat-remove"></i>
+                        </div>
+                        <div className="stat-content">
+                          <span className="stat-label">Rejected</span>
+                          <span className="stat-value">{stats.rejectedOrders} (₹{stats.rejectedAmount.toLocaleString('en-IN')})</span>
+                        </div>
+                      </div>
+                    </Col>
+                  )}
                 </Row>
               ) : (
-                /* Sales Staff Stats */
                 <Row className="stats-row g-2">
                   <Col md="3">
                     <div className="stat-card compact">
@@ -851,6 +889,19 @@ const StaffReport = () => {
                       </div>
                     </div>
                   </Col>
+                  {/* {stats.rejectedAmount > 0 && (
+                    <Col md="3">
+                      <div className="stat-card compact">
+                        <div className="stat-icon danger compact">
+                          <i className="ni ni-fat-remove"></i>
+                        </div>
+                        <div className="stat-content">
+                          <span className="stat-label">Rejected</span>
+                          <span className="stat-value">₹{stats.rejectedAmount.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </Col>
+                  )} */}
                 </Row>
               )}
 
@@ -884,60 +935,73 @@ const StaffReport = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {currentItems.map((bill, idx) => (
-                            <tr key={bill._id}>
-                              <td>{indexOfFirstItem + idx + 1}</td>
-                              <td>
-                                <span className="order-id">#{bill._id.toString().slice(-6)}</span>
-                              </td>
-                              <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {getCustomerName(bill).length > 15 
-                                  ? getCustomerName(bill).substring(0, 15) + '...' 
-                                  : getCustomerName(bill)}
-                              </td>
-                              <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
-                                day: '2-digit', 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}</td>
-                              <td className="amount">₹ {(Number(bill.finalAmt) || 0).toLocaleString('en-IN')}</td>
-                              {selectedStaff.type?.toLowerCase() !== 'delivery' && (
+                          {currentItems.map((bill, idx) => {
+                            let paymentStatusText = 'Pending';
+                            let paymentStatusClass = 'pending';
+                            
+                            if (bill.orderStatus === "rejected") {
+                              paymentStatusText = 'Rejected';
+                              paymentStatusClass = 'rejected';
+                            } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
+                              paymentStatusText = 'Paid';
+                              paymentStatusClass = 'paid';
+                            }
+                            
+                            return (
+                              <tr key={bill._id} className={bill.orderStatus === "rejected" ? "rejected-row" : ""}>
+                                <td>{indexOfFirstItem + idx + 1}</td>
                                 <td>
-                                  <span className={`status-badge ${bill.paymentMethod ? 'paid' : 'pending'}`}>
-                                    {bill.paymentMethod ? 'Paid' : 'Pending'}
+                                  <span className="order-id">#{bill._id.toString().slice(-6)}</span>
+                                </td>
+                                <td>{getCustomerName(bill)}</td>
+                                <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
+                                  day: '2-digit', 
+                                  month: 'short', 
+                                  year: 'numeric' 
+                                })}</td>
+                                <td className="amount">₹{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
+                                {selectedStaff.type?.toLowerCase() !== 'delivery' && (
+                                  <td>
+                                    <span className={`status-badge ${paymentStatusClass}`}>
+                                      {paymentStatusText}
+                                    </span>
+                                  </td>
+                                )}
+                                <td>
+                                  <span className={`order-status-badge ${bill.orderStatus?.toLowerCase() || 'pending'}`}>
+                                    {bill.orderStatus || 'Pending'}
                                   </span>
                                 </td>
-                              )}
-                              <td>
-                                <span className={`order-status-badge ${bill.orderStatus?.toLowerCase() || 'pending'}`}>
-                                  {bill.orderStatus || 'Pending'}
-                                </span>
-                              </td>
-                              <td>
-                                <button 
-                                  className="action-btn view-btn"
-                                  onClick={() => openInvoiceModal(bill)}
-                                  title="View Invoice"
-                                >
-                                  <i className="ni ni-eye"></i>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                                <td>
+                                  <button 
+                                    className="action-btn view-btn"
+                                    onClick={() => openInvoiceModal(bill)}
+                                    title="View Invoice"
+                                  >
+                                    <i className="ni ni-eye"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan="4" className="text-end fw-bold">Total Amount:</td>
-                            <td className="amount fw-bold">₹ {stats.totalAmount.toLocaleString('en-IN')}</td>
-                            {selectedStaff.type?.toLowerCase() !== 'delivery' && <td></td>}
-                            <td></td>
-                            <td></td>
+                            <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end fw-bold">Total :</td>
+                            <td className="amount fw-bold">₹{stats.totalAmount.toLocaleString('en-IN')}</td>
+                            <td colSpan="2"></td>
                           </tr>
+                          {/* {stats.rejectedAmount > 0 && (
+                            <tr className="rejected-footer-row">
+                              <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end text-danger">Rejected Amount:</td>
+                              <td className="amount text-danger">₹{stats.rejectedAmount.toLocaleString('en-IN')}</td>
+                              <td colSpan="2"></td>
+                            </tr>
+                          )} */}
                         </tfoot>
                       </table>
                     </div>
 
-                    {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="pagination-wrapper">
                         <Pagination>
@@ -992,7 +1056,7 @@ const StaffReport = () => {
         </div>
       </div>
 
-      {/* Invoice Modal - Using finalAmt */}
+      {/* Invoice Modal - Using totalAmt */}
       <Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
         <ModalHeader toggle={() => setInvoiceModal(false)}>
           <div className="modal-header-content">
@@ -1006,7 +1070,6 @@ const StaffReport = () => {
         <ModalBody>
           {selectedBill && (
             <div className="invoice-container">
-              {/* Order ID and Date */}
               <div className="invoice-header">
                 <div className="order-info">
                   <h2 className="order-id">Order ID: #{selectedBill._id.toString().slice(-6)}</h2>
@@ -1021,9 +1084,7 @@ const StaffReport = () => {
                 </div>
               </div>
 
-              {/* Customer and Staff Details Grid */}
               <div className="details-grid">
-                {/* Customer Details */}
                 <div className="details-section">
                   <h6 className="section-title">Customer Details</h6>
                   <div className="detail-item">
@@ -1040,7 +1101,6 @@ const StaffReport = () => {
                   </div>
                 </div>
 
-                {/* Staff Details */}
                 <div className="details-section">
                   <h6 className="section-title">Staff Details</h6>
                   <div className="detail-item">
@@ -1058,8 +1118,7 @@ const StaffReport = () => {
                 </div>
               </div>
 
-              {/* Paid Stamp */}
-              {selectedBill?.paymentMethod && (
+              {selectedBill?.paymentMethod && selectedBill.orderStatus !== "rejected" && (
                 <div className="paid-stamp-round-container">
                   <div className="paid-stamp-round distressed">
                     <div className="paper-texture"></div>
@@ -1086,7 +1145,33 @@ const StaffReport = () => {
                 </div>
               )}
 
-              {/* Products Table */}
+              {selectedBill?.orderStatus === "rejected" && (
+                <div className="rejected-stamp-round-container">
+                  <div className="rejected-stamp-round distressed">
+                    <div className="paper-texture"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="stamp-inner">
+                      <div className="stamp-text">REJECTED</div>
+                    </div>
+                    <div className="stamp-dots">
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="stamp-dot"
+                          style={{
+                            top: `${20 + Math.random() * 60}%`,
+                            left: `${20 + Math.random() * 60}%`,
+                            transform: `rotate(${Math.random() * 360}deg)`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="products-table-container">
                 <table className="products-table">
                   <thead>
@@ -1104,41 +1189,39 @@ const StaffReport = () => {
                         <td>{idx + 1}</td>
                         <td>{product.productName}</td>
                         <td>{product.qty}</td>
-                        <td>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
-                        <td>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
+                        <td>₹{(Number(product.value) || 0).toLocaleString('en-IN')}</td>
+                        <td>₹{((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Totals Section - Using finalAmt */}
               <div className="totals-section">
                 <div className="total-row">
                   <span className="total-label">Subtotal</span>
                   <span className="total-value">
-                    ₹ {selectedBill.orderedProducts?.reduce(
+                    ₹{selectedBill.orderedProducts?.reduce(
                       (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
                       0
-                    ).toLocaleString('en-IN') || (Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}
+                    ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="total-row">
                   <span className="total-label">Discount</span>
-                  <span className="total-value">₹ 0</span>
+                  <span className="total-value">₹0</span>
                 </div>
                 <div className="total-row">
                   <span className="total-label">Tax</span>
-                  <span className="total-value">₹ 0</span>
+                  <span className="total-value">₹0</span>
                 </div>
                 <div className="total-row grand-total">
                   <span className="total-label">Total</span>
-                  <span className="total-value">₹ {(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}</span>
+                  <span className="total-value">₹{(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
-              {/* Payment Information */}
-              {selectedBill.paymentMethod && (
+              {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
                 <div className="payment-info-section">
                   <p className="payment-method">
                     <strong>Payment Method:</strong> {selectedBill.paymentMethod}

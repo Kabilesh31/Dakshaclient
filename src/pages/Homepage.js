@@ -259,21 +259,28 @@ const Homepage = () => {
   const totalOrders = filteredBills.length;
   
   // Payment Status - Using finalAmt
-  const paidAmount = filteredBills
-    .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+ // Payment Status - Using finalAmt (only for approved bills)
+const paidAmount = filteredBills
+  .filter(b => b.orderStatus === "approved" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
+  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+
+const outstandingAmount = filteredBills
+  .filter(b => b.orderStatus === "approved" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"))
+  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+
+// Total approved order value - Using finalAmt (for percentage calculation)
+const totalApprovedValue = filteredBills
+  .filter(b => b.orderStatus === "approved")
+  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
   
-  const outstandingAmount = filteredBills
-    .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
-    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
-  
-  const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+// Total order value - Using totalAmt
+const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
   
   // Business value (total approved orders amount) - Using finalAmt
-  const businessValue = filteredBills
-    .filter(b => b.orderStatus === "approved")
-    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
-  
+ // Business value (total approved orders amount) - Using totalAmt
+const businessValue = filteredBills
+  .filter(b => b.orderStatus === "approved")
+  .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
   // Total counts
   const totalCustomers = selectedStaffId 
     ? customerData?.filter(c => c.createdBy === selectedStaffId).length || 0
@@ -294,41 +301,43 @@ const Homepage = () => {
   );
 
   // Get selected staff performance details - Using finalAmt
-  const getSelectedStaffPerformance = () => {
-    if (!selectedStaffForPerformance) return null;
-    
-    const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
-    
-    const totalBills = staffBills.length;
-    const totalRevenue = staffBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
-    
-    const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
-    const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
-    const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
-    const paidBills = staffBills.filter(b => b.paymentMethod && b.paymentMethod !== null).length;
-    const unpaidBills = staffBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length;
-    const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
-    
-    const lastBillDate = staffBills.length > 0 
-      ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
-      : 'N/A';
-    
-    const avgOrderValue = totalBills > 0 ? totalRevenue / totalBills : 0;
-    
-    return {
-      ...selectedStaffForPerformance,
-      totalBills,
-      totalRevenue,
-      approvedBills,
-      rejectedBills,
-      pendingBills,
-      paidBills,
-      unpaidBills,
-      customersServed,
-      lastBillDate,
-      avgOrderValue
-    };
+ // Get selected staff performance details - Using finalAmt only for approved bills
+const getSelectedStaffPerformance = () => {
+  if (!selectedStaffForPerformance) return null;
+  
+  const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
+  const approvedStaffBills = staffBills.filter(b => b.orderStatus === "approved");
+  
+  const totalBills = staffBills.length;
+  const totalRevenue = approvedStaffBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+  
+  const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
+  const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
+  const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
+  const paidBills = approvedStaffBills.filter(b => b.paymentMethod && b.paymentMethod !== null).length;
+  const unpaidBills = approvedStaffBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length;
+  const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
+  
+  const lastBillDate = staffBills.length > 0 
+    ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
+    : 'N/A';
+  
+  const avgOrderValue = approvedBills > 0 ? totalRevenue / approvedBills : 0;
+  
+  return {
+    ...selectedStaffForPerformance,
+    totalBills,
+    totalRevenue,
+    approvedBills,
+    rejectedBills,
+    pendingBills,
+    paidBills,
+    unpaidBills,
+    customersServed,
+    lastBillDate,
+    avgOrderValue
   };
+};
 
   const staffPerformance = getSelectedStaffPerformance();
 
@@ -1055,85 +1064,95 @@ const Homepage = () => {
                 </PreviewAltCard>
 
                 {/* Business Value Card - Using finalAmt */}
-                <PreviewAltCard className="delivery-card flex-grow-1">
-                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-                    <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
-                      <Icon name="trend-up" size={28} />
-                    </div>
-                    <div className="delivery-content">
-                      <h6 className="delivery-title">Business Value</h6>
-                      <div className="delivery-value">
-                        {loading.bills ? (
-                          <span>Loading...</span>
-                        ) : (
-                          <>
-                            <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
-                            <small className="badge">final amount</small>
-                          </>
-                        )}
-                      </div>
-                      {/* Approved Bills Total */}
-                      <div className="approved-breakdown mt-2">
-                        <div className="d-flex justify-content-between small">
-                          <span>Approved Bills:</span>
-                          <span className="fw-bold text-success">{approvedOrders}</span>
-                        </div>
-                        <div className="d-flex justify-content-between small mt-1">
-                          <span>Avg per Bill:</span>
-                          <span className="fw-bold">
-                            ₹{approvedOrders > 0 ? (businessValue/approvedOrders).toFixed(0) : 0}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Trend Indicator */}
-                      <div className="trend-indicator up mt-2">
-                        <Icon name="arrow-up" size={14} />
-                        <span>12.5% vs last period</span>
-                      </div>
-                    </div>
-                  </div>
-                </PreviewAltCard>
+           {/* Business Value Card - Using totalAmt */}
+<PreviewAltCard className="delivery-card flex-grow-1">
+  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+    <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
+      <Icon name="trend-up" size={28} />
+    </div>
+    <div className="delivery-content">
+      <h6 className="delivery-title">Business Value</h6>
+      <div className="delivery-value">
+        {loading.bills ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
+            <small className="badge">total amount</small> {/* Changed from "final amount" to "total amount" */}
+          </>
+        )}
+      </div>
+      {/* Approved Bills Total */}
+      <div className="approved-breakdown mt-2">
+        <div className="d-flex justify-content-between small">
+          <span>Approved Bills:</span>
+          <span className="fw-bold text-success">{approvedOrders}</span>
+        </div>
+        <div className="d-flex justify-content-between small mt-1">
+          <span>Avg per Bill:</span>
+          <span className="fw-bold">
+            ₹{approvedOrders > 0 ? (businessValue/approvedOrders).toFixed(0) : 0}
+          </span>
+        </div>
+      </div>
+      {/* Trend Indicator */}
+      <div className="trend-indicator up mt-2">
+        <Icon name="arrow-up" size={14} />
+        <span>12.5% vs last period</span>
+      </div>
+    </div>
+  </div>
+</PreviewAltCard>
 
                 {/* Outstanding Amount Card - Using finalAmt */}
-                <PreviewAltCard className="delivery-card flex-grow-1">
-                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-                    <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
-                      <Icon name="clock" size={28} />
-                    </div>
-                    <div className="delivery-content">
-                      <h6 className="delivery-title">Outstanding Amount</h6>
-                      <div className="delivery-value">
-                        {loading.bills ? (
-                          <span>Loading...</span>
-                        ) : (
-                          <>
-                            <span className="value-number">₹{outstandingAmount.toLocaleString('en-IN')}</span>
-                            <small className="badge">unpaid</small>
-                          </>
-                        )}
-                      </div>
-                      {/* Payment Progress */}
-                      <div className="payment-progress mt-2">
-                        <div className="d-flex justify-content-between small mb-1">
-                          <span>Paid: ₹{paidAmount.toLocaleString('en-IN')}</span>
-                          <span>{totalOrderValue > 0 ? Math.round((paidAmount/totalOrderValue)*100) : 0}%</span>
-                        </div>
-                        <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
-                          <div style={{
-                            width: `${totalOrderValue > 0 ? (paidAmount/totalOrderValue)*100 : 0}%`,
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
-                            borderRadius: '10px'
-                          }} />
-                        </div>
-                        <div className="d-flex justify-content-between small mt-1">
-                          <span>Pending Bills:</span>
-                          <span className="fw-bold text-warning">{filteredBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </PreviewAltCard>
+                {/* Outstanding Amount Card - Using finalAmt for approved bills only */}
+<PreviewAltCard className="delivery-card flex-grow-1">
+  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+    <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
+      <Icon name="clock" size={28} />
+    </div>
+    <div className="delivery-content">
+      <h6 className="delivery-title">Outstanding Amount</h6>
+      <div className="delivery-value">
+        {loading.bills ? (
+          <span>Loading...</span>
+        ) : (
+          <>
+            <span className="value-number">₹{outstandingAmount.toLocaleString('en-IN')}</span>
+            <small className="badge">unpaid (approved bills)</small>
+          </>
+        )}
+      </div>
+      {/* Payment Progress - Only for approved bills */}
+      <div className="payment-progress mt-2">
+        <div className="d-flex justify-content-between small mb-1">
+          <span>Paid: ₹{paidAmount.toLocaleString('en-IN')}</span>
+          <span>{totalApprovedValue > 0 ? Math.round((paidAmount/totalApprovedValue)*100) : 0}%</span>
+        </div>
+        <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{
+            width: `${totalApprovedValue > 0 ? (paidAmount/totalApprovedValue)*100 : 0}%`,
+            height: '100%',
+            background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
+            borderRadius: '10px'
+          }} />
+        </div>
+        <div className="d-flex justify-content-between small mt-1">
+          <span>Pending Bills (Unpaid):</span>
+          <span className="fw-bold text-warning">
+            {filteredBills.filter(b => b.orderStatus === "approved" && (!b.paymentMethod || b.paymentMethod === null)).length}
+          </span>
+        </div>
+        <div className="d-flex justify-content-between small mt-1">
+          <span>Paid Bills:</span>
+          <span className="fw-bold text-success">
+            {filteredBills.filter(b => b.orderStatus === "approved" && b.paymentMethod && b.paymentMethod !== null).length}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</PreviewAltCard>
               </div>
             </Col>
           </Row>

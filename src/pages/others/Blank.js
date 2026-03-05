@@ -4,8 +4,6 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { Input, Badge, Button, Table, Card, CardBody, Row, Col, Pagination, PaginationItem, PaginationLink, Modal, ModalHeader, ModalBody, ModalFooter } from "reactstrap";
 import { errorToast } from "../../utils/toaster";
-// import jsPDF from "jspdf";
-// import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import "./report.css";
 import { jsPDF } from "jspdf";
@@ -28,16 +26,22 @@ const Reports = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   
-  // Calculate paid and pending amounts from filtered data - Using finalAmt
+  // Calculate amounts from filtered data - Using totalAmt
   const paidAmount = filteredReportData
-    .filter(b => b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+    .filter(b => b.orderStatus !== "rejected" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
   
   const pendingAmount = filteredReportData
-    .filter(b => !b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null")
-    .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+    .filter(b => b.orderStatus !== "rejected" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"))
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
-  const totalAmount = filteredReportData.reduce((acc, o) => acc + (Number(o.finalAmt) || 0), 0);
+  const rejectedAmount = filteredReportData
+    .filter(b => b.orderStatus === "rejected")
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
+
+  const totalAmount = filteredReportData
+  .filter(b => b.orderStatus !== "rejected")
+  .reduce((acc, o) => acc + (Number(o.totalAmt) || 0), 0);
 
   const fetchCustomers = async () => {
     try {
@@ -211,188 +215,189 @@ const Reports = () => {
     setInvoiceModal(true);
   };
 
-// Function to download invoice as PDF - Using finalAmt
-const downloadInvoicePDF = () => {
-  if (!selectedBill) return;
+  // Function to download invoice as PDF - Using totalAmt
+  const downloadInvoicePDF = () => {
+    if (!selectedBill) return;
 
-  const doc = new jsPDF();
+    const doc = new jsPDF();
 
-  // ===== Header =====
-  doc.setFontSize(24);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Retail Pulse", 105, 20, { align: "center" });
+    // ===== Header =====
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Retail Pulse", 105, 20, { align: "center" });
 
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text("Order Invoice", 105, 30, { align: "center" });
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text("Order Invoice", 105, 30, { align: "center" });
 
-  // ===== Order ID and Date =====
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
-  
-  doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric'
-  })}`, 14, 52);
+    // ===== Order ID and Date =====
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    })}`, 14, 52);
 
-  // ===== Order Status =====
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(46, 204, 113); // Green color for delivered
-  doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
+    // ===== Order Status =====
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
 
-  // ===== Customer Details =====
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Customer Details", 14, 67);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Name: ${selectedBill.customerName || selectedCustomer?.name || 'N/A'}`, 14, 75);
-  doc.text(`Mobile: ${selectedCustomer?.phone || 'N/A'}`, 14, 82);
-  doc.text(`Address: ${selectedCustomer?.address || 'N/A'}`, 14, 89);
+    // ===== Customer Details =====
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Customer Details", 14, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Name: ${selectedBill.customerName || selectedCustomer?.name || 'N/A'}`, 14, 75);
+    doc.text(`Mobile: ${selectedCustomer?.phone || 'N/A'}`, 14, 82);
+    doc.text(`Address: ${selectedCustomer?.address || 'N/A'}`, 14, 89);
 
-  // ===== Staff Details =====
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Staff Details", 120, 67);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  
-  const staffName = getStaffName(selectedBill);
-  const staffInfo = staffList.find(s => 
-    s._id === selectedBill.deliveredBy || 
-    s._id === selectedBill.paymentCollectedBy ||
-    s._id === selectedBill.createdBy
-  );
+    // ===== Staff Details =====
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Staff Details", 120, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    
+    const staffName = getStaffName(selectedBill);
+    const staffInfo = staffList.find(s => 
+      s._id === selectedBill.deliveredBy || 
+      s._id === selectedBill.paymentCollectedBy ||
+      s._id === selectedBill.createdBy
+    );
 
-  doc.text(`Name: ${staffName}`, 120, 75);
-  doc.text(`Role: ${staffInfo?.role || 'sales'}`, 120, 82);
-  doc.text(`Contact: ${staffInfo?.phone || 'N/A'}`, 120, 89);
+    doc.text(`Name: ${staffName}`, 120, 75);
+    doc.text(`Role: ${staffInfo?.role || 'sales'}`, 120, 82);
+    doc.text(`Contact: ${staffInfo?.phone || 'N/A'}`, 120, 89);
 
-  // ===== Products Table =====
-  const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
-  const tableRows = selectedBill.orderedProducts?.map((product, idx) => [
-    idx + 1,
-    product.productName,
-    product.qty.toString(),
-    (Number(product.value) || 0).toString(),
-    ((Number(product.value) || 0) * (Number(product.qty) || 0)).toString()
-  ]) || [];
+    // ===== Products Table =====
+    const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
+    const tableRows = selectedBill.orderedProducts?.map((product, idx) => [
+      idx + 1,
+      product.productName,
+      product.qty.toString(),
+      (Number(product.value) || 0).toString(),
+      ((Number(product.value) || 0) * (Number(product.qty) || 0)).toString()
+    ]) || [];
 
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: 105,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [51, 51, 51],
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 10,
-      halign: 'center'
-    },
-    styles: {
-      fontSize: 9,
-      cellPadding: 5,
-      font: 'helvetica',
-      halign: 'left'
-    },
-    columnStyles: {
-      0: { cellWidth: 15, halign: 'center' },
-      1: { cellWidth: 70, halign: 'left' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 30, halign: 'right' },
-      4: { cellWidth: 35, halign: 'right' }
-    },
-    didDrawPage: function(data) {
-      // Add Rupee symbol to headers after table is drawn
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      
-      // Get the position of the table headers
-      const headersY = data.cursor.y - 8;
-      
-      // Override the header text for Rate and Amount columns with Rupee symbol
-      doc.text("Rate (₹)", 135, headersY, { align: 'right' });
-      doc.text("Amount (₹)", 170, headersY, { align: 'right' });
-    }
-  });
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 105,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [51, 51, 51],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10,
+        halign: 'center'
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 5,
+        font: 'helvetica',
+        halign: 'left'
+      },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 70, halign: 'left' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 30, halign: 'right' },
+        4: { cellWidth: 35, halign: 'right' }
+      },
+      didDrawPage: function(data) {
+        // Add Rupee symbol to headers after table is drawn
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        
+        // Get the position of the table headers
+        const headersY = data.cursor.y - 8;
+        
+        // Override the header text for Rate and Amount columns with Rupee symbol
+        doc.text("Rate (₹)", 135, headersY, { align: 'right' });
+        doc.text("Amount (₹)", 170, headersY, { align: 'right' });
+      }
+    });
 
-  // ===== Totals - Using finalAmt =====
-  const finalY = doc.lastAutoTable.finalY + 15;
+    // ===== Totals - Using totalAmt =====
+    const finalY = doc.lastAutoTable.finalY + 15;
 
-  // Calculate subtotal from orderedProducts
-  const subtotal = selectedBill.orderedProducts?.reduce(
-    (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
-    0
-  ) || Number(selectedBill.finalAmt) || 0;
+    // Calculate subtotal from orderedProducts
+    const subtotal = selectedBill.orderedProducts?.reduce(
+      (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
+      0
+    ) || Number(selectedBill.totalAmt) || 0;
 
-  // Subtotal
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.text("Subtotal", 140, finalY);
-  doc.text(`₹ ${subtotal.toLocaleString('en-IN')}`, 180, finalY, { align: 'right' });
-
-  // Discount
-  doc.text("Discount", 140, finalY + 8);
-  doc.text(`₹ 0`, 180, finalY + 8, { align: 'right' });
-
-  // Tax
-  doc.text("Tax", 140, finalY + 16);
-  doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
-
-  // Total (with bold font) - Using finalAmt
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(33, 37, 41);
-  doc.text("Total", 135, finalY + 28);
-  doc.text(`₹ ${(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
-
-  // ===== Payment Information =====
-  if (selectedBill.paymentMethod) {
-    doc.setFontSize(9);
+    // Subtotal
+    doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 40);
-    
-    if (selectedBill.paymentCollectedAt) {
-      doc.text(
-        `Payment Collected: ${new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US', {
-          month: '2-digit',
-          day: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })}`, 
-        14, 
-        finalY + 47
-      );
-    }
-  }
+    doc.text("Subtotal", 140, finalY);
+    doc.text(`₹ ${subtotal.toLocaleString('en-IN')}`, 180, finalY, { align: 'right' });
 
-  // ===== Save PDF =====
-  doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
-};
+    // Discount
+    doc.text("Discount", 140, finalY + 8);
+    doc.text(`₹ 0`, 180, finalY + 8, { align: 'right' });
+
+    // Tax
+    doc.text("Tax", 140, finalY + 16);
+    doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
+
+    // Total (with bold font) - Using totalAmt
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(33, 37, 41);
+    doc.text("Total", 135, finalY + 28);
+    doc.text(`₹ ${(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
+
+    // ===== Payment Information =====
+    if (selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected") {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 40);
+      
+      if (selectedBill.paymentCollectedAt) {
+        doc.text(
+          `Payment Collected: ${new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}`, 
+          14, 
+          finalY + 47
+        );
+      }
+    }
+
+    // ===== Save PDF =====
+    doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
+  };
 
   const PopperContainer = ({ children }) => {
     return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
   };
 
-  // Export PDF - Using finalAmt
+  // Export PDF - Using totalAmt
   const exportPDF = () => {
     if (!selectedCustomer) return;
 
@@ -418,7 +423,7 @@ const downloadInvoicePDF = () => {
       );
     }
 
-    // ===== Summary Section - Using finalAmt =====
+    // ===== Summary Section - Using totalAmt =====
     doc.setFontSize(11);
     doc.setTextColor(33);
     doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
@@ -437,30 +442,46 @@ const downloadInvoicePDF = () => {
       14,
       66
     );
+    if (rejectedAmount > 0) {
+      doc.text(
+        `Rejected Amount: Rs. ${rejectedAmount.toLocaleString("en-IN")}`,
+        14,
+        72
+      );
+    }
 
-    // ===== Table - Using finalAmt =====
+    // ===== Table - Using totalAmt =====
     const tableColumn = [
       "S.No",
       "Order No",
       "Date",
       "Amount (Rs)",
-      "Payment Status",
+      "Status",
       "Staff Name",
     ];
 
-    const tableRows = filteredReportData.map((o, idx) => [
-      idx + 1,
-      `#${o._id.toString().slice(-6)}`,
-      new Date(o.createdAt).toLocaleDateString("en-IN"),
-      (Number(o.finalAmt) || 0).toLocaleString("en-IN"),
-      o.paymentMethod ? "Paid" : "Pending",
-      getStaffName(o),
-    ]);
+    const tableRows = filteredReportData.map((o, idx) => {
+      let statusText = 'Pending';
+      if (o.orderStatus === "rejected") {
+        statusText = 'Rejected';
+      } else if (o.paymentMethod && o.paymentMethod !== null && o.paymentMethod !== "null") {
+        statusText = 'Paid';
+      }
+      
+      return [
+        idx + 1,
+        `#${o._id.toString().slice(-6)}`,
+        new Date(o.createdAt).toLocaleDateString("en-IN"),
+        (Number(o.totalAmt) || 0).toLocaleString("en-IN"),
+        statusText,
+        getStaffName(o),
+      ];
+    });
 
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 75,
+      startY: rejectedAmount > 0 ? 80 : 75,
       theme: "striped",
       headStyles: {
         fillColor: [41, 128, 185],
@@ -479,19 +500,28 @@ const downloadInvoicePDF = () => {
     doc.save(`${selectedCustomer.name}_Report.pdf`);
   };
   
-  // Export Excel - Using finalAmt
+  // Export Excel - Using totalAmt
   const exportExcel = () => {
     if (!selectedCustomer) return;
     
-    const exportData = filteredReportData.map((bill, idx) => ({
-      'S.No': idx + 1,
-      'Order No': `#${bill._id.toString().slice(-6)}`,
-      'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-      'Amount (₹)': Number(bill.finalAmt) || 0,
-      'Payment Status': bill.paymentMethod ? 'Paid' : 'Pending',
-      'Order Status': bill.orderStatus || 'N/A',
-      'Staff Name': getStaffName(bill)
-    }));
+    const exportData = filteredReportData.map((bill, idx) => {
+      let statusText = 'Pending';
+      if (bill.orderStatus === "rejected") {
+        statusText = 'Rejected';
+      } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
+        statusText = 'Paid';
+      }
+      
+      return {
+        'S.No': idx + 1,
+        'Order No': `#${bill._id.toString().slice(-6)}`,
+        'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
+        'Amount (₹)': Number(bill.totalAmt) || 0,
+        'Status': statusText,
+        'Order Status': bill.orderStatus || 'N/A',
+        'Staff Name': getStaffName(bill)
+      };
+    });
     
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
@@ -503,6 +533,10 @@ const downloadInvoicePDF = () => {
       { 'Summary': 'Paid Amount', 'Value': `₹${paidAmount.toLocaleString('en-IN')}` },
       { 'Summary': 'Pending Amount', 'Value': `₹${pendingAmount.toLocaleString('en-IN')}` }
     ];
+    
+    if (rejectedAmount > 0) {
+      summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${rejectedAmount.toLocaleString('en-IN')}` });
+    }
     
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "Summary");
     XLSX.writeFile(wb, `${selectedCustomer.name}_Report.xlsx`);
@@ -577,10 +611,6 @@ const downloadInvoicePDF = () => {
                   </div>
                   <div className="customer-info">
                     <div className="customer-name">{c.name}</div>
-                    {/* <div className="customer-details">
-                      <span className="customer-phone">{c.phone || 'No phone'}</span>
-                      <span className="customer-badge">Line #{c.lineNo}</span>
-                    </div> */}
                   </div>
                   {selectedCustomer?._id === c._id && (
                     <div className="selected-indicator">
@@ -629,7 +659,6 @@ const downloadInvoicePDF = () => {
                     disabled={filteredReportData.length === 0}
                   >
                     <FaFileExcel />
-                    
                   </button>
                   <button
                     onClick={exportPDF}
@@ -637,8 +666,7 @@ const downloadInvoicePDF = () => {
                     disabled={filteredReportData.length === 0}
                     title="Export to PDF"
                   >
-                    <FaFilePdf size={13} color="sandal" />
-                    
+                    <FaFilePdf size={13} />
                   </button>
                 </div>
               </div>
@@ -651,7 +679,6 @@ const downloadInvoicePDF = () => {
                   </div>
                   <div>
                     <h3 className="customer-header-name">{selectedCustomer.name}</h3>
-                    
                     <p className="customer-header-meta">
                       {selectedCustomer.phone || 'No phone'} | {selectedCustomer.routeName}  • Line #{selectedCustomer.lineNo}
                     </p>
@@ -667,19 +694,19 @@ const downloadInvoicePDF = () => {
                 )}
               </div>
 
-              {/* Stats Cards - Using finalAmt */}
+              {/* Stats Cards - Using totalAmt */}
               <Row className="stats-row g-2">
                 <Col md="3">
-                  <div className="stat-card compact">
-                    <div className="stat-icon blue compact">
-                      <i className="ni ni-box"></i>
-                    </div>
-                    <div className="stat-content">
-                      <span className="stat-label">Total Orders</span>
-                      <span className="stat-value">{filteredReportData.length}</span>
-                    </div>
-                  </div>
-                </Col>
+  <div className="stat-card compact">
+    <div className="stat-icon blue compact">
+      <i className="ni ni-box"></i>
+    </div>
+    <div className="stat-content">
+      <span className="stat-label">Total Orders</span>
+      <span className="stat-value">{filteredReportData.filter(b => b.orderStatus !== "rejected").length}</span>
+    </div>
+  </div>
+</Col>
                 <Col md="3">
                   <div className="stat-card compact">
                     <div className="stat-icon green compact">
@@ -713,19 +740,31 @@ const downloadInvoicePDF = () => {
                     </div>
                   </div>
                 </Col>
+                {/* {rejectedAmount > 0 && (
+                  <Col md="3">
+                    <div className="stat-card compact">
+                      <div className="stat-icon danger compact">
+                        <i className="ni ni-fat-remove"></i>
+                      </div>
+                      <div className="stat-content">
+                        <span className="stat-label">Rejected Amount</span>
+                        <span className="stat-value">₹{rejectedAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </Col>
+                )} */}
               </Row>
 
               {/* Transactions Table */}
-            {/* Transactions Table */}
-<div className="transactions-section">
-  <div className="transactions-header">
-    <h6 className="transactions-title">📋 Transaction History</h6>
-    {filteredReportData.length > 0 && (
-      <span className="transactions-count">{filteredReportData.length} entries</span>
-    )}
-  </div>
+              <div className="transactions-section">
+                <div className="transactions-header">
+                  <h6 className="transactions-title">📋 Transaction History</h6>
+                  {filteredReportData.length > 0 && (
+                    <span className="transactions-count">{filteredReportData.length} entries</span>
+                  )}
+                </div>
 
-  {currentItems.length > 0 ? (
+                {currentItems.length > 0 ? (
                   <>
                     <div className="table-responsive">
                       <table className="transactions-table">
@@ -741,133 +780,147 @@ const downloadInvoicePDF = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {currentItems.map((o, idx) => (
-                            <tr key={o._id}>
-                              <td>{indexOfFirstItem + idx + 1}</td>
-                              <td>
-                                <span className="order-id">#{o._id.toString().slice(-6)}</span>
-                              </td>
-                              <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
-                                day: '2-digit', 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}</td>
-                              <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
-                              <td>
-                                <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
-                                  {o.paymentMethod ? 'Paid' : 'Pending'}
-                                </span>
-                              </td>
-                              <td>
-                                <span className="staff-name">
-                                  {getStaffName(o)}
-                                </span>
-                              </td>
-                              <td>
-                                <button 
-                                  className="action-btn view-btn"
-                                  onClick={() => openInvoiceModal(o)}
-                                  title="View Invoice"
-                                >
-                                  <i className="ni ni-eye"></i>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
+                          {currentItems.map((o, idx) => {
+                            // Determine status based on orderStatus first, then paymentMethod
+                            let statusText = 'Pending';
+                            let statusClass = 'pending';
+                            
+                            if (o.orderStatus === "rejected") {
+                              statusText = 'Rejected';
+                              statusClass = 'rejected';
+                            } else if (o.paymentMethod && o.paymentMethod !== null && o.paymentMethod !== "null") {
+                              statusText = 'Paid';
+                              statusClass = 'paid';
+                            }
+                            
+                            return (
+                              <tr key={o._id} className={o.orderStatus === "rejected" ? "rejected-row" : ""}>
+                                <td>{indexOfFirstItem + idx + 1}</td>
+                                <td>
+                                  <span className="order-id">#{o._id.toString().slice(-6)}</span>
+                                </td>
+                                <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
+                                  day: '2-digit', 
+                                  month: 'short', 
+                                  year: 'numeric' 
+                                })}</td>
+                                <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString('en-IN')}</td>
+                                <td>
+                                  <span className={`status-badge ${statusClass}`}>
+                                    {statusText}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="staff-name">
+                                    {getStaffName(o)}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button 
+                                    className="action-btn view-btn"
+                                    onClick={() => openInvoiceModal(o)}
+                                    title="View Invoice"
+                                  >
+                                    <i className="ni ni-eye"></i>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                         <tfoot>
-                          <tr>
-                            <td colSpan="3" className="text-end fw-bold "></td>
-                            <td className="amount fw-bold ml-1">₹ {totalAmount.toLocaleString('en-IN')}</td>
-                            <td colSpan="3"></td>
-                          </tr>
-                        </tfoot>
+  <tr>
+    <td colSpan="3" className="text-end fw-bold"></td>
+    <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
+    <td colSpan="3"></td>
+  </tr>
+</tfoot>
                       </table>
                     </div>
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination-wrapper">
-          <Pagination>
-            <PaginationItem disabled={currentPage === 1}>
-              <PaginationLink
-                previous
-                onClick={() => paginate(currentPage - 1)}
-              />
-            </PaginationItem>
-            
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i + 1} active={currentPage === i + 1}>
-                <PaginationLink onClick={() => paginate(i + 1)}>
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            
-            <PaginationItem disabled={currentPage === totalPages}>
-              <PaginationLink
-                next
-                onClick={() => paginate(currentPage + 1)}
-              />
-            </PaginationItem>
-          </Pagination>
-        </div>
-      )}
-    </>
-  ) : (
-    <div className="no-data">
-      <i className="ni ni-box-open"></i>
-      <p>No transactions found for the selected period</p>
-      {(startDate || endDate) && (
-        <button 
-          className="clear-filter-btn"
-          onClick={() => setDateRange([null, null])}
-        >
-          Clear Filters
-        </button>
-      )}
-    </div>
-  )}
-</div>
+                    
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="pagination-wrapper">
+                        <Pagination>
+                          <PaginationItem disabled={currentPage === 1}>
+                            <PaginationLink
+                              previous
+                              onClick={() => paginate(currentPage - 1)}
+                            />
+                          </PaginationItem>
+                          
+                          {[...Array(totalPages)].map((_, i) => (
+                            <PaginationItem key={i + 1} active={currentPage === i + 1}>
+                              <PaginationLink onClick={() => paginate(i + 1)}>
+                                {i + 1}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          
+                          <PaginationItem disabled={currentPage === totalPages}>
+                            <PaginationLink
+                              next
+                              onClick={() => paginate(currentPage + 1)}
+                            />
+                          </PaginationItem>
+                        </Pagination>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-data">
+                    <i className="ni ni-box-open"></i>
+                    <p>No transactions found for the selected period</p>
+                    {(startDate || endDate) && (
+                      <button 
+                        className="clear-filter-btn"
+                        onClick={() => setDateRange([null, null])}
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
-{/* Customer Notes Section - New Addition */}
-{selectedCustomer && (selectedCustomer.nextVisit?.notes || selectedCustomer.nextVisit?.nextVisitDate) && (
-  <div className="customer-notes-section mt-4">
-    
-    <div className="notes-content">
-      {selectedCustomer.nextVisit?.notes && (
-        <div className="note-item">
-          <div className="note-icon">
-            <i className="ni ni-note"></i>
-          </div>
-          <div className="note-details">
-            <span className="note-label">Notes:</span>
-            <span className="note-text">{selectedCustomer.nextVisit.notes}</span>
-          </div>
-        </div>
-      )}
-      {selectedCustomer.nextVisit?.nextVisitDate && (
-        <div className="note-item">
-          <div className="note-icon">
-            <i className="ni ni-calendar-date"></i>
-          </div>
-          <div className="note-details">
-            <span className="note-label">Follow-up Date:</span>
-            <span className="note-text">
-              {new Date(selectedCustomer.nextVisit.nextVisitDate).toLocaleDateString('en-IN', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric'
-              })}
-              {new Date(selectedCustomer.nextVisit.nextVisitDate) < new Date() && (
-                <span className="overdue-badge"> Overdue</span>
+              {/* Customer Notes Section */}
+              {selectedCustomer && (selectedCustomer.nextVisit?.notes || selectedCustomer.nextVisit?.nextVisitDate) && (
+                <div className="customer-notes-section mt-4">
+                  <div className="notes-content">
+                    {selectedCustomer.nextVisit?.notes && (
+                      <div className="note-item">
+                        <div className="note-icon">
+                          <i className="ni ni-note"></i>
+                        </div>
+                        <div className="note-details">
+                          <span className="note-label">Notes:</span>
+                          <span className="note-text">{selectedCustomer.nextVisit.notes}</span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedCustomer.nextVisit?.nextVisitDate && (
+                      <div className="note-item">
+                        <div className="note-icon">
+                          <i className="ni ni-calendar-date"></i>
+                        </div>
+                        <div className="note-details">
+                          <span className="note-label">Follow-up Date:</span>
+                          <span className="note-text">
+                            {new Date(selectedCustomer.nextVisit.nextVisitDate).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                            {new Date(selectedCustomer.nextVisit.nextVisitDate) < new Date() && (
+                              <span className="overdue-badge"> Overdue</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-)}
             </>
           ) : (
             <div className="select-customer-prompt">
@@ -879,193 +932,215 @@ const downloadInvoicePDF = () => {
         </div>
       </div>
 
-
-<Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
- <ModalHeader toggle={() => setInvoiceModal(false)}>
-    <div className="modal-header-content">
-      <h4 className="modal-title">Retail Pulse</h4>
-      <span className="invoice-number">Order Invoice</span>
-    </div>
-    <button className="close" onClick={() => setInvoiceModal(false)}>
-      <span>×</span>
-    </button>
-  </ModalHeader>
-  <ModalBody>
-    {selectedBill && (
-      <div className="invoice-container">
-        {/* Order ID and Date */}
-        <div className="invoice-header">
-          <div className="order-info">
-            <h2 className="order-id">Order ID: #{selectedBill._id.toString().slice(-6)}</h2>
-            <p className="order-date">Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
-              month: '2-digit',
-              day: '2-digit',
-              year: 'numeric'
-            })}</p>
+      <Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
+        <ModalHeader toggle={() => setInvoiceModal(false)}>
+          <div className="modal-header-content">
+            <h4 className="modal-title">Retail Pulse</h4>
+            <span className="invoice-number">Order Invoice</span>
           </div>
-          <div className={`order-status-badge ${selectedBill.orderStatus?.toLowerCase() || 'delivered'}`}>
-            {selectedBill.orderStatus || 'delivered'}
-          </div>
-        </div>
+          <button className="close" onClick={() => setInvoiceModal(false)}>
+            <span>×</span>
+          </button>
+        </ModalHeader>
+        <ModalBody>
+          {selectedBill && (
+            <div className="invoice-container">
+              {/* Order ID and Date */}
+              <div className="invoice-header">
+                <div className="order-info">
+                  <h2 className="order-id">Order ID: #{selectedBill._id.toString().slice(-6)}</h2>
+                  <p className="order-date">Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    year: 'numeric'
+                  })}</p>
+                </div>
+                <div className={`order-status-badge ${selectedBill.orderStatus?.toLowerCase() || 'delivered'}`}>
+                  {selectedBill.orderStatus || 'delivered'}
+                </div>
+              </div>
 
-        {/* Customer and Staff Details Grid */}
-        <div className="details-grid">
-          {/* Customer Details */}
-          <div className="details-section">
-            <h6 className="section-title">Customer Details</h6>
-            <div className="detail-item">
-              <span className="detail-label">Name:</span>
-              <span className="detail-value">{selectedBill.customerName || selectedCustomer?.name || 'N/A'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Mobile:</span>
-              <span className="detail-value">{selectedCustomer?.phone || 'N/A'}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Address:</span>
-              <span className="detail-value">{selectedCustomer?.address || 'N/A'}</span>
-            </div>
-          </div>
+              {/* Customer and Staff Details Grid */}
+              <div className="details-grid">
+                {/* Customer Details */}
+                <div className="details-section">
+                  <h6 className="section-title">Customer Details</h6>
+                  <div className="detail-item">
+                    <span className="detail-label">Name:</span>
+                    <span className="detail-value">{selectedBill.customerName || selectedCustomer?.name || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Mobile:</span>
+                    <span className="detail-value">{selectedCustomer?.phone || 'N/A'}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Address:</span>
+                    <span className="detail-value">{selectedCustomer?.address || 'N/A'}</span>
+                  </div>
+                </div>
 
-          {/* Staff Details */}
-          <div className="details-section">
-            <h6 className="section-title">Staff Details</h6>
-            <div className="detail-item">
-              <span className="detail-label">Name:</span>
-              <span className="detail-value">{getStaffName(selectedBill)}</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Role:</span>
-              <span className="detail-value">
-                {staffList.find(s => 
-                  s._id === selectedBill.deliveredBy || 
-                  s._id === selectedBill.paymentCollectedBy ||
-                  s._id === selectedBill.createdBy
-                )?.role || 'sales'}
-              </span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Contact:</span>
-              <span className="detail-value">
-                {staffList.find(s => 
-                  s._id === selectedBill.deliveredBy || 
-                  s._id === selectedBill.paymentCollectedBy ||
-                  s._id === selectedBill.createdBy
-                )?.phone || 'N/A'}
-              </span>
-            </div>
-          </div>
-        </div>
+                {/* Staff Details */}
+                <div className="details-section">
+                  <h6 className="section-title">Staff Details</h6>
+                  <div className="detail-item">
+                    <span className="detail-label">Name:</span>
+                    <span className="detail-value">{getStaffName(selectedBill)}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Role:</span>
+                    <span className="detail-value">
+                      {staffList.find(s => 
+                        s._id === selectedBill.deliveredBy || 
+                        s._id === selectedBill.paymentCollectedBy ||
+                        s._id === selectedBill.createdBy
+                      )?.role || 'sales'}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Contact:</span>
+                    <span className="detail-value">
+                      {staffList.find(s => 
+                        s._id === selectedBill.deliveredBy || 
+                        s._id === selectedBill.paymentCollectedBy ||
+                        s._id === selectedBill.createdBy
+                      )?.phone || 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-       {/* Products Table - Updated to use orderedProducts */}
-<div className="products-table-container">
-  <table className="products-table">
-    <thead>
-      <tr>
-        <th>S.No</th>
-        <th>Product</th>
-        <th>Qty</th>
-        <th>Rate </th>
-        <th>Amount </th>
-      </tr>
-    </thead>
-    <tbody>
-      {selectedBill.orderedProducts?.map((product, idx) => (
-        <tr key={product._id || idx}>
-          <td>{idx + 1}</td>
-          <td>{product.productName}</td>
-          <td>{product.qty}</td>
-          <td>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
-          <td>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-{/* Paid Stamp with Real Cement/Uneven Ink Effect */}
-{selectedBill.paymentMethod && (
-  <div className="paid-stamp-round-container">
-    <div className="paid-stamp-round distressed">
-      {/* Paper texture background */}
-      <div className="paper-texture"></div>
-      
-      {/* Ink bleed effects */}
-      <div className="ink-bleed"></div>
-      <div className="ink-bleed"></div>
-      <div className="ink-bleed"></div>
-      
-      {/* Stamp inner content */}
-      <div className="stamp-inner">
-        <div className="stamp-text">PAID</div>
-      </div>
-      
-      {/* Decorative dots with uneven distribution */}
-      <div className="stamp-dots">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="stamp-dot"
-            style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${20 + Math.random() * 60}%`,
-              transform: `rotate(${Math.random() * 360}deg)`
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  </div>
-)}
-{/* Totals Section - Using finalAmt */}
-<div className="totals-section">
-  <div className="total-row">
-    <span className="total-label">Subtotal</span>
-    <span className="total-value">
-      ₹ {selectedBill.orderedProducts?.reduce(
-        (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
-        0
-      ).toLocaleString('en-IN') || (Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}
-    </span>
-  </div>
-  <div className="total-row">
-    <span className="total-label">Discount</span>
-    <span className="total-value">₹ 0</span>
-  </div>
-  <div className="total-row">
-    <span className="total-label">Tax</span>
-    <span className="total-value">₹ 0</span>
-  </div>
-  <div className="total-row grand-total">
-    <span className="total-label">Total</span>
-    <span className="total-value">₹ {(Number(selectedBill.finalAmt) || 0).toLocaleString('en-IN')}</span>
-  </div>
-</div>
+              {/* Products Table */}
+              <div className="products-table-container">
+                <table className="products-table">
+                  <thead>
+                    <tr>
+                      <th>S.No</th>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Rate</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedBill.orderedProducts?.map((product, idx) => (
+                      <tr key={product._id || idx}>
+                        <td>{idx + 1}</td>
+                        <td>{product.productName}</td>
+                        <td>{product.qty}</td>
+                        <td>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
+                        <td>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Paid Stamp */}
+              {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
+                <div className="paid-stamp-round-container">
+                  <div className="paid-stamp-round distressed">
+                    <div className="paper-texture"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="stamp-inner">
+                      <div className="stamp-text">PAID</div>
+                    </div>
+                    <div className="stamp-dots">
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="stamp-dot"
+                          style={{
+                            top: `${20 + Math.random() * 60}%`,
+                            left: `${20 + Math.random() * 60}%`,
+                            transform: `rotate(${Math.random() * 360}deg)`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Rejected Stamp */}
+              {selectedBill.orderStatus === "rejected" && (
+                <div className="rejected-stamp-round-container">
+                  <div className="rejected-stamp-round distressed">
+                    <div className="paper-texture"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="ink-bleed"></div>
+                    <div className="stamp-inner">
+                      <div className="stamp-text">REJECTED</div>
+                    </div>
+                    <div className="stamp-dots">
+                      {[...Array(12)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="stamp-dot"
+                          style={{
+                            top: `${20 + Math.random() * 60}%`,
+                            left: `${20 + Math.random() * 60}%`,
+                            transform: `rotate(${Math.random() * 360}deg)`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-        {/* Payment Information */}
-        {selectedBill.paymentMethod && (
-          <div className="payment-info-section">
-            <p className="payment-method">
-              <strong>Payment Method:</strong> {selectedBill.paymentMethod}
-            </p>
-            {selectedBill.paymentCollectedAt && (
-              <p className="payment-time">
-                <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US')}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    )}
-  </ModalBody>
-  <ModalFooter>
-    <Button color="primary" onClick={downloadInvoicePDF} className="download-btn">
-      <FaDownload /> Download PDF
-    </Button>
-    <Button color="secondary" onClick={() => setInvoiceModal(false)}>
-      Close
-    </Button>
-  </ModalFooter>
-</Modal>
+              {/* Totals Section - Using totalAmt */}
+              <div className="totals-section">
+                <div className="total-row">
+                  <span className="total-label">Subtotal</span>
+                  <span className="total-value">
+                    ₹ {selectedBill.orderedProducts?.reduce(
+                      (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
+                      0
+                    ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="total-row">
+                  <span className="total-label">Discount</span>
+                  <span className="total-value">₹ 0</span>
+                </div>
+                <div className="total-row">
+                  <span className="total-label">Tax</span>
+                  <span className="total-value">₹ 0</span>
+                </div>
+                <div className="total-row grand-total">
+                  <span className="total-label">Total</span>
+                  <span className="total-value">₹ {(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
+                <div className="payment-info-section">
+                  <p className="payment-method">
+                    <strong>Payment Method:</strong> {selectedBill.paymentMethod}
+                  </p>
+                  {selectedBill.paymentCollectedAt && (
+                    <p className="payment-time">
+                      <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US')}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button color="primary" onClick={downloadInvoicePDF} className="download-btn">
+            <FaDownload /> Download PDF
+          </Button>
+          <Button color="secondary" onClick={() => setInvoiceModal(false)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };
