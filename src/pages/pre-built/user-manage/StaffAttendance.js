@@ -50,7 +50,10 @@ const [currentPage, setCurrentPage] = useState(1);
     { length: getDaysInMonth(month, year) },
     (_, i) => i + 1
   );
-
+const capitalizeFirst = (text) => {
+  if (!text) return "-";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
   useEffect(() => {
     fetchStaff();
   }, []);
@@ -407,12 +410,19 @@ const getSelectedDateRecord = () => {
             </DataTableRow>
             <DataTableRow>{emp.mobile}</DataTableRow>
 
-            <DataTableRow>{emp.type || "-"}</DataTableRow>
+            <DataTableRow>
+  {capitalizeFirst(emp.type)}
+</DataTableRow>
 
             
              <DataTableRow>
-  <span style={{ color: getStaffStatusColor(emp.staffStatus), fontWeight: 500 }}>
-    {emp.staffStatus || "-"}
+  <span
+    style={{
+      color: getStaffStatusColor(emp.staffStatus),
+      fontWeight: 500,
+    }}
+  >
+    {capitalizeFirst(emp.staffStatus)}
   </span>
 </DataTableRow>
 

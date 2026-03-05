@@ -168,8 +168,11 @@ const last3DaysBills = bills.filter((bill) => {
       // If assigned → fetch customers
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`
-        );
+  `${process.env.REACT_APP_BACKENDURL}/api/route-assignment/${selectedStaffId}/assignedCustomer`,
+  {
+    params: { date: selectedDate }
+  }
+);
         console.log(response.data.customers)
         if (response.status === 200) {
           setAssignedCustomerDatas(response.data.customers || []);
@@ -340,14 +343,11 @@ const last3DaysBills = bills.filter((bill) => {
   };
 
 
-  const filteredDeliveryStaff = Array.isArray(deliveryStaff)
-    ? deliveryStaff.filter(
-        (staff) =>
-          staff.staffStatus === "active" &&
-          staff.dutyStatus === "active" &&   // 👈 IMPORTANT
-          staff.isDeleted === false
-      )
-    : [];
+const filteredDeliveryStaff = Array.isArray(deliveryStaff)
+  ? deliveryStaff.filter(
+      (staff) => staff.isDeleted === false
+    )
+  : [];
 
 
     // Get routes already assigned to a specific staff member on selected date

@@ -152,10 +152,14 @@ const [editLoading, setEditLoading] = useState(false);
       setModalAdd(false);
       resetForm();
       fetchStaff();
-    } catch (err) {
-      console.error(err);
-      errorToast("Add staff failed");
-    }finally {
+    }catch (err) {
+  const message =
+    err.response?.data?.message ||
+    err.response?.data?.error ||
+    "Add staff failed";
+
+  errorToast(message);
+}finally {
     setAddLoading(false);
   }
   };

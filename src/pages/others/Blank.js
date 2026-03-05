@@ -716,15 +716,16 @@ const downloadInvoicePDF = () => {
               </Row>
 
               {/* Transactions Table */}
-              <div className="transactions-section">
-                <div className="transactions-header">
-                  <h6 className="transactions-title">📋 Transaction History</h6>
-                  {filteredReportData.length > 0 && (
-                    <span className="transactions-count">{filteredReportData.length} entries</span>
-                  )}
-                </div>
+            {/* Transactions Table */}
+<div className="transactions-section">
+  <div className="transactions-header">
+    <h6 className="transactions-title">📋 Transaction History</h6>
+    {filteredReportData.length > 0 && (
+      <span className="transactions-count">{filteredReportData.length} entries</span>
+    )}
+  </div>
 
-                {currentItems.length > 0 ? (
+  {currentItems.length > 0 ? (
                   <>
                     <div className="table-responsive">
                       <table className="transactions-table">
@@ -751,7 +752,7 @@ const downloadInvoicePDF = () => {
                                 month: 'short', 
                                 year: 'numeric' 
                               })}</td>
-                              <td className="amount">₹ {(Number(o.finalAmt) || 0).toLocaleString('en-IN')}</td>
+                              <td className="amount">₹ {o.totalAmt?.toLocaleString('en-IN')}</td>
                               <td>
                                 <span className={`status-badge ${o.paymentMethod ? 'paid' : 'pending'}`}>
                                   {o.paymentMethod ? 'Paid' : 'Pending'}
@@ -776,58 +777,97 @@ const downloadInvoicePDF = () => {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td colSpan="3" className="text-end fw-bold ">Total:</td>
+                            <td colSpan="3" className="text-end fw-bold "></td>
                             <td className="amount fw-bold ml-1">₹ {totalAmount.toLocaleString('en-IN')}</td>
                             <td colSpan="3"></td>
                           </tr>
                         </tfoot>
                       </table>
                     </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination-wrapper">
+          <Pagination>
+            <PaginationItem disabled={currentPage === 1}>
+              <PaginationLink
+                previous
+                onClick={() => paginate(currentPage - 1)}
+              />
+            </PaginationItem>
+            
+            {[...Array(totalPages)].map((_, i) => (
+              <PaginationItem key={i + 1} active={currentPage === i + 1}>
+                <PaginationLink onClick={() => paginate(i + 1)}>
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem disabled={currentPage === totalPages}>
+              <PaginationLink
+                next
+                onClick={() => paginate(currentPage + 1)}
+              />
+            </PaginationItem>
+          </Pagination>
+        </div>
+      )}
+    </>
+  ) : (
+    <div className="no-data">
+      <i className="ni ni-box-open"></i>
+      <p>No transactions found for the selected period</p>
+      {(startDate || endDate) && (
+        <button 
+          className="clear-filter-btn"
+          onClick={() => setDateRange([null, null])}
+        >
+          Clear Filters
+        </button>
+      )}
+    </div>
+  )}
+</div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                      <div className="pagination-wrapper">
-                        <Pagination>
-                          <PaginationItem disabled={currentPage === 1}>
-                            <PaginationLink
-                              previous
-                              onClick={() => paginate(currentPage - 1)}
-                            />
-                          </PaginationItem>
-                          
-                          {[...Array(totalPages)].map((_, i) => (
-                            <PaginationItem key={i + 1} active={currentPage === i + 1}>
-                              <PaginationLink onClick={() => paginate(i + 1)}>
-                                {i + 1}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ))}
-                          
-                          <PaginationItem disabled={currentPage === totalPages}>
-                            <PaginationLink
-                              next
-                              onClick={() => paginate(currentPage + 1)}
-                            />
-                          </PaginationItem>
-                        </Pagination>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="no-data">
-                    <i className="ni ni-box-open"></i>
-                    <p>No transactions found for the selected period</p>
-                    {(startDate || endDate) && (
-                      <button 
-                        className="clear-filter-btn"
-                        onClick={() => setDateRange([null, null])}
-                      >
-                        Clear Filters
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+{/* Customer Notes Section - New Addition */}
+{selectedCustomer && (selectedCustomer.nextVisit?.notes || selectedCustomer.nextVisit?.nextVisitDate) && (
+  <div className="customer-notes-section mt-4">
+    
+    <div className="notes-content">
+      {selectedCustomer.nextVisit?.notes && (
+        <div className="note-item">
+          <div className="note-icon">
+            <i className="ni ni-note"></i>
+          </div>
+          <div className="note-details">
+            <span className="note-label">Notes:</span>
+            <span className="note-text">{selectedCustomer.nextVisit.notes}</span>
+          </div>
+        </div>
+      )}
+      {selectedCustomer.nextVisit?.nextVisitDate && (
+        <div className="note-item">
+          <div className="note-icon">
+            <i className="ni ni-calendar-date"></i>
+          </div>
+          <div className="note-details">
+            <span className="note-label">Follow-up Date:</span>
+            <span className="note-text">
+              {new Date(selectedCustomer.nextVisit.nextVisitDate).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              })}
+              {new Date(selectedCustomer.nextVisit.nextVisitDate) < new Date() && (
+                <span className="overdue-badge"> Overdue</span>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
             </>
           ) : (
             <div className="select-customer-prompt">
