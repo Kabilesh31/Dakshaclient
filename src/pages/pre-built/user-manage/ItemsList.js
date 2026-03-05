@@ -42,20 +42,18 @@ const ProductsListCompact = () => {
   const [brands, setBrands] = useState([]);
   const { userData } = useContext(DataContext);
   const [sm, updateSm] = useState(false);
-  const [tablesm, updateTableSm] = useState(false);
   const [onSearch, setonSearch] = useState(false);
   const [onSearchText, setSearchText] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [addLoading, setAddLoading] = useState(false);
-const [editLoading, setEditLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const [modal, setModal] = useState({
     edit: false,
     add: false,
   });
 
-  const [editId, setEditedId] = useState();
   const [modalAdd, setModalAdd] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -78,25 +76,13 @@ const [editLoading, setEditLoading] = useState(false);
   const [actionText, setActionText] = useState("");
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
-const [categories, setCategories] = useState([]);
-
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(20);
 
-  const [sort, setSortState] = useState("");
-  const [assignModal, setAssignModal] = useState(false);
-  const [selectedData, setSelectedData] = useState([]);
-  const [uploadModal, setUploadModal] = useState(false);
   const [files, setFiles] = useState([]);
   const [files2, setFiles2] = useState([]);
-  const [sheetData, setSheetData] = useState(null);
-  const [editedValue, setEditedValue] = useState(null);
-  const [editedStock, setEditedStock] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editingStockId, setEditingStockId] = useState(null);
-  const [clickCount, setClickCount] = useState(0);
-  const [showTextBox, setShowTextBox] = useState(false);
+
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
   const searchRef = useRef(null);
@@ -137,14 +123,31 @@ const [categories, setCategories] = useState([]);
 
     return matchesBrand && matchesSearch;
   });
-useEffect(() => {
-  setCurrentPage(1);
-}, [filteredProducts.length]);
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredProducts.length]);
+
+
   const fetchProductData = async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product`);
 
-      const activeProducts = (response.data || []).filter((product) => product.isDeleted !== true);
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/product`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
+
+      const activeProducts = (response.data || []).filter(
+        (product) => product.isDeleted !== true
+      );
 
       setData(activeProducts);
 
@@ -161,8 +164,9 @@ useEffect(() => {
         Array.from(brandSet).map((b) => ({
           name: b,
           productCount: brandCounts[b],
-        })),
+        }))
       );
+
     } catch (err) {
       console.log("Failed to fetch products:", err);
       setData([]);
