@@ -12,16 +12,30 @@ const TransactionTable = () => {
   const [datas, setDatas] = useState([])
 
   
-  const fetchTransactions = async() => {
-     try{
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer/transaction");
-      if(response.status === 200){
-        setDatas(response.data.data)
+const fetchTransactions = async () => {
+  try {
+
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    const response = await axios.get(
+      process.env.REACT_APP_BACKENDURL + "/api/customer/transaction",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken
+        }
       }
-     }catch(err){
-      console.error(err)
-     }
+    );
+
+    if (response.status === 200) {
+      setDatas(response.data.data);
+    }
+
+  } catch (err) {
+    console.error(err);
   }
+};
 
   useEffect(()=> {
     if(datas.length === 0){

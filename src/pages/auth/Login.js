@@ -54,14 +54,16 @@ const Login = () => {
       const response = await fetch(process.env.REACT_APP_BACKENDURL+"/api/user/login", postUser)
       const resData = await response.json();
       const token = resData.token;
+      const sessionToken = resData.sessionToken;
       
       if(!response.ok){
         setLoading(false);
-        eerrorToast(resData.message || "Invalid email or password");
+        errorToast(resData.message || "Invalid email or password");
       }
       else {
         successToast("Success")
         localStorage.setItem("accessToken", token);
+        localStorage.setItem("sessionToken", sessionToken);
       setTimeout(() => {
         window.history.pushState(
           `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`,
@@ -117,29 +119,7 @@ const Login = () => {
                   {/* <span className="hero-logo-icon">📊</span> */}
                  <img src={Logo} alt="Retail Pulse Logo" className="hero-logo-img" />
                 </div>
-                {/* <h2 className="hero-subtitle">
-                  Where Data Meets Retail Excellence
-                </h2>
-                <p className="hero-description">
-                  Unlock actionable insights and transform your retail business 
-                  
-                </p>
-
-                <div className="hero-stats">
-                  <div className="stat-item">
-                    <div className="stat-number">99.9%</div>
-                    <div className="stat-label">Uptime</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-number">10k+</div>
-                    <div className="stat-label">Active Stores</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-number">24/7</div>
-                    <div className="stat-label">Support</div>
-                  </div>
-                </div> */}
-
+         
                 <div className="hero-features">
                   <div className="feature-card">
                     <div className="feature-icon">
@@ -172,10 +152,7 @@ const Login = () => {
               {/* Form Header */}
               <div className="form-header">
                 <div className="form-brand">
-                  {/* <div className="brand-logo">
-                    <div className="logo-circle"></div>
-                    <span className="logo-text">RP</span>
-                  </div> */}
+               
                   <h3 className="brand-name">Retail Pulse</h3>
                 </div>
                 <h2 className="welcome-text">
@@ -270,11 +247,7 @@ const Login = () => {
                 </FormGroup>
 
                 <div className="form-options">
-                  {/* <label className="checkbox-container">
-                    <input type="checkbox" className="checkbox-input" />
-                    <span className="checkbox-custom"></span>
-                    <span className="checkbox-label">Remember me for 30 days</span>
-                  </label> */}
+               
                 </div>
 
                 <Button
@@ -297,17 +270,7 @@ const Login = () => {
                   )}
                 </Button>
 
-              
-                {/* <div className="signup-link">
-                  New to Retail Pulse?{" "}
-                  <Link to={`${process.env.PUBLIC_URL}/auth-register`} className="signup-text">
-                    Create an account
-                  </Link>
-                </div> */}
               </Form>
-
-              {/* Demo Access */}
-          
             </div>
 
             {/* Footer */}

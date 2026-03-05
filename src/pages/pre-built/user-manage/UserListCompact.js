@@ -76,18 +76,31 @@ const UserListCompact = () => {
     }
   }, [data]);
 
-  // fetch users list
+    // fetch users list
   const fetchUserData = async () => {
-  try {
-    const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/user");
-    const reversed = response.data.data.reverse();
-    setOriginalData(reversed);
-    setData(reversed);
-  } catch (err) {
-    console.log(err);
-  }
-};
+    try {
 
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      const response = await axios.get(
+        process.env.REACT_APP_BACKENDURL + "/api/user",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken
+          }
+        }
+      );
+
+      const reversed = response.data.data.reverse();
+      setOriginalData(reversed);
+      setData(reversed);
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   // Sorting data
   const sortFunc = (order) => {
