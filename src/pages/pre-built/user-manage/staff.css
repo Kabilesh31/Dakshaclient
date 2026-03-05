@@ -176,3 +176,66 @@
   50% { background-color: #ffe082; }
   100% { background-color: #fff8e1; }
 }
+/* Completely remove outer scrollbar */
+body.modal-open {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+.modal {
+  overflow: hidden !important;
+}
+
+.modal-dialog {
+  margin-left: 370px;
+  
+  height: 98vh;
+  display: flex;
+  align-items: center;
+  max-width: 1100px; /* Adjust based on your xl size */
+}
+
+/* Modal content styling */
+.order-modal .modal-content {
+  max-height: 98vh;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+/* Internal scrolling only */
+.order-modal .modal-body {
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  scrollbar-width: thin;
+}
+
+/* Hide scrollbar from body */
+.modal.show {
+  padding-right: 0 !important;
+}
+
+/* Style the internal scrollbar */
+.order-modal .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.order-modal .modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.order-modal .modal-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.order-modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Ensure modal doesn't cause body scroll */
+.modal-open .modal {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}

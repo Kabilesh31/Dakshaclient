@@ -593,10 +593,16 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
   const currentLineNo = firstPendingCustomer
     ? firstPendingCustomer.lineNo
     : null;
-const assignedVehicleNumbers = routeAssignments
-  .filter(a => a.date === selectedDate && a.vehicleNo)
-  .map(a => a.vehicleNo);
+// const assignedVehicleNumbers = routeAssignments
+//   .filter(a => a.date === selectedDate && a.vehicleNo)
+//   .map(a => a.vehicleNo);
     // Render Route Assign Tab
+    const assignedVehicleData = routeAssignments
+  .filter(a => a.date === selectedDate && a.vehicleNo)
+  .map(a => ({
+    vehicleNo: a.vehicleNo,
+    staffId: a.staffId?._id
+  }));
     const renderRouteAssign = () => {
       if (loading && routeAssignments.length === 0) {
         return <div className="text-center py-5">Loading...</div>;
@@ -666,234 +672,388 @@ const assignedVehicleNumbers = routeAssignments
               )}
 
               {/* Delivery Staff Table */}
-              <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>Staff Member</th>
-                      <th>Assigned Routes</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
-                      const staffAssignments = getStaffAssignedRoutes(staff._id);
-                      const existingVehicleNo =
-  staffAssignments.length > 0
-    ? staffAssignments[0].vehicleNo
-    : null;
-                      const canAssign = canAssignMoreRoutes(staff._id);
-                      
-                      return (
-                        <tr key={staff._id}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div className="user-avatar bg-primary" style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '12px' }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-  <img
-    src={staff.img ? staff.img : "/default-avatar.png"}
-    alt="profile"
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = "/default-avatar";
-    }}
-    style={{
-      width: "40px",
-      height: "40px",
-      borderRadius: "50%",
-      objectFit: "cover"
-    }}
-  />
-</div>
-                              </div>
-                              <div>
-                                <div className="fw-bold">{staff.name}</div>
-                                <small className="text-muted">{staff.email}</small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            {staffAssignments?.length > 0 ? (
-                              <div>
-                                {staffAssignments.map((assignment) => (
-                                  <div
-                                    key={assignment._id}
-                                    className="d-flex align-items-center justify-content-between mb-1"
-                                  >
-                                    <div>
-                                      <span className="fw-medium">
-                                        {assignment.routeId?.routeName || assignment.routeName}
-                                        {assignment.vehicleNo && (
-  <div className="small text-muted">
-    🚗 {assignment.vehicleNo}
-  </div>
-)}
-                                      </span>
-                                      <Badge className="m-1" color={getStatusBadge(assignment.status)}>
-                                        {assignment.status?.replace('_', ' ') || 'ASSIGNED'}
-                                      </Badge>
-                                    </div>
-                                    <Button
-                                      size="xs"
-                                      color="danger"
-                                      className="btn-dim"
-                                      onClick={() => openUnassignConfirm(assignment._id)}
-                                    >
-                                      <Icon name="cross"></Icon>
-                                    </Button>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-muted">No routes assigned</span>
-                            )}
-                          </td>
-
-                          <td>
-                            <Badge
-                              color={staffAssignments?.length === 0 ? "light" : "primary"}
-                              className="mt-1"
-                            >
-                              {staffAssignments?.length || 0}/2 Routes
-                            </Badge>
-                          </td>
-
-                          <td>
-                            <div className="d-flex gap-3 align-items-center flex-wrap">
-
-                              {/* Route Select */}
-                              <div className="form-group mt-1 mr-1 " style={{ minWidth: '180px' }}>
-                                <select
-                                  className="form-control"
-                                  value={staff.selectedRoute || ""}
-                                  onChange={(e) => {
-                                    setDeliveryStaff(prev =>
-                                      prev.map(s =>
-                                        s._id === staff._id
-                                          ? { ...s, selectedRoute: e.target.value }
-                                          : s
-                                      )
-                                    );
-                                  }}
-                                >
-                                  <option value="">Select Route</option>
-                                  {getAvailableRoutes().map(route => (
-                                    <option key={route._id} value={route._id}>
-                                      {route.routeName}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {/* Vehicle Select */}
-                              <div className="form-group mt-1" style={{ minWidth: '180px' }}>
-                            <select
-                              className="form-control"
-                              disabled={!!existingVehicleNo}
-                              value={existingVehicleNo || staff.selectedVehicle || ""}
-                              onChange={(e) => {
-                                setDeliveryStaff(prev =>
-                                  prev.map(s =>
-                                    s._id === staff._id
-                                      ? { ...s, selectedVehicle: e.target.value }
-                                      : s
-                                  )
-                                );
-                              }}
-                            >
-                              <option value="">Select Vehicle</option>
-
-                            {vehicles
-                              .filter(vehicle => {
-                                if (existingVehicleNo) {
-                                  return vehicle.vehicleNumber === existingVehicleNo;
-                                }
-                                return !assignedVehicleNumbers.includes(vehicle.vehicleNumber);
-                              })
-                              .map(vehicle => (
-                                <option key={vehicle._id} value={vehicle._id}>
-                                  {vehicle.vehicleNumber} ({vehicle.vehicleType?.charAt(0).toUpperCase() + vehicle.vehicleType?.slice(1).toLowerCase()})
-                                </option>
-                              ))}
-                            </select>
-                              </div>
-
-                              {/* Assign Button */}
-                              <Button
-                                color="primary gap-1"
-                                style={{height:"35px",marginLeft:"8px",marginTop:"-10px"}}
-                                size="md"
-                                disabled={
-                              !staff.selectedRoute ||
-                              (!existingVehicleNo && !staff.selectedVehicle) ||
-                              !canAssignMoreRoutes(staff._id) ||
-                              loading
-                            }
-                                onClick={async () => {
-                                  try {
-                                    setLoading(true);
-                                    setError(null);
-
-                                    const route = findRoute(staff.selectedRoute);
-                                    if (!route) {
-                                      setError("Selected route not found");
-                                      return;
-                                    }
-
-                                    let vehicleToSend = existingVehicleNo;
-
-                            if (!vehicleToSend) {
-                              const selectedVehicleData = vehicles.find(
-                                v => v._id === staff.selectedVehicle
-                              );
-                              vehicleToSend = selectedVehicleData?.vehicleNumber || null;
-                            }
-                                await axios.post(
-                              `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
-                              {
-                                date: selectedDate,
-                                staffId: staff._id,
-                                routeId: route._id,
-                                routeName: route.routeName,
-                                vehicleNo: vehicleToSend,   // 🔥 USE THIS
-                              },
-                              {
-                                headers: {
-                                  Authorization: `Bearer ${localStorage.getItem("token")}`,
-                                },
-                              }
-                            );
-
-                                    setSuccess(`Route assigned to ${staff.name}`);
-                                    fetchAssignmentsByDate(selectedDate);
-
-                                    setDeliveryStaff(prev =>
-                                      prev.map(s =>
-                                        s._id === staff._id
-                                          ? { ...s, selectedRoute: "", selectedVehicle: "" }
-                                          : s
-                                      )
-                                    );
-
-                                  } catch (err) {
-                                    setError(err.response?.data?.message || "Failed to assign route");
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                              >
-                                {loading ? "Assigning..." : "Assign"}
-                              </Button>
-
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <div className="table-responsive" style={{ borderRadius: '8px', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+  <table className="table table-hover mb-0" style={{ minWidth: '1000px', fontSize: '0.85rem' }}>
+    <thead style={{ backgroundColor: '#f8f9fc', borderBottom: '1px solid #e9ecef' }}>
+      <tr>
+        <th style={{ padding: '10px 80px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Staff</th>
+        <th style={{ padding: '10px 80px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Assigned Routes</th>
+        <th style={{ padding: '10px 80x', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Load</th>
+        <th style={{ padding: '10px 80px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
+        const staffAssignments = getStaffAssignedRoutes(staff._id);
+        const existingVehicleNo = staffAssignments.length > 0 ? staffAssignments[0].vehicleNo : null;
+        const canAssign = canAssignMoreRoutes(staff._id);
+        
+        return (
+          <tr key={staff._id} style={{ borderBottom: '1px solid #edf2f7' }}>
+            <td style={{ padding: '10px 12px' }}>
+              <div className="d-flex align-items-center">
+                <img
+                  src={staff.img || "/default-avatar.png"}
+                  alt=""
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/default-avatar.png";
+                  }}
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginRight: '8px',
+                    border: '1px solid #fff',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}
+                />
+                <div>
+                  <div style={{ fontWeight: '500', color: '#2c3e50', fontSize: '0.85rem' }}>{staff.name}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#8a9cb0', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    {staff.email}
+                  </div>
+                </div>
               </div>
+            </td>
+            
+            <td style={{ padding: '10px 12px' }}>
+              {staffAssignments?.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {staffAssignments.map((assignment) => (
+                    <div
+                      key={assignment._id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#f8fafd',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #eef2f6',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: '500', color: '#2c3e50' }}>
+                          {assignment.routeId?.routeName || assignment.routeName}
+                        </span>
+                        {assignment.vehicleNo && (
+                          <span style={{ fontSize: '0.7rem', color: '#8a9cb0', marginLeft: '6px' }}>
+                            • 🚗 {assignment.vehicleNo}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '12px',
+                          fontSize: '0.65rem',
+                          fontWeight: '500',
+                          backgroundColor: assignment.status === 'ASSIGNED' ? '#e8f0fe' : '#fff4e5',
+                          color: assignment.status === 'ASSIGNED' ? '#2c6b9e' : '#cc7b2e'
+                        }}>
+                          {assignment.status?.replace('_', ' ') || 'ASGN'}
+                        </span>
+                        <button
+                          onClick={() => openUnassignConfirm(assignment._id)}
+                          style={{
+                            border: 'none',
+                            background: 'none',
+                            padding: '2px',
+                            cursor: 'pointer',
+                            borderRadius: '3px',
+                            color: '#dc3545',
+                            opacity: 0.6,
+                            lineHeight: 1
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span style={{ color: '#a0b3c9', fontSize: '0.8rem', fontStyle: 'italic' }}>—</span>
+              )}
+            </td>
+
+            <td style={{ padding: '10px 12px', verticalAlign: 'middle' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  backgroundColor: staffAssignments?.length === 0 ? '#f1f5f9' : '#e8f0fe',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '600',
+                  color: staffAssignments?.length === 0 ? '#8a9cb0' : '#2c6b9e',
+                  fontSize: '0.8rem'
+                }}>
+                  {staffAssignments?.length || 0}
+                </div>
+                <span style={{ color: '#8a9cb0', fontSize: '0.75rem' }}>/2</span>
+              </div>
+            </td>
+
+           <td style={{ padding: '12px 16px' }}>
+  <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
+    
+    {/* Route Select - Increased Width */}
+    <div style={{ position: 'relative', width: '160px' }}>
+      <select
+        style={{
+          width: '100%',
+          padding: '8px 28px 8px 12px',
+          borderRadius: '6px',
+          border: '1px solid #e0e7ed',
+          backgroundColor: '#fff',
+          fontSize: '0.85rem',
+          color: '#2c3e50',
+          outline: 'none',
+          cursor: 'pointer',
+          appearance: 'none',
+          transition: 'all 0.2s'
+        }}
+        value={staff.selectedRoute || ""}
+        onChange={(e) => {
+          setDeliveryStaff(prev =>
+            prev.map(s =>
+              s._id === staff._id
+                ? { ...s, selectedRoute: e.target.value }
+                : s
+            )
+          );
+        }}
+        onFocus={(e) => e.target.style.borderColor = '#2c6b9e'}
+        onBlur={(e) => e.target.style.borderColor = '#e0e7ed'}
+      >
+        <option value="">Select Route</option>
+        {getAvailableRoutes().map(route => (
+          <option key={route._id} value={route._id}>
+            {route.routeName}
+          </option>
+        ))}
+      </select>
+      <div style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none',
+        color: '#8a9cb0',
+        fontSize: '11px'
+      }}>
+        ▼
+      </div>
+    </div>
+
+    {/* Vehicle Select - Increased Width */}
+    <div style={{ position: 'relative', width: '140px' }}>
+      <select
+        style={{
+          width: '100%',
+          padding: '8px 28px 8px 12px',
+          borderRadius: '6px',
+          border: '1px solid #e0e7ed',
+          backgroundColor: existingVehicleNo ? '#f8fafd' : '#fff',
+          fontSize: '0.85rem',
+          color: existingVehicleNo ? '#8a9cb0' : '#2c3e50',
+          outline: 'none',
+          cursor: existingVehicleNo ? 'not-allowed' : 'pointer',
+          appearance: 'none',
+          transition: 'all 0.2s'
+        }}
+        disabled={!!existingVehicleNo}
+        value={existingVehicleNo || staff.selectedVehicle || ""}
+        onChange={(e) => {
+          setDeliveryStaff(prev =>
+            prev.map(s =>
+              s._id === staff._id
+                ? { ...s, selectedVehicle: e.target.value }
+                : s
+            )
+          );
+        }}
+        onFocus={(e) => {
+          if (!existingVehicleNo) e.target.style.borderColor = '#2c6b9e';
+        }}
+        onBlur={(e) => e.target.style.borderColor = '#e0e7ed'}
+      >
+        <option value="">Select Vehicle</option>
+        {vehicles
+          .filter(vehicle => {
+            if (existingVehicleNo) {
+              return vehicle.vehicleNumber === existingVehicleNo;
+            }
+            const vehicleAssignments = assignedVehicleData.filter(
+              v => v.vehicleNo === vehicle.vehicleNumber
+            );
+            if (vehicleAssignments.length === 0) return true;
+            return vehicleAssignments.every(
+              v => v.staffId?.toString() === staff._id.toString()
+            );
+          })
+          .map(vehicle => (
+            <option key={vehicle._id} value={vehicle._id}>
+              {vehicle.vehicleNumber} ({vehicle.vehicleType})
+            </option>
+          ))}
+      </select>
+      <div style={{
+        position: 'absolute',
+        right: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none',
+        color: '#8a9cb0',
+        fontSize: '11px'
+      }}>
+        ▼
+      </div>
+    </div>
+
+    {/* Assign Button - Increased Size */}
+    <button
+      style={{
+        padding: '8px 16px',
+        borderRadius: '6px',
+        border: 'none',
+        backgroundColor: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? '#f1f5f9' : '#2c6b9e',
+        color: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? '#8a9cb0' : '#fff',
+        fontSize: '0.85rem',
+        fontWeight: '500',
+        cursor: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        lineHeight: 1,
+        minWidth: '80px',
+        justifyContent: 'center',
+        transition: 'all 0.2s',
+        boxShadow: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? 'none' : '0 2px 4px rgba(44,107,158,0.2)'
+      }}
+      disabled={!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading}
+      onClick={async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          const route = findRoute(staff.selectedRoute);
+          if (!route) {
+            setError("Selected route not found");
+            return;
+          }
+
+          let vehicleToSend = existingVehicleNo;
+          if (!vehicleToSend) {
+            const selectedVehicleData = vehicles.find(
+              v => v._id === staff.selectedVehicle
+            );
+            vehicleToSend = selectedVehicleData?.vehicleNumber || null;
+          }
+          
+          await axios.post(
+            `${process.env.REACT_APP_BACKENDURL}/api/route-assignment`,
+            {
+              date: selectedDate,
+              staffId: staff._id,
+              routeId: route._id,
+              routeName: route.routeName,
+              vehicleNo: vehicleToSend,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          setSuccess(`Route assigned to ${staff.name}`);
+          fetchAssignmentsByDate(selectedDate);
+
+          setDeliveryStaff(prev =>
+            prev.map(s =>
+              s._id === staff._id
+                ? { ...s, selectedRoute: "", selectedVehicle: "" }
+                : s
+            )
+          );
+
+        } catch (err) {
+          setError(err.response?.data?.message || "Failed to assign route");
+        } finally {
+          setLoading(false);
+        }
+      }}
+      onMouseEnter={(e) => {
+        if (!(!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading)) {
+          e.currentTarget.style.backgroundColor = '#1e4f72';
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.boxShadow = '0 4px 8px rgba(44,107,158,0.25)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!(!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading)) {
+          e.currentTarget.style.backgroundColor = '#2c6b9e';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 2px 4px rgba(44,107,158,0.2)';
+        }
+      }}
+    >
+      {loading ? (
+        <>
+          <span style={{ 
+            width: '14px', 
+            height: '14px', 
+            border: '2px solid #fff', 
+            borderTopColor: 'transparent', 
+            borderRadius: '50%', 
+            animation: 'spin 0.6s linear infinite',
+            display: 'inline-block'
+          }}></span>
+          <span>Assigning...</span>
+        </>
+      ) : (
+        'Assign'
+      )}
+    </button>
+
+  </div>
+</td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+
+<style jsx>{`
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .table-hover tbody tr:hover {
+    background-color: #fafcff;
+  }
+  
+  select:hover:not(:disabled) {
+    border-color: #b8c5d4;
+  }
+`}</style>
             </PreviewCard>
           </div>
 
