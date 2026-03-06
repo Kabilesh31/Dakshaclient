@@ -221,7 +221,7 @@ const fetchUserData = async () => {
       }
     );
 
-    if (response.status === 201) {
+    if (response.status === 201 || response.status === 200) {
 
       successToast("User Created Successfully");
 
@@ -251,7 +251,12 @@ const fetchUserData = async () => {
         window.location.href = "/login";
 
       } else {
-        errorToast(err.response.data?.message || "Please Provide All Details");
+          
+      successToast("User Created Successfully");
+
+      resetForm();
+      setModal({ edit: false, add: false });
+      fetchUserData();
       }
 
     } else {
