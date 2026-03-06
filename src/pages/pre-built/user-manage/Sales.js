@@ -857,6 +857,29 @@ const fetchCustomers = async () => {
       const handlesRefresh = () => {
         fetchStaff();
       };
+      const getAvailableVehiclesForStaff = (staffId) => {
+  if (!Array.isArray(vehicles)) return [];
+
+  const usedVehicles = routeAssignments
+    .filter(a => a.date === selectedDate)
+    .map(a => ({
+      vehicleNo: a.vehicleNo,
+      staffId: a.staffId?._id
+    }));
+
+  return vehicles.filter(vehicle => {
+    const vehicleUsed = usedVehicles.find(
+      v => v.vehicleNo === vehicle.vehicleNumber
+    );
+
+    if (!vehicleUsed) return true;
+
+    if (vehicleUsed.staffId?.toString() === staffId?.toString())
+      return true;
+
+    return false;
+  });
+};
       return (
         <div className="row g-4">
           <div className="col-12">
@@ -925,9 +948,14 @@ const fetchCustomers = async () => {
         const canAssign = canAssignMoreRoutes(staff._id);
 
         // Get already assigned vehicle for this staff on selected date
-        const existingVehicleNo = staffAssignments.length > 0
-          ? staffAssignments[0]?.vehicleNo
-          : null;
+       // Get vehicle already assigned to this staff for selected date
+const staffVehicleAssignment = routeAssignments.find(
+  (a) =>
+    a.staffId?._id?.toString() === staff._id?.toString() &&
+    a.date === selectedDate
+);
+
+const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
         
         return (
           <tr key={staff._id} style={{ borderBottom: '1px solid #edf2f7' }}>
@@ -1138,10 +1166,10 @@ const fetchCustomers = async () => {
                     }}
                     disabled={!!existingVehicleNo}
                     value={
-                      existingVehicleNo?.vehicleNumber ||
-                      staff.selectedVehicle ||
-                      ""
-                    }
+  existingVehicleNo ||
+  staff.selectedVehicle ||
+  ""
+}
                     onChange={(e) => {
                       setDeliveryStaff(prev =>
                         prev.map(s =>
@@ -1153,8 +1181,7 @@ const fetchCustomers = async () => {
                     }}
                   >
                     <option value="">Vehicle</option>
-                    {Array.isArray(vehicles) &&
-                      vehicles.map(vehicle => (
+                    {getAvailableVehiclesForStaff(staff._id).map(vehicle => (
                         <option key={vehicle._id} value={vehicle._id}>
                           {vehicle.vehicleNumber} ({vehicle.vehicleType})
                         </option>
@@ -1212,24 +1239,40 @@ const fetchCustomers = async () => {
                           setError("Selected route not found");
                           return;
                         }
+                        const staffAssignments = getStaffAssignedRoutes(staff._id);
 
-                        // 🔥 VEHICLE LOGIC
-                        let vehicleToSend = null;
+if (staffAssignments.length >= 2) {
+  setError("This staff already has 2 routes assigned");
+  return;
+}
 
-                        if (existingVehicleNo?.vehicleNumber) {
-                          vehicleToSend = existingVehicleNo.vehicleNumber;
-                        } else {
-                          const selectedVehicleData = vehicles.find(
-                            (v) => v._id === staff.selectedVehicle
-                          );
-                          vehicleToSend = selectedVehicleData?.vehicleNumber;
-                        }
+                      let vehicleToSend = null;
+
+if (existingVehicleNo) {
+  vehicleToSend = existingVehicleNo; // already vehicle number string
+} else {
+  const selectedVehicleData = vehicles.find(
+    (v) => v._id === staff.selectedVehicle
+  );
+  vehicleToSend = selectedVehicleData?.vehicleNumber;
+}
 
                         if (!vehicleToSend) {
                           setError("Please select vehicle");
                           return;
                         }
+// Check if vehicle is used by another staff
+const vehicleConflict = routeAssignments.find(
+  a =>
+    a.date === selectedDate &&
+    a.vehicleNo === vehicleToSend &&
+    a.staffId?._id?.toString() !== staff._id?.toString()
+);
 
+if (vehicleConflict) {
+  setError("Vehicle already assigned to another staff");
+  return;
+}
                         await axios.post(
                           `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
                           {

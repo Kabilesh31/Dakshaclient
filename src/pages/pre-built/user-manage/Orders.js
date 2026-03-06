@@ -595,7 +595,7 @@ const confirmAction = async () => {
       </Content>
 
       {selectedOrder && (
-        <Modal isOpen={!!selectedOrder} centered size="xl" contentClassName="order-modal">
+        <Modal isOpen={!!selectedOrder} centered size="xl" className="texting" contentClassName="order-modal">
           <ModalBody>
             <div ref={modalRef}>
               <a

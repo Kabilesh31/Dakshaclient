@@ -1068,179 +1068,127 @@ const StaffReport = () => {
         </div>
       </div>
 
-      {/* Invoice Modal - Using totalAmt */}
-      <Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" className="invoice-modal">
+      {/* Simple Invoice Modal - No frames */}
+      <Modal 
+        isOpen={invoiceModal} 
+        toggle={() => setInvoiceModal(false)} 
+        size="lg" 
+        scrollable 
+        className="simple-invoice-modal"
+      >
         <ModalHeader toggle={() => setInvoiceModal(false)}>
-          <div className="modal-header-content">
-            <h4 className="modal-title">Retail Pulse</h4>
-            <span className="invoice-number">Order Invoice</span>
-          </div>
-          <button className="close" onClick={() => setInvoiceModal(false)}>
-            <span>×</span>
-          </button>
+          Order Invoice #{selectedBill?._id.toString().slice(-6)}
         </ModalHeader>
         <ModalBody>
           {selectedBill && (
-            <div className="invoice-container">
-              <div className="invoice-header">
-                <div className="order-info">
-                  <h2 className="order-id">Order ID: #{selectedBill._id.toString().slice(-6)}</h2>
-                  <p className="order-date">Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    year: 'numeric'
-                  })}</p>
-                </div>
-                <div className={`order-status-badge ${selectedBill.orderStatus?.toLowerCase() || 'delivered'}`}>
-                  {selectedBill.orderStatus || 'delivered'}
-                </div>
-              </div>
-
-              <div className="details-grid">
-                <div className="details-section">
-                  <h6 className="section-title">Customer Details</h6>
-                  <div className="detail-item">
-                    <span className="detail-label">Name:</span>
-                    <span className="detail-value">{getCustomerName(selectedBill)}</span>
+            <div className="simple-invoice">
+              {/* Order Header */}
+              <div style={{ borderBottom: '2px solid #eee', paddingBottom: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>Retail Pulse</h3>
+                    <p style={{ margin: 0, color: '#666' }}>Order Invoice</p>
                   </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Mobile:</span>
-                    <span className="detail-value">{selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Address:</span>
-                    <span className="detail-value">{selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}</span>
-                  </div>
-                </div>
-
-                <div className="details-section">
-                  <h6 className="section-title">Staff Details</h6>
-                  <div className="detail-item">
-                    <span className="detail-label">Name:</span>
-                    <span className="detail-value">{selectedStaff?.name}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Type:</span>
-                    <span className="detail-value">{selectedStaff?.type || 'staff'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Contact:</span>
-                    <span className="detail-value">{selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ 
+                      backgroundColor: selectedBill.orderStatus === 'rejected' ? '#fef2f2' : '#e6f7e6',
+                      color: selectedBill.orderStatus === 'rejected' ? '#dc2626' : '#10b981',
+                      padding: '5px 10px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}>
+                      {selectedBill.orderStatus || 'Delivered'}
+                    </div>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
+                      Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-IN')}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {selectedBill?.paymentMethod && selectedBill.orderStatus !== "rejected" && (
-                <div className="paid-stamp-round-container">
-                  <div className="paid-stamp-round distressed">
-                    <div className="paper-texture"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="stamp-inner">
-                      <div className="stamp-text">PAID</div>
-                    </div>
-                    <div className="stamp-dots">
-                      {[...Array(12)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="stamp-dot"
-                          style={{
-                            top: `${20 + Math.random() * 60}%`,
-                            left: `${20 + Math.random() * 60}%`,
-                            transform: `rotate(${Math.random() * 360}deg)`
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+              {/* Customer & Staff Details */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+                <div>
+                  <h4 style={{ fontSize: '14px', margin: '0 0 10px 0', color: '#333' }}>Customer Details</h4>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Name:</strong> {getCustomerName(selectedBill)}</p>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Mobile:</strong> {selectedBill.customerId?.mobile || selectedBill.customerId?.phone || 'N/A'}</p>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Address:</strong> {selectedBill.customerId?.address || selectedBill.deliveryAddress || 'N/A'}</p>
                 </div>
-              )}
-
-              {selectedBill?.orderStatus === "rejected" && (
-                <div className="rejected-stamp-round-container">
-                  <div className="rejected-stamp-round distressed">
-                    <div className="paper-texture"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="ink-bleed"></div>
-                    <div className="stamp-inner">
-                      <div className="stamp-text">REJECTED</div>
-                    </div>
-                    <div className="stamp-dots">
-                      {[...Array(12)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="stamp-dot"
-                          style={{
-                            top: `${20 + Math.random() * 60}%`,
-                            left: `${20 + Math.random() * 60}%`,
-                            transform: `rotate(${Math.random() * 360}deg)`
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                <div>
+                  <h4 style={{ fontSize: '14px', margin: '0 0 10px 0', color: '#333' }}>Staff Details</h4>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Name:</strong> {selectedStaff?.name || selectedBill.staffName || 'N/A'}</p>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Type:</strong> {selectedStaff?.type || 'staff'}</p>
+                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Contact:</strong> {selectedStaff?.mobile || selectedStaff?.phone || 'N/A'}</p>
                 </div>
-              )}
+              </div>
 
-              <div className="products-table-container">
-                <table className="products-table">
+              {/* Products Table */}
+              <div style={{ marginBottom: '30px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
-                    <tr>
-                      <th>S.No</th>
-                      <th>Product</th>
-                      <th>Qty</th>
-                      <th>Rate</th>
-                      <th>Amount</th>
+                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>S.No</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Product</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Qty</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Rate (₹)</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedBill.orderedProducts?.map((product, idx) => (
-                      <tr key={product._id || idx}>
-                        <td>{idx + 1}</td>
-                        <td>{product.productName}</td>
-                        <td>{product.qty}</td>
-                        <td>₹{(Number(product.value) || 0).toLocaleString('en-IN')}</td>
-                        <td>₹{((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
+                      <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                        <td style={{ padding: '10px' }}>{idx + 1}</td>
+                        <td style={{ padding: '10px' }}>{product.productName}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>{product.qty}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>{(Number(product.value) || 0).toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '10px', textAlign: 'right' }}>
+                          {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="totals-section">
-                <div className="total-row">
-                  <span className="total-label">Subtotal</span>
-                  <span className="total-value">
-                    ₹{selectedBill.orderedProducts?.reduce(
-                      (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
-                      0
-                    ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
-                  </span>
-                </div>
-                <div className="total-row">
-                  <span className="total-label">Discount</span>
-                  <span className="total-value">₹0</span>
-                </div>
-                <div className="total-row">
-                  <span className="total-label">Tax</span>
-                  <span className="total-value">₹0</span>
-                </div>
-                <div className="total-row grand-total">
-                  <span className="total-label">Total</span>
-                  <span className="total-value">₹{(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
+              {/* Totals */}
+              <div style={{ borderTop: '2px solid #eee', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '300px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontWeight: '500' }}>Subtotal:</span>
+                      <span>
+                        ₹{selectedBill.orderedProducts?.reduce(
+                          (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
+                          0
+                        ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontWeight: '500' }}>Discount:</span>
+                      <span>₹0</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                      <span style={{ fontWeight: '500' }}>Tax:</span>
+                      <span>₹0</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '16px', fontWeight: 'bold' }}>
+                      <span>Total:</span>
+                      <span>₹{(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {/* Payment Info */}
               {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
-                <div className="payment-info-section">
-                  <p className="payment-method">
+                <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                  <p style={{ margin: '0 0 5px 0', fontSize: '13px' }}>
                     <strong>Payment Method:</strong> {selectedBill.paymentMethod}
                   </p>
                   {selectedBill.paymentCollectedAt && (
-                    <p className="payment-time">
-                      <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US')}
+                    <p style={{ margin: '0', fontSize: '13px' }}>
+                      <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-IN')}
                     </p>
                   )}
                 </div>

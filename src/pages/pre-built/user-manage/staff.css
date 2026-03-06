@@ -186,14 +186,7 @@ body.modal-open {
   overflow: hidden !important;
 }
 
-.modal-dialog {
-  margin-left: 370px;
-  
-  height: 98vh;
-  display: flex;
-  align-items: center;
-  max-width: 1100px; /* Adjust based on your xl size */
-}
+
 
 /* Modal content styling */
 .order-modal .modal-content {
@@ -239,3 +232,4 @@ body.modal-open {
   overflow-x: hidden;
   overflow-y: hidden;
 }
+.texting{margin-left: 335px;}

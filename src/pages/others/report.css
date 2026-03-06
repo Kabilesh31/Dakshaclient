@@ -2300,17 +2300,82 @@ font-size: small;
 }
 
 /* Modal body positioning */
+/* Modal body positioning - FIXED VERSION */
 .invoice-modal .modal-body {
   position: relative;
-  overflow: hidden;
-  min-height: 600px;
+  max-height: 70vh; /* Add this - limits the height */
+  overflow-y: auto; /* Change from 'hidden' to 'auto' */
+  min-height: 400px; /* Optional: set a minimum height */
   background: #fff;
   background-image: 
     linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%);
   background-size: 20px 20px;
+  padding: 2rem; /* Keep your existing padding */
+}
+/* Adjust stamp positioning for scrolling */
+.paid-stamp-round-container,
+.rejected-stamp-round-container {
+  position: sticky; /* Change from absolute to sticky */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  float: right; /* Alternative approach */
+  margin-right: 20px;
+}
+/* Remove or comment out these conflicting styles */
+.invoice-modal .modal-body {
+  /* Remove max-height, overflow-y, and min-height */
+  position: relative;
+  /* max-height: 70vh; */  /* Remove this */
+  /* overflow-y: auto; */   /* Remove this */
+  /* min-height: 400px; */  /* Remove this if you had it */
+  background: #fff;
+  background-image: 
+    linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%);
+  background-size: 20px 20px;
+  padding: 2rem;
 }
 
+/* Make sure the modal content can scroll */
+.invoice-modal .modal-content {
+  max-height: 90vh; /* Limit the modal height */
+  overflow-y: auto; /* Make the entire modal content scrollable */
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Ensure the header and footer stay at top/bottom when scrolling */
+.invoice-modal .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.5rem 2rem;
+}
+
+.invoice-modal .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: white;
+  border-top: 1px solid #e9ecef;
+  padding: 1.5rem 2rem;
+}
+/* Or if you want the stamp to stay in place while content scrolls behind it */
+.paid-stamp-round-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
 /* Add these HTML elements in your modal for the full effect */
 .stamp-effects {
   position: absolute;
