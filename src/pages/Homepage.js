@@ -853,178 +853,177 @@ const getSelectedStaffPerformance = () => {
             <Col xl="4" lg="4">
               {/* Routes Section */}
               <PreviewCard className="chart-card mb-3">
-                <div className="card-head chart-header" style={{ 
-                  padding: '0.5rem 0.75rem',
-                  borderBottom: '1px solid #e9ecef'
-                }}>
-                  <h6 className="chart-title" style={{ 
-                    fontSize: '0.8rem', 
-                    margin: 0,
-                    fontWeight: '600',
-                    color: '#1a2b3c'
-                  }}>🗺️ Routes Overview</h6>
-                </div>
-                
-                <div className="card-body" style={{ padding: '0.75rem' }}>
-                  {/* Main Stats */}
-                  <div className="routes-main-stats" style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-around', 
-                    marginBottom: '0.75rem',
-                    background: '#f8f9fa',
-                    borderRadius: '8px',
-                    padding: '0.5rem'
-                  }}>
-                    <div className="route-stat" style={{ textAlign: 'center' }}>
-                      <span className="route-stat-label" style={{ 
-                        fontSize: '0.55rem', 
-                        color: '#6c757d',
-                        display: 'block',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.3px',
-                        marginBottom: '0.1rem'
-                      }}>Total</span>
-                      <span className="route-stat-value" style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '700', 
-                        color: '#1a2b3c',
-                        display: 'block'
-                      }}>{routeData.length}</span>
-                    </div>
-                    <div className="route-stat" style={{ textAlign: 'center' }}>
-                      <span className="route-stat-label" style={{ 
-                        fontSize: '0.55rem', 
-                        color: '#6c757d',
-                        display: 'block',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.3px',
-                        marginBottom: '0.1rem'
-                      }}>Active</span>
-                      <span className="route-stat-value success" style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '700', 
-                        color: '#10b981',
-                        display: 'block'
-                      }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
-                    </div>
-                    <div className="route-stat" style={{ textAlign: 'center' }}>
-                      <span className="route-stat-label" style={{ 
-                        fontSize: '0.55rem', 
-                        color: '#6c757d',
-                        display: 'block',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.3px',
-                        marginBottom: '0.1rem'
-                      }}>Customers</span>
-                      <span className="route-stat-value info" style={{ 
-                        fontSize: '1rem', 
-                        fontWeight: '700', 
-                        color: '#0ea5e9',
-                        display: 'block'
-                      }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
-                    </div>
-                  </div>
+  <div className="card-head chart-header" style={{ 
+    padding: '0.5rem 0.75rem',
+    borderBottom: '1px solid #e9ecef'
+  }}>
+    <h6 className="chart-title" style={{ 
+      fontSize: '0.8rem', 
+      margin: 0,
+      fontWeight: '600',
+      color: '#1a2b3c'
+    }}>🗺️ Routes Overview</h6>
+  </div>
+  
+  <div className="card-body" style={{ padding: '0.75rem' }}>
+    {/* Main Stats */}
+    <div className="routes-main-stats" style={{ 
+      display: 'flex', 
+      justifyContent: 'space-around', 
+      marginBottom: '0.75rem',
+      background: '#f8f9fa',
+      borderRadius: '8px',
+      padding: '0.5rem'
+    }}>
+      <div className="route-stat" style={{ textAlign: 'center' }}>
+        <span className="route-stat-label" style={{ 
+          fontSize: '0.55rem', 
+          color: '#6c757d',
+          display: 'block',
+          textTransform: 'uppercase',
+          letterSpacing: '0.3px',
+          marginBottom: '0.1rem'
+        }}>Total</span>
+        <span className="route-stat-value" style={{ 
+          fontSize: '1rem', 
+          fontWeight: '700', 
+          color: '#1a2b3c',
+          display: 'block'
+        }}>{routeData.length}</span>
+      </div>
+      <div className="route-stat" style={{ textAlign: 'center' }}>
+        <span className="route-stat-label" style={{ 
+          fontSize: '0.55rem', 
+          color: '#6c757d',
+          display: 'block',
+          textTransform: 'uppercase',
+          letterSpacing: '0.3px',
+          marginBottom: '0.1rem'
+        }}>Active</span>
+        <span className="route-stat-value success" style={{ 
+          fontSize: '1rem', 
+          fontWeight: '700', 
+          color: '#10b981',
+          display: 'block'
+        }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
+      </div>
+      <div className="route-stat" style={{ textAlign: 'center' }}>
+        <span className="route-stat-label" style={{ 
+          fontSize: '0.55rem', 
+          color: '#6c757d',
+          display: 'block',
+          textTransform: 'uppercase',
+          letterSpacing: '0.3px',
+          marginBottom: '0.1rem'
+        }}>Customers</span>
+        <span className="route-stat-value info" style={{ 
+          fontSize: '1rem', 
+          fontWeight: '700', 
+          color: '#0ea5e9',
+          display: 'block'
+        }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
+      </div>
+    </div>
 
-                  {/* Top Routes List */}
-                  <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
-                    <div style={{ 
-                      fontSize: '0.65rem', 
-                      color: '#6c757d', 
-                      marginBottom: '0.35rem',
-                      fontWeight: '500',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.3px'
-                    }}>Top Routes</div>
-                    {routeData.slice(0, 2).map((route, index) => (
-                      <div key={route._id || index} className="route-mini-item" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.4rem 0.5rem',
-                        background: index === 0 ? '#fff7ed' : '#f0f9ff',
-                        borderRadius: '6px',
-                        marginBottom: '0.35rem',
-                        border: '1px solid rgba(0,0,0,0.02)'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <span style={{ 
-                            width: '18px', 
-                            height: '18px', 
-                            borderRadius: '50%', 
-                            background: index === 0 ? '#f59e0b' : '#0ea5e9',
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.6rem',
-                            fontWeight: '600'
-                          }}>
-                            {index + 1}
-                          </span>
-                          <span style={{ 
-                            fontSize: '0.7rem', 
-                            fontWeight: '500', 
-                            color: '#1a2b3c',
-                            maxWidth: '100px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {route.routeName || `Route ${index + 1}`}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
-                            {route.customerCount || 0}
-                          </span>
-                          <span style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: route.isActive !== false ? '#10b981' : '#ef4444'
-                          }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+    {/* Top Routes List */}
+    <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
+      <div style={{ 
+        fontSize: '0.65rem', 
+        color: '#6c757d', 
+        marginBottom: '0.35rem',
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: '0.3px'
+      }}>Top Routes</div>
+      {routeData.slice(0, 2).map((route, index) => (
+        <div key={route._id || index} className="route-mini-item" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.4rem 0.5rem',
+          background: index === 0 ? '#fff7ed' : '#f0f9ff',
+          borderRadius: '6px',
+          marginBottom: '0.35rem',
+          border: '1px solid rgba(0,0,0,0.02)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1 }}>
+            <span style={{ 
+              width: '18px', 
+              height: '18px', 
+              borderRadius: '50%', 
+              background: index === 0 ? '#f59e0b' : '#0ea5e9',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.6rem',
+              fontWeight: '600',
+              flexShrink: 0
+            }}>
+              {index + 1}
+            </span>
+            <span style={{ 
+              fontSize: '0.7rem', 
+              fontWeight: '500', 
+              color: '#1a2b3c',
+              wordBreak: 'break-word', // Allows long words to break
+              lineHeight: '1.3'
+            }}>
+              {route.routeName || `Route ${index + 1}`}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+            <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
+              {route.customerCount || 0}
+            </span>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: route.isActive !== false ? '#10b981' : '#ef4444'
+            }} />
+          </div>
+        </div>
+      ))}
+    </div>
 
-                  {/* Utilization Bar */}
-                  <div className="routes-utilization" style={{ 
-                    marginTop: '0.25rem',
-                    paddingTop: '0.5rem',
-                    borderTop: '1px dashed #e9ecef'
-                  }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      fontSize: '0.6rem', 
-                      color: '#6c757d', 
-                      marginBottom: '0.25rem',
-                      fontWeight: '500'
-                    }}>
-                      <span>Route Utilization</span>
-                      <span style={{ fontWeight: '600', color: '#f59e0b' }}>
-                        {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
-                      </span>
-                    </div>
-                    <div style={{ 
-                      height: '4px', 
-                      background: '#e9ecef', 
-                      borderRadius: '10px', 
-                      overflow: 'hidden',
-                      width: '100%'
-                    }}>
-                      <div style={{
-                        width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
-                        height: '100%',
-                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
-                        borderRadius: '10px',
-                        transition: 'width 0.3s ease'
-                      }} />
-                    </div>
-                  </div>
-                </div>
-              </PreviewCard>
+    {/* Utilization Bar */}
+    <div className="routes-utilization" style={{ 
+      marginTop: '2rem',
+      paddingTop: '0.5rem',
+      borderTop: '1px dashed #e9ecef'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        fontSize: '0.6rem', 
+        color: '#6c757d', 
+        marginBottom: '0.25rem',
+        fontWeight: '500'
+      }}>
+        <span>Route Utilization</span>
+        <span style={{ fontWeight: '600', color: '#f59e0b' }}>
+          {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
+        </span>
+      </div>
+      <div style={{ 
+        height: '4px', 
+        background: '#e9ecef', 
+        borderRadius: '10px', 
+        overflow: 'hidden',
+        width: '100%'
+      }}>
+        <div style={{
+          width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
+          height: '100%',
+          background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+          borderRadius: '10px',
+          transition: 'width 0.3s ease'
+        }} />
+      </div>
+    </div>
+  </div>
+</PreviewCard>
 
               {/* Total Staff Distribution Card */}
               <PreviewCard className="chart-card">

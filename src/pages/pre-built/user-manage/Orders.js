@@ -446,9 +446,9 @@ const confirmAction = async () => {
                             {new Date(order.createdAt).toLocaleDateString("en-IN")}
                           </span>
                         </td>
-                        <td className="py-2 text-start">
-                          {order.customerName}
-                        </td>
+                       <td className="py-2 text-start">
+  {order.customerName?.charAt(0).toUpperCase() + order.customerName?.slice(1)}
+</td>
 
                         <td
                           className="px-4 py-2 text-start"

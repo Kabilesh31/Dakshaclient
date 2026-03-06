@@ -697,7 +697,9 @@ const exportToExcel = () => {
                     </span>
                   </DataTableRow>
 
-                  <DataTableRow>{item.type}</DataTableRow>
+                  <DataTableRow>
+  {item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}
+</DataTableRow>
                   <DataTableRow>{item.staffCode || "--"}</DataTableRow>
                   <DataTableRow>
                     <span className={`tb-status text-${item.staffStatus === "active" ? "success" : "danger"}`}>
@@ -1274,9 +1276,9 @@ const exportToExcel = () => {
         <ModalBody className="text-center">
           <Icon name="alert-circle" className="text-danger mb-2" />
           <h5>Are you sure to delete?</h5>
-          <ul className="d-flex justify-content-center mt-3">
+          <ul className="d-flex justify-content-center  mt-3">
             <li>
-              <Button color="danger" onClick={onDeleteConfirm}>
+              <Button color="danger" className="mr-2" onClick={onDeleteConfirm}>
                 Delete
               </Button>
             </li>

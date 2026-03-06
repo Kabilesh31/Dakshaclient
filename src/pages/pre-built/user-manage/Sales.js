@@ -1459,17 +1459,18 @@ if (vehicleConflict) {
                   <p className="text-soft mb-0">Drag and drop to set delivery line order for customers</p>
                 </div>
                 <div className="d-flex gap-2">
-                  <div className="form-group" style={{ minWidth: '250px' }}>
-                    <label className="form-label">Select Route</label>
+                  <div className="form-group" style={{ minWidth: '220px' }}>
+                    <label className="form-label ml-1">Select Route</label>
                   <select
                     className="form-control"
                     value={selectedRouteForAlignment}
+                    style={{padding:"2px"}}
                     onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
                   >
-                    <option value="">Select Route</option>
+                    <option  value="">Select Route</option>
                     {routes.map(route => (
                       <option key={route._id} value={route._id}>
-                    {route.routeName}
+                    <span >{route.routeName}</span>
                   </option>
                     ))}
                   </select>
@@ -2506,49 +2507,40 @@ const renderLiveTrack = () => {
             </ModalBody>
           </Modal>
           
-          <Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered size="md">
-            <ModalBody className="p-5 text-center">
-              {/* Icon */}
-              <Icon
-                name="alert-circle"
-                className="text-danger mb-3"
-                size="xl"
-              />
+         <Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered>
+  <ModalBody className="text-center">
+    <Icon name="alert-circle" className="text-danger mb-2" />
 
-              {/* Title */}
-              <h4 className="mb-2 fw-bold">Unassign Route?</h4>
+    <h5>Are you sure to unassign this route?</h5>
 
-              {/* Message */}
-              <p className="text-muted mb-4">
-                This action will remove the route from the staff for this day.
-                <br />
-                Are you sure you want to continue?
-              </p>
+    <p className="text-muted">
+      This action will remove the route from the staff for this day.
+    </p>
 
-              {/* BIG ACTION BUTTONS */}
-              <div className="d-flex justify-content-center gap-3">
-                <Button
-                  color="light"
-                  size="lg"
-                  className="px-5"
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
+    <ul className="d-flex justify-content-center mt-3">
+      <li>
+        <Button
+          color="danger"
+          className="mr-2"
+          onClick={handleUnassignRoute}
+          disabled={loading}
+        >
+          {loading ? "Unassigning..." : "Unassign"}
+        </Button>
+      </li>
 
-                <Button
-                  color="danger"
-                  size="lg"
-                  className="px-5"
-                  onClick={handleUnassignRoute}
-                  disabled={loading}
-                >
-                  {loading ? "Unassigning..." : "Unassign Route"}
-                </Button>
-              </div>
-            </ModalBody>
-          </Modal>
+      <li>
+        <Button
+          color="light"
+          onClick={() => setConfirmOpen(false)}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+      </li>
+    </ul>
+  </ModalBody>
+</Modal>
           <Modal
             isOpen={viewCustomerModal}
             toggle={() => setViewCustomerModal(false)}

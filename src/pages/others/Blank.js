@@ -839,7 +839,7 @@ const Reports = () => {
                                 })}</td>
                                 <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString('en-IN')}</td>
                                 <td>
-                                  <span className={`status-badge ${statusClass}`}>
+                                  <span className={`order-status-badge ${statusClass}`}>
                                     {statusText}
                                   </span>
                                 </td>
@@ -939,15 +939,31 @@ const Reports = () => {
                         <div className="note-details">
                           <span className="note-label">Follow-up Date:</span>
                           <span className="note-text">
-                            {new Date(selectedCustomer.nextVisit.nextVisitDate).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                            {new Date(selectedCustomer.nextVisit.nextVisitDate) < new Date() && (
-                              <span className="overdue-badge"> Overdue</span>
-                            )}
-                          </span>
+  {(() => {
+    const visitDate = new Date(selectedCustomer.nextVisit.nextVisitDate);
+    const today = new Date();
+
+    visitDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (visitDate.getTime() === today.getTime()) {
+      return <span className="today-badge">Today</span>;
+    }
+
+    return (
+      <>
+        {visitDate.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })}
+        {visitDate < today && (
+          <span className="overdue-badge"> Overdue</span>
+        )}
+      </>
+    );
+  })()}
+</span>
                         </div>
                       </div>
                     )}

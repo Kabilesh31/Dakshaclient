@@ -684,7 +684,9 @@ const isExpiringSoon = (date, days = 7) => {
 </DataTableRow>
 
 
-                  <DataTableRow>{item.vehicleType}</DataTableRow>
+                  <DataTableRow>
+  {item.vehicleType?.charAt(0).toUpperCase() + item.vehicleType?.slice(1)}
+</DataTableRow>
                   <DataTableRow>{item.makeYear}</DataTableRow>
                  <DataTableRow>
   {item.insuranceExpiry ? (

@@ -772,9 +772,11 @@ const onEditSubmit = async (submitData) => {
                           </div>
                           {/* </Link> */}
                         </DataTableRow>
-                        <DataTableRow size="md">
-                          <span>{item.role}</span>
-                        </DataTableRow>
+                       <DataTableRow size="md">
+  <span>
+    {item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}
+  </span>
+</DataTableRow>
                         <DataTableRow size="sm">
                           <span>{item.email}</span>
                         </DataTableRow>

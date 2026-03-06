@@ -22,6 +22,7 @@ import "./report.css";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FaFileExcel, FaFilePdf, FaDownload } from "react-icons/fa";
+import { Weight } from "lucide-react";
 
 const StaffReport = () => {
   const [staffList, setStaffList] = useState([]);
@@ -707,7 +708,7 @@ const StaffReport = () => {
                       <span className={getTypeBadgeClass(s.type)}>
                         {s.type || 'staff'}
                       </span>
-                      {s.mobile && <span className="staff-phone">{s.mobile}</span>}
+                      {s.mobile && <span className="customer-name "style={{fontSize:"11px", marginLeft:"12px", fontWeight:'150'}}>{s.mobile}</span>}
                     </div>
                   </div>
                   {selectedStaff?._id === s._id && (
@@ -942,7 +943,7 @@ const StaffReport = () => {
                             {selectedStaff.type?.toLowerCase() !== 'delivery' && (
                               <th>Payment</th>
                             )}
-                            <th>Order Status</th>
+                            <th>Status</th>
                             <th>Action</th>
                           </tr>
                         </thead>
@@ -968,13 +969,13 @@ const StaffReport = () => {
                                 <td>{getCustomerName(bill)}</td>
                                 <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
                                   day: '2-digit', 
-                                  month: 'short', 
+                                  month: "numeric", 
                                   year: 'numeric' 
                                 })}</td>
                                 <td className="amount">₹{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
                                 {selectedStaff.type?.toLowerCase() !== 'delivery' && (
                                   <td>
-                                    <span className={`status-badge ${paymentStatusClass}`}>
+                                    <span className={`order-status-badge ${paymentStatusClass}`}>
                                       {paymentStatusText}
                                     </span>
                                   </td>
