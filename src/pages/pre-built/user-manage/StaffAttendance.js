@@ -406,7 +406,7 @@ const StaffAttendance = () => {
   };
 
   return (
-    <div style={{ padding: "30px" }}>
+    <div style={{ padding: "20px" }}>
       {/* ================= STAFF LIST VIEW ================= */}
       {!selectedStaff && (
         <Block>
@@ -414,7 +414,7 @@ const StaffAttendance = () => {
             <BlockBetween>
               <BlockHeadContent>
                 <BlockTitle tag="h3" page>
-                  <h3 style={{ marginTop: "45px" }}>Staff Attendance</h3>
+                  <h3 style={{ marginTop: "55px" }}>Staff Attendance</h3>
                 </BlockTitle>
                 <p className="text-soft">
                   You have total {staffs.length} Staffs.
@@ -631,649 +631,670 @@ const StaffAttendance = () => {
       )}
 
       {/* ================= STAFF INNER VIEW ================= */}
-      {selectedStaff && (
-        <div>
-          {/* Top Header */}
-          <div style={{
+      {/* ================= STAFF INNER VIEW ================= */}
+{selectedStaff && (
+  <div>
+    {/* Top Header */}
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "20px",
+      marginTop: "20px"
+    }}>
+      {/* Left side - Back button and Staff Name */}
+      <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        <button
+          onClick={() => {
+            setSelectedStaff(null);
+            setSelectedDateDetails(null);
+            setSelectedDay(null);
+          }}
+          style={{
+            background: "#d9d9d9",
+            border: "none",
+            padding: "5px 12px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: "500",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "20px",
-            marginTop: "20px"
-          }}>
-            {/* Left side - Back button and Staff Name */}
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <button
-                onClick={() => {
-                  setSelectedStaff(null);
-                  setSelectedDateDetails(null);
-                  setSelectedDay(null);
-                }}
-                style={{
-                  background: "#d9d9d9",
-                  border: "none",
-                  padding: "5px 12px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px"
-                }}
-              >
-                ← Back
-              </button>
-              <h2 style={{ 
-                marginTop: "90px",
-                marginLeft:"-92px",
-                fontSize: "24px",
-                fontWeight: "600",
-                color: "#333"
-              }}>
-                {selectedStaff.name}
-              </h2>
-            </div>
+            gap: "5px"
+          }}
+        >
+          ← Back
+        </button>
+        <h2 style={{ 
+          marginTop: "90px",
+          marginLeft:"-92px",
+          fontSize: "24px",
+          fontWeight: "600",
+          color: "#333"
+        }}>
+          {selectedStaff.name}
+        </h2>
+      </div>
 
-            {/* Right side - Month/Year Select */}
-            <div style={{ 
-              display: "flex", 
-              gap: "10px",
-              alignItems: "center"
-            }}>
-              {/* Month Dropdown */}
-              <UncontrolledDropdown>
-                <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
-                  <Icon className="d-none d-sm-inline" name="calender-date" />
-                  <span>
-                    <span className="d-none d-md-inline">{months[month]}</span>
-                  </span>
-                  <Icon className="dd-indc" name="chevron-right" />
-                </DropdownToggle>
-                <DropdownMenu>
-                  <ul className="link-list-opt no-bdr" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                    {months.map((m, i) => (
-                      <li key={m}>
-                        <DropdownItem
-                          tag="a"
-                          href="#!"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            setMonth(i);
-                          }}
-                        >
-                          <span>{m}</span>
-                        </DropdownItem>
-                      </li>
-                    ))}
-                  </ul>
-                </DropdownMenu>
-              </UncontrolledDropdown>
+      {/* Right side - Month/Year Select */}
+      <div style={{ 
+        display: "flex", 
+        gap: "10px",
+        alignItems: "center"
+      }}>
+        {/* Month Dropdown */}
+        <UncontrolledDropdown>
+          <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+            <Icon className="d-none d-sm-inline" name="calender-date" />
+            <span>
+              <span className="d-none d-md-inline">{months[month]}</span>
+            </span>
+            <Icon className="dd-indc" name="chevron-right" />
+          </DropdownToggle>
+          <DropdownMenu>
+            <ul className="link-list-opt no-bdr" style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {months.map((m, i) => (
+                <li key={m}>
+                  <DropdownItem
+                    tag="a"
+                    href="#!"
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      setMonth(i);
+                    }}
+                  >
+                    <span>{m}</span>
+                  </DropdownItem>
+                </li>
+              ))}
+            </ul>
+          </DropdownMenu>
+        </UncontrolledDropdown>
 
-              {/* Year Dropdown */}
-              <UncontrolledDropdown>
-                <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
-                  <Icon className="d-none d-sm-inline" name="calender-date" />
-                  <span>
-                    <span className="d-none d-md-inline">{year}</span>
-                  </span>
-                  <Icon className="dd-indc" name="chevron-right" />
-                </DropdownToggle>
-                <DropdownMenu>
-                  <ul className="link-list-opt no-bdr">
-                    {[2023, 2024, 2025, 2026].map((y) => (
-                      <li key={y}>
-                        <DropdownItem
-                          tag="a"
-                          href="#!"
-                          onClick={(ev) => {
-                            ev.preventDefault();
-                            setYear(y);
-                          }}
-                        >
-                          <span>{y}</span>
-                        </DropdownItem>
-                      </li>
-                    ))}
-                  </ul>
-                </DropdownMenu>
-              </UncontrolledDropdown>
-            </div>
-          </div>
+        {/* Year Dropdown */}
+        <UncontrolledDropdown>
+          <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+            <Icon className="d-none d-sm-inline" name="calender-date" />
+            <span>
+              <span className="d-none d-md-inline">{year}</span>
+            </span>
+            <Icon className="dd-indc" name="chevron-right" />
+          </DropdownToggle>
+          <DropdownMenu>
+            <ul className="link-list-opt no-bdr">
+              {[2023, 2024, 2025, 2026].map((y) => (
+                <li key={y}>
+                  <DropdownItem
+                    tag="a"
+                    href="#!"
+                    onClick={(ev) => {
+                      ev.preventDefault();
+                      setYear(y);
+                    }}
+                  >
+                    <span>{y}</span>
+                  </DropdownItem>
+                </li>
+              ))}
+            </ul>
+          </DropdownMenu>
+        </UncontrolledDropdown>
+      </div>
+    </div>
 
-          {/* Main Container with Calendar on Left and Summary on Right */}
-          <div style={{ 
-            display: "flex", 
-            gap: "20px",
-            marginBottom: "30px",
-            alignItems: "stretch"
-          }}>
-            {/* LEFT SIDE - Attendance Summary & Calendar */}
-            <div
-              style={{
-                flex: "0 0 400px",
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                flexDirection: "column"
-              }}
-            >
-              {/* Attendance Summary Cards */}
-              {(() => {
-                const summary = calculateAttendanceSummary();
-                const sundaysCount = daysInMonth.filter(day => 
-                  new Date(year, month, day).getDay() === 0
-                ).length;
-                
-                return (
-                  <div style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginBottom: "20px"
-                  }}>
-                    <div style={{
-                      flex: 1,
-                      background: "#e8f5e9",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: "12px", color: "#2e7d32", marginBottom: "3px" }}>Present</div>
-                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#2e7d32" }}>{summary.present}</div>
-                    </div>
-                    <div style={{
-                      flex: 1,
-                      background: "#e3f2fd",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: "12px", color: "#1565c0", marginBottom: "3px" }}>Working</div>
-                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#1565c0" }}>{summary.working}</div>
-                    </div>
-                    <div style={{
-                      flex: 1,
-                      background: "#fff3e0",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: "12px", color: "#ef6c00", marginBottom: "3px" }}>Absent</div>
-                      <div style={{ fontSize: "20px", fontWeight: "bold", color: "#ef6c00" }}>
-                        {daysInMonth.filter(day => {
-                          const date = new Date(year, month, day);
-                          const isSunday = date.getDay() === 0;
-                          const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
-                          return !isSunday && !record;
-                        }).length}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Legend */}
-              <div style={{
-                display: "flex",
-                gap: "15px",
-                alignItems: "center",
-                marginBottom: "15px",
-                fontSize: "12px",
-                fontWeight: 500,
-                background: "#f8f9fa",
-                padding: "8px 12px",
-                borderRadius: "6px"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "12px", height: "12px", backgroundColor: "#5DB996", borderRadius: "3px" }}></div>
-                  <span>Present</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "12px", height: "12px", backgroundColor: "#4F46E5", borderRadius: "3px" }}></div>
-                  <span>Working</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "12px", height: "12px", backgroundColor: "#FFB74D", borderRadius: "3px" }}></div>
-                  <span>Absent</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <div style={{ width: "12px", height: "12px", backgroundColor: "#f1f1f1", borderRadius: "3px" }}></div>
-                  <span>Sunday</span>
-                </div>
-              </div>
-
-              {/* Calendar */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(7, 1fr)",
-                gap: "4px",
-                flex: 1
-              }}>
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <div key={day} style={{
-                    textAlign: "center",
-                    fontSize: "11px",
-                    fontWeight: "600",
-                    color: "#666",
-                    padding: "4px 0"
-                  }}>
-                    {day}
-                  </div>
-                ))}
-                
-                {daysInMonth.map((day) => {
-                  const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
-                  const isSelected = selectedDay === day;
-                  const date = new Date(year, month, day);
-                  const isSunday = date.getDay() === 0;
-                  
-                  // Determine background color
-                  let bgColor = "#ffffff";
-                  if (isSunday) {
-                    bgColor = "#f1f1f1";
-                  } else if (record?.status === "present") {
-                    bgColor = "#5DB996";
-                  } else if (record?.status === "working") {
-                    bgColor = "#4F46E5";
-                  } else {
-                    bgColor = "#FFB74D";
-                  }
-                  
-                  return (
-                    <div
-                      key={day}
-                      onClick={() => {
-                        if (record || isSunday) {
-                          if (isSunday && !record) {
-                            setSelectedDateDetails({ status: 'sunday', isSunday: true });
-                          } else {
-                            setSelectedDateDetails(record);
-                          }
-                          setSelectedDay(day);
-                        } else {
-                          setSelectedDateDetails({ status: 'absent' });
-                          setSelectedDay(day);
-                        }
-                      }}
-                      style={{
-                        width: "35px",
-                        height: "35px",
-                        borderRadius: "6px",
-                        backgroundColor: bgColor,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        color: (record || isSunday) ? "#fff" : "#000",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        boxShadow: isSelected ? "0 0 0 2px #007bff" : "0 1px 3px rgba(0,0,0,0.1)",
-                        transition: "all 0.2s",
-                        border: isSelected ? "1px solid #007bff" : "none",
-                        margin: "0 auto"
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(1.05)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "scale(1)";
-                      }}
-                      title={
-                        isSunday ? "Sunday" : 
-                        record?.status === "present" ? "Present" :
-                        record?.status === "working" ? "Working" : "Absent"
-                      }
-                    >
-                      {day}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* RIGHT SIDE - Day Wise Report */}
-            <div
-              style={{
-                flex: 1,
-                background: "#fff",
-                padding: "20px",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                display: "flex",
-                flexDirection: "column"
-              }}
-            >
-              <h4 style={{
-                margin: "0 0 15px 0",
-                fontSize: "16px",
-                fontWeight: "600",
-                color: "#333",
-                borderBottom: "2px solid #f0f0f0",
-                paddingBottom: "10px"
-              }}>
-                Day Details {selectedDay && `- ${selectedDay} ${months[month]} ${year}`}
-              </h4>
-
-              <div style={{ flex: 1, display: "flex", alignItems: "flex-start" }}>
-                {selectedDay ? (
-                  (() => {
-                    const record = getSelectedDateRecord();
-                    const date = new Date(year, month, selectedDay);
-                    const isSunday = date.getDay() === 0;
-                    const isAbsent = !record && !isSunday;
-                    
-                    return (
-                      <div style={{
-                        fontSize: "14px",
-                        lineHeight: "2",
-                        width: "100%"
-                      }}>
-                        <div style={{
-                          background: "#f8f9fa",
-                          padding: "20px",
-                          height: "320px",
-                          borderRadius: "6px",
-                        }}>
-                          <p style={{ margin: "0 0 15px 0", display: "flex", alignItems: "center" }}>
-                            <strong style={{ display: "inline-block", width: "90px" }}>Status:</strong> 
-                            <span style={{
-                              padding: "4px 12px",
-                              borderRadius: "20px",
-                              backgroundColor: 
-                                isSunday ? "#f1f1f1" : 
-                                isAbsent ? "#ffebee" :
-                                record?.status === "working" ? "#e3f2fd" : "#e8f5e9",
-                              color: 
-                                isSunday ? "#666" : 
-                                isAbsent ? "#d32f2f" :
-                                record?.status === "working" ? "#1565c0" : "#2e7d32",
-                              fontWeight: "500",
-                              marginLeft: "8px",
-                              fontSize: "13px"
-                            }}>
-                              {isSunday ? "Sunday (Weekly Off)" : 
-                               isAbsent ? "Absent" :
-                               record?.status === "working" ? "Currently Working" : "Present"}
-                            </span>
-                          </p>
-                          
-                          {!isSunday && !isAbsent && record && (
-                            <>
-                              <p style={{ margin: "0 0 15px 0", display: "flex", alignItems: "center" }}>
-                                <strong style={{ display: "inline-block", width: "90px" }}>Check In:</strong> 
-                                <span style={{ marginLeft: "8px", color: "#444" }}>
-                                  {formatTimeOnly(record.checkIn)}
-                                </span>
-                              </p>
-                              <p style={{ margin: "0 0 15px 0", display: "flex", alignItems: "center" }}>
-                                <strong style={{ display: "inline-block", width: "90px" }}>Check Out:</strong> 
-                                <span style={{ marginLeft: "8px", color: "#444" }}>
-                                  {formatTimeOnly(record.checkOut)}
-                                </span>
-                              </p>
-                              <p style={{ margin: "0", display: "flex", alignItems: "center" }}>
-                                <strong style={{ display: "inline-block", width: "90px" }}>Work Hours:</strong> 
-                                <span style={{ marginLeft: "8px", fontWeight: "600", color: "#1565c0" }}>
-                                  {calculateHours(record.checkIn, record.checkOut)}
-                                </span>
-                              </p>
-                            </>
-                          )}
-                          
-                          {isAbsent && (
-                            <p style={{ margin: "0", color: "#666", textAlign: "center" }}>
-                              No attendance record for this date
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div style={{
-                    background: "#f8f9fa",
-                    padding: "85px 20px",
-                    borderRadius: "6px",
-                    textAlign: "center",
-                    color: "#666",
-                    height: "320px",
-                    fontSize: "14px",
-                    width: "100%"
-                  }}>
-                    <div style={{ fontSize: "34px", marginBottom: "10px" }}>📆</div>
-                    <p style={{ margin: 0, fontWeight: "500" }}>
-                      Select any date from the calendar
-                    </p>
-                    <p style={{ margin: "5px 0 0", fontSize: "15px", color: "#999" }}>
-                      Click on a date to view details
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ================= ADVANCED LIST - Monthly Attendance Report ================= */}
+    {/* Main Container with Calendar on Left and Summary on Right - EQUAL WIDTH */}
+      <div style={{ 
+        display: "flex", 
+        gap: "20px",
+        marginBottom: "30px",
+        alignItems: "stretch"
+      }}>
+        {/* LEFT SIDE - Attendance Summary & Calendar */}
+        {/* LEFT SIDE - Attendance Summary & Calendar */}
+  <div
+    style={{
+      flex: "1 1 0", // Equal flex basis
+      minWidth: 0, // Prevents overflow
+      background: "#fff",
+      padding: "20px",
+      borderRadius: "10px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      display: "flex",
+      flexDirection: "column"
+    }}
+  >
+    {/* Attendance Summary Cards */}
+    {(() => {
+      const summary = calculateAttendanceSummary();
+      const sundaysCount = daysInMonth.filter(day => 
+        new Date(year, month, day).getDay() === 0
+      ).length;
+      
+      return (
+        <div style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "20px"
+        }}>
           <div style={{
-            background: "#fff",
-            borderRadius: "10px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            padding: "20px",
-            marginTop: "20px"
+            flex: 1,
+            background: "#e8f5e9",
+            padding: "10px", // Increased padding
+            borderRadius: "8px", // Slightly larger radius
+            textAlign: "center"
           }}>
-            {/* Header with title and export options */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              borderBottom: "2px solid #f0f0f0",
-              paddingBottom: "15px"
-            }}>
-              <div>
-                <h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>
-                  Monthly Attendance Report
-                </h4>
-                <p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>
-                  {months[month]} {year} • {selectedStaff.name}
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  onClick={exportToExcel}
-                  style={{
-                    padding: "8px 16px",
-                    background: "#4F46E5",
-                    border: "none",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "#fff",
-                    fontWeight: "500",
-                    transition: "background 0.2s"
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#4338CA"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "#4F46E5"}
-                >
-                  <span>📊</span> Export to Excel
-                </button>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div style={{ overflowX: "auto" }}>
-              <table style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px"
-              }}>
-                <thead>
-                  <tr style={{
-                    background: "#f8f9fa",
-                    borderBottom: "2px solid #e0e0e0"
-                  }}>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Date</th>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Day</th>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Status</th>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check In</th>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check Out</th>
-                    <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Work Hours</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {daysInMonth.map((day) => {
-                    const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
-                    const date = new Date(year, month, day);
-                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-                    const isSunday = date.getDay() === 0;
-                    
-                    // Determine status display
-                    let statusDisplay = '-';
-                    let statusColor = '#666';
-                    let statusBg = '#f5f5f5';
-                    
-                    if (isSunday) {
-                      statusDisplay = 'Sunday';
-                      statusColor = '#9e9e9e';
-                      statusBg = '#f5f5f5';
-                    } else if (record?.status === 'present') {
-                      statusDisplay = 'Present';
-                      statusColor = '#2e7d32';
-                      statusBg = '#e8f5e9';
-                    } else if (record?.status === 'working') {
-                      statusDisplay = 'Working';
-                      statusColor = '#1565c0';
-                      statusBg = '#e3f2fd';
-                    } else if (!record) {
-                      statusDisplay = 'Absent';
-                      statusColor = '#d32f2f';
-                      statusBg = '#ffebee';
-                    }
-                    
-                    return (
-                      <tr 
-                        key={day}
-                        onClick={() => {
-                          setSelectedDay(day);
-                          if (record || isSunday) {
-                            if (isSunday && !record) {
-                              setSelectedDateDetails({ status: 'sunday', isSunday: true });
-                            } else {
-                              setSelectedDateDetails(record);
-                            }
-                          } else {
-                            setSelectedDateDetails({ status: 'absent' });
-                          }
-                        }}
-                        style={{
-                          borderBottom: "1px solid #f0f0f0",
-                          cursor: "pointer",
-                          backgroundColor: selectedDay === day ? "#f0f7ff" : "transparent",
-                          transition: "background-color 0.2s"
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f5f5f5";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = selectedDay === day ? "#f0f7ff" : "transparent";
-                        }}
-                      >
-                        <td style={{ padding: "12px 15px", fontWeight: "500" }}>
-                          {day} {months[month]} {year}
-                        </td>
-                        <td style={{ padding: "12px 15px", color: "#666" }}>{dayName}</td>
-                        <td style={{ padding: "12px 15px" }}>
-                          <span style={{
-                            padding: "4px 10px",
-                            borderRadius: "20px",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                            backgroundColor: statusBg,
-                            color: statusColor
-                          }}>
-                            {statusDisplay}
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 15px", color: "#444" }}>
-                          {record?.checkIn ? formatTimeOnly(record.checkIn) : '-'}
-                        </td>
-                        <td style={{ padding: "12px 15px", color: "#444" }}>
-                          {record?.checkOut ? formatTimeOnly(record.checkOut) : '-'}
-                        </td>
-                        <td style={{ 
-                          padding: "12px 15px", 
-                          fontWeight: "600",
-                          color: record?.checkIn ? "#1565c0" : "#999"
-                        }}>
-                          {record?.checkIn ? calculateHours(record.checkIn, record.checkOut) : '-'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Summary Footer */}
-            <div style={{
-              marginTop: "20px",
-              padding: "15px",
-              background: "#f8f9fa",
-              borderRadius: "8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: "14px",
-              flexWrap: "wrap",
-              gap: "15px"
-            }}>
-              <div style={{ display: "flex", gap: "25px", flexWrap: "wrap" }}>
-                <div>
-                  <span style={{ color: "#666" }}>Total Days: </span>
-                  <span style={{ fontWeight: "600", marginLeft: "5px" }}>{daysInMonth.length}</span>
-                </div>
-                <div>
-                  <span style={{ color: "#666" }}>Present: </span>
-                  <span style={{ fontWeight: "600", color: "#2e7d32", marginLeft: "5px" }}>
-                    {calculateAttendanceSummary().present}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: "#666" }}>Working: </span>
-                  <span style={{ fontWeight: "600", color: "#1565c0", marginLeft: "5px" }}>
-                    {calculateAttendanceSummary().working}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: "#666" }}>Absent: </span>
-                  <span style={{ fontWeight: "600", color: "#d32f2f", marginLeft: "5px" }}>
-                    {daysInMonth.filter(day => {
-                      const date = new Date(year, month, day);
-                      const isSunday = date.getDay() === 0;
-                      const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
-                      return !isSunday && !record;
-                    }).length}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: "#666" }}>Sundays: </span>
-                  <span style={{ fontWeight: "600", color: "#9e9e9e", marginLeft: "5px" }}>
-                    {daysInMonth.filter(day => new Date(year, month, day).getDay() === 0).length}
-                  </span>
-                </div>
-              </div>
-              <div style={{ color: "#666", fontSize: "12px" }}>
-                * Sundays are not counted in absent
-              </div>
+            <div style={{ fontSize: "14px", color: "#2e7d32", marginBottom: "5px" }}>Present</div>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#2e7d32" }}>{summary.present}</div>
+          </div>
+          <div style={{
+            flex: 1,
+            background: "#e3f2fd",
+            padding: "12px",
+            borderRadius: "8px",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "14px", color: "#1565c0", marginBottom: "5px" }}>Working</div>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#1565c0" }}>{summary.working}</div>
+          </div>
+          <div style={{
+            flex: 1,
+            background: "#fff3e0",
+            padding: "12px",
+            borderRadius: "8px",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: "14px", color: "#ef6c00", marginBottom: "5px" }}>Absent</div>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "#ef6c00" }}>
+              {daysInMonth.filter(day => {
+                const date = new Date(year, month, day);
+                const isSunday = date.getDay() === 0;
+                const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
+                return !isSunday && !record;
+              }).length}
             </div>
           </div>
         </div>
+      );
+    })()}
+
+    {/* Legend */}
+    <div style={{
+      display: "flex",
+      gap: "22px", // Increased gap
+      alignItems: "center",
+      justifyContent: "center", // Center the legend
+      marginBottom: "20px", // Increased margin
+      fontSize: "14px", // Larger font
+      fontWeight: 500,
+      background: "#f8f9fa",
+      padding: "5px 5px", // Increased padding
+      borderRadius: "8px",
+      flexWrap: "wrap"
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "16px", height: "16px", backgroundColor: "#5DB996", borderRadius: "4px" }}></div>
+        <span>Present</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "16px", height: "16px", backgroundColor: "#4F46E5", borderRadius: "4px" }}></div>
+        <span>Working</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "16px", height: "16px", backgroundColor: "#FFB74D", borderRadius: "4px" }}></div>
+        <span>Absent</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ width: "16px", height: "16px", backgroundColor: "#f1f1f1", borderRadius: "4px" }}></div>
+        <span>Sunday</span>
+      </div>
+    </div>
+
+    {/* Calendar - Full width with larger cells */}
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      width: "100%",
+      flex: 1 // Take remaining space
+    }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, 1fr)",
+        gap: "8px", // Increased gap
+        width: "100%", // Full width
+        maxWidth: "100%", // Remove max-width constraint
+      }}>
+        {/* Day labels */}
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} style={{
+            textAlign: "center",
+            fontSize: "12px", // Larger font
+            fontWeight: "600",
+            color: "#666",
+            padding: "8px 2px",
+            background: "#f8f9fa",
+            borderRadius: "6px"
+          }}>
+            {day}
+          </div>
+        ))}
+        
+        {/* Calendar cells */}
+        {daysInMonth.map((day) => {
+          const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
+          const isSelected = selectedDay === day;
+          const date = new Date(year, month, day);
+          const isSunday = date.getDay() === 0;
+          
+          // Determine background color
+          let bgColor = "#ffffff";
+          if (isSunday) {
+            bgColor = "#f1f1f1";
+          } else if (record?.status === "present") {
+            bgColor = "#5DB996";
+          } else if (record?.status === "working") {
+            bgColor = "#4F46E5";
+          } else {
+            bgColor = "#fff3e0";
+          }
+          
+          return (
+            <div
+              key={day}
+              onClick={() => {
+                if (record || isSunday) {
+                  if (isSunday && !record) {
+                    setSelectedDateDetails({ status: 'sunday', isSunday: true });
+                  } else {
+                    setSelectedDateDetails(record);
+                  }
+                  setSelectedDay(day);
+                } else {
+                  setSelectedDateDetails({ status: 'absent' });
+                  setSelectedDay(day);
+                }
+              }}
+              style={{
+                aspectRatio: "3/2", // Make cells square
+                width: "85%",
+                borderRadius: "8px",
+                backgroundColor: bgColor,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: (record || isSunday) ? "#fff" : "#000",
+                fontSize: "16px", // Larger font
+                fontWeight: 600,
+                boxShadow: isSelected ? "0 0 0 3px #007bff" : "0 2px 4px rgba(0,0,0,0.1)",
+                transition: "all 0.2s",
+                border: isSelected ? "2px solid #007bff" : "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = isSelected ? "0 0 0 3px #007bff" : "0 2px 4px rgba(0,0,0,0.1)";
+              }}
+              title={
+                isSunday ? "Sunday" : 
+                record?.status === "present" ? "Present" :
+                record?.status === "working" ? "Working" : "Absent"
+              }
+            >
+              {day}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+
+        {/* RIGHT SIDE - Day Wise Report */}
+      {/* RIGHT SIDE - Day Wise Report */}
+  <div
+    style={{
+      flex: "1 1 0",
+      minWidth: 0,
+      background: "#fff",
+      padding: "30px",
+      borderRadius: "10px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      display: "flex",
+      flexDirection: "column"
+    }}
+  >
+    <h4 style={{
+      margin: "0 0 20px 0",
+      fontSize: "18px",
+      fontWeight: "600",
+      color: "#333",
+      borderBottom: "2px solid #f0f0f0",
+      paddingBottom: "12px"
+    }}>
+      Day Details {selectedDay && `- ${selectedDay} ${months[month]} ${year}`}
+    </h4>
+
+    <div style={{ flex: 1, display: "flex", alignItems: "flex-start" }}>
+      {selectedDay ? (
+        (() => {
+          const record = getSelectedDateRecord();
+          const date = new Date(year, month, selectedDay);
+          const isSunday = date.getDay() === 0;
+          const isAbsent = !record && !isSunday;
+          
+          return (
+            <div style={{
+              fontSize: "16px", // Larger font
+              lineHeight: "2.2", // Increased line height
+              width: "100%",
+              height: "100%"
+            }}>
+              <div style={{
+                background: "#f8f9fa",
+                padding: "25px", // Increased padding
+                height: "100%",
+                borderRadius: "8px",
+              }}>
+                <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}>
+                  <strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Status:</strong> 
+                  <span style={{
+                    padding: "6px 16px", // Larger padding
+                    borderRadius: "25px",
+                    backgroundColor: 
+                      isSunday ? "#f1f1f1" : 
+                      isAbsent ? "#ffebee" :
+                      record?.status === "working" ? "#e3f2fd" : "#e8f5e9",
+                    color: 
+                      isSunday ? "#666" : 
+                      isAbsent ? "#d32f2f" :
+                      record?.status === "working" ? "#1565c0" : "#2e7d32",
+                    fontWeight: "500",
+                    marginLeft: "10px",
+                    fontSize: "15px"
+                  }}>
+                    {isSunday ? "Sunday (Weekly Off)" : 
+                    isAbsent ? "Absent" :
+                    record?.status === "working" ? "Currently Working" : "Present"}
+                  </span>
+                </p>
+                
+                {!isSunday && !isAbsent && record && (
+                  <>
+                    <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}>
+                      <strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Check In:</strong> 
+                      <span style={{ marginLeft: "10px", color: "#444", fontSize: "16px" }}>
+                        {formatTimeOnly(record.checkIn)}
+                      </span>
+                    </p>
+                    <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}>
+                      <strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Check Out:</strong> 
+                      <span style={{ marginLeft: "10px", color: "#444", fontSize: "16px" }}>
+                        {formatTimeOnly(record.checkOut)}
+                      </span>
+                    </p>
+                    <p style={{ margin: "0", display: "flex", alignItems: "center" }}>
+                      <strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Work Hours:</strong> 
+                      <span style={{ marginLeft: "10px", fontWeight: "600", color: "#1565c0", fontSize: "18px" }}>
+                        {calculateHours(record.checkIn, record.checkOut)}
+                      </span>
+                    </p>
+                  </>
+                )}
+                
+                {isAbsent && (
+                  <p style={{ margin: "0", color: "#666", textAlign: "center", fontSize: "16px" }}>
+                    No attendance record for this date
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()
+      ) : (
+        <div style={{
+          background: "#f8f9fa",
+          padding: "50px 20px",
+          borderRadius: "8px",
+          textAlign: "center",
+          height: "100%",
+          color: "#666",
+          fontSize: "16px",
+          width: "100%"
+        }}>
+          <div style={{ fontSize: "32px", marginBottom: "10px",marginTop: "35px" }}>📆</div>
+          <p style={{ marginTop: "25px", fontWeight: "500", fontSize: "16px" }}>
+            Select any date from the calendar
+          </p>
+          <p style={{ margin: "8px 0 0", fontSize: "14px", color: "#999" }}>
+            Click on a date to view details
+          </p>
+        </div>
       )}
+    </div>
+  </div>
+      </div>
+
+    {/* ================= ADVANCED LIST - Monthly Attendance Report ================= */}
+    <div style={{
+      background: "#fff",
+      borderRadius: "10px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      padding: "20px",
+      marginTop: "20px"
+    }}>
+      {/* Header with title and export options */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "20px",
+        borderBottom: "2px solid #f0f0f0",
+        paddingBottom: "15px"
+      }}>
+        <div>
+          <h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>
+            Monthly Attendance Report
+          </h4>
+          <p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>
+            {months[month]} {year} • {selectedStaff.name}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={exportToExcel}
+            style={{
+              padding: "8px 16px",
+              background: "#4F46E5",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "13px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: "#fff",
+              fontWeight: "500",
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "#4338CA"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "#4F46E5"}
+          >
+            <span>📊</span> Export to Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: "14px"
+        }}>
+          <thead>
+            <tr style={{
+              background: "#f8f9fa",
+              borderBottom: "2px solid #e0e0e0"
+            }}>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Date</th>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Day</th>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Status</th>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check In</th>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check Out</th>
+              <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Work Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {daysInMonth.map((day) => {
+              const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
+              const date = new Date(year, month, day);
+              const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+              const isSunday = date.getDay() === 0;
+              
+              // Determine status display
+              let statusDisplay = '-';
+              let statusColor = '#666';
+              let statusBg = '#f5f5f5';
+              
+              if (isSunday) {
+                statusDisplay = 'Sunday';
+                statusColor = '#9e9e9e';
+                statusBg = '#f5f5f5';
+              } else if (record?.status === 'present') {
+                statusDisplay = 'Present';
+                statusColor = '#2e7d32';
+                statusBg = '#e8f5e9';
+              } else if (record?.status === 'working') {
+                statusDisplay = 'Working';
+                statusColor = '#1565c0';
+                statusBg = '#e3f2fd';
+              } else if (!record) {
+                statusDisplay = 'Absent';
+                statusColor = '#d32f2f';
+                statusBg = '#ffebee';
+              }
+              
+              return (
+                <tr 
+                  key={day}
+                  onClick={() => {
+                    setSelectedDay(day);
+                    if (record || isSunday) {
+                      if (isSunday && !record) {
+                        setSelectedDateDetails({ status: 'sunday', isSunday: true });
+                      } else {
+                        setSelectedDateDetails(record);
+                      }
+                    } else {
+                      setSelectedDateDetails({ status: 'absent' });
+                    }
+                  }}
+                  style={{
+                    borderBottom: "1px solid #f0f0f0",
+                    cursor: "pointer",
+                    backgroundColor: selectedDay === day ? "#f0f7ff" : "transparent",
+                    transition: "background-color 0.2s"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#f5f5f5";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = selectedDay === day ? "#f0f7ff" : "transparent";
+                  }}
+                >
+                  <td style={{ padding: "12px 15px", fontWeight: "500" }}>
+                    {day} {months[month]} {year}
+                  </td>
+                  <td style={{ padding: "12px 15px", color: "#666" }}>{dayName}</td>
+                  <td style={{ padding: "12px 15px" }}>
+                    <span style={{
+                      padding: "4px 10px",
+                      borderRadius: "20px",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      backgroundColor: statusBg,
+                      color: statusColor
+                    }}>
+                      {statusDisplay}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 15px", color: "#444" }}>
+                    {record?.checkIn ? formatTimeOnly(record.checkIn) : '-'}
+                  </td>
+                  <td style={{ padding: "12px 15px", color: "#444" }}>
+                    {record?.checkOut ? formatTimeOnly(record.checkOut) : '-'}
+                  </td>
+                  <td style={{ 
+                    padding: "12px 15px", 
+                    fontWeight: "600",
+                    color: record?.checkIn ? "#1565c0" : "#999"
+                  }}>
+                    {record?.checkIn ? calculateHours(record.checkIn, record.checkOut) : '-'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Summary Footer */}
+      <div style={{
+        marginTop: "20px",
+        padding: "15px",
+        background: "#f8f9fa",
+        borderRadius: "8px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontSize: "14px",
+        flexWrap: "wrap",
+        gap: "15px"
+      }}>
+        <div style={{ display: "flex", gap: "25px", flexWrap: "wrap" }}>
+          <div>
+            <span style={{ color: "#666" }}>Total Days: </span>
+            <span style={{ fontWeight: "600", marginLeft: "5px" }}>{daysInMonth.length}</span>
+          </div>
+          <div>
+            <span style={{ color: "#666" }}>Present: </span>
+            <span style={{ fontWeight: "600", color: "#2e7d32", marginLeft: "5px" }}>
+              {calculateAttendanceSummary().present}
+            </span>
+          </div>
+          <div>
+            <span style={{ color: "#666" }}>Working: </span>
+            <span style={{ fontWeight: "600", color: "#1565c0", marginLeft: "5px" }}>
+              {calculateAttendanceSummary().working}
+            </span>
+          </div>
+          <div>
+            <span style={{ color: "#666" }}>Absent: </span>
+            <span style={{ fontWeight: "600", color: "#d32f2f", marginLeft: "5px" }}>
+              {daysInMonth.filter(day => {
+                const date = new Date(year, month, day);
+                const isSunday = date.getDay() === 0;
+                const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
+                return !isSunday && !record;
+              }).length}
+            </span>
+          </div>
+          <div>
+            <span style={{ color: "#666" }}>Sundays: </span>
+            <span style={{ fontWeight: "600", color: "#9e9e9e", marginLeft: "5px" }}>
+              {daysInMonth.filter(day => new Date(year, month, day).getDay() === 0).length}
+            </span>
+          </div>
+        </div>
+        <div style={{ color: "#666", fontSize: "12px" }}>
+          * Sundays are not counted in absent
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
