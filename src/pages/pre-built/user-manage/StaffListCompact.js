@@ -40,6 +40,7 @@ const StaffListCompact = () => {
   const { userData } = useContext(DataContext);
 
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [currentItems, setCurrentItems] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
@@ -47,8 +48,12 @@ const StaffListCompact = () => {
   const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
-const [addLoading, setAddLoading] = useState(false);
-const [editLoading, setEditLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Filter states
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [uniqueTypes, setUniqueTypes] = useState([]);
 
   const [modalAdd, setModalAdd] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
@@ -69,86 +74,106 @@ const [editLoading, setEditLoading] = useState(false);
   });
 
   /* ================= FETCH ================= */
-const fetchStaff = async () => {
-  try {
+  const fetchStaff = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
-
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
       }
-    );
 
-    if (res.status === 200) {
-      setData(res.data);
-    }
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
 
-  } catch (err) {
+      if (res.status === 200) {
+        setData(res.data);
+        
+        // Extract unique types for filter
+        const types = [...new Set(res.data.map(s => s.type).filter(Boolean))];
+        setUniqueTypes(types);
+      }
 
-    console.log("Fetch staff error:", err);
+    } catch (err) {
+      console.log("Fetch staff error:", err);
 
-    if (err.response) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(
+            err.response.data?.message || "Session expired. Please login again"
+          );
 
-      if (err.response.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
+          window.location.href = "/login";
 
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+        } else {
+          errorToast(err.response.data?.message || "Failed to fetch staff");
+        }
       } else {
-        errorToast(err.response.data?.message || "Failed to fetch staff");
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
     }
-  }
-};
+  };
 
   useEffect(() => {
     fetchStaff();
   }, []);
 
+  // Apply filters whenever data, typeFilter, or searchText changes
+  useEffect(() => {
+    let filtered = [...data];
+    
+    // Apply type filter
+    if (typeFilter !== "All") {
+      filtered = filtered.filter(s => s.type === typeFilter);
+    }
+    
+    // Apply search filter if search text exists
+    if (searchText) {
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(searchText.toLowerCase()) || 
+        s.email.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+    
+    setFilteredData(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [data, typeFilter, searchText]);
+
   /* ================= PAGINATION ================= */
   useEffect(() => {
     const indexOfLast = currentPage * itemPerPage;
     const indexOfFirst = indexOfLast - itemPerPage;
-    setCurrentItems(data.slice(indexOfFirst, indexOfLast));
-  }, [data, currentPage, itemPerPage]);
+    setCurrentItems(filteredData.slice(indexOfFirst, indexOfLast));
+  }, [filteredData, currentPage, itemPerPage]);
 
   /* ================= SEARCH ================= */
   const onFilterChange = (e) => {
-    const value = e.target.value.toLowerCase();
+    const value = e.target.value;
     setSearchText(value);
-    if (value === "") {
-      fetchStaff();
-    } else {
-      setData(data.filter((v) => v.name.toLowerCase().includes(value) || v.email.toLowerCase().includes(value)));
-    }
   };
 
   /* ================= SORT ================= */
   const sortFunc = (type) => {
-    let sorted = [...data];
+    let sorted = [...filteredData];
     sorted.sort((a, b) => (type === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
-    setData(sorted);
+    setFilteredData(sorted);
+  };
+
+  const resetFilters = () => {
+    setTypeFilter("All");
+    setSearchText("");
   };
 
   /* ================= CRUD ================= */
@@ -174,92 +199,84 @@ const fetchStaff = async () => {
     setModalAdd(true);
   };
 
- const onAddSubmit = async (e) => {
-  e.preventDefault();
-  setAddLoading(true);
+  const onAddSubmit = async (e) => {
+    e.preventDefault();
+    setAddLoading(true);
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  Object.keys(formData).forEach((k) => {
-    if (k === "documents" && formData.documents.length > 0) {
-      formData.documents.forEach((file) => fd.append("documents", file));
-    } else if (
-      formData[k] !== undefined &&
-      formData[k] !== null &&
-      formData[k] !== ""
-    ) {
-      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
-    }
-  });
-
-  fd.append("createdBy", userData._id);
-
-  try {
-
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
-
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      fd,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
+    Object.keys(formData).forEach((k) => {
+      if (k === "documents" && formData.documents.length > 0) {
+        formData.documents.forEach((file) => fd.append("documents", file));
+      } else if (
+        formData[k] !== undefined &&
+        formData[k] !== null &&
+        formData[k] !== ""
+      ) {
+        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
       }
-    );
+    });
 
-    if (response.status === 201 || response.status === 200) {
+    fd.append("createdBy", userData._id);
 
-      successToast("Staff added successfully");
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-      setModalAdd(false);
-      resetForm();
-      fetchStaff();
-    }
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-  } catch (err) {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKENDURL}/api/staff`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
 
-    console.log("Add staff error:", err);
+      if (response.status === 201 || response.status === 200) {
+        successToast("Staff added successfully");
+        setModalAdd(false);
+        resetForm();
+        fetchStaff();
+      }
 
-    if (err.response) {
+    } catch (err) {
+      console.log("Add staff error:", err);
 
-      if (err.response.status === 401) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(
+            err.response.data?.message || "Session expired. Please login again"
+          );
 
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
+          window.location.href = "/login";
 
-        window.location.href = "/login";
+        } else {
+          const message =
+            err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Add staff failed";
 
+          errorToast(message);
+        }
       } else {
-
-        const message =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Add staff failed";
-
-        errorToast(message);
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
 
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
+    } finally {
+      setAddLoading(false);
     }
-
-  } finally {
-    setAddLoading(false);
-  }
-};
+  };
 
   // ================= EDIT STAFF =================
   const onEditClick = (item) => {
@@ -279,177 +296,166 @@ const fetchStaff = async () => {
     setModalEdit(true);
   };
 
- const onEditSubmit = async (e) => {
-  e.preventDefault();
-  setEditLoading(true);
+  const onEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  Object.keys(formData).forEach((k) => {
-    if (k === "documents" && formData.documents.length > 0) {
-      formData.documents.forEach((file) => fd.append("documents", file));
-    } else if (formData[k]) {
-      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
-    }
-  });
-
-  try {
-
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
-
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.put(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
-      fd,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
+    Object.keys(formData).forEach((k) => {
+      if (k === "documents" && formData.documents.length > 0) {
+        formData.documents.forEach((file) => fd.append("documents", file));
+      } else if (formData[k]) {
+        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
       }
-    );
+    });
 
-    if (response.status === 200) {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-      successToast("Staff updated successfully");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-      setModalEdit(false);
-      resetForm();
-      fetchStaff();
-    }
+      const response = await axios.put(
+        `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
 
-  } catch (err) {
+      if (response.status === 200) {
+        successToast("Staff updated successfully");
+        setModalEdit(false);
+        resetForm();
+        fetchStaff();
+      }
 
-    console.log("Update staff error:", err);
+    } catch (err) {
+      console.log("Update staff error:", err);
 
-    if (err.response) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(
+            err.response.data?.message || "Session expired. Please login again"
+          );
 
-      if (err.response.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
+          window.location.href = "/login";
 
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
+        } else {
+          const message =
+            err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Update failed";
 
-        window.location.href = "/login";
-
+          errorToast(message);
+        }
       } else {
-
-        const message =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Update failed";
-
-        errorToast(message);
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
 
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
+    } finally {
+      setEditLoading(false);
     }
+  };
 
-  } finally {
-    setEditLoading(false);
-  }
-};
   // ================= DELETE STAFF =================
   const onDeleteConfirm = async () => {
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
+      const response = await axios.delete(
+        `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        successToast("Staff deleted successfully");
+        setModalDelete(false);
+        fetchStaff();
+      }
+
+    } catch (err) {
+      console.log("Delete staff error:", err);
+
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(
+            err.response.data?.message || "Session expired. Please login again"
+          );
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+
+        } else {
+          errorToast(err.response.data?.message || "Delete failed");
+        }
+      } else {
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
+      }
+    }
+  };
+
+  const exportToExcel = () => {
+    if (!filteredData || filteredData.length === 0) {
+      errorToast("No data to export");
       return;
     }
 
-    const response = await axios.delete(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
-      }
-    );
+    // Format data for Excel
+    const exportData = filteredData.map((item, index) => ({
+      SNo: index + 1,
+      Name: item.name,
+      Email: item.email,
+      Mobile: item.mobile,
+      Type: item.type,
+      StaffCode: item.staffCode || "--",
+      BloodGroup: item.bloodGroup || "--",
+      DutyStatus: item.dutyStatus,
+      StaffStatus: item.staffStatus,
+    }));
 
-    if (response.status === 200) {
-      successToast("Staff deleted successfully");
-      setModalDelete(false);
-      fetchStaff();
-    }
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
 
-  } catch (err) {
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Staff List");
 
-    console.log("Delete staff error:", err);
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
 
-    if (err.response) {
+    const blob = new Blob([excelBuffer], {
+      type:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
 
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
-      } else {
-        errorToast(err.response.data?.message || "Delete failed");
-      }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
-    }
-  }
-};
-const exportToExcel = () => {
-  if (!data || data.length === 0) {
-    errorToast("No data to export");
-    return;
-  }
-
-  // Format data for Excel
-  const exportData = data.map((item, index) => ({
-    SNo: index + 1,
-    Name: item.name,
-    Email: item.email,
-    Mobile: item.mobile,
-    Type: item.type,
-    StaffCode: item.staffCode || "--",
-    BloodGroup: item.bloodGroup || "--",
-    DutyStatus: item.dutyStatus,
-    StaffStatus: item.staffStatus,
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(exportData);
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Staff List");
-
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
-
-  const blob = new Blob([excelBuffer], {
-    type:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-  });
-
-  saveAs(blob, "Staff_List.xlsx");
-};
+    saveAs(blob, "Staff_List.xlsx");
+  };
 
   /* ================= UI ================= */
   return (
@@ -464,7 +470,14 @@ const exportToExcel = () => {
               </BlockTitle>
 
               <BlockDes className="text-soft">
-                <p>You have total {data?.length} Staffs.</p>
+                <p>
+                  You have total {filteredData?.length} Staffs.
+                  {(typeFilter !== "All" || searchText) && (
+                    <span className="text-primary ms-2">
+                      (Filtered)
+                    </span>
+                  )}
+                </p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
@@ -477,6 +490,52 @@ const exportToExcel = () => {
                 </Button>
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
+                    {/* Type Filter Dropdown */}
+                    <li>
+                      <UncontrolledDropdown>
+                        <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+                          <Icon name="user-list" className="d-none d-sm-inline" />
+                          <span>
+                            <span className="d-none d-md-inline">
+                              {typeFilter === "All" ? "All Types" : typeFilter}
+                            </span>
+                          </span>
+                          <Icon className="dd-indc" name="chevron-right" />
+                        </DropdownToggle>
+                        <DropdownMenu>
+                          <ul className="link-list-opt no-bdr">
+                            <li className={typeFilter === "All" ? "active" : ""}>
+                              <DropdownItem
+                                tag="a"
+                                href="#!"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  setTypeFilter("All");
+                                }}
+                              >
+                                <span>All Types</span>
+                              </DropdownItem>
+                            </li>
+                            {uniqueTypes.map((type) => (
+                              <li key={type} className={typeFilter === type ? "active" : ""}>
+                                <DropdownItem
+                                  tag="a"
+                                  href="#!"
+                                  onClick={(ev) => {
+                                    ev.preventDefault();
+                                    setTypeFilter(type);
+                                  }}
+                                >
+                                  <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                </DropdownItem>
+                              </li>
+                            ))}
+                          </ul>
+                        </DropdownMenu>
+                      </UncontrolledDropdown>
+                    </li>
+                    
+                    {/* Export Button */}
                     <li>
                       <a
                         href="#export"
@@ -487,6 +546,8 @@ const exportToExcel = () => {
                         <span>Export</span>
                       </a>
                     </li>
+                    
+                    {/* Add Staff Button */}
                     <li className="nk-block-tools-opt">
                       <Button color="primary" className="btn-icon" onClick={openAddModal}>
                         <Icon name="plus"></Icon>
@@ -534,7 +595,7 @@ const exportToExcel = () => {
                             <li>
                               <span>Show</span>
                             </li>
-                            {[10, 15].map((n) => (
+                            {[10, 15, 20, 25].map((n) => (
                               <li key={n} className={itemPerPage === n ? "active" : ""}>
                                 <DropdownItem
                                   tag="a"
@@ -580,6 +641,23 @@ const exportToExcel = () => {
                               </DropdownItem>
                             </li>
                           </ul>
+                          {(typeFilter !== "All" || searchText) && (
+                            <ul className="link-check">
+                              <li>
+                                <DropdownItem
+                                  tag="a"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    resetFilters();
+                                  }}
+                                  className="text-primary"
+                                >
+                                  Clear Filters
+                                </DropdownItem>
+                              </li>
+                            </ul>
+                          )}
                         </DropdownMenu>
                       </UncontrolledDropdown>
                     </li>
@@ -596,7 +674,6 @@ const exportToExcel = () => {
                       onClick={() => {
                         setSearchText("");
                         setOnSearch(false);
-                        fetchStaff();
                       }}
                     >
                       <Icon name="arrow-left" />
@@ -631,12 +708,11 @@ const exportToExcel = () => {
                     Email
                   </span>
                 </DataTableRow>
-                 <DataTableRow>
+                <DataTableRow>
                   <span style={{ fontWeight: "bold" }} className="sub-text">
                     Mobile
                   </span>
                 </DataTableRow>
-
                 <DataTableRow>
                   <span style={{ fontWeight: "bold" }} className="sub-text">
                     Duty
@@ -660,159 +736,165 @@ const exportToExcel = () => {
                 <DataTableRow className="nk-tb-col-tools"></DataTableRow>
               </DataTableHead>
 
-              {currentItems.map((item) => (
-                <DataTableItem key={item._id}>
-                  <DataTableRow>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-  <img
-    src={item.img ? item.img : "/default-avatar.png"}
-    alt="profile"
-    style={{
-      width: "30px",
-      height: "30px",
-      borderRadius: "50%",
-      objectFit: "cover",
-    }}
-  />
-</div>
+              {currentItems.length > 0 ? (
+                currentItems.map((item) => (
+                  <DataTableItem key={item._id}>
+                    <DataTableRow>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <img
+                          src={item.img ? item.img : "/default-avatar.png"}
+                          alt="profile"
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                    </DataTableRow>
 
-                  </DataTableRow>
+                    <DataTableRow>
+                      <Link
+                        className="tb-lead"
+                        to={`${process.env.PUBLIC_URL}/staff/${item._id}`}
+                      >
+                        {item.name && item.name.length > 20
+                          ? item.name.slice(0, 20) + "..."
+                          : item.name}
+                      </Link>
+                    </DataTableRow>
 
-                 <DataTableRow>
-  <Link
-    className="tb-lead"
-    to={`${process.env.PUBLIC_URL}/staff/${item._id}`}
-  >
-    {item.name && item.name.length > 20
-      ? item.name.slice(0, 20) + "..."
-      : item.name}
-  </Link>
-</DataTableRow>
+                    <DataTableRow>{item.email}</DataTableRow>
+                    <DataTableRow>{item.mobile}</DataTableRow>
+                    <DataTableRow>
+                      <span className={`tb-status text-${item.dutyStatus === "active" ? "success" : "danger"}`}>
+                        {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
+                      </span>
+                    </DataTableRow>
 
-                  <DataTableRow>{item.email}</DataTableRow>
-                  <DataTableRow>{item.mobile}</DataTableRow>
-                  <DataTableRow>
-                    <span className={`tb-status text-${item.dutyStatus === "active" ? "success" : "danger"}`}>
-                      {item.dutyStatus === "active" ? "On Duty" : "Off Duty"}
-                    </span>
-                  </DataTableRow>
+                    <DataTableRow>
+                      {item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}
+                    </DataTableRow>
+                    <DataTableRow>{item.staffCode || "--"}</DataTableRow>
+                    <DataTableRow>
+                      <span className={`tb-status text-${item.staffStatus === "active" ? "success" : "danger"}`}>
+                        {item.staffStatus.charAt(0).toUpperCase() + item.staffStatus.slice(1)}
+                      </span>
+                    </DataTableRow>
 
-                  <DataTableRow>
-  {item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}
-</DataTableRow>
-                  <DataTableRow>{item.staffCode || "--"}</DataTableRow>
-                  <DataTableRow>
-                    <span className={`tb-status text-${item.staffStatus === "active" ? "success" : "danger"}`}>
-                      {item.staffStatus.charAt(0).toUpperCase() + item.staffStatus.slice(1)}
-                    </span>
-                  </DataTableRow>
-
-                  <DataTableRow className="nk-tb-col-tools">
-                    <ul className="nk-tb-actions gx-1">
-                      <li>
-                        <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
-                          <Icon name="edit-alt-fill" />
-                        </Button>
-                      </li>
-                      <li>
-                        <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                            <Icon name="more-h" />
-                          </DropdownToggle>
-                          <DropdownMenu right>
-                            <ul className="link-list-opt no-bdr">
-                              <li>
-                                <DropdownItem onClick={() => onEditClick(item)}>
-                                  <Icon name="edit" /> <span>Edit</span>
-                                </DropdownItem>
-                              </li>
-                              <li>
-                                <DropdownItem
-                                  onClick={() => {
-                                    setSelectedId(item._id);
-                                    setModalDelete(true);
-                                  }}
-                                >
-                                  <Icon name="trash" /> <span>Delete</span>
-                                </DropdownItem>
-                              </li>
-                            </ul>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
-                      </li>
-                    </ul>
+                    <DataTableRow className="nk-tb-col-tools">
+                      <ul className="nk-tb-actions gx-1">
+                        <li>
+                          <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
+                            <Icon name="edit-alt-fill" />
+                          </Button>
+                        </li>
+                        <li>
+                          <UncontrolledDropdown>
+                            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                              <Icon name="more-h" />
+                            </DropdownToggle>
+                            <DropdownMenu right>
+                              <ul className="link-list-opt no-bdr">
+                                <li>
+                                  <DropdownItem onClick={() => onEditClick(item)}>
+                                    <Icon name="edit" /> <span>Edit</span>
+                                  </DropdownItem>
+                                </li>
+                                <li>
+                                  <DropdownItem
+                                    onClick={() => {
+                                      setSelectedId(item._id);
+                                      setModalDelete(true);
+                                    }}
+                                  >
+                                    <Icon name="trash" /> <span>Delete</span>
+                                  </DropdownItem>
+                                </li>
+                              </ul>
+                            </DropdownMenu>
+                          </UncontrolledDropdown>
+                        </li>
+                      </ul>
+                    </DataTableRow>
+                  </DataTableItem>
+                ))
+              ) : (
+                <DataTableItem>
+                  <DataTableRow colSpan="9" className="text-center py-4">
+                    No staff members found
                   </DataTableRow>
                 </DataTableItem>
-              ))}
+              )}
             </DataTableBody>
 
             {/* PAGINATION */}
-         <div className="card-inner">
-  {currentItems.length > 0 ? (
-    <div className="d-flex justify-content-center align-items-center">
+            <div className="card-inner">
+              {currentItems.length > 0 ? (
+                <div className="d-flex justify-content-center align-items-center">
+                  {/* Previous Button */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-left"></em>
+                  </button>
 
-      {/* Previous Button */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage(currentPage - 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-left"></em>
-      </button>
+                  {/* Page Numbers (Only show current-1, current, current+1) */}
+                  {[...Array(Math.ceil(filteredData.length / itemPerPage))].map((_, index) => {
+                    const pageNumber = index + 1;
 
-      {/* Page Numbers (Only show current-1, current, current+1) */}
-      {[...Array(Math.ceil(data.length / itemPerPage))].map((_, index) => {
-        const pageNumber = index + 1;
+                    if (
+                      pageNumber === currentPage ||
+                      pageNumber === currentPage - 1 ||
+                      pageNumber === currentPage + 1
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`btn btn-sm mx-1 ${
+                            currentPage === pageNumber
+                              ? "btn-primary"
+                              : "btn-outline-light"
+                          }`}
+                          style={{
+                            minWidth: "36px",
+                            borderRadius: "6px",
+                            fontWeight: 500
+                          }}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
 
-        if (
-          pageNumber === currentPage ||
-          pageNumber === currentPage - 1 ||
-          pageNumber === currentPage + 1
-        ) {
-          return (
-            <button
-              key={pageNumber}
-              onClick={() => setCurrentPage(pageNumber)}
-              className={`btn btn-sm mx-1 ${
-                currentPage === pageNumber
-                  ? "btn-primary"
-                  : "btn-outline-light"
-              }`}
-              style={{
-                minWidth: "36px",
-                borderRadius: "6px",
-                fontWeight: 500
-              }}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
-        return null;
-      })}
-
-      {/* Next Button */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={
-          currentPage === Math.ceil(data.length / itemPerPage)
-        }
-        onClick={() => setCurrentPage(currentPage + 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-right"></em>
-      </button>
-
-    </div>
-  ) : (
-    <div className="text-center text-silent">No data found</div>
-  )}
-</div>
+                  {/* Next Button */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={
+                      currentPage === Math.ceil(filteredData.length / itemPerPage)
+                    }
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-right"></em>
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center text-silent">No data found</div>
+              )}
+            </div>
           </DataTable>
         </Block>
       </Content>
 
+      {/* Add Modal */}
       <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
         <ModalBody>
           <a
@@ -828,38 +910,29 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Add Staff</h5>
             <Form className="row gy-4" onSubmit={onAddSubmit}>
-             <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Name</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Name"
-      value={formData.name}
-      onChange={(e) => {
-        let value = e.target.value;
-
-        // Allow only letters, dot and space
-        value = value.replace(/[^a-zA-Z.\s]/g, "");
-
-        // Allow only one space total
-        const spaceCount = (value.match(/\s/g) || []).length;
-        if (spaceCount > 1) return;
-
-        // Prevent space at beginning
-        if (value.startsWith(" ")) return;
-
-        // Capitalize first letter
-        if (value.length > 0) {
-          value = value.charAt(0).toUpperCase() + value.slice(1);
-        }
-
-        setFormData({ ...formData, name: value });
-      }}
-      required
-    />
-  </FormGroup>
-</Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      value = value.replace(/[^a-zA-Z.\s]/g, "");
+                      const spaceCount = (value.match(/\s/g) || []).length;
+                      if (spaceCount > 1) return;
+                      if (value.startsWith(" ")) return;
+                      if (value.length > 0) {
+                        value = value.charAt(0).toUpperCase() + value.slice(1);
+                      }
+                      setFormData({ ...formData, name: value });
+                    }}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -874,6 +947,7 @@ const exportToExcel = () => {
                   />
                 </FormGroup>
               </Col>
+              
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Mobile</label>
@@ -883,11 +957,11 @@ const exportToExcel = () => {
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
                     onChange={(e) => {
-  const value = e.target.value.replace(/\D/g, ""); // only numbers
-  if (value.length <= 10) {
-    setFormData({ ...formData, mobile: value });
-  }
-}}
+                      const value = e.target.value.replace(/\D/g, "");
+                      if (value.length <= 10) {
+                        setFormData({ ...formData, mobile: value });
+                      }
+                    }}
                     required
                   />
                 </FormGroup>
@@ -897,19 +971,16 @@ const exportToExcel = () => {
                 <FormGroup>
                   <label className="form-label">* Type</label>
                   <select
-  className="form-control"
-  value={formData.type}
-  onChange={(e) =>
-    setFormData({ ...formData, type: e.target.value })
-  }
-  required
->
-  <option value="">Select Type</option>
-  <option value="sales">Sales</option>
-  <option value="delivery">Delivery</option>
-  <option value="manager">Manager</option>
-</select>
-
+                    className="form-control"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Type</option>
+                    <option value="sales">Sales</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="manager">Manager</option>
+                  </select>
                 </FormGroup>
               </Col>
 
@@ -941,23 +1012,21 @@ const exportToExcel = () => {
                   </select>
                 </FormGroup>
               </Col>
+              
               <Col md="6">
-  <FormGroup>
-    <label className="form-label">Duty Status</label>
-    <select
-      className="form-control"
-      value={formData.dutyStatus}
-      onChange={(e) =>
-        setFormData({ ...formData, dutyStatus: e.target.value })
-      }
-      disabled   // 👈 This makes it disabled
-    >
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-    </select>
-  </FormGroup>
-</Col>
-
+                <FormGroup>
+                  <label className="form-label">Duty Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.dutyStatus}
+                    onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
+                    disabled
+                  >
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -993,41 +1062,17 @@ const exportToExcel = () => {
                 </FormGroup>
               </Col>
 
-              {/* Documents Upload */}
-              {/* <Col md="12">
-                <FormGroup>
-                  <label className="form-label">Documents</label>
-                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-                    {({ getRootProps, getInputProps }) => (
-                      <div {...getRootProps()} className="dropzone mt-2">
-                        <input {...getInputProps()} />
-                        {formData.documents.length > 0 ? (
-                          <ul>
-                            {formData.documents.map((f, idx) => (
-                              <li key={idx}>{f.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>Drag & drop files or click to select</p>
-                        )}
-                      </div>
-                    )}
-                  </Dropzone>
-                </FormGroup>
-              </Col> */}
-
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
-  {addLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Saving...
-    </>
-  ) : (
-    "Save"
-  )}
-</Button>
-
+                  {addLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
               </Col>
             </Form>
           </div>
@@ -1050,38 +1095,29 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Edit Staff</h5>
             <Form className="row gy-4" onSubmit={onEditSubmit}>
-             <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Name</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Name"
-      value={formData.name}
-      onChange={(e) => {
-        let value = e.target.value;
-
-        // Allow only letters, dot and space
-        value = value.replace(/[^a-zA-Z.\s]/g, "");
-
-        // Prevent space at beginning
-        if (value.startsWith(" ")) return;
-
-        // Allow only one space total
-        const spaces = (value.match(/\s/g) || []).length;
-        if (spaces > 1) return;
-
-        // Capitalize first letter
-        if (value.length > 0) {
-          value = value.charAt(0).toUpperCase() + value.slice(1);
-        }
-
-        setFormData({ ...formData, name: value });
-      }}
-      required
-    />
-  </FormGroup>
-</Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      value = value.replace(/[^a-zA-Z.\s]/g, "");
+                      if (value.startsWith(" ")) return;
+                      const spaces = (value.match(/\s/g) || []).length;
+                      if (spaces > 1) return;
+                      if (value.length > 0) {
+                        value = value.charAt(0).toUpperCase() + value.slice(1);
+                      }
+                      setFormData({ ...formData, name: value });
+                    }}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -1096,6 +1132,7 @@ const exportToExcel = () => {
                   />
                 </FormGroup>
               </Col>
+              
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">* Mobile</label>
@@ -1104,12 +1141,12 @@ const exportToExcel = () => {
                     className="form-control"
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
-                   onChange={(e) => {
-  const value = e.target.value.replace(/\D/g, ""); // only numbers
-  if (value.length <= 10) {
-    setFormData({ ...formData, mobile: value });
-  }
-}}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "");
+                      if (value.length <= 10) {
+                        setFormData({ ...formData, mobile: value });
+                      }
+                    }}
                     required
                   />
                 </FormGroup>
@@ -1119,26 +1156,22 @@ const exportToExcel = () => {
                 <FormGroup>
                   <label className="form-label">* Type</label>
                   <select
-  className="form-control"
-  value={formData.type}
-  onChange={(e) =>
-    setFormData({ ...formData, type: e.target.value })
-  }
-  disabled={formData.dutyStatus === "active"}  // 🔥 Important line
-  required
->
-
-  <option value="">Select Type</option>
-  <option value="sales">Sales</option>
-  <option value="delivery">Delivery</option>
-  <option value="manager">Manager</option>
-</select>
-{formData.dutyStatus === "active" && (
-  <small className="text-danger">
-    Cannot change type while staff is On Duty
-  </small>
-)}
-
+                    className="form-control"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    disabled={formData.dutyStatus === "active"}
+                    required
+                  >
+                    <option value="">Select Type</option>
+                    <option value="sales">Sales</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                  {formData.dutyStatus === "active" && (
+                    <small className="text-danger">
+                      Cannot change type while staff is On Duty
+                    </small>
+                  )}
                 </FormGroup>
               </Col>
 
@@ -1170,6 +1203,7 @@ const exportToExcel = () => {
                   </select>
                 </FormGroup>
               </Col>
+              
               <Col md="6">
                 <FormGroup>
                   <label className="form-label">Duty Status</label>
@@ -1230,41 +1264,17 @@ const exportToExcel = () => {
                 </FormGroup>
               </Col>
 
-              {/* Documents Upload */}
-              {/* <Col md="12">
-                <FormGroup>
-                  <label className="form-label">Documents</label>
-                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-                    {({ getRootProps, getInputProps }) => (
-                      <div {...getRootProps()} className="dropzone mt-2">
-                        <input {...getInputProps()} />
-                        {formData.documents.length > 0 ? (
-                          <ul>
-                            {formData.documents.map((f, idx) => (
-                              <li key={idx}>{f.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>Drag & drop files or click to select</p>
-                        )}
-                      </div>
-                    )}
-                  </Dropzone>
-                </FormGroup>
-              </Col> */}
-
               <Col md="12">
                 <Button color="primary" type="submit" disabled={editLoading}>
-  {editLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Updating...
-    </>
-  ) : (
-    "Update"
-  )}
-</Button>
-
+                  {editLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update"
+                  )}
+                </Button>
               </Col>
             </Form>
           </div>

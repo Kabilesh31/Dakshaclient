@@ -38,6 +38,7 @@ const CustomerListCompact = () => {
   const { userData } = useContext(DataContext);
 
   const [data, setData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [currentItems, setCurrentItems] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
@@ -48,6 +49,12 @@ const CustomerListCompact = () => {
   const [addLoading, setAddLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
+  // Filter states
+  const [routeFilter, setRouteFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [uniqueRoutes, setUniqueRoutes] = useState([]);
+  const [uniqueCategories, setUniqueCategories] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
@@ -57,7 +64,7 @@ const CustomerListCompact = () => {
 
   const [selectedId, setSelectedId] = useState(null);
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null); // Add image preview state
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -75,49 +82,78 @@ const CustomerListCompact = () => {
     img: null,
   });
 
-const fetchCustomers = async () => {
-  try {
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          "session-token": localStorage.getItem("sessionToken"),
-        },
+  const fetchCustomers = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/customer`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
+        }
+      );
+
+      const filtered = res.data.filter((c) => !c.isDeleted);
+      const sorted = filtered.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      setData(sorted);
+      
+      // Extract unique routes and categories for filters
+      const routes = [...new Set(sorted.map(c => c.routeName).filter(Boolean))];
+      const categories = [...new Set(sorted.map(c => c.category).filter(Boolean))];
+      
+      setUniqueRoutes(routes);
+      setUniqueCategories(categories);
+      
+    } catch (err) {
+      if (err.response?.status === 401) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
       }
-    );
-
-    const filtered = res.data.filter((c) => !c.isDeleted);
-
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
-    setData(sorted);
-
-  } catch (err) {
-
-    if (err.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("sessionToken");
+      errorToast("Failed to fetch customers");
     }
-
-    errorToast("Failed to fetch customers");
-  }
-};
+  };
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
+  // Apply filters whenever data, routeFilter, or categoryFilter changes
   useEffect(() => {
-    if (!data.length) return;
-    const sorted = [...data].sort((a, b) => {
+    let filtered = [...data];
+    
+    // Apply route filter
+    if (routeFilter !== "All") {
+      filtered = filtered.filter(c => c.routeName === routeFilter);
+    }
+    
+    // Apply category filter
+    if (categoryFilter !== "All") {
+      filtered = filtered.filter(c => c.category === categoryFilter);
+    }
+    
+    // Apply search filter if search text exists
+    if (searchText) {
+      filtered = filtered.filter(c => 
+        c.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+    
+    setFilteredData(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [data, routeFilter, categoryFilter, searchText]);
+
+  useEffect(() => {
+    if (!filteredData.length) return;
+    const sorted = [...filteredData].sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
       return sort === "asc" ? dateA - dateB : dateB - dateA;
     });
-    setData(sorted);
+    setFilteredData(sorted);
   }, [sort]);
 
   const fetchRoutes = async () => {
@@ -176,26 +212,18 @@ const fetchCustomers = async () => {
   useEffect(() => {
     const indexOfLast = currentPage * itemPerPage;
     const indexOfFirst = indexOfLast - itemPerPage;
-    setCurrentItems(data.slice(indexOfFirst, indexOfLast));
-  }, [data, currentPage, itemPerPage]);
+    setCurrentItems(filteredData.slice(indexOfFirst, indexOfLast));
+  }, [filteredData, currentPage, itemPerPage]);
 
   const onFilterChange = (e) => {
-    const value = e.target.value.toLowerCase();
+    const value = e.target.value;
     setSearchText(value);
-    if (!value) {
-      fetchCustomers();
-    } else {
-      setData(data.filter((c) => c.name.toLowerCase().includes(value)));
-    }
   };
 
-  const sortFunc = (type) => {
-    const sorted = [...data].sort((a, b) => {
-      const dateA = new Date(a.createdAt);
-      const dateB = new Date(b.createdAt);
-      return type === "asc" ? dateA - dateB : dateB - dateA;
-    });
-    setData(sorted);
+  const resetFilters = () => {
+    setRouteFilter("All");
+    setCategoryFilter("All");
+    setSearchText("");
   };
 
   const resetForm = () => {
@@ -215,23 +243,20 @@ const fetchCustomers = async () => {
       img: null,
     });
     setUploadedFile(null);
-    setImagePreview(null); // Reset image preview
+    setImagePreview(null);
     setSelectedId(null);
   };
 
-  // Handle file selection with preview
   const handleFileSelect = (files) => {
     const file = files[0];
     setUploadedFile(file);
     
-    // Create preview URL
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
   };
 
-  // Clean up preview URL when modal closes
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -303,7 +328,6 @@ const fetchCustomers = async () => {
       },
     });
 
-    // Set image preview if existing image exists
     if (item.img) {
       setImagePreview(item.img);
     } else {
@@ -367,11 +391,20 @@ const fetchCustomers = async () => {
     }
   };
 
-  const routeDatas = [
-    { _id: 1, name: "route1" },
-    { _id: 2, name: "route2" },
-  ];
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
 
+    let creditDays = "";
+    if (category === "FMCG") creditDays = "30";
+    if (category === "Hardware") creditDays = "45";
+    if (category === "Electrical") creditDays = "60";
+
+    setFormData({
+      ...formData,
+      category: category,
+      creditDays: creditDays
+    });
+  };
   return (
     <>
       <Head title="Customer List" />
@@ -384,21 +417,116 @@ const fetchCustomers = async () => {
                 <span className="text-soft">
                   You Have Total {" "} 
                   <span className="fw-bold mr-1">
-                    {data.length}
+                    {filteredData.length}
                   </span>
                   Customers
+                  {(routeFilter !== "All" || categoryFilter !== "All" || searchText) && (
+                    <span className="text-primary ms-2">
+                      (Filtered)
+                    </span>
+                  )}
                 </span>
               </div>
             </BlockHeadContent>
 
-            <Button color="primary" className="btn-icon"
-              onClick={() => {
-                resetForm();
-                setModalAdd(true);
-              }}
-            >
-              <Icon name="plus" />
-            </Button>
+            {/* Filter Dropdowns and Add Button */}
+            <div className="d-flex align-items-center gap-2">
+              {/* Route Filter Dropdown */}
+              <UncontrolledDropdown>
+                <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+                  <Icon name="map" className="d-none d-sm-inline" />
+                  <span>
+                    <span className="d-none d-md-inline">
+                      {routeFilter === "All" ? "All Routes" : routeFilter}
+                    </span>
+                  </span>
+                  <Icon className="dd-indc" name="chevron-right" />
+                </DropdownToggle>
+                <DropdownMenu>
+                  <ul className="link-list-opt no-bdr">
+                    <li className={routeFilter === "All" ? "active" : ""}>
+                      <DropdownItem
+                        tag="a"
+                        href="#!"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          setRouteFilter("All");
+                        }}
+                      >
+                        <span>All Routes</span>
+                      </DropdownItem>
+                    </li>
+                    {uniqueRoutes.map((route) => (
+                      <li key={route} className={routeFilter === route ? "active" : ""}>
+                        <DropdownItem
+                          tag="a"
+                          href="#!"
+                          onClick={(ev) => {
+                            ev.preventDefault();
+                            setRouteFilter(route);
+                          }}
+                        >
+                          <span>{route}</span>
+                        </DropdownItem>
+                      </li>
+                    ))}
+                  </ul>
+                </DropdownMenu>
+              </UncontrolledDropdown>
+
+              {/* Category Filter Dropdown */}
+              <UncontrolledDropdown>
+                <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+                  <Icon name="category" className="d-none d-sm-inline" />
+                  <span>
+                    <span className="d-none d-md-inline">
+                      {categoryFilter === "All" ? "All Categories" : categoryFilter}
+                    </span>
+                  </span>
+                  <Icon className="dd-indc" name="chevron-right" />
+                </DropdownToggle>
+                <DropdownMenu>
+                  <ul className="link-list-opt no-bdr">
+                    <li className={categoryFilter === "All" ? "active" : ""}>
+                      <DropdownItem
+                        tag="a"
+                        href="#!"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          setCategoryFilter("All");
+                        }}
+                      >
+                        <span>All Categories</span>
+                      </DropdownItem>
+                    </li>
+                    {uniqueCategories.map((category) => (
+                      <li key={category} className={categoryFilter === category ? "active" : ""}>
+                        <DropdownItem
+                          tag="a"
+                          href="#!"
+                          onClick={(ev) => {
+                            ev.preventDefault();
+                            setCategoryFilter(category);
+                          }}
+                        >
+                          <span>{category}</span>
+                        </DropdownItem>
+                      </li>
+                    ))}
+                  </ul>
+                </DropdownMenu>
+              </UncontrolledDropdown>
+
+              {/* Add Customer Button */}
+              <Button color="primary" className="btn-icon"
+                onClick={() => {
+                  resetForm();
+                  setModalAdd(true);
+                }}
+              >
+                <Icon name="plus" />
+              </Button>
+            </div>
           </BlockBetween>
         </BlockHead>
 
@@ -436,7 +564,7 @@ const fetchCustomers = async () => {
                             <li>
                               <span>Show</span>
                             </li>
-                            {[10, 15].map((n) => (
+                            {[10, 15, 20, 25].map((n) => (
                               <li key={n} className={itemPerPage === n ? "active" : ""}>
                                 <DropdownItem
                                   tag="a"
@@ -474,6 +602,23 @@ const fetchCustomers = async () => {
                               </DropdownItem>
                             </li>
                           </ul>
+                          {(routeFilter !== "All" || categoryFilter !== "All" || searchText) && (
+                            <ul className="link-check">
+                              <li>
+                                <DropdownItem
+                                  tag="a"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    resetFilters();
+                                  }}
+                                  className="text-primary"
+                                >
+                                  Clear Filters
+                                </DropdownItem>
+                              </li>
+                            </ul>
+                          )}
                         </DropdownMenu>
                       </UncontrolledDropdown>
                     </li>
@@ -489,7 +634,6 @@ const fetchCustomers = async () => {
                       onClick={() => {
                         setSearchText("");
                         setOnSearch(false);
-                        fetchVehicles();
                       }}
                     >
                       <Icon name="arrow-left" />
@@ -535,134 +679,142 @@ const fetchCustomers = async () => {
                 <DataTableRow />
               </DataTableHead>
 
-              {currentItems.map((item) => (
-                <DataTableItem key={item._id}>
-                  <DataTableRow>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <img
-                        src={item.img || "/default-avatar.png"}
-                        alt={item.name}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/default-avatar.png";
-                        }}
-                        style={{
-                          width: "30px",
-                          height: "30px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-                      <span className="tb-lead">
-  {item.name?.charAt(0).toUpperCase() + item.name?.slice(1)}
-</span>
-                    </div>
-                  </DataTableRow>
-                  <DataTableRow>{item.phone}</DataTableRow>
-                  <DataTableRow>{item.routeName || "--"}</DataTableRow>
-                  <DataTableRow>{item.category || "--"}</DataTableRow>
-                  <DataTableRow>
-                    <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
-                      {item.status ? "Active" : "Inactive"}
-                    </span>
-                  </DataTableRow>
-                  <DataTableRow className="nk-tb-col-tools">
-                    <ul className="nk-tb-actions gx-1">
-                      <li>
-                        <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
-                          <Icon name="edit-alt-fill" />
-                        </Button>
-                      </li>
-                      <li>
-                        <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                            <Icon name="more-h" />
-                          </DropdownToggle>
-                          <DropdownMenu right>
-                            <ul className="link-list-opt no-bdr">
-                              <li>
-                                <DropdownItem onClick={() => onEditClick(item)}>
-                                  <Icon name="edit" /> <span>Edit</span>
-                                </DropdownItem>
-                              </li>
-                              <li>
-                                <DropdownItem
-                                  onClick={() => {
-                                    setSelectedId(item._id);
-                                    setModalDelete(true);
-                                  }}
-                                >
-                                  <Icon name="trash" /> <span>Delete</span>
-                                </DropdownItem>
-                              </li>
-                            </ul>
-                          </DropdownMenu>
-                        </UncontrolledDropdown>
-                      </li>
-                    </ul>
+              {currentItems.length > 0 ? (
+                currentItems.map((item) => (
+                  <DataTableItem key={item._id}>
+                    <DataTableRow>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <img
+                          src={item.img || "/default-avatar.png"}
+                          alt={item.name}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/default-avatar.png";
+                          }}
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <span className="tb-lead">
+                          {item.name?.charAt(0).toUpperCase() + item.name?.slice(1)}
+                        </span>
+                      </div>
+                    </DataTableRow>
+                    <DataTableRow>{item.phone}</DataTableRow>
+                    <DataTableRow>{item.routeName || "--"}</DataTableRow>
+                    <DataTableRow>{item.category || "--"}</DataTableRow>
+                    <DataTableRow>
+                      <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
+                        {item.status ? "Active" : "Inactive"}
+                      </span>
+                    </DataTableRow>
+                    <DataTableRow className="nk-tb-col-tools">
+                      <ul className="nk-tb-actions gx-1">
+                        <li>
+                          <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
+                            <Icon name="edit-alt-fill" />
+                          </Button>
+                        </li>
+                        <li>
+                          <UncontrolledDropdown>
+                            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                              <Icon name="more-h" />
+                            </DropdownToggle>
+                            <DropdownMenu right>
+                              <ul className="link-list-opt no-bdr">
+                                <li>
+                                  <DropdownItem onClick={() => onEditClick(item)}>
+                                    <Icon name="edit" /> <span>Edit</span>
+                                  </DropdownItem>
+                                </li>
+                                <li>
+                                  <DropdownItem
+                                    onClick={() => {
+                                      setSelectedId(item._id);
+                                      setModalDelete(true);
+                                    }}
+                                  >
+                                    <Icon name="trash" /> <span>Delete</span>
+                                  </DropdownItem>
+                                </li>
+                              </ul>
+                            </DropdownMenu>
+                          </UncontrolledDropdown>
+                        </li>
+                      </ul>
+                    </DataTableRow>
+                  </DataTableItem>
+                ))
+              ) : (
+                <DataTableItem>
+                  <DataTableRow colSpan="6" className="text-center py-4">
+                    No customers found
                   </DataTableRow>
                 </DataTableItem>
-              ))}
+              )}
             </DataTableBody>
 
-           <div className="card-inner">
-  <div className="d-flex justify-content-center align-items-center">
+            {filteredData.length > 0 && (
+              <div className="card-inner">
+                <div className="d-flex justify-content-center align-items-center">
+                  {/* Previous */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-left"></em>
+                  </button>
 
-    {/* Previous */}
-    <button
-      className="btn btn-icon btn-sm btn-outline-light mx-1"
-      disabled={currentPage === 1}
-      onClick={() => setCurrentPage(currentPage - 1)}
-      style={{ borderRadius: "6px" }}
-    >
-      <em className="icon ni ni-chevron-left"></em>
-    </button>
+                  {/* Page Numbers */}
+                  {[...Array(Math.ceil(filteredData.length / itemPerPage))].map((_, index) => {
+                    const pageNumber = index + 1;
 
-    {/* Page Numbers */}
-    {[...Array(Math.ceil(data.length / itemPerPage))].map((_, index) => {
-      const pageNumber = index + 1;
+                    if (
+                      pageNumber === currentPage ||
+                      pageNumber === currentPage - 1 ||
+                      pageNumber === currentPage + 1
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`btn btn-sm mx-1 ${
+                            currentPage === pageNumber
+                              ? "btn-primary"
+                              : "btn-outline-light"
+                          }`}
+                          style={{
+                            minWidth: "36px",
+                            borderRadius: "6px",
+                            fontWeight: 500
+                          }}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
 
-      if (
-        pageNumber === currentPage ||
-        pageNumber === currentPage - 1 ||
-        pageNumber === currentPage + 1
-      ) {
-        return (
-          <button
-            key={pageNumber}
-            onClick={() => setCurrentPage(pageNumber)}
-            className={`btn btn-sm mx-1 ${
-              currentPage === pageNumber
-                ? "btn-primary"
-                : "btn-outline-light"
-            }`}
-            style={{
-              minWidth: "36px",
-              borderRadius: "6px",
-              fontWeight: 500
-            }}
-          >
-            {pageNumber}
-          </button>
-        );
-      }
-      return null;
-    })}
-
-    {/* Next */}
-    <button
-      className="btn btn-icon btn-sm btn-outline-light mx-1"
-      disabled={
-        currentPage === Math.ceil(data.length / itemPerPage)
-      }
-      onClick={() => setCurrentPage(currentPage + 1)}
-      style={{ borderRadius: "6px" }}
-    >
-      <em className="icon ni ni-chevron-right"></em>
-    </button>
-
-  </div>
-</div>
+                  {/* Next */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={
+                      currentPage === Math.ceil(filteredData.length / itemPerPage)
+                    }
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-right"></em>
+                  </button>
+                </div>
+              </div>
+            )}
           </DataTable>
         </Block>
       </Content>
@@ -792,66 +944,33 @@ const fetchCustomers = async () => {
               </FormGroup>
             </Col>
 
-            {/* <Col md="4">
-              <FormGroup>
-                <label className="form-label">Line No *</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={formData.lineNo}
-                  placeholder="Enter line no"
-                  onChange={(e) => setFormData({ ...formData, lineNo: e.target.value })}
-                  
-                />
-              </FormGroup>
-            </Col> */}
-
-            <Col md="4">
-              <FormGroup>
-                <label className="form-label">Credit Days *</label>
-                <select
-                  className="form-control"
-                  value={formData.creditDays}
-                  required
-                  onChange={(e) => setFormData({ ...formData, creditDays: e.target.value })}
-                >
-                  <option value="">Select Credit Days</option>
-                  <option value="15">15 Days</option>
-                  <option value="30">30 Days</option>
-                  <option value="45">45 Days</option>
-                  <option value="60">60 Days</option>
-                </select>
-              </FormGroup>
-            </Col>
-
-            <Col md="4">
-              <FormGroup>
-                <label className="form-label">Pincode *</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={formData.pincode}
-                  placeholder="Enter Pincode"
-                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  required
-                />
-              </FormGroup>
-            </Col>
-
-            <Col md="4">
+           <Col md="4">
               <FormGroup>
                 <label className="form-label">Category *</label>
                 <select
                   className="form-control"
                   value={formData.category}
                   required
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={handleCategoryChange}
                 >
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
                   <option value="Hardware">Hardware</option>
                 </select>
+              </FormGroup>
+            </Col>
+
+             <Col md="4">
+              <FormGroup>
+                <label className="form-label">Credit Days</label>
+                <input
+                  className="form-control"
+                  value={formData.creditDays}
+                  disabled
+                >
+
+                </input>
               </FormGroup>
             </Col>
 
@@ -885,6 +1004,20 @@ const fetchCustomers = async () => {
               </FormGroup>
             </Col>
 
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Pincode *</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={formData.pincode}
+                  placeholder="Enter Pincode"
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                  required
+                />
+              </FormGroup>
+            </Col>
+
             <Col md="12">
               <FormGroup>
                 <label className="form-label">Customer Image</label>
@@ -898,7 +1031,6 @@ const fetchCustomers = async () => {
                     )}
                   </Dropzone>
                   
-                  {/* Image Preview */}
                   {imagePreview && (
                     <div style={{ 
                       width: '60px', 
@@ -1038,61 +1170,32 @@ const fetchCustomers = async () => {
               </FormGroup>
             </Col>
 
-            {/* <Col md="4">
-              <FormGroup>
-                <label className="form-label">Line No *</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={formData.lineNo}
-                 
-                  onChange={(e) => setFormData({ ...formData, lineNo: e.target.value })}
-                />
-              </FormGroup>
-            </Col> */}
+        
 
-            <Col md="4">
-              <FormGroup>
-                <label className="form-label">Credit Days *</label>
-                <select
-                  className="form-control"
-                  value={formData.creditDays}
-                  onChange={(e) => setFormData({ ...formData, creditDays: e.target.value })}
-                >
-                  <option value="">Select Credit Days</option>
-                  <option value="15">15 Days</option>
-                  <option value="30">30 Days</option>
-                  <option value="45">45 Days</option>
-                  <option value="60">60 Days</option>
-                </select>
-              </FormGroup>
-            </Col>
-
-            <Col md="4">
-              <FormGroup>
-                <label className="form-label">Pincode *</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={formData.pincode}
-                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                />
-              </FormGroup>
-            </Col>
-
-            <Col md="4">
+           <Col md="4">
               <FormGroup>
                 <label className="form-label">Category *</label>
                 <select
                   className="form-control"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={handleCategoryChange}
                 >
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
                   <option value="Hardware">Hardware</option>
                 </select>
+              </FormGroup>
+            </Col>
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Credit Days *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={formData.creditDays}
+                  disabled
+                />
               </FormGroup>
             </Col>
 
@@ -1103,6 +1206,7 @@ const fetchCustomers = async () => {
                   className="form-control"
                   value={formData.geoLocation?.lat}
                   required
+                  disabled
                   onChange={(e) =>
                     setFormData({ ...formData, geoLocation: { ...formData.geoLocation, lat: e.target.value } })
                   }
@@ -1117,9 +1221,23 @@ const fetchCustomers = async () => {
                   className="form-control"
                   value={formData.geoLocation?.long}
                   required
+                  disabled
                   onChange={(e) =>
                     setFormData({ ...formData, geoLocation: { ...formData.geoLocation, long: e.target.value } })
                   }
+                />
+              </FormGroup>
+            </Col>
+
+            
+            <Col md="4">
+              <FormGroup>
+                <label className="form-label">Pincode *</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={formData.pincode}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                 />
               </FormGroup>
             </Col>
@@ -1137,7 +1255,6 @@ const fetchCustomers = async () => {
                     )}
                   </Dropzone>
                   
-                  {/* Image Preview */}
                   {imagePreview && (
                     <div style={{ 
                       width: '60px', 
