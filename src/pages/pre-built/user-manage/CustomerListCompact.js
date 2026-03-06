@@ -553,7 +553,9 @@ const fetchCustomers = async () => {
                           objectFit: "cover",
                         }}
                       />
-                      <span className="tb-lead">{item.name}</span>
+                      <span className="tb-lead">
+  {item.name?.charAt(0).toUpperCase() + item.name?.slice(1)}
+</span>
                     </div>
                   </DataTableRow>
                   <DataTableRow>{item.phone}</DataTableRow>
@@ -1182,7 +1184,7 @@ const fetchCustomers = async () => {
           <h5>Are you sure to delete?</h5>
           <ul className="d-flex justify-content-center mt-3">
             <li>
-              <Button color="danger" onClick={onDeleteConfirm}>
+              <Button color="danger" className="mr-2" onClick={onDeleteConfirm}>
                 Delete
               </Button>
             </li>

@@ -1265,10 +1265,11 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
                   <p className="text-soft mb-0">Drag and drop to set delivery line order for customers</p>
                 </div>
                 <div className="d-flex gap-2">
-                  <div className="form-group" style={{ minWidth: '250px' }}>
-                    <label className="form-label">Select Route</label>
+                  <div className="form-group" style={{ minWidth: '200px' }}>
+                    <label className="form-label ml-1">Select Route</label>
                   <select
                     className="form-control"
+                    style={{padding:"2px"}}
                     value={selectedRouteForAlignment}
                     onChange={(e) => setSelectedRouteForAlignment(e.target.value)}
                   >
@@ -1506,7 +1507,17 @@ const renderLiveTrack = () => {
       </Alert>
     );
   }
-
+  
+  const assignmentsForDate = routeAssignments.filter(
+    a => a.date === selectedDate
+  );
+  const assignedStaffIds = assignmentsForDate.map(a =>
+    String(a.staffId?._id || a.staffId)
+  );
+  const assignedStaff = filteredDeliveryStaff.filter(staff =>
+    assignedStaffIds.includes(String(staff._id))
+  );
+  
   // Get active deliveries (IN_PROGRESS) for selected date
   const activeDeliveries = routeAssignments
     .filter(a => a.date === selectedDate && a.status === 'IN_PROGRESS');
@@ -1625,8 +1636,30 @@ const renderLiveTrack = () => {
     return {
       isArriving: isArriving,
       isDelivered: isDelivered,
-      deliveredAt: null
+      deliveredAt: null // You might want to add a deliveredAt field to customers if available
     };
+  };
+
+  // Helper function to calculate duration from start time to customer delivery
+  const getCustomerDuration = (customer) => {
+    if (!selectedTrackStaff?.startedAt) return null;
+    
+    // Check if customer has a deliveredAt timestamp (you may need to add this to your customer object)
+    // For now, we'll use the current time if orderPending is false (delivered)
+    if (customer.orderPending === false) {
+      // If you have a deliveredAt field in customer, use that
+      // Otherwise, you might need to get this from bills or another source
+      const deliveryTime = customer.deliveredAt ? new Date(customer.deliveredAt).getTime() : new Date().getTime();
+      const startTime = new Date(selectedTrackStaff.startedAt).getTime();
+      const diffMinutes = Math.round((deliveryTime - startTime) / (1000 * 60));
+      
+      if (diffMinutes > 0) {
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+      }
+    }
+    return null;
   };
 
   const completedCustomers = displayCustomers?.filter((c) => {
@@ -1726,7 +1759,7 @@ const renderLiveTrack = () => {
                   </div>
 
                   <div className="staff-list" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                    {(showAllStaff ? filteredDeliveryStaff : staffWithActiveDeliveries).map((staff) => {
+                    {assignedStaff.map((staff) => {
                       const staffDelivery = activeDeliveries.find(d =>
                         String(d.staffId?._id || d.staffId) === String(staff._id)
                       );
@@ -1860,6 +1893,7 @@ const renderLiveTrack = () => {
                     </div>
                   ) : (
                     <div className="rail-status">
+                      {/* START POINT - Warehouse */}
                       <div className="rail-row completed">
                         <div className="rail-left">
                           <div className="rail-dot"></div>
@@ -1876,12 +1910,16 @@ const renderLiveTrack = () => {
                         </div>
                       </div>
 
+                      {/* CUSTOMERS */}
                       {displayCustomers
                         .sort((a, b) => a.lineNo - b.lineNo)
                         .map((customer, index) => {
                           const isActiveCustomer = selectedCustomerForMap?._id === customer._id;
                           const { isArriving, isDelivered } = getCustomerDeliveryStatus(customer);
                           let rowStatus = isDelivered ? "delivered" : "arriving";
+                          
+                          // Calculate duration from start time to this customer
+                          const duration = getCustomerDuration(customer);
 
                           return (
                             <div
@@ -1901,21 +1939,53 @@ const renderLiveTrack = () => {
                               </div>
                               <div className="rail-content">
                                 <div className="d-flex justify-content-between">
-                                  <strong>{customer.name}</strong>
-                                  <span className={`time ${getCustomerStatusClass(rowStatus)}`}>
-                                    {rowStatus === "delivered" ? "Delivered" : "Arriving"}
-                                  </span>
+                                  <div className="d-flex align-items-center flex-wrap" style={{ gap: '8px' }}>
+                                    <strong>{customer.name}
+                                      {isDelivered && duration && (
+                                      <span style={{ 
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        color: '#6c757d', 
+                                        fontSize: '11px',
+                                        backgroundColor: '#f8f9fa',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontWeight: '500',
+                                        gap: '3px'
+                                      }}>
+                                        <span style={{ fontSize: '11px' }}>⏱️</span>
+                                        +{duration}
+                                      </span>
+                                    )}
+                                    </strong>
+                                    {/* Clock icon with duration - only show for delivered customers */}
+                                    
+                                  </div>
+                                  <span className={``} style={{
+  color: rowStatus === "delivered" ? "#10b981" : "#f59e0b", // green for delivered, orange/yellow for arriving
+  fontWeight: "500",
+  fontSize: "11px"
+}}>
+  {rowStatus === "delivered" ? "Delivered" : "Arriving"}
+</span>
                                 </div>
                                 <div className="d-flex justify-content-between align-items-center mt-1">
                                   <small className={rowStatus === "arriving" ? "text-primary" : "text-muted"}>
                                     Line No: {customer.lineNo} • {customer.routeName}
                                   </small>
+                                  {/* Show delivery time for delivered customers */}
+                                  {isDelivered && (
+                                    <span  style={{ fontSize: '12px' }}>
+                                      {formatTime(new Date())} {/* Replace with actual deliveredAt if available */}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
                           );
                         })}
 
+                      {/* END POINT - Warehouse */}
                       <div className={`rail-row ${isRouteCompleted ? "completed" : "upcoming"}`}>
                         <div className="rail-left">
                           <div className="rail-dot"></div>
@@ -1927,7 +1997,26 @@ const renderLiveTrack = () => {
                               {selectedTrackStaff?.endedAt ? formatTime(selectedTrackStaff.endedAt) : '--:--'}
                             </span>
                           </div>
-                          <small className="text-muted">Trip Completion</small>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <small className="text-muted">Trip Completion</small>
+                            {/* Show total duration if route is completed */}
+                            {isRouteCompleted && selectedTrackStaff?.startedAt && selectedTrackStaff?.endedAt && (
+                              <span style={{ 
+                                fontSize: '11px',
+                                color: '#10b981',
+                                fontWeight: '500'
+                              }}>
+                                Total: {(() => {
+                                  const start = new Date(selectedTrackStaff.startedAt).getTime();
+                                  const end = new Date(selectedTrackStaff.endedAt).getTime();
+                                  const diffMinutes = Math.round((end - start) / (1000 * 60));
+                                  const hours = Math.floor(diffMinutes / 60);
+                                  const mins = diffMinutes % 60;
+                                  return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                                })()}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -2053,49 +2142,39 @@ const renderLiveTrack = () => {
             </ModalBody>
           </Modal>
           
-          <Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered size="md">
-            <ModalBody className="p-5 text-center">
-              {/* Icon */}
-              <Icon
-                name="alert-circle"
-                className="text-danger mb-3"
-                size="xl"
-              />
+         <Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered>
+  <ModalBody className="text-center">
+    <Icon name="alert-circle" className="text-danger mb-2" />
 
-              {/* Title */}
-              <h4 className="mb-2 fw-bold">Unassign Route?</h4>
+    <h5>Are you sure to unassign this route?</h5>
 
-              {/* Message */}
-              <p className="text-muted mb-4">
-                This action will remove the route from the staff for this day.
-                <br />
-                Are you sure you want to continue?
-              </p>
+    <p className="text-muted mb-2">
+      This will remove the route from the staff for this day.
+    </p>
 
-              {/* BIG ACTION BUTTONS */}
-              <div className="d-flex justify-content-center gap-3">
-                <Button
-                  color="light"
-                  size="lg"
-                  className="px-5"
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  color="danger"
-                  size="lg"
-                  className="px-5"
-                  onClick={handleUnassignRoute}
-                  disabled={loading}
-                >
-                  {loading ? "Unassigning..." : "Unassign Route"}
-                </Button>
-              </div>
-            </ModalBody>
-          </Modal>
+    <ul className="d-flex justify-content-center mt-3">
+      <li>
+        <Button
+          color="danger"
+          className="mr-2"
+          onClick={handleUnassignRoute}
+          disabled={loading}
+        >
+          {loading ? "Unassigning..." : "Unassign"}
+        </Button>
+      </li>
+      <li>
+        <Button
+          color="light"
+          onClick={() => setConfirmOpen(false)}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+      </li>
+    </ul>
+  </ModalBody>
+</Modal>
           <Modal
             isOpen={viewCustomerModal}
             toggle={() => setViewCustomerModal(false)}
