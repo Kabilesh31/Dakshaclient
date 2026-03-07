@@ -53,7 +53,6 @@ const CustomerListCompact = () => {
   const [routeFilter, setRouteFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [uniqueRoutes, setUniqueRoutes] = useState([]);
-  const [uniqueCategories, setUniqueCategories] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
@@ -106,8 +105,7 @@ const CustomerListCompact = () => {
       const categories = [...new Set(sorted.map(c => c.category).filter(Boolean))];
       
       setUniqueRoutes(routes);
-      setUniqueCategories(categories);
-      
+  
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.removeItem("accessToken");
@@ -209,6 +207,7 @@ const CustomerListCompact = () => {
     }
   };
 
+
   useEffect(() => {
     const indexOfLast = currentPage * itemPerPage;
     const indexOfFirst = indexOfLast - itemPerPage;
@@ -306,6 +305,8 @@ const CustomerListCompact = () => {
       setAddLoading(false);
     }
   };
+
+  const categories = ["Electrical", "FMCG", "Hardware"];
 
   const onEditClick = (item) => {
     setSelectedId(item._id);
@@ -499,7 +500,7 @@ const CustomerListCompact = () => {
                         <span>All Categories</span>
                       </DropdownItem>
                     </li>
-                    {uniqueCategories.map((category) => (
+                    {categories.map((category) => (
                       <li key={category} className={categoryFilter === category ? "active" : ""}>
                         <DropdownItem
                           tag="a"
