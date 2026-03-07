@@ -2302,7 +2302,7 @@ const renderLiveTrack = () => {
                     {isFirstCustomer && (
                       <Badge
                         color="primary"
-                        className="ms-2"
+                        className="ms-2 ml-2"
                         pill
                       >
                         ⏱️ +{warehouseToFirstCustomer.formatted}
@@ -2313,7 +2313,7 @@ const renderLiveTrack = () => {
                       !isFirstCustomer && (
                         <Badge
                           color="info"
-                          className="ms-2"
+                          className="ms-2 ml-2"
                           pill
                         >
                           ⏱️ +{timeBetweenVisits.minutes}m
