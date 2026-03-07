@@ -4,6 +4,8 @@
   import Content from "../../../layout/content/Content";
   import Head from "../../../layout/head/Head";
   import CustomerLiveMap from "./delivery/CustomerLiveMap";
+  import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
   import axios from "axios";
   import { FiRefreshCw } from "react-icons/fi";
   import { 
@@ -34,7 +36,21 @@
     const [showAllStaff, setShowAllStaff] = useState(true);
     const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("");
     const [customers, setCustomers] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+   const getISTDate = () => {
+  const date = new Date();
+
+  const istDate = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+console.log(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const year = istDate.getFullYear();
+  const month = String(istDate.getMonth() + 1).padStart(2, "0");
+  const day = String(istDate.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`; // required format for input type=date
+};
+
+const [selectedDate, setSelectedDate] = useState(getISTDate());
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [assignModal, setAssignModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
@@ -767,12 +783,15 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
                   
                   <div style={{marginRight : "10px"}} >
                 
-                    <Input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="form-control"
-                    />
+                   <Input
+  type="date"
+  lang="en-GB"
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  className="form-control"
+  
+/>
+
                   </div>
 
                   {/* Refresh Button */}

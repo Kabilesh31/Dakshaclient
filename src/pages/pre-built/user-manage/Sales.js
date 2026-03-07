@@ -32,7 +32,21 @@ import { FiClock } from 'react-icons/fi';
     const [showAllStaff, setShowAllStaff] = useState(true);
     const [selectedRouteForAlignment, setSelectedRouteForAlignment] = useState("");
     const [customers, setCustomers] = useState([]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+     const getISTDate = () => {
+     const date = new Date();
+   
+     const istDate = new Date(
+       date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+     );
+   console.log(Intl.DateTimeFormat().resolvedOptions().timeZone);
+     const year = istDate.getFullYear();
+     const month = String(istDate.getMonth() + 1).padStart(2, "0");
+     const day = String(istDate.getDate()).padStart(2, "0");
+   
+     return `${year}-${month}-${day}`; // required format for input type=date
+   };
+   
+   const [selectedDate, setSelectedDate] = useState(getISTDate());
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [assignModal, setAssignModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
