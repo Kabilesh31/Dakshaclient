@@ -1110,14 +1110,14 @@ const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
             </td>
 
             <td style={{ padding: '12px 16px' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div style={{ display: 'flex',gap: '10px', alignItems: 'center' }}>
 
                 {/* Route Select */}
-                <div style={{ position: 'relative', width: '120px' }}>
+                <div style={{ position: 'relative', width: '170px' }}>
                   <select
                     className="form-control"
                     style={{
-                      width: '100%',
+                      
                       padding: '8px 24px 8px 10px',
                       borderRadius: '6px',
                       border: '1px solid #e0e7ed',
@@ -1162,11 +1162,12 @@ const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
                 </div>
 
                 {/* Vehicle Select */}
-                <div style={{ position: 'relative', width: '150px' }}>
+                <div style={{ position: 'relative', width: '170px' }}>
                   <select
                     className="form-control"
                     style={{
                       width: '100%',
+                      
                       padding: '8px 24px 8px 10px',
                       borderRadius: '6px',
                       border: '1px solid #e0e7ed',
@@ -1220,6 +1221,7 @@ const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
                     padding: '8px 16px',
                     borderRadius: '6px',
                     border: 'none',
+                     marginLeft: 'auto',
                     backgroundColor: (!staff.selectedRoute || loading) ? '#f1f5f9' : '#2c6b9e',
                     color: (!staff.selectedRoute || loading) ? '#8a9cb0' : '#fff',
                     fontSize: '0.8rem',
@@ -1679,7 +1681,7 @@ if (vehicleConflict) {
                           </td>
                           <td>
                             <Badge color={customer.creditDays > 30 ? "warning" : "success"}>
-                              {customer.creditDays} days
+                              {customer.creditDays} Days
                             </Badge>
                           </td>
                           <td>
@@ -2416,18 +2418,15 @@ const renderLiveTrack = () => {
     </div>
   );
 };
-  if (loading && routes.length === 0 && routeAssignments.length === 0) {
-    return (
-      <Content>
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3">Loading Sales management data...</p>
-        </div>
-      </Content>
-    );
-  }
+ if (loading && routes.length === 0 && routeAssignments.length === 0) {
+  return (
+    <Content>
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" style={{marginTop:"230px"}} role="status"></div>
+      </div>
+    </Content>
+  );
+}
 
   return (
     <>

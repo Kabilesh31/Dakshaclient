@@ -306,35 +306,36 @@ const Homepage = () => {
   // Filtered bills
   const filteredBills = filterBills();
 
-  // Order Status - Using finalAmt for all calculations
-  const approvedOrders = filteredBills.filter(b => b.orderStatus === "approved").length;
+  // Order Status
+  const approvedOrders = filteredBills.filter(b => b.orderStatus === "approved" || b.orderStatus === "delivered").length;
   const rejectedOrders = filteredBills.filter(b => b.orderStatus === "rejected").length;
   const pendingOrders = filteredBills.filter(b => b.orderStatus === "pending").length;
   const totalOrders = filteredBills.length;
   
-  // Payment Status - Using finalAmt
- // Payment Status - Using finalAmt (only for approved bills)
-const paidAmount = filteredBills
-  .filter(b => b.orderStatus === "approved" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
-  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+  // Payment Status - Using totalAmt (only for approved/delivered bills)
+  const paidAmount = filteredBills
+    .filter(b => (b.orderStatus === "approved" || b.orderStatus === "delivered") && b.paidStatus === true)
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
-const outstandingAmount = filteredBills
-  .filter(b => b.orderStatus === "approved" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"))
-  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+  const pendingAmount = filteredBills
+    .filter(b => (b.orderStatus === "approved" || b.orderStatus === "delivered") && (b.paidStatus === false || !b.paidStatus))
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
-// Total approved order value - Using finalAmt (for percentage calculation)
-const totalApprovedValue = filteredBills
-  .filter(b => b.orderStatus === "approved")
-  .reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
+  // Bill counts
+  const paidBillsCount = filteredBills
+    .filter(b => (b.orderStatus === "approved" || b.orderStatus === "delivered") && b.paidStatus === true).length;
+
+  const pendingBillsCount = filteredBills
+    .filter(b => (b.orderStatus === "approved" || b.orderStatus === "delivered") && (b.paidStatus === false || !b.paidStatus)).length;
+
+  // Total approved/delivered order value - Using totalAmt
+  const totalApprovedValue = filteredBills
+    .filter(b => b.orderStatus === "approved" || b.orderStatus === "delivered")
+    .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
   
-// Total order value - Using totalAmt
-const totalOrderValue = filteredBills.reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-  
-  // Business value (total approved orders amount) - Using finalAmt
- // Business value (total approved orders amount) - Using totalAmt
-const businessValue = filteredBills
-  .filter(b => b.orderStatus === "approved")
-  .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
+  // Business value (same as totalApprovedValue)
+  const businessValue = totalApprovedValue;
+
   // Total counts
   const totalCustomers = selectedStaffId 
     ? customerData?.filter(c => c.createdBy === selectedStaffId).length || 0
@@ -354,44 +355,43 @@ const businessValue = filteredBills
     (item, index, self) => index === self.findIndex((t) => t._id === item._id)
   );
 
-  // Get selected staff performance details - Using finalAmt
- // Get selected staff performance details - Using finalAmt only for approved bills
-const getSelectedStaffPerformance = () => {
-  if (!selectedStaffForPerformance) return null;
-  
-  const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
-  const approvedStaffBills = staffBills.filter(b => b.orderStatus === "approved");
-  
-  const totalBills = staffBills.length;
-  const totalRevenue = approvedStaffBills.reduce((acc, bill) => acc + (Number(bill.finalAmt) || 0), 0);
-  
-  const approvedBills = staffBills.filter(b => b.orderStatus === "approved").length;
-  const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
-  const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
-  const paidBills = approvedStaffBills.filter(b => b.paymentMethod && b.paymentMethod !== null).length;
-  const unpaidBills = approvedStaffBills.filter(b => !b.paymentMethod || b.paymentMethod === null).length;
-  const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
-  
-  const lastBillDate = staffBills.length > 0 
-    ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
-    : 'N/A';
-  
-  const avgOrderValue = approvedBills > 0 ? totalRevenue / approvedBills : 0;
-  
-  return {
-    ...selectedStaffForPerformance,
-    totalBills,
-    totalRevenue,
-    approvedBills,
-    rejectedBills,
-    pendingBills,
-    paidBills,
-    unpaidBills,
-    customersServed,
-    lastBillDate,
-    avgOrderValue
+  // Get selected staff performance details - Using totalAmt
+  const getSelectedStaffPerformance = () => {
+    if (!selectedStaffForPerformance) return null;
+    
+    const staffBills = filteredBills.filter(bill => bill.createdBy === selectedStaffForPerformance._id);
+    const completedStaffBills = staffBills.filter(b => b.orderStatus === "approved" || b.orderStatus === "delivered");
+    
+    const totalBills = staffBills.length;
+    const totalRevenue = completedStaffBills.reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
+    
+    const completedBills = staffBills.filter(b => b.orderStatus === "approved" || b.orderStatus === "delivered").length;
+    const rejectedBills = staffBills.filter(b => b.orderStatus === "rejected").length;
+    const pendingBills = staffBills.filter(b => b.orderStatus === "pending").length;
+    const paidBills = completedStaffBills.filter(b => b.paidStatus === true).length;
+    const unpaidBills = completedStaffBills.filter(b => b.paidStatus === false || !b.paidStatus).length;
+    const customersServed = [...new Set(staffBills.map(b => b.customerId))].length;
+    
+    const lastBillDate = staffBills.length > 0 
+      ? new Date(Math.max(...staffBills.map(b => new Date(b.createdAt)))).toLocaleDateString('en-IN')
+      : 'N/A';
+    
+    const avgOrderValue = completedBills > 0 ? totalRevenue / completedBills : 0;
+    
+    return {
+      ...selectedStaffForPerformance,
+      totalBills,
+      totalRevenue,
+      completedBills,
+      rejectedBills,
+      pendingBills,
+      paidBills,
+      unpaidBills,
+      customersServed,
+      lastBillDate,
+      avgOrderValue
+    };
   };
-};
 
   const staffPerformance = getSelectedStaffPerformance();
 
@@ -738,8 +738,8 @@ const getSelectedStaffPerformance = () => {
                               <span className="stat-value">₹{(staffPerformance.totalRevenue/1000).toFixed(1)}K</span>
                             </div>
                             <div className="stat-item">
-                              <span>Approved</span>
-                              <span className="stat-value success">{staffPerformance.approvedBills}</span>
+                              <span>Completed</span>
+                              <span className="stat-value success">{staffPerformance.completedBills}</span>
                             </div>
                             <div className="stat-item">
                               <span>Rejected</span>
@@ -778,7 +778,7 @@ const getSelectedStaffPerformance = () => {
                             </div>
                             <div className="stat-item">
                               <span>Delivered</span>
-                              <span className="stat-value success">{staffPerformance.approvedBills || 0}</span>
+                              <span className="stat-value success">{staffPerformance.completedBills || 0}</span>
                             </div>
                             <div className="stat-item">
                               <span>Pending</span>
@@ -803,7 +803,7 @@ const getSelectedStaffPerformance = () => {
                               <span>Delivery Rate</span>
                               <span className="stat-value success">
                                 {staffPerformance.totalBills > 0 
-                                  ? ((staffPerformance.approvedBills / staffPerformance.totalBills) * 100).toFixed(1)
+                                  ? ((staffPerformance.completedBills / staffPerformance.totalBills) * 100).toFixed(1)
                                   : 0}%
                               </span>
                             </div>
@@ -853,177 +853,177 @@ const getSelectedStaffPerformance = () => {
             <Col xl="4" lg="4">
               {/* Routes Section */}
               <PreviewCard className="chart-card mb-3">
-  <div className="card-head chart-header" style={{ 
-    padding: '0.5rem 0.75rem',
-    borderBottom: '1px solid #e9ecef'
-  }}>
-    <h6 className="chart-title" style={{ 
-      fontSize: '0.8rem', 
-      margin: 0,
-      fontWeight: '600',
-      color: '#1a2b3c'
-    }}>🗺️ Routes Overview</h6>
-  </div>
-  
-  <div className="card-body" style={{ padding: '0.75rem' }}>
-    {/* Main Stats */}
-    <div className="routes-main-stats" style={{ 
-      display: 'flex', 
-      justifyContent: 'space-around', 
-      marginBottom: '0.75rem',
-      background: '#f8f9fa',
-      borderRadius: '8px',
-      padding: '0.5rem'
-    }}>
-      <div className="route-stat" style={{ textAlign: 'center' }}>
-        <span className="route-stat-label" style={{ 
-          fontSize: '0.55rem', 
-          color: '#6c757d',
-          display: 'block',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px',
-          marginBottom: '0.1rem'
-        }}>Total</span>
-        <span className="route-stat-value" style={{ 
-          fontSize: '1rem', 
-          fontWeight: '700', 
-          color: '#1a2b3c',
-          display: 'block'
-        }}>{routeData.length}</span>
-      </div>
-      <div className="route-stat" style={{ textAlign: 'center' }}>
-        <span className="route-stat-label" style={{ 
-          fontSize: '0.55rem', 
-          color: '#6c757d',
-          display: 'block',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px',
-          marginBottom: '0.1rem'
-        }}>Active</span>
-        <span className="route-stat-value success" style={{ 
-          fontSize: '1rem', 
-          fontWeight: '700', 
-          color: '#10b981',
-          display: 'block'
-        }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
-      </div>
-      <div className="route-stat" style={{ textAlign: 'center' }}>
-        <span className="route-stat-label" style={{ 
-          fontSize: '0.55rem', 
-          color: '#6c757d',
-          display: 'block',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px',
-          marginBottom: '0.1rem'
-        }}>Customers</span>
-        <span className="route-stat-value info" style={{ 
-          fontSize: '1rem', 
-          fontWeight: '700', 
-          color: '#0ea5e9',
-          display: 'block'
-        }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
-      </div>
-    </div>
+                <div className="card-head chart-header" style={{ 
+                  padding: '0.5rem 0.75rem',
+                  borderBottom: '1px solid #e9ecef'
+                }}>
+                  <h6 className="chart-title" style={{ 
+                    fontSize: '0.8rem', 
+                    margin: 0,
+                    fontWeight: '600',
+                    color: '#1a2b3c'
+                  }}>🗺️ Routes Overview</h6>
+                </div>
+                
+                <div className="card-body" style={{ padding: '0.75rem' }}>
+                  {/* Main Stats */}
+                  <div className="routes-main-stats" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-around', 
+                    marginBottom: '0.75rem',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    padding: '0.5rem'
+                  }}>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Total</span>
+                      <span className="route-stat-value" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#1a2b3c',
+                        display: 'block'
+                      }}>{routeData.length}</span>
+                    </div>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Active</span>
+                      <span className="route-stat-value success" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#10b981',
+                        display: 'block'
+                      }}>{routeData.filter(r => r.isActive !== false).length || 0}</span>
+                    </div>
+                    <div className="route-stat" style={{ textAlign: 'center' }}>
+                      <span className="route-stat-label" style={{ 
+                        fontSize: '0.55rem', 
+                        color: '#6c757d',
+                        display: 'block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
+                        marginBottom: '0.1rem'
+                      }}>Customers</span>
+                      <span className="route-stat-value info" style={{ 
+                        fontSize: '1rem', 
+                        fontWeight: '700', 
+                        color: '#0ea5e9',
+                        display: 'block'
+                      }}>{routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0)}</span>
+                    </div>
+                  </div>
 
-    {/* Top Routes List */}
-    <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
-      <div style={{ 
-        fontSize: '0.65rem', 
-        color: '#6c757d', 
-        marginBottom: '0.35rem',
-        fontWeight: '500',
-        textTransform: 'uppercase',
-        letterSpacing: '0.3px'
-      }}>Top Routes</div>
-      {routeData.slice(0, 2).map((route, index) => (
-        <div key={route._id || index} className="route-mini-item" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.4rem 0.5rem',
-          background: index === 0 ? '#fff7ed' : '#f0f9ff',
-          borderRadius: '6px',
-          marginBottom: '0.35rem',
-          border: '1px solid rgba(0,0,0,0.02)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1 }}>
-            <span style={{ 
-              width: '18px', 
-              height: '18px', 
-              borderRadius: '50%', 
-              background: index === 0 ? '#f59e0b' : '#0ea5e9',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.6rem',
-              fontWeight: '600',
-              flexShrink: 0
-            }}>
-              {index + 1}
-            </span>
-            <span style={{ 
-              fontSize: '0.7rem', 
-              fontWeight: '500', 
-              color: '#1a2b3c',
-              wordBreak: 'break-word', // Allows long words to break
-              lineHeight: '1.3'
-            }}>
-              {route.routeName || `Route ${index + 1}`}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-            <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
-              {route.customerCount || 0}
-            </span>
-            <span style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: route.isActive !== false ? '#10b981' : '#ef4444'
-            }} />
-          </div>
-        </div>
-      ))}
-    </div>
+                  {/* Top Routes List */}
+                  <div className="routes-mini-list" style={{ marginBottom: '0.5rem' }}>
+                    <div style={{ 
+                      fontSize: '0.65rem', 
+                      color: '#6c757d', 
+                      marginBottom: '0.35rem',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.3px'
+                    }}>Top Routes</div>
+                    {routeData.slice(0, 2).map((route, index) => (
+                      <div key={route._id || index} className="route-mini-item" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.4rem 0.5rem',
+                        background: index === 0 ? '#fff7ed' : '#f0f9ff',
+                        borderRadius: '6px',
+                        marginBottom: '0.35rem',
+                        border: '1px solid rgba(0,0,0,0.02)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: 1 }}>
+                          <span style={{ 
+                            width: '18px', 
+                            height: '18px', 
+                            borderRadius: '50%', 
+                            background: index === 0 ? '#f59e0b' : '#0ea5e9',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.6rem',
+                            fontWeight: '600',
+                            flexShrink: 0
+                          }}>
+                            {index + 1}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            fontWeight: '500', 
+                            color: '#1a2b3c',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.3'
+                          }}>
+                            {route.routeName || `Route ${index + 1}`}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: '500', color: '#6c757d' }}>
+                            {route.customerCount || 0}
+                          </span>
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: route.isActive !== false ? '#10b981' : '#ef4444'
+                          }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
-    {/* Utilization Bar */}
-    <div className="routes-utilization" style={{ 
-      marginTop: '2rem',
-      paddingTop: '0.5rem',
-      borderTop: '1px dashed #e9ecef'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        fontSize: '0.6rem', 
-        color: '#6c757d', 
-        marginBottom: '0.25rem',
-        fontWeight: '500'
-      }}>
-        <span>Route Utilization</span>
-        <span style={{ fontWeight: '600', color: '#f59e0b' }}>
-          {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
-        </span>
-      </div>
-      <div style={{ 
-        height: '4px', 
-        background: '#e9ecef', 
-        borderRadius: '10px', 
-        overflow: 'hidden',
-        width: '100%'
-      }}>
-        <div style={{
-          width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
-          height: '100%',
-          background: 'linear-gradient(90deg, #f59e0b, #d97706)',
-          borderRadius: '10px',
-          transition: 'width 0.3s ease'
-        }} />
-      </div>
-    </div>
-  </div>
-</PreviewCard>
+                  {/* Utilization Bar */}
+                  <div className="routes-utilization" style={{ 
+                    marginTop: '2rem',
+                    paddingTop: '0.5rem',
+                    borderTop: '1px dashed #e9ecef'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      fontSize: '0.6rem', 
+                      color: '#6c757d', 
+                      marginBottom: '0.25rem',
+                      fontWeight: '500'
+                    }}>
+                      <span>Route Utilization</span>
+                      <span style={{ fontWeight: '600', color: '#f59e0b' }}>
+                        {routeData.length > 0 ? Math.round((routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%
+                      </span>
+                    </div>
+                    <div style={{ 
+                      height: '4px', 
+                      background: '#e9ecef', 
+                      borderRadius: '10px', 
+                      overflow: 'hidden',
+                      width: '100%'
+                    }}>
+                      <div style={{
+                        width: `${routeData.length > 0 ? Math.min(100, (routeData.reduce((acc, route) => acc + (route.customerCount || 0), 0) / (routeData.length * 15)) * 100) : 0}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+                        borderRadius: '10px',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              </PreviewCard>
 
               {/* Total Staff Distribution Card */}
               <PreviewCard className="chart-card">
@@ -1084,7 +1084,7 @@ const getSelectedStaffPerformance = () => {
               </PreviewCard>
             </Col>
 
-            {/* Third Section - Total Orders, Business Value, Outstanding Amount */}
+            {/* Third Section - Total Orders, Business Value, Pending Amount */}
             <Col xl="4" lg="4">
               <div className="d-flex flex-column h-100" style={{ gap: '1.25rem' }}>
                 {/* Total Orders Card */}
@@ -1116,96 +1116,103 @@ const getSelectedStaffPerformance = () => {
                   </div>
                 </PreviewAltCard>
 
-                {/* Business Value Card - Using finalAmt */}
-           {/* Business Value Card - Using totalAmt */}
-<PreviewAltCard className="delivery-card flex-grow-1">
-  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-    <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
-      <Icon name="trend-up" size={28} />
-    </div>
-    <div className="delivery-content">
-      <h6 className="delivery-title">Business Value</h6>
-      <div className="delivery-value">
-        {loading.bills ? (
-          <span>Loading...</span>
-        ) : (
-          <>
-            <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
-            <small className="badge">total amount</small> {/* Changed from "final amount" to "total amount" */}
-          </>
-        )}
-      </div>
-      {/* Approved Bills Total */}
-      <div className="approved-breakdown mt-2">
-        <div className="d-flex justify-content-between small">
-          <span>Approved Bills:</span>
-          <span className="fw-bold text-success">{approvedOrders}</span>
-        </div>
-        <div className="d-flex justify-content-between small mt-1">
-          <span>Avg per Bill:</span>
-          <span className="fw-bold">
-            ₹{approvedOrders > 0 ? (businessValue/approvedOrders).toFixed(0) : 0}
-          </span>
-        </div>
-      </div>
-      {/* Trend Indicator */}
-      <div className="trend-indicator up mt-2">
-        <Icon name="arrow-up" size={14} />
-        <span>12.5% vs last period</span>
-      </div>
-    </div>
-  </div>
-</PreviewAltCard>
+                {/* Business Value Card - Using totalAmt */}
+                <PreviewAltCard className="delivery-card flex-grow-1">
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon success" style={{ width: '55px', height: '55px', background: '#10b98120' }}>
+                      <Icon name="trend-up" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Business Value</h6>
+                      <div className="delivery-value">
+                        {loading.bills ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">₹{businessValue.toLocaleString('en-IN')}</span>
+                            <small className="badge">total amount</small>
+                          </>
+                        )}
+                      </div>
+                      {/* Approved Bills Total */}
+                      <div className="approved-breakdown mt-2">
+                        <div className="d-flex justify-content-between small">
+                          <span>Approved Bills:</span>
+                          <span className="fw-bold text-success">{approvedOrders}</span>
+                        </div>
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Avg per Bill:</span>
+                          <span className="fw-bold">
+                            ₹{approvedOrders > 0 ? (businessValue/approvedOrders).toFixed(0) : 0}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Trend Indicator */}
+                      <div className="trend-indicator up mt-2">
+                        <Icon name="arrow-up" size={14} />
+                        <span>12.5% vs last period</span>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
 
-                {/* Outstanding Amount Card - Using finalAmt */}
-                {/* Outstanding Amount Card - Using finalAmt for approved bills only */}
-<PreviewAltCard className="delivery-card flex-grow-1">
-  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
-    <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
-      <Icon name="clock" size={28} />
-    </div>
-    <div className="delivery-content">
-      <h6 className="delivery-title">Outstanding Amount</h6>
-      <div className="delivery-value">
-        {loading.bills ? (
-          <span>Loading...</span>
-        ) : (
-          <>
-            <span className="value-number">₹{outstandingAmount.toLocaleString('en-IN')}</span>
-            <small className="badge">unpaid (approved bills)</small>
-          </>
-        )}
-      </div>
-      {/* Payment Progress - Only for approved bills */}
-      <div className="payment-progress mt-2">
-        <div className="d-flex justify-content-between small mb-1">
-          <span>Paid: ₹{paidAmount.toLocaleString('en-IN')}</span>
-          <span>{totalApprovedValue > 0 ? Math.round((paidAmount/totalApprovedValue)*100) : 0}%</span>
-        </div>
-        <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
-          <div style={{
-            width: `${totalApprovedValue > 0 ? (paidAmount/totalApprovedValue)*100 : 0}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
-            borderRadius: '10px'
-          }} />
-        </div>
-        <div className="d-flex justify-content-between small mt-1">
-          <span>Pending Bills (Unpaid):</span>
-          <span className="fw-bold text-warning">
-            {filteredBills.filter(b => b.orderStatus === "approved" && (!b.paymentMethod || b.paymentMethod === null)).length}
-          </span>
-        </div>
-        <div className="d-flex justify-content-between small mt-1">
-          <span>Paid Bills:</span>
-          <span className="fw-bold text-success">
-            {filteredBills.filter(b => b.orderStatus === "approved" && b.paymentMethod && b.paymentMethod !== null).length}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-</PreviewAltCard>
+                {/* Pending Amount Card - Using paidStatus for approved bills only */}
+                <PreviewAltCard className="delivery-card flex-grow-1">
+                  <div className="card-body delivery-body" style={{ padding: '1.5rem' }}>
+                    <div className="delivery-icon warning" style={{ width: '55px', height: '55px' }}>
+                      <Icon name="clock" size={28} />
+                    </div>
+                    <div className="delivery-content">
+                      <h6 className="delivery-title">Outstanding Amount</h6>
+                      <div className="delivery-value">
+                        {loading.bills ? (
+                          <span>Loading...</span>
+                        ) : (
+                          <>
+                            <span className="value-number">₹{pendingAmount.toLocaleString('en-IN')}</span>
+                            
+                          </>
+                        )}
+                      </div>
+                      
+                      {/* Payment Progress - Using paidStatus */}
+                      <div className="payment-progress mt-2">
+                        <div className="d-flex justify-content-between small mb-1">
+                          <span>Paid: ₹{paidAmount.toLocaleString('en-IN')}</span>
+                          <span>{totalApprovedValue > 0 ? Math.round((paidAmount/totalApprovedValue)*100) : 0}%</span>
+                        </div>
+                        <div style={{ height: '4px', background: '#e9ecef', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${totalApprovedValue > 0 ? (paidAmount/totalApprovedValue)*100 : 0}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #f59e0b, #f39c12)',
+                            borderRadius: '10px'
+                          }} />
+                        </div>
+                        
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Pending Bills (Unpaid):</span>
+                          <span className="fw-bold text-warning">
+                            {pendingBillsCount}
+                          </span>
+                        </div>
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Paid Bills:</span>
+                          <span className="fw-bold text-success">
+                            {paidBillsCount}
+                          </span>
+                        </div>
+                       
+                        <div className="d-flex justify-content-between small mt-1">
+                          <span>Total Approved:</span>
+                          <span className="fw-bold text-primary">
+                            ₹{totalApprovedValue.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </PreviewAltCard>
               </div>
             </Col>
           </Row>
@@ -1240,7 +1247,7 @@ const getSelectedStaffPerformance = () => {
                     </div>
                     <div className="staff-info">
                       <h6>{staff.name}</h6>
-                      <p>{staff.email || 'No email'}</p>
+                      <p>{staff.mobile || 'No mobile number'}</p>
                     </div>
                     <div className="staff-stats">
                       <span className="stat-badge" style={{ background: staff.type === 'delivery' ? '#3498db20' : staff.type === 'sales' ? '#2ecc7120' : '#95a5a620', color: staff.type === 'delivery' ? '#3498db' : staff.type === 'sales' ? '#2ecc71' : '#95a5a6' }}>

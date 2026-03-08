@@ -964,14 +964,15 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
             </td>
 
            <td style={{ padding: '12px 16px' }}>
-  <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
+  <div style={{ display: 'flex', gap: '35px', alignItems: 'center', flexWrap: 'wrap' }}>
     
     {/* Route Select - Increased Width */}
     <div style={{ position: 'relative', width: '160px' }}>
       <select
         style={{
-          width: '100%',
+          width: '120%',
           padding: '8px 28px 8px 12px',
+          
           borderRadius: '6px',
           border: '1px solid #e0e7ed',
           backgroundColor: '#fff',
@@ -1005,6 +1006,7 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
       <div style={{
         position: 'absolute',
         right: '10px',
+        left: '165px',
         top: '50%',
         transform: 'translateY(-50%)',
         pointerEvents: 'none',
@@ -1019,9 +1021,10 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
     <div style={{ position: 'relative', width: '140px' }}>
       <select
         style={{
-          width: '100%',
+          width: '120%',
           padding: '8px 28px 8px 12px',
           borderRadius: '6px',
+          marginLeft: '10px',
           border: '1px solid #e0e7ed',
           backgroundColor: existingVehicleNo ? '#f8fafd' : '#fff',
           fontSize: '0.85rem',
@@ -1070,6 +1073,7 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
       <div style={{
         position: 'absolute',
         right: '10px',
+        left: '150px',
         top: '50%',
         transform: 'translateY(-50%)',
         pointerEvents: 'none',
@@ -1085,6 +1089,7 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
       style={{
         padding: '8px 16px',
         borderRadius: '6px',
+        marginLeft: 'auto',
         border: 'none',
         backgroundColor: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? '#f1f5f9' : '#2c6b9e',
         color: (!staff.selectedRoute || (!existingVehicleNo && !staff.selectedVehicle) || !canAssignMoreRoutes(staff._id) || loading) ? '#8a9cb0' : '#fff',
@@ -1489,7 +1494,7 @@ const filteredDeliveryStaff = Array.isArray(deliveryStaff)
                           </td>
                           <td>
                             <Badge color={customer.creditDays > 30 ? "warning" : "success"}>
-                              {customer.creditDays} days
+                              {customer.creditDays} Days
                             </Badge>
                           </td>
                           <td>
@@ -2057,17 +2062,14 @@ const renderLiveTrack = () => {
 };
 
   if (loading && routes.length === 0 && routeAssignments.length === 0) {
-    return (
-      <Content>
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-          <p className="mt-3">Loading delivery management data...</p>
-        </div>
-      </Content>
-    );
-  }
+  return (
+    <Content>
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" style={{marginTop:"230px"}} role="status"></div>
+      </div>
+    </Content>
+  );
+}
 
   return (
     <>

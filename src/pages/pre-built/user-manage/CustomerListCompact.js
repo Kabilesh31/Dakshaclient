@@ -750,11 +750,15 @@ const CustomerListCompact = () => {
                   </DataTableItem>
                 ))
               ) : (
-                <DataTableItem>
-                  <DataTableRow colSpan="6" className="text-center py-4">
-                    No customers found
-                  </DataTableRow>
-                </DataTableItem>
+               <tr>
+    <td colSpan="9" style={{ 
+      textAlign: 'center', 
+      padding: '20px',
+      backgroundColor: '#fff'
+    }}>
+      No customers found
+    </td>
+  </tr>
               )}
             </DataTableBody>
 
@@ -1028,7 +1032,10 @@ const CustomerListCompact = () => {
                       <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
                         <input {...getInputProps()} />
                         {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
+                        <div className="text-soft medium mt-1">PNG or JPG only (max 5MB)</div>
                       </div>
+                      
+                      
                     )}
                   </Dropzone>
                   
@@ -1252,6 +1259,7 @@ const CustomerListCompact = () => {
                       <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
                         <input {...getInputProps()} />
                         {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
+                         <div className="text-soft medium mt-1">PNG or JPG only (max 5MB)</div>
                       </div>
                     )}
                   </Dropzone>
