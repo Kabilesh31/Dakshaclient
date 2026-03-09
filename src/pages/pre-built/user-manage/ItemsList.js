@@ -4,7 +4,7 @@ import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
 
-import { FormGroup, UncontrolledDropdown, Modal, ModalBody, DropdownItem, Form } from "reactstrap";
+import { FormGroup, UncontrolledDropdown,  DropdownToggle, DropdownMenu, Modal, ModalBody, DropdownItem, Form } from "reactstrap";
 import {
   Block,
   BlockBetween,
@@ -46,6 +46,10 @@ const ProductsListCompact = () => {
   const [onSearchText, setSearchText] = useState("");
   const [brandSearch, setBrandSearch] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("All Brands");
+  
+  // NEW: State for focus filter
+  const [showFocusOnly, setShowFocusOnly] = useState(false);
+  
   const [addLoading, setAddLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
 
@@ -111,27 +115,30 @@ const ProductsListCompact = () => {
     }
   }, [data]);
 
+  // MODIFIED: Filter logic to include focus filter
   const filteredProducts = data.filter((product) => {
+    // Brand filter
     const matchesBrand = selectedBrand === "All Brands" || product.brand === selectedBrand;
+    
+    // Focus filter
+    const matchesFocus = !showFocusOnly || product.focusProduct === true;
 
+    // Search filter
     const searchText = onSearchText.toLowerCase();
-
     const matchesSearch =
       product.productName?.toLowerCase().includes(searchText) ||
       product.productCode?.toLowerCase().includes(searchText) ||
       product.brand?.toLowerCase().includes(searchText);
 
-    return matchesBrand && matchesSearch;
+    return matchesBrand && matchesFocus && matchesSearch;
   });
   
   useEffect(() => {
     setCurrentPage(1);
-  }, [filteredProducts.length]);
-
+  }, [filteredProducts.length, showFocusOnly]); // Added showFocusOnly dependency
 
   const fetchProductData = async () => {
     try {
-
       const token = localStorage.getItem("accessToken");
       const sessionToken = localStorage.getItem("sessionToken");
 
@@ -279,8 +286,8 @@ const resetForm = () => {
       });
 
       setCurrentPage(1);
-
       setSelectedBrand("All Brands");
+      setShowFocusOnly(false); // Reset focus filter when adding new product
     } catch (err) {
       console.error(err);
       errorToast("Add product failed");
@@ -335,6 +342,65 @@ const resetForm = () => {
     setEditLoading(false);
   }
   };
+const toggleFocusProduct = async (item) => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    const sessionToken = localStorage.getItem("sessionToken");
+
+    if (!token || !sessionToken) {
+      errorToast("Authentication required");
+      return;
+    }
+
+    const url = item.focusProduct
+      ? `${process.env.REACT_APP_BACKENDURL}/api/product/unfocus/${item._id}`
+      : `${process.env.REACT_APP_BACKENDURL}/api/product/focus/${item._id}`;
+
+    console.log("Toggling focus for:", item._id);
+    console.log("Current focus status:", item.focusProduct);
+    console.log("Request URL:", url);
+
+    const response = await axios.put(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Response:", response.data);
+
+    // Update UI immediately
+    setData((prev) =>
+      prev.map((p) =>
+        p._id === item._id
+          ? { ...p, focusProduct: !p.focusProduct }
+          : p
+      )
+    );
+
+    successToast(
+      item.focusProduct
+        ? "Product removed from focus"
+        : "Product marked as focus"
+    );
+
+  } catch (err) {
+    console.error("Focus update error:", err);
+    console.error("Error response:", err.response?.data);
+
+    const errorMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Failed to update focus status";
+
+    errorToast(errorMessage);
+  }
+};
 
 const onEditClick = (item) => {
   setSelectedId(item._id);
@@ -395,6 +461,9 @@ const onEditClick = (item) => {
   };
 
   const { errors, register, handleSubmit } = useForm();
+
+  // Calculate focus products count
+  const focusProductsCount = data.filter(p => p.focusProduct).length;
 
   return (
     <React.Fragment>
@@ -501,11 +570,38 @@ const onEditClick = (item) => {
                     }}
                   />
 
+                  {/* NEW: Focus Products Button */}
+                  <div
+                    className={`brand-item ${showFocusOnly ? "active" : ""}`}
+                    onClick={() => {
+                      setShowFocusOnly(!showFocusOnly);
+                      setSelectedBrand("All Brands"); // Reset brand filter when toggling focus
+                    }}
+                    style={{
+                      marginTop: "10px",
+                      padding: "10px 5px",
+                      fontSize: "1rem",
+                      backgroundColor: showFocusOnly ? "#ffc107" : "transparent",
+                      color: showFocusOnly ? "#000" : "inherit",
+                    }}
+                  >
+                    <div className="brand-name">
+                      <Icon name="star-fill" style={{ marginRight: "8px", color: showFocusOnly ? "#000" : "#ffc107" }} />
+                      Focus Products
+                    </div>
+                    <div className="brand-count" style={{ backgroundColor: showFocusOnly ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.1)" }}>
+                      {focusProductsCount}
+                    </div>
+                  </div>
+
                   <div className="brand-list" style={{ maxHeight: "100%", overflowY: "auto" }}>
                     {/* All Brands */}
                     <div
-                      className={`brand-item ${selectedBrand === "All Brands" ? "active" : ""}`}
-                      onClick={() => setSelectedBrand("All Brands")}
+                      className={`brand-item ${selectedBrand === "All Brands" && !showFocusOnly ? "active" : ""}`}
+                      onClick={() => {
+                        setSelectedBrand("All Brands");
+                        setShowFocusOnly(false);
+                      }}
                       style={{
                         marginTop: "5px",
                         padding: "10px 5px",
@@ -522,8 +618,11 @@ const onEditClick = (item) => {
                       .map((brand, index) => (
                         <div
                           key={index}
-                          className={`brand-item ${selectedBrand === brand.name ? "active" : ""}`}
-                          onClick={() => setSelectedBrand(brand.name)}
+                          className={`brand-item ${selectedBrand === brand.name && !showFocusOnly ? "active" : ""}`}
+                          onClick={() => {
+                            setSelectedBrand(brand.name);
+                            setShowFocusOnly(false);
+                          }}
                           style={{
                             padding: "10px 5px",
                             fontSize: "0.5rem",
@@ -546,7 +645,7 @@ const onEditClick = (item) => {
                   <div className="card-title-group">
                     <div className="card-tools">
                       <div className="form-inline flex-nowrap gx-3">
-                        {/* Selected Brand Display */}
+                        {/* Selected Filter Display */}
                         <div className="form-wrap">
                           <div
                             className="form-control d-flex align-items-center"
@@ -556,7 +655,14 @@ const onEditClick = (item) => {
                               fontWeight: 600,
                             }}
                           >
-                            {selectedBrand || "All Brands"}
+                            {showFocusOnly ? (
+                              <>
+                                <Icon name="star-fill" style={{ marginRight: "8px", color: "#ffc107" }} />
+                                Focus Products
+                              </>
+                            ) : (
+                              selectedBrand || "All Brands"
+                            )}
                           </div>
                         </div>
                       </div>
@@ -613,13 +719,20 @@ const onEditClick = (item) => {
                   <BlockContent>
                     <Row className="g-1">
                       {currentItems.map((item, idx) => (
-                        <Col lg="3" md="4" sm="6">
+                        <Col lg="3" md="4" sm="6" key={item._id}>
                           <div className="product-card">
                             <div className="product-image-wrapper">
                               {item.img ? (
                                 <img className="product-image" src={item.img} alt={item.productName} />
                               ) : (
                                 <span className="no-preview">No preview available</span>
+                              )}
+                              {item.focusProduct && (
+                                <div style={{ position: "absolute", top: "10px", left: "10px" }}>
+                                  <span className="badge badge-warning">
+                                    <Icon name="star-fill" /> Focus
+                                  </span>
+                                </div>
                               )}
                               <div className="hover-icon" onClick={() => onEditClick(item)}>
                                 <TooltipComponent
@@ -700,7 +813,15 @@ const onEditClick = (item) => {
                                 image={item.img}
                               />
                               <div className="user-info ml-2">
-                                <span className="tb-lead">{item.productName}</span>
+                               <span className="tb-lead">
+  {item.productName}
+
+  {item.focusProduct && (
+    <span className="badge badge-warning ml-2">
+      Focus
+    </span>
+  )}
+</span>
                               </div>
                             </div>
                           </DataTableRow>
@@ -732,39 +853,59 @@ const onEditClick = (item) => {
                           </DataTableRow> */}
                           <DataTableRow className="nk-tb-col-tools">
                             <ul className="nk-tb-actions gx-1">
-                              <li onClick={() => onEditClick(item)}>
-                                <TooltipComponent
-                                  tag="a"
-                                  containerClassName="btn btn-trigger btn-icon"
-                                  id={"edit" + item._id}
-                                  icon="edit-alt-fill"
-                                  direction="top"
-                                  text="Edit"
-                                />
-                              </li>
-                              <li
-                                onClick={() => {
-                                  setDeleteItem(item);
-                                  setDeleteModal(true);
-                                }}
-                              >
-                                <TooltipComponent
-                                  tag="a"
-                                  containerClassName="btn btn-trigger btn-icon text-danger"
-                                  id={"delete" + item._id}
-                                  icon="trash-fill"
-                                  direction="top"
-                                  text="Delete"
-                                />
-                              </li>
-                            </ul>
+  <li>
+    <UncontrolledDropdown>
+      <DropdownToggle
+        tag="a"
+        className="dropdown-toggle btn btn-icon btn-trigger"
+      >
+        <Icon name="more-h"></Icon>
+      </DropdownToggle>
+
+      <DropdownMenu right>
+        {/* Edit */}
+        <DropdownItem
+          onClick={() => onEditClick(item)}
+        >
+          <Icon name="edit-alt-fill" className="mr-1" />
+          Edit
+        </DropdownItem>
+
+        {/* Focus / Unfocus */}
+        <DropdownItem
+          onClick={() => toggleFocusProduct(item)}
+        >
+          <Icon
+            name={item.focusProduct ? "star-fill" : "star"}
+            className="mr-1"
+          />
+          {item.focusProduct
+            ? "Remove Focus Product"
+            : "Mark as Focus Product"}
+        </DropdownItem>
+
+        {/* Delete */}
+        <DropdownItem
+          className="text-danger"
+          onClick={() => {
+            setDeleteItem(item);
+            setDeleteModal(true);
+          }}
+        >
+          <Icon name="trash-fill" className="mr-1" />
+          Delete
+        </DropdownItem>
+      </DropdownMenu>
+    </UncontrolledDropdown>
+  </li>
+</ul>
                           </DataTableRow>
                         </DataTableItem>
                       ))
                     ) : (
                       <DataTableItem>
                         <DataTableRow colSpan="11" className="text-center py-5">
-                          <span className="text-silent">No products found for selected brand</span>
+                          <span className="text-silent">No products found</span>
                         </DataTableRow>
                       </DataTableItem>
                     )}
@@ -840,9 +981,8 @@ const onEditClick = (item) => {
           </Row>
         </Block>
 
-        {/* Add Product Modal */}
-        <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
-          <ModalBody>
+       <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
+  <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
             <a
               href="#close"
               className="close"
@@ -1014,182 +1154,181 @@ const onEditClick = (item) => {
           </ModalBody>
         </Modal>
 
-        {/* Edit Product Modal */}
-        <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
-          <ModalBody>
-            <a
-              href="#close"
-              className="close"
-              onClick={(e) => {
-                e.preventDefault();
-                setModalEdit(false);
-              }}
-            >
-              <Icon name="cross-sm" />
-            </a>
+    {/* Edit Product Modal */}
+<Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
+  <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+    <a
+      href="#close"
+      className="close"
+      onClick={(e) => {
+        e.preventDefault();
+        setModalEdit(false);
+      }}
+    >
+      <Icon name="cross-sm" />
+    </a>
 
-            <h5 className="title mb-3">Edit Product</h5>
+    <h5 className="title mb-3">Edit Product</h5>
 
-            <Form className="row gy-3" onSubmit={onEditSubmit}>
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
-                  <CreatableSelect
-                    options={brandOptions}
-                    value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
-                    onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
-                    isClearable
-                  />
-                </FormGroup>
-              </Col>
+    <Form className="row gy-3" onSubmit={onEditSubmit}>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
+          <CreatableSelect
+            options={brandOptions}
+            value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
+            onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
+            isClearable
+          />
+        </FormGroup>
+      </Col>
 
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
-                  <input
-                    className="form-control"
-                    value={formData.productName}
-                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                    required
-                  />
-                </FormGroup>
-              </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
+          <input
+            className="form-control"
+            value={formData.productName}
+            onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+            required
+          />
+        </FormGroup>
+      </Col>
 
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
-                  <input
-                    className="form-control"
-                    value={formData.productCode}
-                    onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
-                    required
-                  />
-                </FormGroup>
-              </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
+          <input
+            className="form-control"
+            value={formData.productCode}
+            onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+            required
+          />
+        </FormGroup>
+      </Col>
 
-              <Col md="6">
-                <FormGroup>
-                  <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.value}
-                    onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                    required
-                  />
-                </FormGroup>
-              </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
+          <input
+            type="number"
+            className="form-control"
+            value={formData.value}
+            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+            required
+          />
+        </FormGroup>
+      </Col>
 
-              <Col md="12">
-                <FormGroup check>
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={formData.boxPacking}
-                    onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
-                  />
-                  <label className="form-label ms-2">Box Packing Available</label>
-                </FormGroup>
-              </Col>
-              <Col md="6">
-  <FormGroup>
-    <label className="form-label">Packing</label>
-    <input
-      type="text"
-      className={`form-control ${
-        formData.packing && !packingRegex.test(formData.packing)
-          ? "is-invalid"
-          : ""
-      }`}
-      placeholder="1 x 1"
-      value={formData.packing}
-      onChange={(e) =>
-        setFormData({ ...formData, packing: e.target.value })
-      }
-    />
-    {formData.packing &&
-      !packingRegex.test(formData.packing) && (
-        <div className="invalid-feedback">
-          Format must be like: 10 x 2
-        </div>
-      )}
-  </FormGroup>
-</Col>
-<Col md="6">
-  <FormGroup>
-    <label className="form-label">GST (%)</label>
-    <input
-      type="number"
-      className="form-control"
-      value={formData.gst}
-      onChange={(e) =>
-        setFormData({ ...formData, gst: e.target.value })
-      }
-      min="0"
-    />
-  </FormGroup>
-</Col>
+      <Col md="12">
+        <FormGroup check>
+          <input
+            type="checkbox"
+            className="form-check-input"
+            checked={formData.boxPacking}
+            onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
+          />
+          <label className="form-label ms-2">Box Packing Available</label>
+        </FormGroup>
+      </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">Packing</label>
+          <input
+            type="text"
+            className={`form-control ${
+              formData.packing && !packingRegex.test(formData.packing)
+                ? "is-invalid"
+                : ""
+            }`}
+            placeholder="1 x 1"
+            value={formData.packing}
+            onChange={(e) =>
+              setFormData({ ...formData, packing: e.target.value })
+            }
+          />
+          {formData.packing &&
+            !packingRegex.test(formData.packing) && (
+              <div className="invalid-feedback">
+                Format must be like: 10 x 2
+              </div>
+            )}
+        </FormGroup>
+      </Col>
+      <Col md="6">
+        <FormGroup>
+          <label className="form-label">GST (%)</label>
+          <input
+            type="number"
+            className="form-control"
+            value={formData.gst}
+            onChange={(e) =>
+              setFormData({ ...formData, gst: e.target.value })
+            }
+            min="0"
+          />
+        </FormGroup>
+      </Col>
 
-              {[1, 2, 3].map((n) => (
-                <Col md="4" key={n}>
-                  <FormGroup>
-                    <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
-                    <input
-                      className="form-control"
-                      value={formData[`ptr${n}`]}
-                      onChange={(e) => setFormData({ ...formData, [`ptr${n}`]: e.target.value })}
-                    />
-                  </FormGroup>
-                </Col>
-              ))}
+      {[1, 2, 3].map((n) => (
+        <Col md="4" key={n}>
+          <FormGroup>
+            <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
+            <input
+              className="form-control"
+              value={formData[`ptr${n}`]}
+              onChange={(e) => setFormData({ ...formData, [`ptr${n}`]: e.target.value })}
+            />
+          </FormGroup>
+        </Col>
+      ))}
 
-              <Col md="12">
-                <FormGroup>
-                  <label className="form-label">Notes</label>
-                  <textarea
-                    className="form-control"
-                    rows="2"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    
-                  />
-                </FormGroup>
-              </Col>
+      <Col md="12">
+        <FormGroup>
+          <label className="form-label">Notes</label>
+          <textarea
+            className="form-control"
+            rows="2"
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            
+          />
+        </FormGroup>
+      </Col>
 
-              <Col md="12">
-                <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
-                  {({ getRootProps, getInputProps }) => (
-                    <div {...getRootProps()} className="dropzone">
-                      <input {...getInputProps()} />
-                      {formData.img ? (
-                        <img
-                          src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
-                          style={{ width: 80 }}
-                        />
-                      ) : (
-                        <p>Upload Image</p>
-                      )}
-                    </div>
-                  )}
-                </Dropzone>
-              </Col>
+      <Col md="12">
+        <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+          {({ getRootProps, getInputProps }) => (
+            <div {...getRootProps()} className="dropzone">
+              <input {...getInputProps()} />
+              {formData.img ? (
+                <img
+                  src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
+                  style={{ width: 80 }}
+                />
+              ) : (
+                <p>Upload Image</p>
+              )}
+            </div>
+          )}
+        </Dropzone>
+      </Col>
 
-              <Col md="12">
-                <Button color="primary" type="submit" disabled={editLoading}>
-  {editLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Updating...
-    </>
-  ) : (
-    "Update Product"
-  )}
-</Button>
-
-              </Col>
-            </Form>
-          </ModalBody>
-        </Modal>
+      <Col md="12">
+        <Button color="primary" type="submit" disabled={editLoading}>
+          {editLoading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2"></span>
+              Updating...
+            </>
+          ) : (
+            "Update Product"
+          )}
+        </Button>
+      </Col>
+    </Form>
+  </ModalBody>
+</Modal>
 
         <Modal isOpen={deleteModal} toggle={() => setDeleteModal(false)} className="modal-dialog-centered">
           <div className="modal-header">
