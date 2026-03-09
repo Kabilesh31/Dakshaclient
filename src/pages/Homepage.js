@@ -394,7 +394,15 @@ const Homepage = () => {
   };
 
   const staffPerformance = getSelectedStaffPerformance();
+const salesStaff = staffData.filter(
+  (staff) => staff.type?.toLowerCase() === "sales"
+);
 
+const deliveryStaff = staffData.filter(
+  (staff) => staff.type?.toLowerCase() === "delivery"
+);
+
+const selectedType = selectedStaffForPerformance?.type?.toLowerCase();
   return (
     <React.Fragment>
       <Head title="Homepage"></Head>
@@ -1220,7 +1228,7 @@ const Homepage = () => {
       </Content>
 
       {/* Staff Selection Modal */}
-      <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="lg">
+      <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="xl">
         <ModalBody className="staff-modal-body">
           <a
             href="#cancel"
@@ -1232,35 +1240,61 @@ const Homepage = () => {
           >
             <Icon name="cross-sm"></Icon>
           </a>
-          <div className="staff-modal-content">
-            <h5 className="staff-modal-title">👤 Select Staff Member</h5>
-            <div className="staff-list">
-              {staffData.length > 0 ? (
-                staffData.map((staff) => (
-                  <div
-                    key={staff._id}
-                    className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
-                    onClick={() => handleStaffPerformanceSelect(staff)}
-                  >
-                    <div className="staff-avatar-small">
-                      {staff.name?.charAt(0)}
-                    </div>
-                    <div className="staff-info">
-                      <h6>{staff.name}</h6>
-                      <p>{staff.mobile || 'No mobile number'}</p>
-                    </div>
-                    <div className="staff-stats">
-                      <span className="stat-badge" style={{ background: staff.type === 'delivery' ? '#3498db20' : staff.type === 'sales' ? '#2ecc7120' : '#95a5a620', color: staff.type === 'delivery' ? '#3498db' : staff.type === 'sales' ? '#2ecc71' : '#95a5a6' }}>
-                        {staff.type || 'manager'}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center py-4">No staff found</p>
-              )}
-            </div>
+         <div className="staff-container">
+
+  {/* Sales Staff */}
+  <div className="staff-column">
+    <h5 className="column-title sales-title">Sales Team</h5>
+
+    {salesStaff.length > 0 ? (
+      salesStaff.map((staff) => (
+        <div
+          key={staff._id}
+          className={`staff-card ${
+            selectedStaffForPerformance?._id === staff._id ? "selected" : ""
+          }`}
+          onClick={() => handleStaffPerformanceSelect(staff)}
+        >
+          <div className="avatar">{staff.name?.charAt(0)}</div>
+
+          <div className="staff-info">
+            <h6>{staff.name}</h6>
+            
           </div>
+        </div>
+      ))
+    ) : (
+      <p className="empty-text">No Sales Staff</p>
+    )}
+  </div>
+
+  {/* Delivery Staff */}
+  <div className="staff-column">
+    <h5 className="column-title delivery-title">Delivery Team</h5>
+
+    {deliveryStaff.length > 0 ? (
+      deliveryStaff.map((staff) => (
+        <div
+          key={staff._id}
+          className={`staff-card ${
+            selectedStaffForPerformance?._id === staff._id ? "selected" : ""
+          }`}
+          onClick={() => handleStaffPerformanceSelect(staff)}
+        >
+          <div className="avatar">{staff.name?.charAt(0)}</div>
+
+          <div className="staff-info">
+            <h6>{staff.name}</h6>
+            <p>{staff.mobile || "No mobile number"}</p>
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="empty-text">No Delivery Staff</p>
+    )}
+  </div>
+
+</div>
         </ModalBody>
       </Modal>
 
