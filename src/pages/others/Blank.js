@@ -730,16 +730,16 @@ const Reports = () => {
               {/* Stats Cards - Using totalAmt */}
               <Row className="stats-row g-2">
                 <Col md="3">
-  <div className="stat-card compact">
-    <div className="stat-icon blue compact">
-      <i className="ni ni-box"></i>
-    </div>
-    <div className="stat-content">
-      <span className="stat-label">Total Orders</span>
-      <span className="stat-value">{filteredReportData.filter(b => b.orderStatus !== "rejected").length}</span>
-    </div>
-  </div>
-</Col>
+                  <div className="stat-card compact">
+                    <div className="stat-icon blue compact">
+                      <i className="ni ni-box"></i>
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-label">Total Orders</span>
+                      <span className="stat-value">{filteredReportData.filter(b => b.orderStatus !== "rejected").length}</span>
+                    </div>
+                  </div>
+                </Col>
                 <Col md="3">
                   <div className="stat-card compact">
                     <div className="stat-icon green compact">
@@ -804,11 +804,11 @@ const Reports = () => {
                         <thead>
                           <tr>
                             <th>S.No</th>
-                            <th>Order No</th>
                             <th>Date</th>
+                            <th>Staff Name</th>
+                            <th>Order ID</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Staff Name</th>
                             <th>Action</th>
                           </tr>
                         </thead>
@@ -829,25 +829,29 @@ const Reports = () => {
                             return (
                               <tr key={o._id} className={o.orderStatus === "rejected" ? "rejected-row" : ""}>
                                 <td>{indexOfFirstItem + idx + 1}</td>
-                                <td>
-                                  <span className="order-id">#{o._id.toString().slice(-6)}</span>
-                                </td>
+                              
                                 <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
                                   day: '2-digit', 
                                   month: 'short', 
                                   year: 'numeric' 
-                                })}</td>
-                                <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString('en-IN')}</td>
-                                <td>
-                                  <span className={`order-status-badge ${statusClass}`}>
-                                    {statusText}
-                                  </span>
+                                })}
                                 </td>
                                 <td>
                                   <span className="staff-name">
                                     {getStaffName(o)}
                                   </span>
                                 </td>
+                                 <td>
+                                  <span className="order-id">#{o._id.toString().slice(-6)}</span>
+                                </td>                                
+                                <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString('en-IN')}</td>
+                                <td>
+                                  <span className={`order-status-badge ${statusClass}`}>
+                                    {statusText}
+                                  </span>
+                                </td>
+                               
+                                 
                                 <td>
                                   <button 
                                     className="action-btn view-btn"
@@ -862,12 +866,12 @@ const Reports = () => {
                           })}
                         </tbody>
                         <tfoot>
-  <tr>
-    <td colSpan="3" className="text-end fw-bold"></td>
-    <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
-    <td colSpan="3"></td>
-  </tr>
-</tfoot>
+                        <tr>
+                          <td colSpan="4" className="text-end fw-bold"></td>
+                          <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
+                          <td colSpan="6"></td>
+                        </tr>
+                      </tfoot>
                       </table>
                     </div>
                     
