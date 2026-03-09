@@ -274,7 +274,7 @@ const StaffReport = () => {
     doc.setFont("helvetica", "bold");
     const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-    doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
+    doc.text("selectedBill.orderStatus" || 'delivered', 160, 45);
 
     // Customer Details
     doc.setFontSize(12);
@@ -320,8 +320,8 @@ const StaffReport = () => {
         idx + 1,
         product.productName || '',
         qty.toString(),
-        `₹${rate.toLocaleString('en-IN')}`,
-        `₹${amount.toLocaleString('en-IN')}`
+        `Rs.${rate.toLocaleString('en-IN')}`,
+        `Rs.${amount.toLocaleString('en-IN')}`
       ];
     }) || [];
 
@@ -363,19 +363,19 @@ const StaffReport = () => {
     const valueX = 178;
 
     doc.text("Subtotal:", startX, finalY);
-    doc.text(`₹${subtotal.toLocaleString('en-IN')}`, valueX, finalY, { align: 'right' });
+    doc.text(`Rs.${subtotal.toLocaleString('en-IN')}`, valueX, finalY, { align: 'right' });
 
     doc.text("Discount:", startX, finalY + 8);
-    doc.text("₹0", valueX, finalY + 8, { align: 'right' });
+    doc.text("Rs.0", valueX, finalY + 8, { align: 'right' });
 
     doc.text("Tax:", startX, finalY + 16);
-    doc.text("₹0", valueX, finalY + 16, { align: 'right' });
+    doc.text("Rs.0", valueX, finalY + 16, { align: 'right' });
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Total:", startX - 5, finalY + 28);
-    doc.text(`₹${(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}`, valueX, finalY + 28, { align: 'right' });
+    doc.text(`Rs.${(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}`, valueX, finalY + 28, { align: 'right' });
 
     // Payment info
     if (selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected") {
@@ -406,7 +406,9 @@ const StaffReport = () => {
     doc.text(`Staff Performance Report`, 14, 18);
 
     doc.setFontSize(12);
-    doc.text(`Staff: ${selectedStaff.name} (${selectedStaff.type})`, 14, 26);
+    const typeCap =
+  selectedStaff.type.charAt(0).toUpperCase() + selectedStaff.type.slice(1);
+    doc.text(`Staff: ${selectedStaff.name} (${typeCap})`, 14, 26);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -426,17 +428,17 @@ const StaffReport = () => {
     
     if (selectedStaff.type?.toLowerCase() === 'delivery') {
       doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: ₹${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
       doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
       doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
       doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
       
       if (stats.rejectedOrders > 0) {
-        doc.text(`Rejected Orders: ${stats.rejectedOrders} (₹${stats.rejectedAmount.toLocaleString("en-IN")})`, 14, 78);
+        doc.text(`Rejected Orders: ${stats.rejectedOrders} (Rs.${stats.rejectedAmount.toLocaleString("en-IN")})`, 14, 78);
       }
       
       // Table for delivery
-      const tableColumn = ["S.No", "Order No", "Customer", "Date", "Amount (₹)", "Status"];
+      const tableColumn = ["S.No", "Order No", "Customer", "Date", "Amount (Rs.)", "Status"];
 
       const tableRows = filteredBills.map((bill, idx) => {
         return [
@@ -444,7 +446,7 @@ const StaffReport = () => {
           `#${bill._id.toString().slice(-6)}`,
           getCustomerName(bill),
           new Date(bill.createdAt).toLocaleDateString("en-IN"),
-          `₹${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
+          `Rs.${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
           bill.orderStatus || 'Pending',
         ];
       });
@@ -468,12 +470,12 @@ const StaffReport = () => {
       });
     } else {
       doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: ₹${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Collected Amount: ₹${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
-      doc.text(`Pending Amount: ₹${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
+      doc.text(`Total Amount: Rs.${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
+      doc.text(`Collected Amount: Rs.${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
+      doc.text(`Pending Amount: Rs.${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
       
       if (stats.rejectedAmount > 0) {
-        doc.text(`Rejected Amount: ₹${stats.rejectedAmount.toLocaleString("en-IN")}`, 14, 72);
+        doc.text(`Rejected Amount: Rs.${stats.rejectedAmount.toLocaleString("en-IN")}`, 14, 72);
       }
       
       // Table for sales/manager
@@ -482,7 +484,7 @@ const StaffReport = () => {
         "Order No",
         "Customer",
         "Date",
-        "Amount (₹)",
+        "Amount (Rs.)",
         "Payment Status",
         "Order Status",
       ];
@@ -495,14 +497,16 @@ const StaffReport = () => {
           paymentStatus = 'Paid';
         }
         
+        const status = (bill.orderStatus || 'Pending');
+        const statusCap = status.charAt(0).toUpperCase() + status.slice(1);
         return [
           idx + 1,
           `#${bill._id.toString().slice(-6)}`,
           getCustomerName(bill),
           new Date(bill.createdAt).toLocaleDateString("en-IN"),
-          `₹${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
+          `Rs.${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
           paymentStatus,
-          bill.orderStatus || 'Pending',
+          statusCap,
         ];
       });
 
@@ -540,7 +544,7 @@ const StaffReport = () => {
         'Order No': `#${bill._id.toString().slice(-6)}`,
         'Customer': getCustomerName(bill),
         'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': Number(bill.totalAmt) || 0,
+        'Amount (Rs.)': Number(bill.totalAmt) || 0,
         'Delivery Status': bill.orderStatus || 'Pending',
       }));
     } else {
@@ -557,7 +561,7 @@ const StaffReport = () => {
           'Order No': `#${bill._id.toString().slice(-6)}`,
           'Customer': getCustomerName(bill),
           'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-          'Amount (₹)': Number(bill.totalAmt) || 0,
+          'Amount (Rs.)': Number(bill.totalAmt) || 0,
           'Payment Status': paymentStatus,
           'Order Status': bill.orderStatus || 'Pending',
         };
@@ -572,24 +576,24 @@ const StaffReport = () => {
     if (selectedStaff.type?.toLowerCase() === 'delivery') {
       summaryData = [
         { 'Summary': 'Total Orders', 'Value': stats.totalOrders },
-        { 'Summary': 'Total Amount', 'Value': `₹${stats.totalAmount.toLocaleString('en-IN')}` },
+        { 'Summary': 'Total Amount', 'Value': `Rs.${stats.totalAmount.toLocaleString('en-IN')}` },
         { 'Summary': 'Delivered Orders', 'Value': stats.deliveredOrders },
         { 'Summary': 'Pending Delivery', 'Value': stats.pendingDelivery },
         { 'Summary': 'Assigned Customers', 'Value': stats.assignedCustomers }
       ];
       if (stats.rejectedOrders > 0) {
         summaryData.push({ 'Summary': 'Rejected Orders', 'Value': stats.rejectedOrders });
-        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${stats.rejectedAmount.toLocaleString('en-IN')}` });
+        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `Rs.${stats.rejectedAmount.toLocaleString('en-IN')}` });
       }
     } else {
       summaryData = [
         { 'Summary': 'Total Orders', 'Value': stats.totalOrders },
-        { 'Summary': 'Total Amount', 'Value': `₹${stats.totalAmount.toLocaleString('en-IN')}` },
-        { 'Summary': 'Collected Amount', 'Value': `₹${stats.collectedAmount.toLocaleString('en-IN')}` },
-        { 'Summary': 'Pending Amount', 'Value': `₹${stats.pendingAmount.toLocaleString('en-IN')}` }
+        { 'Summary': 'Total Amount', 'Value': `Rs.${stats.totalAmount.toLocaleString('en-IN')}` },
+        { 'Summary': 'Collected Amount', 'Value': `Rs.${stats.collectedAmount.toLocaleString('en-IN')}` },
+        { 'Summary': 'Pending Amount', 'Value': `Rs.${stats.pendingAmount.toLocaleString('en-IN')}` }
       ];
       if (stats.rejectedAmount > 0) {
-        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${stats.rejectedAmount.toLocaleString('en-IN')}` });
+        summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `Rs.${stats.rejectedAmount.toLocaleString('en-IN')}` });
       }
     }
     
@@ -850,7 +854,7 @@ const StaffReport = () => {
                         </div>
                         <div className="stat-content">
                           <span className="stat-label">Rejected</span>
-                          <span className="stat-value">{stats.rejectedOrders} (₹{stats.rejectedAmount.toLocaleString('en-IN')})</span>
+                          <span className="stat-value">{stats.rejectedOrders} (Rs.{stats.rejectedAmount.toLocaleString('en-IN')})</span>
                         </div>
                       </div>
                     </Col>
@@ -876,7 +880,7 @@ const StaffReport = () => {
                       </div>
                       <div className="stat-content">
                         <span className="stat-label">Total Amount</span>
-                        <span className="stat-value">₹{stats.totalAmount.toLocaleString('en-IN')}</span>
+                        <span className="stat-value">Rs.{stats.totalAmount.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </Col>
@@ -887,7 +891,7 @@ const StaffReport = () => {
                       </div>
                       <div className="stat-content">
                         <span className="stat-label">Collected</span>
-                        <span className="stat-value">₹{stats.collectedAmount.toLocaleString('en-IN')}</span>
+                        <span className="stat-value">Rs.{stats.collectedAmount.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </Col>
@@ -898,7 +902,7 @@ const StaffReport = () => {
                       </div>
                       <div className="stat-content">
                         <span className="stat-label">Pending</span>
-                        <span className="stat-value">₹{stats.pendingAmount.toLocaleString('en-IN')}</span>
+                        <span className="stat-value">Rs.{stats.pendingAmount.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </Col>
@@ -910,7 +914,7 @@ const StaffReport = () => {
                         </div>
                         <div className="stat-content">
                           <span className="stat-label">Rejected</span>
-                          <span className="stat-value">₹{stats.rejectedAmount.toLocaleString('en-IN')}</span>
+                          <span className="stat-value">Rs.{stats.rejectedAmount.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     </Col>
@@ -936,14 +940,15 @@ const StaffReport = () => {
                         <thead>
                           <tr>
                             <th>S.No</th>
-                            <th>Order No</th>
-                            <th>Customer</th>
                             <th>Date</th>
+                            <th>Customer</th>
+                            <th>Order No</th>
+                          
                             <th>Amount</th>
                             {selectedStaff.type?.toLowerCase() !== 'delivery' && (
-                              <th>Payment</th>
+                              <th>P.Status</th>
                             )}
-                            <th>Status</th>
+                            <th>O.Status</th>
                             <th>Action</th>
                           </tr>
                         </thead>
@@ -963,16 +968,17 @@ const StaffReport = () => {
                             return (
                               <tr key={bill._id} className={bill.orderStatus === "rejected" ? "rejected-row" : ""}>
                                 <td>{indexOfFirstItem + idx + 1}</td>
-                                <td>
-                                  <span className="order-id">#{bill._id.toString().slice(-6)}</span>
-                                </td>
-                                <td>{getCustomerName(bill)}</td>
-                                <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
+                                 <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
                                   day: '2-digit', 
                                   month: "numeric", 
                                   year: 'numeric' 
                                 })}</td>
-                                <td className="amount">₹{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
+                                <td>{getCustomerName(bill)}</td>  
+                                 <td>
+                                  <span className="order-id">#{bill._id.toString().slice(-6)}</span>
+                                </td>
+                              
+                                <td className="amount">Rs.{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
                                 {selectedStaff.type?.toLowerCase() !== 'delivery' && (
                                   <td>
                                     <span className={`order-status-badge ${paymentStatusClass}`}>
@@ -1001,13 +1007,13 @@ const StaffReport = () => {
                         <tfoot>
                           <tr>
                             <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end fw-bold">Total :</td>
-                            <td className="amount fw-bold">₹{stats.totalAmount.toLocaleString('en-IN')}</td>
+                            <td className="amount fw-bold">Rs.{stats.totalAmount.toLocaleString('en-IN')}</td>
                             <td colSpan="2"></td>
                           </tr>
                           {/* {stats.rejectedAmount > 0 && (
                             <tr className="rejected-footer-row">
                               <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end text-danger">Rejected Amount:</td>
-                              <td className="amount text-danger">₹{stats.rejectedAmount.toLocaleString('en-IN')}</td>
+                              <td className="amount text-danger">Rs.{stats.rejectedAmount.toLocaleString('en-IN')}</td>
                               <td colSpan="2"></td>
                             </tr>
                           )} */}
@@ -1132,8 +1138,8 @@ const StaffReport = () => {
                       <th style={{ padding: '10px', textAlign: 'left' }}>S.No</th>
                       <th style={{ padding: '10px', textAlign: 'left' }}>Product</th>
                       <th style={{ padding: '10px', textAlign: 'right' }}>Qty</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Rate (₹)</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Amount (₹)</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Rate (Rs.)</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Amount (Rs.)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1159,7 +1165,7 @@ const StaffReport = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ fontWeight: '500' }}>Subtotal:</span>
                       <span>
-                        ₹{selectedBill.orderedProducts?.reduce(
+                        Rs.{selectedBill.orderedProducts?.reduce(
                           (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
                           0
                         ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
@@ -1167,15 +1173,15 @@ const StaffReport = () => {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ fontWeight: '500' }}>Discount:</span>
-                      <span>₹0</span>
+                      <span>Rs.0</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                       <span style={{ fontWeight: '500' }}>Tax:</span>
-                      <span>₹0</span>
+                      <span>Rs.0</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '16px', fontWeight: 'bold' }}>
                       <span>Total:</span>
-                      <span>₹{(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
+                      <span>Rs.{(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
