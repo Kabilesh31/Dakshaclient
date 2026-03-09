@@ -1653,3 +1653,247 @@
   color: #6c757d;
   margin: 0;
 }
+/* Main container */
+.staff-container {
+  display: flex;
+  gap: 20px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* Individual column */
+.staff-column {
+  flex: 1;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.staff-column:hover {
+  transform: translateY(-1px);
+}
+
+/* Column titles - UPDATED COLORS */
+.column-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.sales-title {
+  color: #0f172a;
+  border-bottom-color: #10b981; /* Green for Sales */
+}
+
+.delivery-title {
+  color: #0f172a;
+  border-bottom-color: #3b82f6; /* Blue for Delivery */
+}
+
+/* Staff cards container */
+.staff-column {
+  max-height: 450px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.staff-column::-webkit-scrollbar {
+  width: 4px;
+}
+
+.staff-column::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.staff-column::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+/* Staff card */
+.staff-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.staff-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: scale(1.01);
+}
+
+.staff-card.selected {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.staff-card.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: #3b82f6;
+}
+
+/* Avatar - UPDATED COLORS */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* Sales column avatars - Green */
+.staff-column:first-child .avatar {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* Green gradient */
+}
+
+/* Delivery column avatars - Blue */
+.staff-column:last-child .avatar {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); /* Blue gradient */
+}
+
+/* Staff info */
+.staff-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-info h6 {
+  margin: 0 0 3px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staff-info p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staff-info p::before {
+  content: '📞';
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Empty state */
+.empty-text {
+  text-align: center;
+  padding: 24px 16px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  background: white;
+  border-radius: 10px;
+  border: 1.5px dashed #e2e8f0;
+  margin: 0;
+}
+
+/* Selected card colors - UPDATED for each column */
+.staff-column:first-child .staff-card.selected {
+  border-color: #10b981; /* Green border for Sales selected card */
+  background: #f0fdf4; /* Light green background */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.staff-column:first-child .staff-card.selected::before {
+  background: #10b981; /* Green left border */
+}
+
+.staff-column:last-child .staff-card.selected {
+  border-color: #3b82f6; /* Blue border for Delivery selected card */
+  background: #eff6ff; /* Light blue background */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.staff-column:last-child .staff-card.selected::before {
+  background: #3b82f6; /* Blue left border */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .staff-container {
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .staff-column {
+    max-height: 350px;
+    padding: 12px;
+  }
+
+  .staff-card {
+    padding: 8px 10px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+  }
+  
+  .staff-info h6 {
+    font-size: 0.85rem;
+  }
+  
+  .staff-info p {
+    font-size: 0.7rem;
+  }
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.staff-card {
+  animation: slideIn 0.25s ease forwards;
+}
