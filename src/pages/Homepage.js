@@ -36,6 +36,7 @@ const Homepage = () => {
   const [selectedDays, setSelectedDays] = useState("Today");
   const [customSelected, setCustomSelected] = useState(false);
   const [modal, setModal] = useState(false);
+  const [staffFilter, setStaffFilter] = useState('all'); 
   const [selectedFromDate, setSelectedFromDate] = useState("");
   const [selectedToDate, setSelectedToDate] = useState("");
   const [selectedStaffForPerformance, setSelectedStaffForPerformance] = useState(null);
@@ -394,15 +395,14 @@ const Homepage = () => {
   };
 
   const staffPerformance = getSelectedStaffPerformance();
-const salesStaff = staffData.filter(
-  (staff) => staff.type?.toLowerCase() === "sales"
-);
+const getFilteredStaff = () => {
+  if (staffFilter === 'all') {
+    return staffData;
+  }
+  return staffData.filter(staff => staff.type === staffFilter);
+};
 
-const deliveryStaff = staffData.filter(
-  (staff) => staff.type?.toLowerCase() === "delivery"
-);
-
-const selectedType = selectedStaffForPerformance?.type?.toLowerCase();
+const filteredStaff = getFilteredStaff();
   return (
     <React.Fragment>
       <Head title="Homepage"></Head>
@@ -1228,76 +1228,96 @@ const selectedType = selectedStaffForPerformance?.type?.toLowerCase();
       </Content>
 
       {/* Staff Selection Modal */}
-      <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="xl">
-        <ModalBody className="staff-modal-body">
-          <a
-            href="#cancel"
-            onClick={(ev) => {
-              ev.preventDefault();
-              setShowStaffModal(false);
-            }}
-            className="close"
-          >
-            <Icon name="cross-sm"></Icon>
-          </a>
-         <div className="staff-container">
-
-  {/* Sales Staff */}
-  <div className="staff-column">
-    <h5 className="column-title sales-title">Sales Team</h5>
-
-    {salesStaff.length > 0 ? (
-      salesStaff.map((staff) => (
-        <div
-          key={staff._id}
-          className={`staff-card ${
-            selectedStaffForPerformance?._id === staff._id ? "selected" : ""
-          }`}
-          onClick={() => handleStaffPerformanceSelect(staff)}
+ <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="lg">
+  <ModalBody className="staff-modal-body">
+    <a
+      href="#cancel"
+      onClick={(ev) => {
+        ev.preventDefault();
+        setShowStaffModal(false);
+      }}
+      className="close"
+    >
+      <Icon name="cross-sm"></Icon>
+    </a>
+    <div className="staff-modal-content">
+      <h5 className="staff-modal-title">👤 Select Staff Member</h5>
+      
+      {/* Filter Buttons */}
+      <div className="staff-filters">
+        <button
+          className={`filter-btn ${staffFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setStaffFilter('all')}
         >
-          <div className="avatar">{staff.name?.charAt(0)}</div>
-
-          <div className="staff-info">
-            <h6>{staff.name}</h6>
-            
-          </div>
-        </div>
-      ))
-    ) : (
-      <p className="empty-text">No Sales Staff</p>
-    )}
-  </div>
-
-  {/* Delivery Staff */}
-  <div className="staff-column">
-    <h5 className="column-title delivery-title">Delivery Team</h5>
-
-    {deliveryStaff.length > 0 ? (
-      deliveryStaff.map((staff) => (
-        <div
-          key={staff._id}
-          className={`staff-card ${
-            selectedStaffForPerformance?._id === staff._id ? "selected" : ""
-          }`}
-          onClick={() => handleStaffPerformanceSelect(staff)}
+          All <span className="count">{staffData.length}</span>
+        </button>
+        <button
+          className={`filter-btn sales ${staffFilter === 'sales' ? 'active' : ''}`}
+          onClick={() => setStaffFilter('sales')}
         >
-          <div className="avatar">{staff.name?.charAt(0)}</div>
+          Sales <span className="count">{staffData.filter(s => s.type === 'sales').length}</span>
+        </button>
+        <button
+          className={`filter-btn delivery ${staffFilter === 'delivery' ? 'active' : ''}`}
+          onClick={() => setStaffFilter('delivery')}
+        >
+          Delivery <span className="count">{staffData.filter(s => s.type === 'delivery').length}</span>
+        </button>
+        <button
+          className={`filter-btn manager ${staffFilter === 'manager' ? 'active' : ''}`}
+          onClick={() => setStaffFilter('manager')}
+        >
+          Manager <span className="count">{staffData.filter(s => s.type === 'manager').length}</span>
+        </button>
+      </div>
 
-          <div className="staff-info">
-            <h6>{staff.name}</h6>
-            <p>{staff.mobile || "No mobile number"}</p>
-          </div>
-        </div>
-      ))
-    ) : (
-      <p className="empty-text">No Delivery Staff</p>
-    )}
-  </div>
-
-</div>
-        </ModalBody>
-      </Modal>
-
+      {/* Staff List */}
+      <div className="staff-list">
+        {filteredStaff.length > 0 ? (
+          filteredStaff.map((staff) => (
+            <div
+              key={staff._id}
+              className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
+              onClick={() => handleStaffPerformanceSelect(staff)}
+            >
+              <div className="staff-avatar-small">
+                {staff.name?.charAt(0)}
+              </div>
+              <div className="staff-info">
+                <h6>{staff.name}</h6>
+                <p>{staff.mobile || 'No mobile number'}</p>
+              </div>
+              <div className="staff-stats">
+               <span 
+  className="stat-badge" 
+  style={{ 
+    background: staff.type === 'delivery' ? '#3498db20' : 
+              staff.type === 'sales' ? '#2ecc7120' : 
+              '#95a5a620', 
+    color: staff.type === 'delivery' ? '#3498db' : 
+           staff.type === 'sales' ? '#2ecc71' : 
+           '#95a5a6' 
+  }}
+>
+  {staff.type ? staff.type.charAt(0).toUpperCase() + staff.type.slice(1) : 'Manager'}
+</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-center py-4 no-staff-message">
+            No {staffFilter !== 'all' ? staffFilter : ''} staff found
+          </p>
+        )}
+      </div>
+      
+      {/* Optional: Show result count */}
+      <div className="filter-footer">
+        <span className="result-count">Showing {filteredStaff.length} of {staffData.length} staff</span>
+      </div>
+    </div>
+  </ModalBody>
+</Modal>
       {/* Date Range Modal */}
       <Modal isOpen={modal} toggle={() => setModal(false)} className="date-modal" size="lg">
         <ModalBody className="date-modal-body">
