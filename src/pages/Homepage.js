@@ -36,7 +36,7 @@ const Homepage = () => {
   const [selectedDays, setSelectedDays] = useState("Today");
   const [customSelected, setCustomSelected] = useState(false);
   const [modal, setModal] = useState(false);
-  const [staffFilter, setStaffFilter] = useState('all'); 
+  const [staffFilter, setStaffFilter] = useState('sales'); 
   const [selectedFromDate, setSelectedFromDate] = useState("");
   const [selectedToDate, setSelectedToDate] = useState("");
   const [selectedStaffForPerformance, setSelectedStaffForPerformance] = useState(null);
@@ -1241,34 +1241,29 @@ const filteredStaff = getFilteredStaff();
       <Icon name="cross-sm"></Icon>
     </a>
     <div className="staff-modal-content">
-      <h5 className="staff-modal-title">👤 Select Staff Member</h5>
+      <h5 className="staff-modal-title"> Select Staff Member</h5>
       
       {/* Filter Buttons */}
       <div className="staff-filters">
-        <button
-          className={`filter-btn ${staffFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setStaffFilter('all')}
-        >
-          All <span className="count">{staffData.length}</span>
-        </button>
+      
         <button
           className={`filter-btn sales ${staffFilter === 'sales' ? 'active' : ''}`}
           onClick={() => setStaffFilter('sales')}
         >
-          Sales <span className="count">{staffData.filter(s => s.type === 'sales').length}</span>
+          Sales 
         </button>
         <button
           className={`filter-btn delivery ${staffFilter === 'delivery' ? 'active' : ''}`}
           onClick={() => setStaffFilter('delivery')}
         >
-          Delivery <span className="count">{staffData.filter(s => s.type === 'delivery').length}</span>
+          Delivery 
         </button>
-        <button
+        {/* <button
           className={`filter-btn manager ${staffFilter === 'manager' ? 'active' : ''}`}
           onClick={() => setStaffFilter('manager')}
         >
           Manager <span className="count">{staffData.filter(s => s.type === 'manager').length}</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Staff List */}
@@ -1312,9 +1307,9 @@ const filteredStaff = getFilteredStaff();
       </div>
       
       {/* Optional: Show result count */}
-      <div className="filter-footer">
+      {/* <div className="filter-footer">
         <span className="result-count">Showing {filteredStaff.length} of {staffData.length} staff</span>
-      </div>
+      </div> */}
     </div>
   </ModalBody>
 </Modal>
