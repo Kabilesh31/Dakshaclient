@@ -20,7 +20,8 @@
   import { useForm } from "react-hook-form";
   import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
   import "./Delivery.css";
-import { FiClock } from 'react-icons/fi';
+import BrandAssign from "./BrandAssign";
+
   const Sales = () => {
     const [activeTab, setActiveTab] = useState("alignment");
     const [vehicles, setVehicles] = useState([]);
@@ -38,12 +39,12 @@ import { FiClock } from 'react-icons/fi';
      const istDate = new Date(
        date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
      );
-   console.log(Intl.DateTimeFormat().resolvedOptions().timeZone);
+   
      const year = istDate.getFullYear();
      const month = String(istDate.getMonth() + 1).padStart(2, "0");
      const day = String(istDate.getDate()).padStart(2, "0");
    
-     return `${year}-${month}-${day}`; // required format for input type=date
+     return `${year}-${month}-${day}`; 
    };
    
    const [selectedDate, setSelectedDate] = useState(getISTDate());
@@ -84,30 +85,16 @@ import { FiClock } from 'react-icons/fi';
             },
           }
         );
-
         if (response.status === 200) {
           setAssignedCustomerDatas(response.data.customers);
         }
-
       } catch (err) {
-
-        console.log("Fetch assigned customers error:", err);
-
         if (err.response) {
-
           if (err.response.status === 401) {
-
-            console.log(
-              err.response.data?.message || "Session expired. Please login again"
-            );
-
             localStorage.removeItem("accessToken");
             localStorage.removeItem("sessionToken");
-
             window.location.href = "/login";
-
           }
-
         } else {
           console.log("Network error");
         }
@@ -119,136 +106,102 @@ import { FiClock } from 'react-icons/fi';
       fetchRoutes();
       fetchCustomers();
     }, []);
+
     useEffect(() => {
-  fetchAssignmentsByDate(selectedDate);
-  fetchAvailableVehicles(selectedDate);
-}, [selectedDate]);
+      fetchAssignmentsByDate(selectedDate);
+      fetchAvailableVehicles(selectedDate);
+    }, [selectedDate]);
 
-const fetchAvailableVehicles = async (date) => {
-  try {
+    const fetchAvailableVehicles = async (date) => {
+      try {
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+        const token = localStorage.getItem("accessToken");
+        const sessionToken = localStorage.getItem("sessionToken");
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
+        if (!token || !sessionToken) {
+          console.log("User not authenticated");
+          return;
+        }
 
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/vehicle/getAvailableVehicle`,
-      {
-        params: { date },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
-      }
-    );
-
-    if (res.status === 200) {
-      setVehicles(res.data.data || []);
-    }
-
-  } catch (error) {
-
-    console.error("Vehicle fetch error:", error);
-
-    if (error.response) {
-
-      if (error.response.status === 401) {
-
-        console.log(
-          error.response.data?.message || "Session expired. Please login again"
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKENDURL}/api/vehicle/getAvailableVehicle`,
+          {
+            params: { date },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "session-token": sessionToken,
+            },
+          }
         );
 
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
+        if (res.status === 200) {
+          setVehicles(res.data.data || []);
+        }
 
-        window.location.href = "/login";
-
+      } catch (error) {
+        if (error.response) {
+          if (error.response.status === 401) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("sessionToken");
+            window.location.href = "/login";
+          }
+        }
+        setVehicles([]);
       }
-
-    }
-
-    setVehicles([]);
-  }
-};
-  
+    };
+      
 
 
     useEffect(() => {
       if (!selectedTrackStaff) return;
+        const fetchLocation = async () => {
+        try {
+          const token = localStorage.getItem("accessToken");
+          const sessionToken = localStorage.getItem("sessionToken");
 
-   const fetchLocation = async () => {
-  try {
+          if (!token || !sessionToken) {
+            console.log("User not authenticated");
+            return;
+          }
+          const res = await axios.get(
+            `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "session-token": sessionToken,
+              },
+            }
+          );
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
-
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/location/latest/${selectedTrackStaff._id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
-      }
-    );
-
-    if (res.status === 200) {
-
-      setLiveLocation({
-        lat: res.data.latitude,
-        lng: res.data.longitude,
-        updatedAt: res.data.updatedAt,
-        batteryLevel: res.data.batteryLevel,
-        gpsStatus: res.data.gpsStatus,
-        networkStatus: res.data.networkStatus,
-        isOnline: res.data.isOnline,
-      });
-
-    }
-
-  } catch (err) {
-
-    console.error("Live tracking error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
-      }
-
-    }
-  }
-};
-
-
+          if (res.status === 200) {
+            setLiveLocation({
+              lat: res.data.latitude,
+              lng: res.data.longitude,
+              updatedAt: res.data.updatedAt,
+              batteryLevel: res.data.batteryLevel,
+              gpsStatus: res.data.gpsStatus,
+              networkStatus: res.data.networkStatus,
+              isOnline: res.data.isOnline,
+            });
+          }
+        } catch (err) {
+          if (err.response) {
+            if (err.response.status === 401) {
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("sessionToken");
+              window.location.href = "/login";
+            }
+          }
+        }
+      };
       fetchLocation();
       const interval = setInterval(fetchLocation, 20000);
-
       return () => clearInterval(interval);
     }, [selectedTrackStaff]);
 
     useEffect(() => {
       fetchAssignmentsByDate(selectedDate);
     }, [selectedDate]);
-
 
     // Helper function to safely find a route
     const findRoute = (routeId) => {
@@ -273,7 +226,6 @@ const fetchAvailableVehicles = async (date) => {
           setDeliveryStaff([]);
           return;
         }
-
         const res = await axios.get(
           `${process.env.REACT_APP_BACKENDURL}/api/staff`,
           {
@@ -283,198 +235,142 @@ const fetchAvailableVehicles = async (date) => {
             },
           }
         );
-
         if (Array.isArray(res.data)) {
-
           const datas = res.data;
-
           const filteredStaffDatas = datas.filter(
             (item) => item.type === "sales"
           );
-
           setDeliveryStaff(filteredStaffDatas);
-
         } else {
-
-          console.warn("Staff data is not in expected format:", res.data);
           setDeliveryStaff([]);
-
         }
-
       } catch (err) {
-
-        console.error("STAFF FETCH ERROR 👉", err);
-
         if (err.response) {
-
           if (err.response.status === 401) {
-
-            console.log(
-              err.response.data?.message ||
-              "Session expired. Please login again"
-            );
-
             localStorage.removeItem("accessToken");
             localStorage.removeItem("sessionToken");
-
             window.location.href = "/login";
-
           } else {
             setError(err.response.data?.message || "Failed to load staff");
           }
-
         } else {
           setError("Network error");
         }
-
         setDeliveryStaff([]);
-
       } finally {
         setLoading(false);
       }
     };
     const fetchAssignmentsByDate = async (date) => {
-  try {
-    setLoading(true);
+      try {
+        setLoading(true);
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+        const token = localStorage.getItem("accessToken");
+        const sessionToken = localStorage.getItem("sessionToken");
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      setRouteAssignments([]);
-      return;
-    }
+        if (!token || !sessionToken) {
+          console.log("User not authenticated");
+          setRouteAssignments([]);
+          return;
+        }
 
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
-      {
-        params: { date },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
-      }
-    );
-
-    let assignmentsData = res.data;
-
-    if (assignmentsData && Array.isArray(assignmentsData.data)) {
-      setRouteAssignments(assignmentsData.data);
-    } else if (Array.isArray(assignmentsData)) {
-      setRouteAssignments(assignmentsData);
-    } else {
-      console.warn(
-        "Assignments data is not in expected format:",
-        assignmentsData
-      );
-      setRouteAssignments([]);
-    }
-
-  } catch (err) {
-
-    console.error("Assignments fetch error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
+          {
+            params: { date },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "session-token": sessionToken,
+            },
+          }
         );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
-      } else {
-        setError(err.response.data?.message || "Failed to load route assignments");
+        let assignmentsData = res.data;
+        if (assignmentsData && Array.isArray(assignmentsData.data)) {
+          setRouteAssignments(assignmentsData.data);
+        } else if (Array.isArray(assignmentsData)) {
+          setRouteAssignments(assignmentsData);
+        } else {
+          console.warn(
+            "Assignments data is not in expected format:",
+            assignmentsData
+          );
+          setRouteAssignments([]);
+        }
+      } catch (err) {
+        if (err.response) {
+          if (err.response.status === 401) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("sessionToken");
+            window.location.href = "/login";
+          } else {
+            setError(err.response.data?.message || "Failed to load route assignments");
+          }
+        } else {
+          setError("Network error");
+        }
+        setRouteAssignments([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-    } else {
-      setError("Network error");
-    }
-
-    setRouteAssignments([]);
-
-  } finally {
-    setLoading(false);
-  }
-};
   const fetchRoutes = async () => {
-  try {
-    setLoading(true);
-    setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      setRoutes([]);
-      return;
-    }
-
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/route`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        setRoutes([]);
+        return;
       }
-    );
 
-    let routesData = res.data;
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKENDURL}/api/route`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
 
-    // If response is { data: [] }
-    if (routesData && routesData.data && Array.isArray(routesData.data)) {
-      setRoutes(routesData.data);
-    }
-    // If response itself is []
-    else if (Array.isArray(routesData)) {
-      setRoutes(routesData);
-    }
-    // Unexpected format
-    else {
-      console.warn("Routes data is not in expected format:", routesData);
-      setRoutes([]);
-    }
+      let routesData = res.data;
+      if (routesData && routesData.data && Array.isArray(routesData.data)) {
+        setRoutes(routesData.data);
+      }
 
-  } catch (err) {
+      else if (Array.isArray(routesData)) {
+        setRoutes(routesData);
+      }
+      else {
+        setRoutes([]);
+      }
 
-    console.error("ROUTES FETCH ERROR 👉", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
+    } catch (err) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+          window.location.href = "/login";
+        } else {
+          setError(err.response.data?.message || "Failed to load routes");
+        }
 
       } else {
-        setError(err.response.data?.message || "Failed to load routes");
+        setError("Network error");
       }
 
-    } else {
-      setError("Network error");
+      setRoutes([]);
+
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setRoutes([]);
-
-  } finally {
-    setLoading(false);
-  }
-};
   // After fetching customers
 const fetchCustomers = async () => {
   try {
@@ -506,43 +402,29 @@ const fetchCustomers = async () => {
     }
 
   } catch (err) {
-
-    console.error("CUSTOMERS FETCH ERROR 👉", err);
-
     if (err.response) {
-
       if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionToken");
-
         window.location.href = "/login";
-
       } else {
         errorToast(err.response.data?.message || "Failed to fetch customers");
       }
-
     } else {
       errorToast("Network error");
     }
-
     setCustomers([]);
   }
 };
 
 
- const filteredDeliveryStaff = Array.isArray(deliveryStaff)
-  ? deliveryStaff.filter(
-      (staff) =>
-        staff.staffStatus === "active" &&
-        staff.isDeleted === false
-    )
-  : [];
+  const filteredDeliveryStaff = Array.isArray(deliveryStaff)
+    ? deliveryStaff.filter(
+        (staff) =>
+          staff.staffStatus === "active" &&
+          staff.isDeleted === false
+      )
+    : [];
 
 
     // Get routes already assigned to a specific staff member on selected date
@@ -582,12 +464,6 @@ const fetchCustomers = async () => {
         const routeId = String(r._id || r.id);
         return !assignedRouteIds.includes(routeId);
       });
-    };
-
-    // Check if staff can be assigned more routes (max 2)
-    const canAssignMoreRoutes = (staffId) => {
-      const staffAssignments = getStaffAssignedRoutes(staffId);
-      return staffAssignments?.length < 2;
     };
 
     // Get status badge color
@@ -651,74 +527,57 @@ const fetchCustomers = async () => {
     };
 
    const handleUnassignRoute = async () => {
-  if (!selectedAssignmentId) return;
+    if (!selectedAssignmentId) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    await axios.delete(
-      `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedAssignmentId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "session-token": sessionToken,
-        },
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
       }
-    );
 
-    // Remove from state
-    setRouteAssignments((prev) =>
-      Array.isArray(prev)
-        ? prev.filter((a) => a._id !== selectedAssignmentId)
-        : []
-    );
+      await axios.delete(
+        `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales/${selectedAssignmentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "session-token": sessionToken,
+          },
+        }
+      );
 
-    setSuccess("Route unassigned successfully");
-    setTimeout(() => setSuccess(null), 3000);
+      // Remove from state
+      setRouteAssignments((prev) =>
+        Array.isArray(prev)
+          ? prev.filter((a) => a._id !== selectedAssignmentId)
+          : []
+      );
 
-    setConfirmOpen(false);
-    setSelectedAssignmentId(null);
-
-  } catch (err) {
-
-    console.error("Unassign Error:", err.response?.data || err.message);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+      setSuccess("Route unassigned successfully");
+      setTimeout(() => setSuccess(null), 3000);
+      setConfirmOpen(false);
+      setSelectedAssignmentId(null);
+    } catch (err) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+          window.location.href = "/login";
+        } else {
+          setError(err.response.data?.message || "Failed to unassign route");
+        }
       } else {
-        setError(err.response.data?.message || "Failed to unassign route");
+        setError("Network error");
       }
-
-    } else {
-      setError("Network error");
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
     }
-
-    setTimeout(() => setError(null), 3000);
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
     const openUnassignConfirm = (assignmentId) => {
       setSelectedAssignmentId(assignmentId);
@@ -798,40 +657,24 @@ const fetchCustomers = async () => {
         },
       }
     );
-
     if (res.data.status === "success") {
       successToast("Alignment saved successfully");
       fetchCustomers();
     } else {
       errorToast("Failed to save alignment");
     }
-
   } catch (err) {
-
-    console.error("SAVE ALIGNMENT ERROR 👉", err.response?.data || err);
-
     if (err.response) {
-
       if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
         localStorage.removeItem("accessToken");
         localStorage.removeItem("sessionToken");
-
         window.location.href = "/login";
-
       } else {
         errorToast(err.response.data?.message || "Save failed");
       }
-
     } else {
       errorToast("Network error");
     }
-
   } finally {
     setIsSavingAlignment(false);
   }
@@ -842,19 +685,6 @@ const fetchCustomers = async () => {
     setViewCustomerModal(true);
   };
 
-  const sortedCustomers = [...assinedCustomerDatas].sort(
-    (a, b) => a.lineNo - b.lineNo
-  );
-
-  const firstPendingCustomer = sortedCustomers.find(
-    (customer) => customer.isVisited === false
-  );
-
-  const currentLineNo = firstPendingCustomer
-    ? firstPendingCustomer.lineNo
-    : null;
-
-    // Render Route Assign Tab
     const renderRouteAssign = () => {
       if (loading && routeAssignments.length === 0) {
         return <div className="text-center py-5">Loading...</div>;
@@ -871,29 +701,30 @@ const fetchCustomers = async () => {
       const handlesRefresh = () => {
         fetchStaff();
       };
+
       const getAvailableVehiclesForStaff = (staffId) => {
-  if (!Array.isArray(vehicles)) return [];
+        if (!Array.isArray(vehicles)) return [];
 
-  const usedVehicles = routeAssignments
-    .filter(a => a.date === selectedDate)
-    .map(a => ({
-      vehicleNo: a.vehicleNo,
-      staffId: a.staffId?._id
-    }));
+        const usedVehicles = routeAssignments
+          .filter(a => a.date === selectedDate)
+          .map(a => ({
+            vehicleNo: a.vehicleNo,
+            staffId: a.staffId?._id
+          }));
 
-  return vehicles.filter(vehicle => {
-    const vehicleUsed = usedVehicles.find(
-      v => v.vehicleNo === vehicle.vehicleNumber
-    );
+        return vehicles.filter(vehicle => {
+          const vehicleUsed = usedVehicles.find(
+            v => v.vehicleNo === vehicle.vehicleNumber
+          );
 
-    if (!vehicleUsed) return true;
+          if (!vehicleUsed) return true;
 
-    if (vehicleUsed.staffId?.toString() === staffId?.toString())
-      return true;
+          if (vehicleUsed.staffId?.toString() === staffId?.toString())
+            return true;
 
-    return false;
-  });
-};
+          return false;
+        });
+      };
       return (
         <div className="row g-4">
           <div className="col-12">
@@ -947,29 +778,24 @@ const fetchCustomers = async () => {
 
               {/* Delivery Staff Table */}
               <div className="table-responsive" style={{ borderRadius: '8px', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
-  <table className="table table-hover mb-0" style={{ minWidth: '1000px', fontSize: '0.85rem' }}>
-    <thead style={{ backgroundColor: '#f8f9fc', borderBottom: '1px solid #e9ecef' }}>
-      <tr>
-        <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Staff Member</th>
-        <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Assigned Routes</th>
-        <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Status</th>
-        <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
-        const staffAssignments = getStaffAssignedRoutes(staff._id);
-        const canAssign = canAssignMoreRoutes(staff._id);
-
-        // Get already assigned vehicle for this staff on selected date
-       // Get vehicle already assigned to this staff for selected date
-const staffVehicleAssignment = routeAssignments.find(
-  (a) =>
-    a.staffId?._id?.toString() === staff._id?.toString() &&
-    a.date === selectedDate
-);
-
-const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
+                <table className="table table-hover mb-0" style={{ minWidth: '1000px', fontSize: '0.85rem' }}>
+                  <thead style={{ backgroundColor: '#f8f9fc', borderBottom: '1px solid #e9ecef' }}>
+                    <tr>
+                      <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Staff Member</th>
+                      <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Assigned Routes</th>
+                      <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Status</th>
+                      <th style={{ padding: '12px 16px', fontWeight: '600', color: '#495057', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                    <tbody>
+                      {Array.isArray(filteredDeliveryStaff) && filteredDeliveryStaff.map((staff) => {
+                        const staffAssignments = getStaffAssignedRoutes(staff._id);
+                        const staffVehicleAssignment = routeAssignments.find(
+                          (a) =>
+                            a.staffId?._id?.toString() === staff._id?.toString() &&
+                            a.date === selectedDate
+                        );
+                        const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
         
         return (
           <tr key={staff._id} style={{ borderBottom: '1px solid #edf2f7' }}>
@@ -1181,10 +1007,10 @@ const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
                     }}
                     disabled={!!existingVehicleNo}
                     value={
-  existingVehicleNo ||
-  staff.selectedVehicle ||
-  ""
-}
+                        existingVehicleNo ||
+                        staff.selectedVehicle ||
+                        ""
+                      }
                     onChange={(e) => {
                       setDeliveryStaff(prev =>
                         prev.map(s =>
@@ -1257,152 +1083,152 @@ const existingVehicleNo = staffVehicleAssignment?.vehicleNo || null;
                         }
                         const staffAssignments = getStaffAssignedRoutes(staff._id);
 
-if (staffAssignments.length >= 2) {
-  setError("This staff already has 2 routes assigned");
-  return;
-}
+                      if (staffAssignments.length >= 2) {
+                        setError("This staff already has 2 routes assigned");
+                        return;
+                      }
 
                       let vehicleToSend = null;
 
-if (existingVehicleNo) {
-  vehicleToSend = existingVehicleNo; // already vehicle number string
-} else {
-  const selectedVehicleData = vehicles.find(
-    (v) => v._id === staff.selectedVehicle
-  );
-  vehicleToSend = selectedVehicleData?.vehicleNumber;
-}
+                      if (existingVehicleNo) {
+                        vehicleToSend = existingVehicleNo; 
+                      } else {
+                        const selectedVehicleData = vehicles.find(
+                          (v) => v._id === staff.selectedVehicle
+                        );
+                        vehicleToSend = selectedVehicleData?.vehicleNumber;
+                      }
 
                         if (!vehicleToSend) {
                           setError("Please select vehicle");
                           return;
                         }
-// Check if vehicle is used by another staff
-const vehicleConflict = routeAssignments.find(
-  a =>
-    a.date === selectedDate &&
-    a.vehicleNo === vehicleToSend &&
-    a.staffId?._id?.toString() !== staff._id?.toString()
-);
+                      
+                      const vehicleConflict = routeAssignments.find(
+                        a =>
+                          a.date === selectedDate &&
+                          a.vehicleNo === vehicleToSend &&
+                          a.staffId?._id?.toString() !== staff._id?.toString()
+                      );
 
-if (vehicleConflict) {
-  setError("Vehicle already assigned to another staff");
-  return;
-}
-                        await axios.post(
-                          `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
-                          {
-                            date: selectedDate,
-                            staffId: staff._id,
-                            routeId: route._id,
-                            routeName: route.routeName,
-                            vehicleNo: vehicleToSend,
-                          },
-                          {
-                            headers: {
-                              Authorization: `Bearer ${token}`,
-                              "session-token": sessionToken,
-                            },
-                          }
-                        );
-
-                        setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
-                        setTimeout(() => setSuccess(null), 3000);
-
-                        fetchAssignmentsByDate(selectedDate);
-
-                        // reset only route
-                        setDeliveryStaff((prev) =>
-                          prev.map((s) =>
-                            s._id === staff._id ? { ...s, selectedRoute: "" } : s
-                          )
-                        );
-
-                      } catch (err) {
-
-                        console.error("Assign error:", err.response?.data || err);
-
-                        if (err.response) {
-
-                          if (err.response.status === 401) {
-
-                            console.log(
-                              err.response.data?.message ||
-                              "Session expired. Please login again"
-                            );
-
-                            localStorage.removeItem("accessToken");
-                            localStorage.removeItem("sessionToken");
-
-                            window.location.href = "/login";
-
-                          } else {
-                            setError(err.response.data?.message || "Failed to assign route");
-                          }
-
-                        } else {
-                          setError("Network error");
-                        }
-
-                      } finally {
-                        setLoading(false);
+                      if (vehicleConflict) {
+                        setError("Vehicle already assigned to another staff");
+                        return;
                       }
-                    }}
-                  onMouseEnter={(e) => {
-                    if (!(!staff.selectedRoute || loading)) {
-                      e.currentTarget.style.backgroundColor = '#1e4f72';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(44,107,158,0.25)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!(!staff.selectedRoute || loading)) {
-                      e.currentTarget.style.backgroundColor = '#2c6b9e';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(44,107,158,0.2)';
-                    }
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <span style={{ 
-                        width: '14px', 
-                        height: '14px', 
-                        border: '2px solid #fff', 
-                        borderTopColor: 'transparent', 
-                        borderRadius: '50%', 
-                        animation: 'spin 0.6s linear infinite',
-                        display: 'inline-block'
-                      }}></span>
-                      <span>Assigning...</span>
-                    </>
-                  ) : (
-                    'Assign'
-                  )}
-                </button>
+                                      await axios.post(
+                                        `${process.env.REACT_APP_BACKENDURL}/api/route-assignment-sales`,
+                                        {
+                                          date: selectedDate,
+                                          staffId: staff._id,
+                                          routeId: route._id,
+                                          routeName: route.routeName,
+                                          vehicleNo: vehicleToSend,
+                                        },
+                                        {
+                                          headers: {
+                                            Authorization: `Bearer ${token}`,
+                                            "session-token": sessionToken,
+                                          },
+                                        }
+                                      );
 
+                                      setSuccess(`Route "${route.routeName}" assigned to ${staff.name}`);
+                                      setTimeout(() => setSuccess(null), 3000);
+
+                                      fetchAssignmentsByDate(selectedDate);
+
+                                      // reset only route
+                                      setDeliveryStaff((prev) =>
+                                        prev.map((s) =>
+                                          s._id === staff._id ? { ...s, selectedRoute: "" } : s
+                                        )
+                                      );
+
+                                    } catch (err) {
+
+                                      console.error("Assign error:", err.response?.data || err);
+
+                                      if (err.response) {
+
+                                        if (err.response.status === 401) {
+
+                                          console.log(
+                                            err.response.data?.message ||
+                                            "Session expired. Please login again"
+                                          );
+
+                                          localStorage.removeItem("accessToken");
+                                          localStorage.removeItem("sessionToken");
+
+                                          window.location.href = "/login";
+
+                                        } else {
+                                          setError(err.response.data?.message || "Failed to assign route");
+                                        }
+
+                                      } else {
+                                        setError("Network error");
+                                      }
+
+                                    } finally {
+                                      setLoading(false);
+                                    }
+                                  }}
+                                onMouseEnter={(e) => {
+                                  if (!(!staff.selectedRoute || loading)) {
+                                    e.currentTarget.style.backgroundColor = '#1e4f72';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(44,107,158,0.25)';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!(!staff.selectedRoute || loading)) {
+                                    e.currentTarget.style.backgroundColor = '#2c6b9e';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(44,107,158,0.2)';
+                                  }
+                                }}
+                              >
+                                {loading ? (
+                                  <>
+                                    <span style={{ 
+                                      width: '14px', 
+                                      height: '14px', 
+                                      border: '2px solid #fff', 
+                                      borderTopColor: 'transparent', 
+                                      borderRadius: '50%', 
+                                      animation: 'spin 0.6s linear infinite',
+                                      display: 'inline-block'
+                                    }}></span>
+                                    <span>Assigning...</span>
+                                  </>
+                                ) : (
+                                  'Assign'
+                                )}
+                              </button>
+
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
 
-<style jsx>{`
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .table-hover tbody tr:hover {
-    background-color: #fafcff;
-  }
-  
-  select:hover:not(:disabled) {
-    border-color: #b8c5d4;
-  }
-`}</style>
+              <style jsx>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+                
+                .table-hover tbody tr:hover {
+                  background-color: #fafcff;
+                }
+                
+                select:hover:not(:disabled) {
+                  border-color: #b8c5d4;
+                }
+              `}</style>
             </PreviewCard>
           </div>
 
@@ -1462,9 +1288,6 @@ if (vehicleConflict) {
   const routeCustomers = customers
     .filter(c => String(c.routeId) === String(selectedRouteForAlignment))
     .sort((a, b) => a.lineNo - b.lineNo);
-
-
-      
       return (
         <div className="row g-4">
           <div className="col-12">
@@ -1707,8 +1530,7 @@ if (vehicleConflict) {
         </div>
       );
     };
-    // Render Live Track Tab
- // Render Live Track Tab
+   
 const renderLiveTrack = () => {
   if (!Array.isArray(routeAssignments) || !Array.isArray(filteredDeliveryStaff)) {
     return (
@@ -1748,7 +1570,7 @@ const renderLiveTrack = () => {
       .sort((a, b) => new Date(a.visitedAt) - new Date(b.visitedAt));
     
     const currentIndex = sortedCustomers.findIndex(c => c._id === currentCustomer._id);
-    if (currentIndex <= 0) return null; // First visited customer
+    if (currentIndex <= 0) return null;
     
     const prevCustomer = sortedCustomers[currentIndex - 1];
     const prevTime = new Date(prevCustomer.visitedAt).getTime();
@@ -1764,7 +1586,7 @@ const renderLiveTrack = () => {
 
   // Calculate warehouse to first customer time using selectedTrackStaff
   const calculateWarehouseToFirstCustomerTime = () => {
-    // Check if we have selectedTrackStaff with startedAt
+
     if (!selectedTrackStaff?.startedAt) {
       console.log("No startedAt for selectedTrackStaff:", selectedTrackStaff);
       return null;
@@ -1791,17 +1613,7 @@ const renderLiveTrack = () => {
     const firstCustomer = sortedVisits[0];
     const startTime = new Date(selectedTrackStaff.startedAt).getTime();
     const firstVisitTime = new Date(firstCustomer.visitedAt).getTime();
-    
-    console.log("Calculating warehouse to first customer:", {
-      staffName: selectedTrackStaff.name,
-      startedAt: selectedTrackStaff.startedAt,
-      firstCustomer: firstCustomer.name,
-      firstVisitTime: firstCustomer.visitedAt,
-      startTime,
-      firstVisitTime
-    });
-    
-    // If first visit happened before start time (shouldn't happen, but just in case)
+
     if (firstVisitTime < startTime) return null;
     
     const diffMinutes = Math.round((firstVisitTime - startTime) / (1000 * 60));
@@ -1817,32 +1629,7 @@ const renderLiveTrack = () => {
     };
   };
 
-  // Calculate total route time between first and last visit
-  const calculateTotalRouteTime = () => {
-    if (!assinedCustomerDatas) return null;
-    
-    const visitedCustomers = assinedCustomerDatas.filter(c => c.isVisited && c.visitedAt);
-    if (visitedCustomers.length < 2) return null;
-    
-    const sortedVisits = [...visitedCustomers].sort((a, b) => 
-      new Date(a.visitedAt) - new Date(b.visitedAt)
-    );
-    
-    const firstVisitTime = new Date(sortedVisits[0].visitedAt).getTime();
-    const lastVisitTime = new Date(sortedVisits[sortedVisits.length - 1].visitedAt).getTime();
-    const totalMinutes = Math.round((lastVisitTime - firstVisitTime) / (1000 * 60));
-    
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    
-    return {
-      totalMinutes,
-      formatted: hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`,
-      firstCustomer: sortedVisits[0].name,
-      lastCustomer: sortedVisits[sortedVisits.length - 1].name
-    };
-  };
-
+  
   // Calculate total route duration from start to end (if endedAt exists)
   const calculateTotalRouteDuration = () => {
     if (!selectedTrackStaff?.startedAt) return null;
@@ -1883,10 +1670,7 @@ const renderLiveTrack = () => {
     
     return null;
   };
-
-  // Calculate these values only when selectedTrackStaff exists
   const warehouseToFirstCustomer = selectedTrackStaff ? calculateWarehouseToFirstCustomerTime() : null;
-  const routeTimeStats = calculateTotalRouteTime();
   const totalDuration = selectedTrackStaff ? calculateTotalRouteDuration() : null;
 
   const getCustomerStatusClass = (status) => {
@@ -2418,6 +2202,13 @@ const renderLiveTrack = () => {
     </div>
   );
 };
+
+const renderBrandAssign = () => {
+  return(
+    <BrandAssign onStaffUpdate={fetchStaff} salesStaff={deliveryStaff}/>
+  )
+}
+
  if (loading && routes.length === 0 && routeAssignments.length === 0) {
   return (
     <Content>
@@ -2473,9 +2264,15 @@ const renderLiveTrack = () => {
                   <span>Live Track</span>
                 </button>
               </li>
-               
-
-              
+              <li>
+                <button
+                  className={`tab-btn ${activeTab === "brand" ? "active" : ""}`}
+                  onClick={() => setActiveTab("brand")}
+                >
+                  <Icon name="user" />
+                  <span>Brand Assign</span>
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -2490,7 +2287,9 @@ const renderLiveTrack = () => {
              <div className={`tab-pane ${activeTab === "alignment" ? "active" : ""}`}>
               {renderCustomerAlignment()}
             </div>
-       
+            <div className={`tab-pane ${activeTab === "brand" ? "active" : ""}`}>
+              {renderBrandAssign()}
+            </div>
           </div>
 
           {/* Assign Route Modal */}
@@ -2521,39 +2320,39 @@ const renderLiveTrack = () => {
           </Modal>
           
          <Modal isOpen={confirmOpen} toggle={() => setConfirmOpen(false)} centered>
-  <ModalBody className="text-center">
-    <Icon name="alert-circle" className="text-danger mb-2" />
+          <ModalBody className="text-center">
+            <Icon name="alert-circle" className="text-danger mb-2" />
 
-    <h5>Are you sure to unassign this route?</h5>
+            <h5>Are you sure to unassign this route?</h5>
 
-    <p className="text-muted">
-      This action will remove the route from the staff for this day.
-    </p>
+            <p className="text-muted">
+              This action will remove the route from the staff for this day.
+            </p>
 
-    <ul className="d-flex justify-content-center mt-3">
-      <li>
-        <Button
-          color="danger"
-          className="mr-2"
-          onClick={handleUnassignRoute}
-          disabled={loading}
-        >
-          {loading ? "Unassigning..." : "Unassign"}
-        </Button>
-      </li>
+            <ul className="d-flex justify-content-center mt-3">
+              <li>
+                <Button
+                  color="danger"
+                  className="mr-2"
+                  onClick={handleUnassignRoute}
+                  disabled={loading}
+                >
+                  {loading ? "Unassigning..." : "Unassign"}
+                </Button>
+              </li>
 
-      <li>
-        <Button
-          color="light"
-          onClick={() => setConfirmOpen(false)}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-      </li>
-    </ul>
-  </ModalBody>
-</Modal>
+              <li>
+                <Button
+                  color="light"
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+              </li>
+            </ul>
+          </ModalBody>
+        </Modal>
           <Modal
             isOpen={viewCustomerModal}
             toggle={() => setViewCustomerModal(false)}
@@ -2570,99 +2369,96 @@ const renderLiveTrack = () => {
 
                   {/* Profile Section */}
                 <div className="col-12">
-            <div
-              className="d-flex align-items-center p-3 bg-light rounded"
-              style={{ gap: "15px" }} // horizontal spacing between items
-            >
-              {/* Avatar */}
-              <div
-                className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
-                style={{ fontSize: "20px", width: "60px", height: "60px" }}
-              >
-                {selectedCustomer.name.charAt(0)}
+                  <div
+                    className="d-flex align-items-center p-3 bg-light rounded"
+                    style={{ gap: "15px" }} // horizontal spacing between items
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="avatar avatar-lg bg-primary text-white d-flex align-items-center justify-content-center"
+                      style={{ fontSize: "20px", width: "60px", height: "60px" }}
+                    >
+                      {selectedCustomer.name.charAt(0)}
+                    </div>
+
+                    {/* Name & Phone */}
+                    <div className="d-flex flex-column">
+                      <h5 className="mb-1">{selectedCustomer.name}</h5>
+                      <span className="text-muted">{selectedCustomer.phone}</span>
+                    </div>
+
+                    {/* Line No Badge */}
+                    <div className="ms-auto">
+                      <Badge color="primary" className="px-3 py-2">
+                        Line #{selectedCustomer.lineNo}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+
+              {/* Info Cards */}
+              <div className="col-md-6">
+                <div className="card card-bordered h-100">
+                  <div className="card-inner">
+                    <h6 className="title mb-2">
+                      <Icon name="map-pin" className="me-1" /> Address
+                    </h6>
+                    <p className="mb-0 text-muted">
+                      {selectedCustomer.address}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              {/* Name & Phone */}
-              <div className="d-flex flex-column">
-                <h5 className="mb-1">{selectedCustomer.name}</h5>
-                <span className="text-muted">{selectedCustomer.phone}</span>
+              <div className="col-md-6">
+                <div className="card card-bordered h-100">
+                  <div className="card-inner">
+                    <h6 className="title mb-2">
+                      <Icon name="tag" className="me-1" /> Category
+                    </h6>
+                    <Badge color="light" className="px-3 py-2">
+                      {selectedCustomer.category}
+                    </Badge>
+                  </div>
+                </div>
               </div>
 
-              {/* Line No Badge */}
-              <div className="ms-auto">
-                <Badge color="primary" className="px-3 py-2">
-                  Line #{selectedCustomer.lineNo}
-                </Badge>
+              {/* Credit & Contact */}
+              <div className="col-md-6">
+                <div className="card card-bordered h-100">
+                  <div className="card-inner">
+                    <h6 className="title mb-2">
+                      <Icon name="clock" className="me-1" /> Credit Days
+                    </h6>
+                    <Badge
+                      color={selectedCustomer.creditDays > 30 ? "warning" : "success"}
+                      className="px-3 py-2"
+                    >
+                      {selectedCustomer.creditDays} Days
+                    </Badge>
+                  </div>
+                </div>
               </div>
+
+              <div className="col-md-6">
+                <div className="card card-bordered h-100">
+                  <div className="card-inner">
+                    <h6 className="title mb-2">
+                      <Icon name="phone" className="me-1" /> Contact
+                    </h6>
+                    <p className="mb-0">{selectedCustomer.phone}</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </div>
-
-
-        {/* Info Cards */}
-        <div className="col-md-6">
-          <div className="card card-bordered h-100">
-            <div className="card-inner">
-              <h6 className="title mb-2">
-                <Icon name="map-pin" className="me-1" /> Address
-              </h6>
-              <p className="mb-0 text-muted">
-                {selectedCustomer.address}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card card-bordered h-100">
-            <div className="card-inner">
-              <h6 className="title mb-2">
-                <Icon name="tag" className="me-1" /> Category
-              </h6>
-              <Badge color="light" className="px-3 py-2">
-                {selectedCustomer.category}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Credit & Contact */}
-        <div className="col-md-6">
-          <div className="card card-bordered h-100">
-            <div className="card-inner">
-              <h6 className="title mb-2">
-                <Icon name="clock" className="me-1" /> Credit Days
-              </h6>
-              <Badge
-                color={selectedCustomer.creditDays > 30 ? "warning" : "success"}
-                className="px-3 py-2"
-              >
-                {selectedCustomer.creditDays} Days
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card card-bordered h-100">
-            <div className="card-inner">
-              <h6 className="title mb-2">
-                <Icon name="phone" className="me-1" /> Contact
-              </h6>
-              <p className="mb-0">{selectedCustomer.phone}</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    )}
-  </ModalBody>
-</Modal>
-
-
-        </Block>
-      </Content>
-    </>
-  );
+          )}
+        </ModalBody>
+      </Modal>
+    </Block>
+  </Content>
+</>);
 };
 
 export default Sales;
