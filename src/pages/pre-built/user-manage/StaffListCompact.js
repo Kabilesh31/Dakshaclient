@@ -47,8 +47,8 @@ const StaffListCompact = () => {
   const [sm, updateSm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
-const [addLoading, setAddLoading] = useState(false);
-const [editLoading, setEditLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const [modalAdd, setModalAdd] = useState(false);
   const [modalEdit, setModalEdit] = useState(false);
