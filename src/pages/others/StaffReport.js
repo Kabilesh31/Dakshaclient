@@ -952,7 +952,7 @@ useEffect(() => {
                         <thead>
                           <tr>
                             <th>S.No</th>
-                            <th>Date</th>
+                            <th>D.Date</th>
                             <th>Customer</th>
                             <th>Order No</th>
                           
@@ -964,58 +964,62 @@ useEffect(() => {
                             <th>Action</th>
                           </tr>
                         </thead>
-                        <tbody>
-                          {currentItems.map((bill, idx) => {
-                            let paymentStatusText = 'Pending';
-                            let paymentStatusClass = 'pending';
-                            
-                            if (bill.orderStatus === "rejected") {
-                              paymentStatusText = 'Rejected';
-                              paymentStatusClass = 'rejected';
-                            } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
-                              paymentStatusText = 'Paid';
-                              paymentStatusClass = 'paid';
-                            }
-                            
-                            return (
-                              <tr key={bill._id} className={bill.orderStatus === "rejected" ? "rejected-row" : ""}>
-                                <td>{indexOfFirstItem + idx + 1}</td>
-                                 <td>{new Date(bill.createdAt).toLocaleDateString('en-IN', { 
-                                  day: '2-digit', 
-                                  month: "numeric", 
-                                  year: 'numeric' 
-                                })}</td>
-                                <td>{getCustomerName(bill)}</td>  
-                                 <td>
-                                  <span className="order-id">#{bill._id.toString().slice(-6)}</span>
-                                </td>
-                              
-                                <td className="amount">Rs.{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
-                                {selectedStaff.type?.toLowerCase() !== 'delivery' && (
-                                  <td>
-                                    <span className={`order-status-badge ${paymentStatusClass}`}>
-                                      {paymentStatusText}
-                                    </span>
-                                  </td>
-                                )}
-                                <td>
-                                  <span className={`order-status-badge ${bill.orderStatus?.toLowerCase() || 'pending'}`}>
-                                    {bill.orderStatus || 'Pending'}
-                                  </span>
-                                </td>
-                                <td>
-                                  <button 
-                                    className="action-btn view-btn"
-                                    onClick={() => openInvoiceModal(bill)}
-                                    title="View Invoice"
-                                  >
-                                    <i className="ni ni-eye"></i>
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
+                       <tbody>
+  {currentItems.map((bill, idx) => {
+    let paymentStatusText = 'Pending';
+    let paymentStatusClass = 'pending';
+    
+    if (bill.orderStatus === "rejected") {
+      paymentStatusText = 'Rejected';
+      paymentStatusClass = 'rejected';
+    } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
+      paymentStatusText = 'Paid';
+      paymentStatusClass = 'paid';
+    }
+    
+    return (
+      <tr key={bill._id} className={bill.orderStatus === "rejected" ? "rejected-row" : ""}>
+        <td>{indexOfFirstItem + idx + 1}</td>
+        <td>
+          {bill.deliveredAt 
+            ? new Date(bill.deliveredAt).toLocaleDateString('en-IN', { 
+                day: '2-digit', 
+                month: "numeric", 
+                year: 'numeric' 
+              })
+            : '-'
+          }
+        </td>
+        <td>{getCustomerName(bill)}</td>  
+        <td>
+          <span className="order-id">#{bill._id.toString().slice(-6)}</span>
+        </td>
+        <td className="amount">Rs.{(Number(bill.totalAmt) || 0).toLocaleString('en-IN')}</td>
+        {selectedStaff.type?.toLowerCase() !== 'delivery' && (
+          <td>
+            <span className={`order-status-badge ${paymentStatusClass}`}>
+              {paymentStatusText}
+            </span>
+          </td>
+        )}
+        <td>
+          <span className={`order-status-badge ${bill.orderStatus?.toLowerCase() || 'pending'}`}>
+            {bill.orderStatus || 'Pending'}
+          </span>
+        </td>
+        <td>
+          <button 
+            className="action-btn view-btn"
+            onClick={() => openInvoiceModal(bill)}
+            title="View Invoice"
+          >
+            <i className="ni ni-eye"></i>
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
                         <tfoot>
                           <tr>
                             <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end fw-bold">Total :</td>
