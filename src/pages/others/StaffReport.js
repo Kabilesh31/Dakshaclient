@@ -152,76 +152,88 @@ const StaffReport = () => {
   };
 
   // Filter bills based on selected staff and type
-  useEffect(() => {
-    if (!selectedStaff || !allBills.length) {
-      setFilteredBills([]);
-      return;
-    }
+ useEffect(() => {
+  if (!selectedStaff || !allBills.length) {
+    setFilteredBills([]);
+    return;
+  }
 
-    let staffBills = [];
-    
-    switch(selectedStaff.type?.toLowerCase()) {
-      case 'manager':
-        staffBills = allBills.filter(bill => 
-          bill.createdBy === selectedStaff._id || 
-          bill.createdBy === selectedStaff.name
+  let staffBills = [];
+
+    switch (selectedStaff.type?.toLowerCase()) {
+      case "manager":
+        staffBills = allBills.filter(
+          bill =>
+            bill.createdBy === selectedStaff._id ||
+            bill.createdBy === selectedStaff.name
         );
         break;
-      case 'delivery':
-        staffBills = allBills.filter(bill => 
-          bill.deliveredBy === selectedStaff._id ||
-          bill.deliveryPersonId === selectedStaff._id ||
-          bill.staffId === selectedStaff._id
+
+      case "delivery":
+        staffBills = allBills.filter(
+          bill =>
+            bill.deliveryPersonId === selectedStaff._id ||
+            bill.deliveredBy === selectedStaff._id ||
+            bill.staffId === selectedStaff._id
         );
         break;
-      case 'sales':
+
+      case "sales":
       default:
-        staffBills = allBills.filter(bill => 
-          bill.createdBy === selectedStaff._id ||
-          bill.paymentCollectedBy === selectedStaff._id ||
-          bill.staffId === selectedStaff._id ||
-          (bill.staff && bill.staff._id === selectedStaff._id)
+        staffBills = allBills.filter(
+          bill =>
+            bill.createdBy === selectedStaff._id ||
+            bill.paymentCollectedBy === selectedStaff._id ||
+            bill.staffId === selectedStaff._id ||
+            (bill.staff && bill.staff._id === selectedStaff._id)
         );
-        break;
     }
 
-    setFilteredBills(staffBills);
-    setCurrentPage(1);
-  }, [selectedStaff, allBills]);
+  setFilteredBills(staffBills);
+  setCurrentPage(1);
+}, [selectedStaff, allBills]);
 
+const filterDeliveryBills = allBills.filter((item)=> item.deliveryPersonId === selectedStaff?._id)
+console.log(filterDeliveryBills)
   // Apply date filter
-  useEffect(() => {
-    if (!selectedStaff || !allBills.length) {
-      setFilteredBills([]);
-      return;
-    }
+  // Apply date filter
+useEffect(() => {
+  if (!selectedStaff || !allBills.length) {
+    setFilteredBills([]);
+    return;
+  }
 
-    let staffBills = allBills.filter(bill => {
-      const isStaffBill = 
+  let staffBills = allBills.filter(bill => {
+    // For delivery staff, only check deliveryPersonId
+    if (selectedStaff.type?.toLowerCase() === 'delivery') {
+      return bill.deliveryPersonId === selectedStaff._id;
+    } else {
+      // For other staff types
+      return (
         bill.createdBy === selectedStaff._id ||
         bill.paymentCollectedBy === selectedStaff._id ||
         bill.deliveredBy === selectedStaff._id ||
         bill.staffId === selectedStaff._id ||
-        (bill.staff && bill.staff._id === selectedStaff._id);
-
-      return isStaffBill;
-    });
-    
-    if (startDate && endDate) {
-      const from = new Date(startDate);
-      from.setHours(0, 0, 0, 0);
-      const to = new Date(endDate);
-      to.setHours(23, 59, 59, 999);
-      
-      staffBills = staffBills.filter((item) => {
-        const createdAt = new Date(item.createdAt);
-        return createdAt >= from && createdAt <= to;
-      });
+        (bill.staff && bill.staff._id === selectedStaff._id)
+      );
     }
+  });
+  
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);
     
-    setFilteredBills(staffBills);
-    setCurrentPage(1);
-  }, [selectedStaff, allBills, startDate, endDate]);
+    staffBills = staffBills.filter((item) => {
+      const createdAt = new Date(item.createdAt);
+      return createdAt >= from && createdAt <= to;
+    });
+  }
+  
+  setFilteredBills(staffBills);
+  setCurrentPage(1);
+}, [selectedStaff, allBills, startDate, endDate]);
 
   useEffect(() => {
     fetchStaff();
@@ -274,7 +286,7 @@ const StaffReport = () => {
     doc.setFont("helvetica", "bold");
     const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-    doc.text("selectedBill.orderStatus" || 'delivered', 160, 45);
+    doc.text("selectedBill.orderStatus" || 'Delivered', 160, 45);
 
     // Customer Details
     doc.setFontSize(12);
@@ -1105,7 +1117,7 @@ const StaffReport = () => {
                       fontSize: '14px',
                       fontWeight: '500'
                     }}>
-                      {selectedBill.orderStatus || 'Delivered'}
+                     {(selectedBill.orderStatus || 'Delivered').charAt(0).toUpperCase() + (selectedBill.orderStatus || 'Delivered').slice(1)}
                     </div>
                     <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
                       Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-IN')}
