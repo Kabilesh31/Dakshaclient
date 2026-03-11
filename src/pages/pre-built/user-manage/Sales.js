@@ -942,6 +942,7 @@ const fetchCustomers = async () => {
                 <div style={{ position: 'relative', width: '170px' }}>
                   <select
                     className="form-control"
+                     disabled={staffAssignments.length >= 2}
                     style={{
                       
                       padding: '8px 24px 8px 10px',
@@ -1023,9 +1024,9 @@ const fetchCustomers = async () => {
                   >
                     <option value="">Vehicle</option>
                     {getAvailableVehiclesForStaff(staff._id).map(vehicle => (
-                        <option key={vehicle._id} value={vehicle._id}>
-                          {vehicle.vehicleNumber} ({vehicle.vehicleType})
-                        </option>
+                        <option key={vehicle._id} value={vehicle.vehicleNumber}>
+  {vehicle.vehicleNumber} ({vehicle.vehicleType})
+</option>
                       ))}
                   </select>
                   <div style={{
@@ -1093,10 +1094,7 @@ const fetchCustomers = async () => {
                       if (existingVehicleNo) {
                         vehicleToSend = existingVehicleNo; 
                       } else {
-                        const selectedVehicleData = vehicles.find(
-                          (v) => v._id === staff.selectedVehicle
-                        );
-                        vehicleToSend = selectedVehicleData?.vehicleNumber;
+                        vehicleToSend = staff.selectedVehicle;
                       }
 
                         if (!vehicleToSend) {
