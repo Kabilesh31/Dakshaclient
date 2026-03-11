@@ -729,9 +729,7 @@ const onEditClick = (item) => {
                               )}
                               {item.focusProduct && (
                                 <div style={{ position: "absolute", top: "10px", left: "10px" }}>
-                                  <span className="badge badge-warning">
-                                    <Icon name="star-fill" /> Focus
-                                  </span>
+                                  <Icon name="star-fill" style={{ marginRight: "8px", color: showFocusOnly ? "#ffc107" : "#ffc107" }} />
                                 </div>
                               )}
                               <div className="hover-icon" onClick={() => onEditClick(item)}>
@@ -814,14 +812,12 @@ const onEditClick = (item) => {
                               />
                               <div className="user-info ml-2">
                                <span className="tb-lead">
-  {item.productName}
+                                  {item.productName}
 
-  {item.focusProduct && (
-    <span className="badge badge-warning ml-2">
-      Focus
-    </span>
-  )}
-</span>
+                                  {item.focusProduct && (
+                                   <Icon name="star-fill" style={{ marginLeft: "8px", color: "#ffc107" }} />
+                                  )}
+                                </span>
                               </div>
                             </div>
                           </DataTableRow>
@@ -853,52 +849,52 @@ const onEditClick = (item) => {
                           </DataTableRow> */}
                           <DataTableRow className="nk-tb-col-tools">
                             <ul className="nk-tb-actions gx-1">
-  <li>
-    <UncontrolledDropdown>
-      <DropdownToggle
-        tag="a"
-        className="dropdown-toggle btn btn-icon btn-trigger"
-      >
-        <Icon name="more-h"></Icon>
-      </DropdownToggle>
+                              <li>
+                                <UncontrolledDropdown>
+                                  <DropdownToggle
+                                    tag="a"
+                                    className="dropdown-toggle btn btn-icon btn-trigger"
+                                  >
+                                    <Icon name="more-h"></Icon>
+                                  </DropdownToggle>
 
-      <DropdownMenu right>
-        {/* Edit */}
-        <DropdownItem
-          onClick={() => onEditClick(item)}
-        >
-          <Icon name="edit-alt-fill" className="mr-1" />
-          Edit
-        </DropdownItem>
+                                  <DropdownMenu right>
+                                    {/* Edit */}
+                                    <DropdownItem
+                                      onClick={() => onEditClick(item)}
+                                    >
+                                      <Icon name="edit-alt-fill" className="mr-1" />
+                                      Edit
+                                    </DropdownItem>
 
-        {/* Focus / Unfocus */}
-        <DropdownItem
-          onClick={() => toggleFocusProduct(item)}
-        >
-          <Icon
-            name={item.focusProduct ? "star-fill" : "star"}
-            className="mr-1"
-          />
-          {item.focusProduct
-            ? "Remove Focus Product"
-            : "Mark as Focus Product"}
-        </DropdownItem>
+                                    {/* Focus / Unfocus */}
+                                    <DropdownItem
+                                      onClick={() => toggleFocusProduct(item)}
+                                    >
+                                      <Icon
+                                        name={item.focusProduct ? "star-fill" : "star"}
+                                        className="mr-1"
+                                      />
+                                      {item.focusProduct
+                                        ? "Remove Focus Product"
+                                        : "Mark as Focus Product"}
+                                    </DropdownItem>
 
-        {/* Delete */}
-        <DropdownItem
-          className="text-danger"
-          onClick={() => {
-            setDeleteItem(item);
-            setDeleteModal(true);
-          }}
-        >
-          <Icon name="trash-fill" className="mr-1" />
-          Delete
-        </DropdownItem>
-      </DropdownMenu>
-    </UncontrolledDropdown>
-  </li>
-</ul>
+                                    {/* Delete */}
+                                    <DropdownItem
+                                      className="text-danger"
+                                      onClick={() => {
+                                        setDeleteItem(item);
+                                        setDeleteModal(true);
+                                      }}
+                                    >
+                                      <Icon name="trash-fill" className="mr-1" />
+                                      Delete
+                                    </DropdownItem>
+                                  </DropdownMenu>
+                                </UncontrolledDropdown>
+                              </li>
+                            </ul>
                           </DataTableRow>
                         </DataTableItem>
                       ))
@@ -913,76 +909,76 @@ const onEditClick = (item) => {
                 )}
 
                 <div className="card-inner">
-  {currentItems.length > 0 ? (
-    <div className="d-flex justify-content-center align-items-center">
+                  {currentItems.length > 0 ? (
+                    <div className="d-flex justify-content-center align-items-center">
 
-      {/* Previous */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === 1}
-        onClick={() => paginate(currentPage - 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-left"></em>
-      </button>
+                      {/* Previous */}
+                      <button
+                        className="btn btn-icon btn-sm btn-outline-light mx-1"
+                        disabled={currentPage === 1}
+                        onClick={() => paginate(currentPage - 1)}
+                        style={{ borderRadius: "6px" }}
+                      >
+                        <em className="icon ni ni-chevron-left"></em>
+                      </button>
 
-      {/* Page Numbers */}
-      {[...Array(Math.ceil(filteredProducts.length / itemPerPage))].map((_, index) => {
-        const pageNumber = index + 1;
+                      {/* Page Numbers */}
+                      {[...Array(Math.ceil(filteredProducts.length / itemPerPage))].map((_, index) => {
+                        const pageNumber = index + 1;
 
-        if (
-          pageNumber === currentPage ||
-          pageNumber === currentPage - 1 ||
-          pageNumber === currentPage + 1
-        ) {
-          return (
-            <button
-              key={pageNumber}
-              onClick={() => paginate(pageNumber)}
-              className={`btn btn-sm mx-1 ${
-                currentPage === pageNumber
-                  ? "btn-primary"
-                  : "btn-outline-light"
-              }`}
-              style={{
-                minWidth: "36px",
-                borderRadius: "6px",
-                fontWeight: 500
-              }}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
-        return null;
-      })}
+                        if (
+                          pageNumber === currentPage ||
+                          pageNumber === currentPage - 1 ||
+                          pageNumber === currentPage + 1
+                        ) {
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => paginate(pageNumber)}
+                              className={`btn btn-sm mx-1 ${
+                                currentPage === pageNumber
+                                  ? "btn-primary"
+                                  : "btn-outline-light"
+                              }`}
+                              style={{
+                                minWidth: "36px",
+                                borderRadius: "6px",
+                                fontWeight: 500
+                              }}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
 
-      {/* Next */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={
-          currentPage === Math.ceil(filteredProducts.length / itemPerPage)
-        }
-        onClick={() => paginate(currentPage + 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-right"></em>
-      </button>
+                      {/* Next */}
+                      <button
+                        className="btn btn-icon btn-sm btn-outline-light mx-1"
+                        disabled={
+                          currentPage === Math.ceil(filteredProducts.length / itemPerPage)
+                        }
+                        onClick={() => paginate(currentPage + 1)}
+                        style={{ borderRadius: "6px" }}
+                      >
+                        <em className="icon ni ni-chevron-right"></em>
+                      </button>
 
-    </div>
-  ) : (
-    <div className="text-center">
-      <span className="text-silent">No data found</span>
-    </div>
-  )}
-</div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <span className="text-silent">No data found</span>
+                    </div>
+                  )}
+                </div>
               </DataTable>
             </Col>
           </Row>
         </Block>
 
        <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
-  <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+        <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
             <a
               href="#close"
               className="close"
@@ -1061,43 +1057,43 @@ const onEditClick = (item) => {
                 </FormGroup>
               </Col>
               <Col md="6">
-  <FormGroup>
-    <label className="form-label">Packing</label>
-    <input
-      type="text"
-      className={`form-control ${
-        formData.packing && !packingRegex.test(formData.packing)
-          ? "is-invalid"
-          : ""
-      }`}
-      placeholder="1 x 1"
-      value={formData.packing}
-      onChange={(e) =>
-        setFormData({ ...formData, packing: e.target.value })
-      }
-    />
-    {formData.packing &&
-      !packingRegex.test(formData.packing) && (
-        <div className="invalid-feedback">
-          Format must be like: 10 x 2
-        </div>
-      )}
-  </FormGroup>
-</Col>
-<Col md="6">
-  <FormGroup>
-    <label className="form-label">GST (%)</label>
-    <input
-      type="number"
-      className="form-control"
-      value={formData.gst}
-      onChange={(e) =>
-        setFormData({ ...formData, gst: e.target.value })
-      }
-      min="0"
-    />
-  </FormGroup>
-</Col>
+                  <FormGroup>
+                    <label className="form-label">Packing</label>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        formData.packing && !packingRegex.test(formData.packing)
+                          ? "is-invalid"
+                          : ""
+                      }`}
+                      placeholder="1 x 1"
+                      value={formData.packing}
+                      onChange={(e) =>
+                        setFormData({ ...formData, packing: e.target.value })
+                      }
+                    />
+                    {formData.packing &&
+                      !packingRegex.test(formData.packing) && (
+                        <div className="invalid-feedback">
+                          Format must be like: 10 x 2
+                        </div>
+                      )}
+                  </FormGroup>
+                </Col>
+                <Col md="6">
+                  <FormGroup>
+                    <label className="form-label">GST (%)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.gst}
+                      onChange={(e) =>
+                        setFormData({ ...formData, gst: e.target.value })
+                      }
+                      min="0"
+                    />
+                  </FormGroup>
+                </Col>
 
               {[1, 2, 3].map((n) => (
                 <Col md="4" key={n}>
@@ -1139,15 +1135,15 @@ const onEditClick = (item) => {
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
-  {addLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Saving...
-    </>
-  ) : (
-    "Save Product"
-  )}
-</Button>
+                  {addLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Product"
+                  )}
+                </Button>
 
               </Col>
             </Form>
@@ -1155,180 +1151,180 @@ const onEditClick = (item) => {
         </Modal>
 
     {/* Edit Product Modal */}
-<Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
-  <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-    <a
-      href="#close"
-      className="close"
-      onClick={(e) => {
-        e.preventDefault();
-        setModalEdit(false);
-      }}
-    >
-      <Icon name="cross-sm" />
-    </a>
+        <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
+          <ModalBody style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+            <a
+              href="#close"
+              className="close"
+              onClick={(e) => {
+                e.preventDefault();
+                setModalEdit(false);
+              }}
+            >
+              <Icon name="cross-sm" />
+            </a>
 
-    <h5 className="title mb-3">Edit Product</h5>
+            <h5 className="title mb-3">Edit Product</h5>
 
-    <Form className="row gy-3" onSubmit={onEditSubmit}>
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
-          <CreatableSelect
-            options={brandOptions}
-            value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
-            onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
-            isClearable
-          />
-        </FormGroup>
-      </Col>
+            <Form className="row gy-3" onSubmit={onEditSubmit}>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Brand<span className="text-danger ml-1 ">*</span></label>
+                  <CreatableSelect
+                    options={brandOptions}
+                    value={formData.brand ? { label: formData.brand, value: formData.brand } : null}
+                    onChange={(e) => setFormData({ ...formData, brand: e?.value || "" })}
+                    isClearable
+                  />
+                </FormGroup>
+              </Col>
 
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
-          <input
-            className="form-control"
-            value={formData.productName}
-            onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-            required
-          />
-        </FormGroup>
-      </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Product Name<span className="text-danger ml-1 ">*</span></label>
+                  <input
+                    className="form-control"
+                    value={formData.productName}
+                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
-          <input
-            className="form-control"
-            value={formData.productCode}
-            onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
-            required
-          />
-        </FormGroup>
-      </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Product Code<span className="text-danger ml-1 ">*</span></label>
+                  <input
+                    className="form-control"
+                    value={formData.productCode}
+                    onChange={(e) => setFormData({ ...formData, productCode: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
-          <input
-            type="number"
-            className="form-control"
-            value={formData.value}
-            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-            required
-          />
-        </FormGroup>
-      </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Value<span className="text-danger ml-1 ">*</span></label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.value}
+                    onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
-      <Col md="12">
-        <FormGroup check>
-          <input
-            type="checkbox"
-            className="form-check-input"
-            checked={formData.boxPacking}
-            onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
-          />
-          <label className="form-label ms-2">Box Packing Available</label>
-        </FormGroup>
-      </Col>
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">Packing</label>
-          <input
-            type="text"
-            className={`form-control ${
-              formData.packing && !packingRegex.test(formData.packing)
-                ? "is-invalid"
-                : ""
-            }`}
-            placeholder="1 x 1"
-            value={formData.packing}
-            onChange={(e) =>
-              setFormData({ ...formData, packing: e.target.value })
-            }
-          />
-          {formData.packing &&
-            !packingRegex.test(formData.packing) && (
-              <div className="invalid-feedback">
-                Format must be like: 10 x 2
-              </div>
-            )}
-        </FormGroup>
-      </Col>
-      <Col md="6">
-        <FormGroup>
-          <label className="form-label">GST (%)</label>
-          <input
-            type="number"
-            className="form-control"
-            value={formData.gst}
-            onChange={(e) =>
-              setFormData({ ...formData, gst: e.target.value })
-            }
-            min="0"
-          />
-        </FormGroup>
-      </Col>
+              <Col md="12">
+                <FormGroup check>
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={formData.boxPacking}
+                    onChange={(e) => setFormData({ ...formData, boxPacking: e.target.checked })}
+                  />
+                  <label className="form-label ms-2">Box Packing Available</label>
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Packing</label>
+                  <input
+                    type="text"
+                    className={`form-control ${
+                      formData.packing && !packingRegex.test(formData.packing)
+                        ? "is-invalid"
+                        : ""
+                    }`}
+                    placeholder="1 x 1"
+                    value={formData.packing}
+                    onChange={(e) =>
+                      setFormData({ ...formData, packing: e.target.value })
+                    }
+                  />
+                  {formData.packing &&
+                    !packingRegex.test(formData.packing) && (
+                      <div className="invalid-feedback">
+                        Format must be like: 10 x 2
+                      </div>
+                    )}
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">GST (%)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.gst}
+                    onChange={(e) =>
+                      setFormData({ ...formData, gst: e.target.value })
+                    }
+                    min="0"
+                  />
+                </FormGroup>
+              </Col>
 
-      {[1, 2, 3].map((n) => (
-        <Col md="4" key={n}>
-          <FormGroup>
-            <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
-            <input
-              className="form-control"
-              value={formData[`ptr${n}`]}
-              onChange={(e) => setFormData({ ...formData, [`ptr${n}`]: e.target.value })}
-            />
-          </FormGroup>
-        </Col>
-      ))}
+              {[1, 2, 3].map((n) => (
+                <Col md="4" key={n}>
+                  <FormGroup>
+                    <label className="form-label">PTR {n}<span className="text-danger ml-1 ">*</span></label>
+                    <input
+                      className="form-control"
+                      value={formData[`ptr${n}`]}
+                      onChange={(e) => setFormData({ ...formData, [`ptr${n}`]: e.target.value })}
+                    />
+                  </FormGroup>
+                </Col>
+              ))}
 
-      <Col md="12">
-        <FormGroup>
-          <label className="form-label">Notes</label>
-          <textarea
-            className="form-control"
-            rows="2"
-            value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            
-          />
-        </FormGroup>
-      </Col>
+              <Col md="12">
+                <FormGroup>
+                  <label className="form-label">Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    
+                  />
+                </FormGroup>
+              </Col>
 
-      <Col md="12">
-        <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
-          {({ getRootProps, getInputProps }) => (
-            <div {...getRootProps()} className="dropzone">
-              <input {...getInputProps()} />
-              {formData.img ? (
-                <img
-                  src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
-                  style={{ width: 80 }}
-                />
-              ) : (
-                <p>Upload Image</p>
-              )}
-            </div>
-          )}
-        </Dropzone>
-      </Col>
+              <Col md="12">
+                <Dropzone multiple={false} onDrop={(files) => setFormData({ ...formData, img: files[0] })}>
+                  {({ getRootProps, getInputProps }) => (
+                    <div {...getRootProps()} className="dropzone">
+                      <input {...getInputProps()} />
+                      {formData.img ? (
+                        <img
+                          src={typeof formData.img === "string" ? formData.img : URL.createObjectURL(formData.img)}
+                          style={{ width: 80 }}
+                        />
+                      ) : (
+                        <p>Upload Image</p>
+                      )}
+                    </div>
+                  )}
+                </Dropzone>
+              </Col>
 
-      <Col md="12">
-        <Button color="primary" type="submit" disabled={editLoading}>
-          {editLoading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2"></span>
-              Updating...
-            </>
-          ) : (
-            "Update Product"
-          )}
-        </Button>
-      </Col>
-    </Form>
-  </ModalBody>
-</Modal>
+              <Col md="12">
+                <Button color="primary" type="submit" disabled={editLoading}>
+                  {editLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Product"
+                  )}
+                </Button>
+              </Col>
+            </Form>
+          </ModalBody>
+        </Modal>
 
         <Modal isOpen={deleteModal} toggle={() => setDeleteModal(false)} className="modal-dialog-centered">
           <div className="modal-header">

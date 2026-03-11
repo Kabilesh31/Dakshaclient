@@ -1228,91 +1228,91 @@ const filteredStaff = getFilteredStaff();
       </Content>
 
       {/* Staff Selection Modal */}
- <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="lg">
-  <ModalBody className="staff-modal-body">
-    <a
-      href="#cancel"
-      onClick={(ev) => {
-        ev.preventDefault();
-        setShowStaffModal(false);
-      }}
-      className="close"
-    >
-      <Icon name="cross-sm"></Icon>
-    </a>
-    <div className="staff-modal-content">
-      <h5 className="staff-modal-title"> Select Staff Member</h5>
-      
-      {/* Filter Buttons */}
-      <div className="staff-filters">
-      
-        <button
-          className={`filter-btn sales ${staffFilter === 'sales' ? 'active' : ''}`}
-          onClick={() => setStaffFilter('sales')}
-        >
-          Sales 
-        </button>
-        <button
-          className={`filter-btn delivery ${staffFilter === 'delivery' ? 'active' : ''}`}
-          onClick={() => setStaffFilter('delivery')}
-        >
-          Delivery 
-        </button>
-        {/* <button
-          className={`filter-btn manager ${staffFilter === 'manager' ? 'active' : ''}`}
-          onClick={() => setStaffFilter('manager')}
-        >
-          Manager <span className="count">{staffData.filter(s => s.type === 'manager').length}</span>
-        </button> */}
-      </div>
-
-      {/* Staff List */}
-      <div className="staff-list">
-        {filteredStaff.length > 0 ? (
-          filteredStaff.map((staff) => (
-            <div
-              key={staff._id}
-              className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
-              onClick={() => handleStaffPerformanceSelect(staff)}
+        <Modal isOpen={showStaffModal} toggle={() => setShowStaffModal(false)} className="staff-modal" size="lg">
+          <ModalBody className="staff-modal-body">
+            <a
+              href="#cancel"
+              onClick={(ev) => {
+                ev.preventDefault();
+                setShowStaffModal(false);
+              }}
+              className="close"
             >
-              <div className="staff-avatar-small">
-                {staff.name?.charAt(0)}
+              <Icon name="cross-sm"></Icon>
+            </a>
+            <div className="staff-modal-content">
+              <h5 className="staff-modal-title"> Select Staff Member</h5>
+
+                  <BlockHead size="sm">
+                          <BlockBetween>
+                            <BlockHeadContent>
+                              <BlockTitle tag="h3"></BlockTitle>
+                              
+                            </BlockHeadContent>
+                            <div className="d-flex align-items-center gap-5">
+                            <div className="btn-group btn-group-sm ml-3">
+                                {["sales", "delivery"].map((s) => (
+                                  <Button
+                                    key={s}
+                                    color={staffFilter === s ? "primary" : "light"}
+                                    className="px-3"
+                                    onClick={() => setStaffFilter(s)}
+                                  >
+                                    {s.toUpperCase()}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </BlockBetween>
+                        </BlockHead>
+
+              {/* Staff List */}
+              <div className="staff-list">
+                {filteredStaff.length > 0 ? (
+                  filteredStaff.map((staff) => (
+                    <div
+                      key={staff._id}
+                      className={`staff-item ${selectedStaffForPerformance?._id === staff._id ? 'selected' : ''}`}
+                      onClick={() => handleStaffPerformanceSelect(staff)}
+                    >
+                      <div className="staff-avatar-small">
+                        {staff.name?.charAt(0)}
+                      </div>
+                      <div className="staff-info">
+                        <h6>{staff.name}</h6>
+                        <p>{staff.mobile || 'No mobile number'}</p>
+                      </div>
+                      <div className="staff-stats">
+                      <span 
+                          className="stat-badge" 
+                          style={{ 
+                            background: staff.type === 'delivery' ? '#3498db20' : 
+                                      staff.type === 'sales' ? '#2ecc7120' : 
+                                      '#95a5a620', 
+                            color: staff.type === 'delivery' ? '#3498db' : 
+                                  staff.type === 'sales' ? '#2ecc71' : 
+                                  '#95a5a6' 
+                          }}
+                        >
+                          {staff.type ? staff.type.charAt(0).toUpperCase() + staff.type.slice(1) : 'Manager'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center py-4 no-staff-message">
+                    No {staffFilter !== 'all' ? staffFilter : ''} staff found
+                  </p>
+                )}
               </div>
-              <div className="staff-info">
-                <h6>{staff.name}</h6>
-                <p>{staff.mobile || 'No mobile number'}</p>
-              </div>
-              <div className="staff-stats">
-               <span 
-  className="stat-badge" 
-  style={{ 
-    background: staff.type === 'delivery' ? '#3498db20' : 
-              staff.type === 'sales' ? '#2ecc7120' : 
-              '#95a5a620', 
-    color: staff.type === 'delivery' ? '#3498db' : 
-           staff.type === 'sales' ? '#2ecc71' : 
-           '#95a5a6' 
-  }}
->
-  {staff.type ? staff.type.charAt(0).toUpperCase() + staff.type.slice(1) : 'Manager'}
-</span>
-              </div>
+              
+              {/* Optional: Show result count */}
+              {/* <div className="filter-footer">
+                <span className="result-count">Showing {filteredStaff.length} of {staffData.length} staff</span>
+              </div> */}
             </div>
-          ))
-        ) : (
-          <p className="text-center py-4 no-staff-message">
-            No {staffFilter !== 'all' ? staffFilter : ''} staff found
-          </p>
-        )}
-      </div>
-      
-      {/* Optional: Show result count */}
-      {/* <div className="filter-footer">
-        <span className="result-count">Showing {filteredStaff.length} of {staffData.length} staff</span>
-      </div> */}
-    </div>
-  </ModalBody>
-</Modal>
+          </ModalBody>
+        </Modal>
       {/* Date Range Modal */}
       <Modal isOpen={modal} toggle={() => setModal(false)} className="date-modal" size="lg">
         <ModalBody className="date-modal-body">

@@ -293,22 +293,22 @@ const confirmAction = async () => {
           
             <div className="d-flex align-items-center gap-5">
            <div className="position-relative">
-  <DatePicker
-    multiple
-    value={selectedDates}
-    onChange={setSelectedDates}
-    format="DD-MM-YYYY"
-    placeholder="    Select dates"
-    style={{
-      width: "160px",          // 🔥 increased width
-      borderRadius: "8px",
-      border: "/weather-ddbea",
-      height: "38px",         // 🔥 increased height
-      fontSize: "15px",       // 🔥 slightly bigger text
-    }}
-    inputClass="form-control ps-3"  // ❌ removed form-control-sm
-  />
-</div>
+            <DatePicker
+              multiple
+              value={selectedDates}
+              onChange={setSelectedDates}
+              format="DD-MM-YYYY"
+              placeholder="    Select dates"
+              style={{
+                width: "160px",       
+                borderRadius: "8px",
+                border: "/weather-ddbea",
+                height: "38px",         
+                fontSize: "15px",      
+              }}
+              inputClass="form-control ps-3"  
+            />
+          </div>
 
             <div className="btn-group btn-group-sm ml-3">
                 {["all", "pending", "approved", "rejected"].map((s) => (
@@ -411,22 +411,22 @@ const confirmAction = async () => {
                 {/* Table Body */}
                <tbody>
                 {currentItems.length > 0 &&
-  currentItems.map((order, index) => {
-    const isHighlighted = order._id === activeHighlight;
+                    currentItems.map((order, index) => {
+                      const isHighlighted = order._id === activeHighlight;
 
-    return (
-      <tr
-        key={order._id}
-        id={order._id}
-        className={`align-middle ${
-          isHighlighted ? "highlight-row" : ""
-        }`}
-        style={{
-          borderTop: "1px solid #e0e0e0",
-          borderBottom: "1px solid #e0e0e0",
-          textAlign: "left",
-        }}
-      >
+                      return (
+                        <tr
+                          key={order._id}
+                          id={order._id}
+                          className={`align-middle ${
+                            isHighlighted ? "highlight-row" : ""
+                          }`}
+                          style={{
+                            borderTop: "1px solid #e0e0e0",
+                            borderBottom: "1px solid #e0e0e0",
+                            textAlign: "left",
+                          }}
+                        >
                         <td className="px-3 py-2 text-center">
                           {indexOfFirstItem + index + 1}
                         </td>
@@ -447,8 +447,8 @@ const confirmAction = async () => {
                           </span>
                         </td>
                        <td className="py-2 text-start">
-  {order.customerName?.charAt(0).toUpperCase() + order.customerName?.slice(1)}
-</td>
+                          {order.customerName?.charAt(0).toUpperCase() + order.customerName?.slice(1)}
+                        </td>
 
                         <td
                           className="px-4 py-2 text-start"
@@ -519,8 +519,8 @@ const confirmAction = async () => {
                           </UncontrolledDropdown>
                         </td>
                       </tr>
-    );
-  })}
+                    );
+                  })}
               </tbody>
 
             </table>
