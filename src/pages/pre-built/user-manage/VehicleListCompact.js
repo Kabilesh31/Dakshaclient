@@ -621,138 +621,151 @@ const isExpiringSoon = (date, days = 7) => {
             </div>
 
             {/* TABLE */}
-            <DataTableBody compact>
-              <DataTableHead>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    Vehicle Number
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    Type
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    Year
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    Insurance Expiry
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    FC Upto
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ fontWeight: "bold" }} className="sub-text">
-                    Status
-                  </span>
-                </DataTableRow>
-                <DataTableRow className="nk-tb-col-tools"></DataTableRow>
-              </DataTableHead>
+      {/* TABLE */}
+<DataTableBody compact>
+  <DataTableHead>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Vehicle Number
+      </span>
+    </DataTableRow>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Type
+      </span>
+    </DataTableRow>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Year
+      </span>
+    </DataTableRow>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Insurance Expiry
+      </span>
+    </DataTableRow>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        FC Upto
+      </span>
+    </DataTableRow>
+    <DataTableRow>
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Status
+      </span>
+    </DataTableRow>
+    <DataTableRow className="nk-tb-col-tools">
+      <span style={{ fontWeight: "bold" }} className="sub-text">
+        Actions
+      </span>
+    </DataTableRow>
+  </DataTableHead>
 
-              {currentItems.map((item) => (
-                <DataTableItem key={item._id}>
-                 <DataTableRow>
-  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-    <img
-      src={item.img ? item.img : "/default-vehicle.jpg"}
-      alt="vehicle"
-      onError={(e) => {
-        e.target.onerror = null; // prevent infinite loop
-        e.target.src = "/default-vehicle.jpg";
-      }}
-      style={{
-        width: "30px",
-        height: "30px",
-        borderRadius: "50%",
-        objectFit: "cover",
-      }}
-    />
-    <Link
-      className="tb-lead"
-      to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}
-    >
-      {item.vehicleNumber}
-    </Link>
-  </div>
-</DataTableRow>
+  {currentItems.map((item) => (
+    <DataTableItem key={item._id}>
+      <DataTableRow>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <img
+            src={item.img ? item.img : "/default-vehicle.jpg"}
+            alt="vehicle"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/default-vehicle.jpg";
+            }}
+            style={{
+              width: "30px",
+              height: "30px",
+              borderRadius: "50%",
+              objectFit: "cover",
+            }}
+          />
+          <Link
+            className="tb-lead"
+            to={`${process.env.PUBLIC_URL}/vehicle/${item._id}`}
+          >
+            {item.vehicleNumber}
+          </Link>
+        </div>
+      </DataTableRow>
 
+      <DataTableRow>
+        {item.vehicleType?.charAt(0).toUpperCase() + item.vehicleType?.slice(1)}
+      </DataTableRow>
+      
+      <DataTableRow>{item.makeYear}</DataTableRow>
+      
+      <DataTableRow>
+        {item.insuranceExpiry ? (
+          <span
+            style={{
+              color: isExpired(item.insuranceExpiry) ? "red" : "inherit",
+              fontWeight: isExpired(item.insuranceExpiry) ? "500" : "normal",
+            }}
+          >
+            {new Date(item.insuranceExpiry).toLocaleDateString()}
+          </span>
+        ) : (
+          "--"
+        )}
+      </DataTableRow>
 
-                  <DataTableRow>
-  {item.vehicleType?.charAt(0).toUpperCase() + item.vehicleType?.slice(1)}
-</DataTableRow>
-                  <DataTableRow>{item.makeYear}</DataTableRow>
-                 <DataTableRow>
-  {item.insuranceExpiry ? (
-    <span
-      style={{
-        color: isExpired(item.insuranceExpiry) ? "red" : "inherit",
-        fontWeight: isExpired(item.insuranceExpiry) ? "500" : "normal",
-      }}
-    >
-      {new Date(item.insuranceExpiry).toLocaleDateString()}
-    </span>
-  ) : (
-    "--"
-  )}
-</DataTableRow>
+      <DataTableRow>
+        {item.fcUpto ? (
+          <span
+            style={{
+              color: isExpired(item.fcUpto) ? "red" : "inherit",
+              fontWeight: isExpired(item.fcUpto) ? "500" : "normal",
+            }}
+          >
+            {new Date(item.fcUpto).toLocaleDateString()}
+          </span>
+        ) : (
+          "--"
+        )}
+      </DataTableRow>
 
-                 <DataTableRow>
-  {item.fcUpto ? (
-    <span
-      style={{
-        color: isExpired(item.fcUpto) ? "red" : "inherit",
-        fontWeight: isExpired(item.fcUpto) ? "500" : "normal",
-      }}
-    >
-      {new Date(item.fcUpto).toLocaleDateString()}
-    </span>
-  ) : (
-    "--"
-  )}
-</DataTableRow>
+      <DataTableRow>
+        <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
+          {item.status ? "Active" : "Inactive"}
+        </span>
+      </DataTableRow>
 
-                  <DataTableRow>
-                    <span className={`tb-status text-${item.status ? "success" : "danger"}`}>
-                      {item.status ? "Active" : "Inactive"}
-                    </span>
-                  </DataTableRow>
-
-                  {/* ACTIONS: EDIT + MORE MENU */}
-                  <DataTableRow className="nk-tb-col-tools">
-                    <ul className="nk-tb-actions gx-1">
-                      <li>
-                        <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
-                          <Icon name="edit-alt-fill" />
-                        </Button>
-                      </li>
-                      <li>
-                       <DataTableRow className="nk-tb-col-tools">
-  <Button
-    size="sm"
-    
-    className="btn-icon"
-    onClick={() => {
-      setSelectedId(item._id);
-      setModalDelete(true);
-    }}
-  >
-    <Icon name="trash" />
-  </Button>
-</DataTableRow>
-
-                      </li>
-                    </ul>
-                  </DataTableRow>
-                </DataTableItem>
-              ))}
-            </DataTableBody>
+      {/* ACTIONS: Three dots dropdown with Edit and Delete */}
+      <DataTableRow className="nk-tb-col-tools">
+        <UncontrolledDropdown>
+          <DropdownToggle tag="a" className="btn btn-trigger btn-icon">
+            <Icon name="more-h" />
+          </DropdownToggle>
+          <DropdownMenu right>
+            <DropdownItem
+              tag="a"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onEditClick(item);
+              }}
+            >
+              <Icon name="edit" />
+              <span>Edit</span>
+            </DropdownItem>
+            <DropdownItem
+              tag="a"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedId(item._id);
+                setModalDelete(true);
+              }}
+            >
+              <Icon name="trash" />
+              <span>Delete</span>
+            </DropdownItem>
+          </DropdownMenu>
+        </UncontrolledDropdown>
+      </DataTableRow>
+    </DataTableItem>
+  ))}
+</DataTableBody>
 
             {/* PAGINATION */}
             <div className="card-inner">

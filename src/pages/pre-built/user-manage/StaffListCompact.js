@@ -657,7 +657,10 @@ const exportToExcel = () => {
                     Status
                   </span>
                 </DataTableRow>
-                <DataTableRow className="nk-tb-col-tools"></DataTableRow>
+                <DataTableRow className="nk-tb-col-tools">
+                  <span style={{ fontWeight: "bold" }} className="sub-text">
+                    Actions
+                  </span> </DataTableRow>
               </DataTableHead>
 
               {currentItems.map((item) => (
@@ -709,14 +712,14 @@ const exportToExcel = () => {
 
                   <DataTableRow className="nk-tb-col-tools">
                     <ul className="nk-tb-actions gx-1">
-                      <li>
+                      {/* <li>
                         <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
                           <Icon name="edit-alt-fill" />
                         </Button>
-                      </li>
+                      </li> */}
                       <li>
                         <UncontrolledDropdown>
-                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                          <DropdownToggle tag="a" className="btn btn-icon btn-trigger mr-5">
                             <Icon name="more-h" />
                           </DropdownToggle>
                           <DropdownMenu right>
