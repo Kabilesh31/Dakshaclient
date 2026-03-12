@@ -172,9 +172,15 @@
 }
 
 @keyframes blinkHighlight {
-  0% { background-color: #fff8e1; }
-  50% { background-color: #ffe082; }
-  100% { background-color: #fff8e1; }
+  0% {
+    background-color: #fff8e1;
+  }
+  50% {
+    background-color: #ffe082;
+  }
+  100% {
+    background-color: #fff8e1;
+  }
 }
 /* Completely remove outer scrollbar */
 body.modal-open {
@@ -186,13 +192,11 @@ body.modal-open {
   overflow: hidden !important;
 }
 
-
-
 /* Modal content styling */
 .order-modal .modal-content {
   max-height: 98vh;
   border: none;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 /* Internal scrolling only */
@@ -232,4 +236,6 @@ body.modal-open {
   overflow-x: hidden;
   overflow-y: hidden;
 }
-.texting{margin-left: 335px;}
+.texting {
+  margin-left: 335px;
+}

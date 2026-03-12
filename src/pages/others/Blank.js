@@ -2,7 +2,23 @@ import React, { useState, useEffect, forwardRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
-import { Input, Badge, Button, Table, Card, CardBody, Row, Col, Pagination, PaginationItem, PaginationLink, Modal, ModalHeader, ModalBody, ModalFooter } from "reactstrap";
+import {
+  Input,
+  Badge,
+  Button,
+  Table,
+  Card,
+  CardBody,
+  Row,
+  Col,
+  Pagination,
+  PaginationItem,
+  PaginationLink,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "reactstrap";
 import { errorToast } from "../../utils/toaster";
 import * as XLSX from "xlsx";
 import "./report.css";
@@ -20,77 +36,72 @@ const Reports = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
-  const [staffList, setStaffList] = useState([]); // Store all staff data
-  
-  // Invoice modal state
+  const [staffList, setStaffList] = useState([]);
+
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
-  
-  // Calculate amounts from filtered data - Using totalAmt
+
   const paidAmount = filteredReportData
-    .filter(b => b.orderStatus !== "rejected" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null")
+    .filter(
+      (b) => b.orderStatus !== "rejected" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null",
+    )
     .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-  
+
   const pendingAmount = filteredReportData
-    .filter(b => b.orderStatus !== "rejected" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"))
+    .filter(
+      (b) =>
+        b.orderStatus !== "rejected" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"),
+    )
     .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
   const rejectedAmount = filteredReportData
-    .filter(b => b.orderStatus === "rejected")
+    .filter((b) => b.orderStatus === "rejected")
     .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
 
   const totalAmount = filteredReportData
-  .filter(b => b.orderStatus !== "rejected")
-  .reduce((acc, o) => acc + (Number(o.totalAmt) || 0), 0);
+    .filter((b) => b.orderStatus !== "rejected")
+    .reduce((acc, o) => acc + (Number(o.totalAmt) || 0), 0);
 
   const fetchCustomers = async () => {
-  try {
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
-      {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
+      });
+
+      setCustomers(res.data);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+        window.location.href = "/login";
+        return;
       }
-    );
 
-    setCustomers(res.data);
-
-  } catch (error) {
-
-    if (error.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("sessionToken");
-      window.location.href = "/login";
-      return;
+      console.error(error);
+      errorToast("Failed to fetch customers");
     }
+  };
 
-    console.error(error);
-    errorToast("Failed to fetch customers");
-  }
-};
-  // Fetch all staff data
   const fetchStaff = async () => {
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-        {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/staff`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
-      }
-      );
+      });
       setStaffList(res.data);
       console.log("Staff data fetched:", res.data); // Debug log
     } catch (error) {
-       if (error.response?.status === 401) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("sessionToken");
-      window.location.href = "/login";
-      return;
-    }
+      if (error.response?.status === 401) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("sessionToken");
+        window.location.href = "/login";
+        return;
+      }
       console.error("Failed to fetch staff:", error);
     }
   };
@@ -99,17 +110,13 @@ const Reports = () => {
     if (!selectedCustomer) return;
 
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/bills`,
-        {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
-      }
-      );
+      });
 
-      // Handle different response structures
       let bills = [];
       if (Array.isArray(res.data)) {
         bills = res.data;
@@ -118,10 +125,10 @@ const Reports = () => {
       }
 
       const customerBills = bills.filter(
-        (b) => b.customerId === selectedCustomer._id || b.customerId?._id === selectedCustomer._id
+        (b) => b.customerId === selectedCustomer._id || b.customerId?._id === selectedCustomer._id,
       );
 
-      console.log("Bills data:", customerBills); // Debug log to see bill structure
+      console.log("Bills data:", customerBills);
       setReportData(customerBills);
       setCurrentPage(1);
     } catch (err) {
@@ -130,23 +137,22 @@ const Reports = () => {
     }
   };
 
-  // Filter data based on date range
   useEffect(() => {
     if (reportData.length > 0) {
       let filtered = [...reportData];
-      
+
       if (startDate && endDate) {
         const from = new Date(startDate);
         from.setHours(0, 0, 0, 0);
         const to = new Date(endDate);
         to.setHours(23, 59, 59, 999);
-        
+
         filtered = filtered.filter((item) => {
           const createdAt = new Date(item.createdAt);
           return createdAt >= from && createdAt <= to;
         });
       }
-      
+
       setFilteredReportData(filtered);
       setCurrentPage(1);
     } else {
@@ -156,7 +162,7 @@ const Reports = () => {
 
   useEffect(() => {
     fetchCustomers();
-    fetchStaff(); // Fetch staff data when component mounts
+    fetchStaff();
   }, []);
 
   useEffect(() => {
@@ -165,20 +171,20 @@ const Reports = () => {
 
   // Function to get staff name by matching ID
   const getStaffNameById = (staffId) => {
-    if (!staffId) return 'N/A';
-    
+    if (!staffId) return "N/A";
+
     // Handle different possible ID field names
     const staffIdValue = staffId._id || staffId.id || staffId;
-    
+
     // Find staff in staffList by matching ID
-    const staff = staffList.find(s => s._id === staffIdValue || s.id === staffIdValue);
-    
+    const staff = staffList.find((s) => s._id === staffIdValue || s.id === staffIdValue);
+
     if (staff) {
-      return staff.name || staff.staffName || 'Unknown';
+      return staff.name || staff.staffName || "Unknown";
     }
-    
+
     console.log("Staff not found for ID:", staffIdValue); // Debug log
-    return 'N/A';
+    return "N/A";
   };
 
   // Main function to get staff name from bill
@@ -188,7 +194,7 @@ const Reports = () => {
       staffId: bill.staffId,
       createdBy: bill.createdBy,
       staffName: bill.staffName,
-      staff: bill.staff
+      staff: bill.staff,
     });
 
     // Case 1: If staff name is directly available
@@ -204,7 +210,7 @@ const Reports = () => {
     // Case 3: If staffId is available, try to find staff name
     if (bill.staffId) {
       const staffName = getStaffNameById(bill.staffId);
-      if (staffName !== 'N/A') {
+      if (staffName !== "N/A") {
         return staffName;
       }
     }
@@ -212,15 +218,15 @@ const Reports = () => {
     // Case 4: If createdBy contains staff ID or name
     if (bill.createdBy) {
       // If createdBy is an object with name
-      if (typeof bill.createdBy === 'object' && bill.createdBy.name) {
+      if (typeof bill.createdBy === "object" && bill.createdBy.name) {
         return bill.createdBy.name;
       }
       // If createdBy is a string (might be ID or name)
-      if (typeof bill.createdBy === 'string') {
+      if (typeof bill.createdBy === "string") {
         // Check if it's an ID (24 character hex string)
         if (bill.createdBy.length === 24 && /^[0-9a-fA-F]{24}$/.test(bill.createdBy)) {
           const staffName = getStaffNameById(bill.createdBy);
-          if (staffName !== 'N/A') {
+          if (staffName !== "N/A") {
             return staffName;
           }
         } else {
@@ -232,14 +238,14 @@ const Reports = () => {
 
     // Case 5: If staff field contains ID
     if (bill.staff) {
-      const staffId = typeof bill.staff === 'object' ? bill.staff._id || bill.staff.id : bill.staff;
+      const staffId = typeof bill.staff === "object" ? bill.staff._id || bill.staff.id : bill.staff;
       const staffName = getStaffNameById(staffId);
-      if (staffName !== 'N/A') {
+      if (staffName !== "N/A") {
         return staffName;
       }
     }
 
-    return 'N/A';
+    return "N/A";
   };
 
   // Function to open invoice modal
@@ -270,135 +276,144 @@ const Reports = () => {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
-    
+
     doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date(selectedBill.createdAt).toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    })}`, 14, 52);
+    doc.text(
+      `Date: ${new Date(selectedBill.createdAt).toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+      })}`,
+      14,
+      52,
+    );
 
     // ===== Order Status =====
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-    doc.text(selectedBill.orderStatus || 'delivered', 160, 45);
+    doc.text(selectedBill.orderStatus || "delivered", 160, 45);
 
     // ===== Customer Details =====
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Customer Details", 14, 67);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-    doc.text(`Name: ${selectedBill.customerName || selectedCustomer?.name || 'N/A'}`, 14, 75);
-    doc.text(`Mobile: ${selectedCustomer?.phone || 'N/A'}`, 14, 82);
-    doc.text(`Address: ${selectedCustomer?.address || 'N/A'}`, 14, 89);
+    doc.text(`Name: ${selectedBill.customerName || selectedCustomer?.name || "N/A"}`, 14, 75);
+    doc.text(`Mobile: ${selectedCustomer?.phone || "N/A"}`, 14, 82);
+    doc.text(`Address: ${selectedCustomer?.address || "N/A"}`, 14, 89);
 
     // ===== Staff Details =====
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Staff Details", 120, 67);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-    
+
     const staffName = getStaffName(selectedBill);
-    const staffInfo = staffList.find(s => 
-      s._id === selectedBill.deliveredBy || 
-      s._id === selectedBill.paymentCollectedBy ||
-      s._id === selectedBill.createdBy
+    const staffInfo = staffList.find(
+      (s) =>
+        s._id === selectedBill.deliveredBy ||
+        s._id === selectedBill.paymentCollectedBy ||
+        s._id === selectedBill.createdBy,
     );
 
     doc.text(`Name: ${staffName}`, 120, 75);
-    doc.text(`Role: ${staffInfo?.role || 'sales'}`, 120, 82);
-    doc.text(`Contact: ${staffInfo?.phone || 'N/A'}`, 120, 89);
+    doc.text(`Role: ${staffInfo?.role || "sales"}`, 120, 82);
+    doc.text(`Contact: ${staffInfo?.phone || "N/A"}`, 120, 89);
 
     // ===== Products Table =====
     const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
-    const tableRows = selectedBill.orderedProducts?.map((product, idx) => [
-      idx + 1,
-      product.productName,
-      product.qty.toString(),
-      (Number(product.value) || 0).toString(),
-      ((Number(product.value) || 0) * (Number(product.qty) || 0)).toString()
-    ]) || [];
+    const tableRows =
+      selectedBill.orderedProducts?.map((product, idx) => [
+        idx + 1,
+        product.productName,
+        product.qty.toString(),
+        (Number(product.value) || 0).toString(),
+        ((Number(product.value) || 0) * (Number(product.qty) || 0)).toString(),
+      ]) || [];
 
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 105,
-      theme: 'grid',
+      theme: "grid",
       headStyles: {
         fillColor: [51, 51, 51],
         textColor: [255, 255, 255],
-        fontStyle: 'bold',
+        fontStyle: "bold",
         fontSize: 10,
-        halign: 'center'
+        halign: "center",
       },
       styles: {
         fontSize: 9,
         cellPadding: 5,
-        font: 'helvetica',
-        halign: 'left'
+        font: "helvetica",
+        halign: "left",
       },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 70, halign: 'left' },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 30, halign: 'right' },
-        4: { cellWidth: 35, halign: 'right' }
+        0: { cellWidth: 15, halign: "center" },
+        1: { cellWidth: 70, halign: "left" },
+        2: { cellWidth: 20, halign: "center" },
+        3: { cellWidth: 30, halign: "right" },
+        4: { cellWidth: 35, halign: "right" },
       },
-      didDrawPage: function(data) {
+      didDrawPage: function (data) {
         // Add Rupee symbol to headers after table is drawn
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(255, 255, 255);
-        
+
         // Get the position of the table headers
         const headersY = data.cursor.y - 8;
-        
+
         // Override the header text for Rate and Amount columns with Rupee symbol
-        doc.text("Rate (₹)", 135, headersY, { align: 'right' });
-        doc.text("Amount (₹)", 170, headersY, { align: 'right' });
-      }
+        doc.text("Rate (₹)", 135, headersY, { align: "right" });
+        doc.text("Amount (₹)", 170, headersY, { align: "right" });
+      },
     });
 
     // ===== Totals - Using totalAmt =====
     const finalY = doc.lastAutoTable.finalY + 15;
 
     // Calculate subtotal from orderedProducts
-    const subtotal = selectedBill.orderedProducts?.reduce(
-      (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
-      0
-    ) || Number(selectedBill.totalAmt) || 0;
+    const subtotal =
+      selectedBill.orderedProducts?.reduce(
+        (sum, product) => sum + (Number(product.value) || 0) * (Number(product.qty) || 0),
+        0,
+      ) ||
+      Number(selectedBill.totalAmt) ||
+      0;
 
     // Subtotal
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
     doc.text("Subtotal", 140, finalY);
-    doc.text(`₹ ${subtotal.toLocaleString('en-IN')}`, 180, finalY, { align: 'right' });
+    doc.text(`₹ ${subtotal.toLocaleString("en-IN")}`, 180, finalY, { align: "right" });
 
     // Discount
     doc.text("Discount", 140, finalY + 8);
-    doc.text(`₹ 0`, 180, finalY + 8, { align: 'right' });
+    doc.text(`₹ 0`, 180, finalY + 8, { align: "right" });
 
     // Tax
     doc.text("Tax", 140, finalY + 16);
-    doc.text(`₹ 0`, 180, finalY + 16, { align: 'right' });
+    doc.text(`₹ 0`, 180, finalY + 16, { align: "right" });
 
     // Total (with bold font) - Using totalAmt
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Total", 135, finalY + 28);
-    doc.text(`₹ ${(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}`, 180, finalY + 28, { align: 'right' });
+    doc.text(`₹ ${(Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}`, 180, finalY + 28, { align: "right" });
 
     // ===== Payment Information =====
     if (selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected") {
@@ -406,18 +421,18 @@ const Reports = () => {
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
       doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 40);
-      
+
       if (selectedBill.paymentCollectedAt) {
         doc.text(
-          `Payment Collected: ${new Date(selectedBill.paymentCollectedAt).toLocaleString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}`, 
-          14, 
-          finalY + 47
+          `Payment Collected: ${new Date(selectedBill.paymentCollectedAt).toLocaleString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`,
+          14,
+          finalY + 47,
         );
       }
     }
@@ -449,58 +464,31 @@ const Reports = () => {
     doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
 
     if (startDate && endDate) {
-      doc.text(
-        `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
-        14,
-        38
-      );
+      doc.text(`Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`, 14, 38);
     }
 
     // ===== Summary Section - Using totalAmt =====
     doc.setFontSize(11);
     doc.setTextColor(33);
     doc.text(`Total Orders: ${filteredReportData.length}`, 14, 48);
-    doc.text(
-      `Total Amount: Rs. ${totalAmount.toLocaleString("en-IN")}`,
-      14,
-      54
-    );
-    doc.text(
-      `Paid Amount: Rs. ${paidAmount.toLocaleString("en-IN")}`,
-      14,
-      60
-    );
-    doc.text(
-      `Pending Amount: Rs. ${pendingAmount.toLocaleString("en-IN")}`,
-      14,
-      66
-    );
+    doc.text(`Total Amount: Rs. ${totalAmount.toLocaleString("en-IN")}`, 14, 54);
+    doc.text(`Paid Amount: Rs. ${paidAmount.toLocaleString("en-IN")}`, 14, 60);
+    doc.text(`Pending Amount: Rs. ${pendingAmount.toLocaleString("en-IN")}`, 14, 66);
     if (rejectedAmount > 0) {
-      doc.text(
-        `Rejected Amount: Rs. ${rejectedAmount.toLocaleString("en-IN")}`,
-        14,
-        72
-      );
+      doc.text(`Rejected Amount: Rs. ${rejectedAmount.toLocaleString("en-IN")}`, 14, 72);
     }
 
     // ===== Table - Using totalAmt =====
-    const tableColumn = [
-      "S.No",
-      "Order No",
-      "Date",
-      "Amount (Rs)",
-      "Status",
-      "Staff Name",
-    ];
+    const tableColumn = ["S.No", "Order No", "Date", "Amount (Rs)", "Status", "Staff Name"];
 
     const tableRows = filteredReportData.map((o, idx) => {
-      let statusText = 'Pending';
+      let statusText = "Pending";
       if (o.orderStatus === "rejected") {
-        statusText = 'Rejected';
+        statusText = "Rejected";
       } else if (o.paymentMethod && o.paymentMethod !== null && o.paymentMethod !== "null") {
-        statusText = 'Paid';
+        statusText = "Paid";
       }
-      
+
       return [
         idx + 1,
         `#${o._id.toString().slice(-6)}`,
@@ -532,45 +520,45 @@ const Reports = () => {
     // ===== Save PDF =====
     doc.save(`${selectedCustomer.name}_Report.pdf`);
   };
-  
+
   // Export Excel - Using totalAmt
   const exportExcel = () => {
     if (!selectedCustomer) return;
-    
+
     const exportData = filteredReportData.map((bill, idx) => {
-      let statusText = 'Pending';
+      let statusText = "Pending";
       if (bill.orderStatus === "rejected") {
-        statusText = 'Rejected';
+        statusText = "Rejected";
       } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
-        statusText = 'Paid';
+        statusText = "Paid";
       }
-      
+
       return {
-        'S.No': idx + 1,
-        'Order No': `#${bill._id.toString().slice(-6)}`,
-        'Date': new Date(bill.createdAt).toLocaleDateString('en-IN'),
-        'Amount (₹)': Number(bill.totalAmt) || 0,
-        'Status': statusText,
-        'Order Status': bill.orderStatus || 'N/A',
-        'Staff Name': getStaffName(bill)
+        "S.No": idx + 1,
+        "Order No": `#${bill._id.toString().slice(-6)}`,
+        Date: new Date(bill.createdAt).toLocaleDateString("en-IN"),
+        "Amount (₹)": Number(bill.totalAmt) || 0,
+        Status: statusText,
+        "Order Status": bill.orderStatus || "N/A",
+        "Staff Name": getStaffName(bill),
       };
     });
-    
+
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
-    
+
     const summaryData = [
-      { 'Summary': 'Total Orders', 'Value': filteredReportData.length },
-      { 'Summary': 'Total Amount', 'Value': `₹${totalAmount.toLocaleString('en-IN')}` },
-      { 'Summary': 'Paid Amount', 'Value': `₹${paidAmount.toLocaleString('en-IN')}` },
-      { 'Summary': 'Pending Amount', 'Value': `₹${pendingAmount.toLocaleString('en-IN')}` }
+      { Summary: "Total Orders", Value: filteredReportData.length },
+      { Summary: "Total Amount", Value: `₹${totalAmount.toLocaleString("en-IN")}` },
+      { Summary: "Paid Amount", Value: `₹${paidAmount.toLocaleString("en-IN")}` },
+      { Summary: "Pending Amount", Value: `₹${pendingAmount.toLocaleString("en-IN")}` },
     ];
-    
+
     if (rejectedAmount > 0) {
-      summaryData.push({ 'Summary': 'Rejected Amount', 'Value': `₹${rejectedAmount.toLocaleString('en-IN')}` });
+      summaryData.push({ Summary: "Rejected Amount", Value: `₹${rejectedAmount.toLocaleString("en-IN")}` });
     }
-    
+
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "Summary");
     XLSX.writeFile(wb, `${selectedCustomer.name}_Report.xlsx`);
   };
@@ -592,9 +580,10 @@ const Reports = () => {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Filter customers based on search
-  const filteredCustomers = customers.filter((c) => 
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.phone && c.phone.toLowerCase().includes(search.toLowerCase()))
+  const filteredCustomers = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone && c.phone.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
@@ -611,7 +600,7 @@ const Reports = () => {
             <h5 className="panel-title">👥 Customers</h5>
             <span className="customer-count">{customers.length} total</span>
           </div>
-          
+
           <div className="search-box">
             <i className="ni ni-search search-icon"></i>
             <Input
@@ -622,10 +611,7 @@ const Reports = () => {
               className="search-input"
             />
             {search && (
-              <button 
-                className="clear-search"
-                onClick={() => setSearch("")}
-              >
+              <button className="clear-search" onClick={() => setSearch("")}>
                 ×
               </button>
             )}
@@ -636,12 +622,10 @@ const Reports = () => {
               filteredCustomers.map((c) => (
                 <div
                   key={c._id}
-                  className={`customer-item ${selectedCustomer?._id === c._id ? 'selected' : ''}`}
+                  className={`customer-item ${selectedCustomer?._id === c._id ? "selected" : ""}`}
                   onClick={() => setSelectedCustomer(c)}
                 >
-                  <div className="customer-avatar">
-                    {c.name.charAt(0)}
-                  </div>
+                  <div className="customer-avatar">{c.name.charAt(0)}</div>
                   <div className="customer-info">
                     <div className="customer-name">{c.name}</div>
                   </div>
@@ -707,13 +691,12 @@ const Reports = () => {
               {/* Customer Header */}
               <div className="customer-header">
                 <div className="customer-header-info">
-                  <div className="customer-header-avatar">
-                    {selectedCustomer.name.charAt(0)}
-                  </div>
+                  <div className="customer-header-avatar">{selectedCustomer.name.charAt(0)}</div>
                   <div>
                     <h3 className="customer-header-name">{selectedCustomer.name}</h3>
                     <p className="customer-header-meta">
-                      {selectedCustomer.phone || 'No phone'} | {selectedCustomer.routeName}  • Line #{selectedCustomer.lineNo}
+                      {selectedCustomer.phone || "No phone"} | {selectedCustomer.routeName} • Line #
+                      {selectedCustomer.lineNo}
                     </p>
                   </div>
                 </div>
@@ -721,7 +704,7 @@ const Reports = () => {
                   <div className="date-range-badge">
                     <i className="ni ni-calendar-date"></i>
                     <span>
-                      {startDate?.toLocaleDateString('en-IN')} - {endDate?.toLocaleDateString('en-IN')}
+                      {startDate?.toLocaleDateString("en-IN")} - {endDate?.toLocaleDateString("en-IN")}
                     </span>
                   </div>
                 )}
@@ -736,7 +719,9 @@ const Reports = () => {
                     </div>
                     <div className="stat-content">
                       <span className="stat-label">Total Orders</span>
-                      <span className="stat-value">{filteredReportData.filter(b => b.orderStatus !== "rejected").length}</span>
+                      <span className="stat-value">
+                        {filteredReportData.filter((b) => b.orderStatus !== "rejected").length}
+                      </span>
                     </div>
                   </div>
                 </Col>
@@ -747,7 +732,7 @@ const Reports = () => {
                     </div>
                     <div className="stat-content">
                       <span className="stat-label">Total Amount</span>
-                      <span className="stat-value">₹{totalAmount.toLocaleString('en-IN')}</span>
+                      <span className="stat-value">₹{totalAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 </Col>
@@ -758,7 +743,7 @@ const Reports = () => {
                     </div>
                     <div className="stat-content">
                       <span className="stat-label">Paid Amount</span>
-                      <span className="stat-value">₹{paidAmount.toLocaleString('en-IN')}</span>
+                      <span className="stat-value">₹{paidAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 </Col>
@@ -769,7 +754,7 @@ const Reports = () => {
                     </div>
                     <div className="stat-content">
                       <span className="stat-label">Pending Amount</span>
-                      <span className="stat-value">₹{pendingAmount.toLocaleString('en-IN')}</span>
+                      <span className="stat-value">₹{pendingAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 </Col>
@@ -815,45 +800,41 @@ const Reports = () => {
                         <tbody>
                           {currentItems.map((o, idx) => {
                             // Determine status based on orderStatus first, then paymentMethod
-                            let statusText = 'Pending';
-                            let statusClass = 'pending';
-                            
+                            let statusText = "Pending";
+                            let statusClass = "pending";
+
                             if (o.orderStatus === "rejected") {
-                              statusText = 'Rejected';
-                              statusClass = 'rejected';
+                              statusText = "Rejected";
+                              statusClass = "rejected";
                             } else if (o.paymentMethod && o.paymentMethod !== null && o.paymentMethod !== "null") {
-                              statusText = 'Paid';
-                              statusClass = 'paid';
+                              statusText = "Paid";
+                              statusClass = "paid";
                             }
-                            
+
                             return (
                               <tr key={o._id} className={o.orderStatus === "rejected" ? "rejected-row" : ""}>
                                 <td>{indexOfFirstItem + idx + 1}</td>
-                              
-                                <td>{new Date(o.createdAt).toLocaleDateString('en-IN', { 
-                                  day: '2-digit', 
-                                  month: 'short', 
-                                  year: 'numeric' 
-                                })}
+
+                                <td>
+                                  {new Date(o.createdAt).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
                                 </td>
                                 <td>
-                                  <span className="staff-name">
-                                    {getStaffName(o)}
-                                  </span>
+                                  <span className="staff-name">{getStaffName(o)}</span>
                                 </td>
-                                 <td>
+                                <td>
                                   <span className="order-id">#{o._id.toString().slice(-6)}</span>
-                                </td>                                
-                                <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString('en-IN')}</td>
-                                <td>
-                                  <span className={`order-status-badge ${statusClass}`}>
-                                    {statusText}
-                                  </span>
                                 </td>
-                               
-                                 
+                                <td className="amount">₹ {(Number(o.totalAmt) || 0).toLocaleString("en-IN")}</td>
                                 <td>
-                                  <button 
+                                  <span className={`order-status-badge ${statusClass}`}>{statusText}</span>
+                                </td>
+
+                                <td>
+                                  <button
                                     className="action-btn view-btn"
                                     onClick={() => openInvoiceModal(o)}
                                     title="View Invoice"
@@ -866,39 +847,31 @@ const Reports = () => {
                           })}
                         </tbody>
                         <tfoot>
-                        <tr>
-                          <td colSpan="4" className="text-end fw-bold"></td>
-                          <td className="amount fw-bold">₹ {totalAmount.toLocaleString('en-IN')}</td>
-                          <td colSpan="6"></td>
-                        </tr>
-                      </tfoot>
+                          <tr>
+                            <td colSpan="4" className="text-end fw-bold"></td>
+                            <td className="amount fw-bold">₹ {totalAmount.toLocaleString("en-IN")}</td>
+                            <td colSpan="6"></td>
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
-                    
+
                     {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="pagination-wrapper">
                         <Pagination>
                           <PaginationItem disabled={currentPage === 1}>
-                            <PaginationLink
-                              previous
-                              onClick={() => paginate(currentPage - 1)}
-                            />
+                            <PaginationLink previous onClick={() => paginate(currentPage - 1)} />
                           </PaginationItem>
-                          
+
                           {[...Array(totalPages)].map((_, i) => (
                             <PaginationItem key={i + 1} active={currentPage === i + 1}>
-                              <PaginationLink onClick={() => paginate(i + 1)}>
-                                {i + 1}
-                              </PaginationLink>
+                              <PaginationLink onClick={() => paginate(i + 1)}>{i + 1}</PaginationLink>
                             </PaginationItem>
                           ))}
-                          
+
                           <PaginationItem disabled={currentPage === totalPages}>
-                            <PaginationLink
-                              next
-                              onClick={() => paginate(currentPage + 1)}
-                            />
+                            <PaginationLink next onClick={() => paginate(currentPage + 1)} />
                           </PaginationItem>
                         </Pagination>
                       </div>
@@ -909,10 +882,7 @@ const Reports = () => {
                     <i className="ni ni-box-open"></i>
                     <p>No transactions found for the selected period</p>
                     {(startDate || endDate) && (
-                      <button 
-                        className="clear-filter-btn"
-                        onClick={() => setDateRange([null, null])}
-                      >
+                      <button className="clear-filter-btn" onClick={() => setDateRange([null, null])}>
                         Clear Filters
                       </button>
                     )}
@@ -943,31 +913,29 @@ const Reports = () => {
                         <div className="note-details">
                           <span className="note-label">Follow-up Date:</span>
                           <span className="note-text">
-  {(() => {
-    const visitDate = new Date(selectedCustomer.nextVisit.nextVisitDate);
-    const today = new Date();
+                            {(() => {
+                              const visitDate = new Date(selectedCustomer.nextVisit.nextVisitDate);
+                              const today = new Date();
 
-    visitDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
+                              visitDate.setHours(0, 0, 0, 0);
+                              today.setHours(0, 0, 0, 0);
 
-    if (visitDate.getTime() === today.getTime()) {
-      return <span className="today-badge">Today</span>;
-    }
+                              if (visitDate.getTime() === today.getTime()) {
+                                return <span className="today-badge">Today</span>;
+                              }
 
-    return (
-      <>
-        {visitDate.toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })}
-        {visitDate < today && (
-          <span className="overdue-badge"> Overdue</span>
-        )}
-      </>
-    );
-  })()}
-</span>
+                              return (
+                                <>
+                                  {visitDate.toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                  {visitDate < today && <span className="overdue-badge"> Overdue</span>}
+                                </>
+                              );
+                            })()}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -986,11 +954,11 @@ const Reports = () => {
       </div>
 
       {/* Simple Invoice Modal - No frames */}
-      <Modal 
-        isOpen={invoiceModal} 
-        toggle={() => setInvoiceModal(false)} 
-        size="lg" 
-         scrollable 
+      <Modal
+        isOpen={invoiceModal}
+        toggle={() => setInvoiceModal(false)}
+        size="lg"
+        scrollable
         className="simple-invoice-modal"
       >
         <ModalHeader toggle={() => setInvoiceModal(false)}>
@@ -1000,66 +968,96 @@ const Reports = () => {
           {selectedBill && (
             <div className="simple-invoice">
               {/* Order Header */}
-              <div style={{ borderBottom: '2px solid #eee', paddingBottom: '20px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ borderBottom: "2px solid #eee", paddingBottom: "20px", marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>Retail Pulse</h3>
-                    <p style={{ margin: 0, color: '#666' }}>Order Invoice</p>
+                    <h3 style={{ margin: "0 0 5px 0", fontSize: "18px" }}>Retail Pulse</h3>
+                    <p style={{ margin: 0, color: "#666" }}>Order Invoice</p>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      backgroundColor: selectedBill.orderStatus === 'rejected' ? '#fef2f2' : '#e6f7e6',
-                      color: selectedBill.orderStatus === 'rejected' ? '#dc2626' : '#10b981',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      fontSize: '14px',
-                      fontWeight: '500'
-                    }}>
-                      {selectedBill.orderStatus || 'Delivered'}
+                  <div style={{ textAlign: "right" }}>
+                    <div
+                      style={{
+                        backgroundColor: selectedBill.orderStatus === "rejected" ? "#fef2f2" : "#e6f7e6",
+                        color: selectedBill.orderStatus === "rejected" ? "#dc2626" : "#10b981",
+                        padding: "5px 10px",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {selectedBill.orderStatus || "Delivered"}
                     </div>
-                    <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
-                      Date: {new Date(selectedBill.createdAt).toLocaleDateString('en-IN')}
+                    <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#666" }}>
+                      Date: {new Date(selectedBill.createdAt).toLocaleDateString("en-IN")}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Customer and Staff Details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
                 <div>
-                  <h4 style={{ fontSize: '14px', margin: '0 0 10px 0', color: '#333' }}>Customer Details</h4>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Name:</strong> {selectedBill.customerName || selectedCustomer?.name || 'N/A'}</p>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Mobile:</strong> {selectedCustomer?.phone || 'N/A'}</p>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Address:</strong> {selectedCustomer?.address || 'N/A'}</p>
+                  <h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Customer Details</h4>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Name:</strong> {selectedBill.customerName || selectedCustomer?.name || "N/A"}
+                  </p>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Mobile:</strong> {selectedCustomer?.phone || "N/A"}
+                  </p>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Address:</strong> {selectedCustomer?.address || "N/A"}
+                  </p>
                 </div>
                 <div>
-                  <h4 style={{ fontSize: '14px', margin: '0 0 10px 0', color: '#333' }}>Staff Details</h4>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Name:</strong> {getStaffName(selectedBill)}</p>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Role:</strong> {staffList.find(s => s._id === selectedBill.deliveredBy || s._id === selectedBill.paymentCollectedBy || s._id === selectedBill.createdBy)?.role || 'sales'}</p>
-                  <p style={{ margin: '5px 0', fontSize: '13px' }}><strong>Contact:</strong> {staffList.find(s => s._id === selectedBill.deliveredBy || s._id === selectedBill.paymentCollectedBy || s._id === selectedBill.createdBy)?.phone || 'N/A'}</p>
+                  <h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Staff Details</h4>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Name:</strong> {getStaffName(selectedBill)}
+                  </p>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Role:</strong>{" "}
+                    {staffList.find(
+                      (s) =>
+                        s._id === selectedBill.deliveredBy ||
+                        s._id === selectedBill.paymentCollectedBy ||
+                        s._id === selectedBill.createdBy,
+                    )?.role || "sales"}
+                  </p>
+                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
+                    <strong>Contact:</strong>{" "}
+                    {staffList.find(
+                      (s) =>
+                        s._id === selectedBill.deliveredBy ||
+                        s._id === selectedBill.paymentCollectedBy ||
+                        s._id === selectedBill.createdBy,
+                    )?.phone || "N/A"}
+                  </p>
                 </div>
               </div>
 
               {/* Products Table */}
-              <div style={{ marginBottom: '30px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <div style={{ marginBottom: "30px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>S.No</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Product</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Qty</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Rate (₹)</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Amount (₹)</th>
+                    <tr style={{ backgroundColor: "#f8f9fa", borderBottom: "2px solid #dee2e6" }}>
+                      <th style={{ padding: "10px", textAlign: "left" }}>S.No</th>
+                      <th style={{ padding: "10px", textAlign: "left" }}>Product</th>
+                      <th style={{ padding: "10px", textAlign: "right" }}>Qty</th>
+                      <th style={{ padding: "10px", textAlign: "right" }}>Rate (₹)</th>
+                      <th style={{ padding: "10px", textAlign: "right" }}>Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedBill.orderedProducts?.map((product, idx) => (
-                      <tr key={product._id || idx} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '10px' }}>{idx + 1}</td>
-                        <td style={{ padding: '10px' }}>{product.productName}</td>
-                        <td style={{ padding: '10px', textAlign: 'right' }}>{product.qty}</td>
-                        <td style={{ padding: '10px', textAlign: 'right' }}>₹ {(Number(product.value) || 0).toLocaleString('en-IN')}</td>
-                        <td style={{ padding: '10px', textAlign: 'right' }}>₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString('en-IN')}</td>
+                      <tr key={product._id || idx} style={{ borderBottom: "1px solid #eee" }}>
+                        <td style={{ padding: "10px" }}>{idx + 1}</td>
+                        <td style={{ padding: "10px" }}>{product.productName}</td>
+                        <td style={{ padding: "10px", textAlign: "right" }}>{product.qty}</td>
+                        <td style={{ padding: "10px", textAlign: "right" }}>
+                          ₹ {(Number(product.value) || 0).toLocaleString("en-IN")}
+                        </td>
+                        <td style={{ padding: "10px", textAlign: "right" }}>
+                          ₹ {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString("en-IN")}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1067,29 +1065,38 @@ const Reports = () => {
               </div>
 
               {/* Totals Section - Using totalAmt */}
-              <div style={{ borderTop: '2px solid #eee', paddingTop: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{ width: '300px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <span style={{ fontWeight: '500' }}>Subtotal:</span>
+              <div style={{ borderTop: "2px solid #eee", paddingTop: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ width: "300px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <span style={{ fontWeight: "500" }}>Subtotal:</span>
                       <span>
-                        ₹ {selectedBill.orderedProducts?.reduce(
-                          (sum, product) => sum + ((Number(product.value) || 0) * (Number(product.qty) || 0)), 
-                          0
-                        ).toLocaleString('en-IN') || (Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}
+                        ₹{" "}
+                        {selectedBill.orderedProducts
+                          ?.reduce((sum, product) => sum + (Number(product.value) || 0) * (Number(product.qty) || 0), 0)
+                          .toLocaleString("en-IN") || (Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                      <span style={{ fontWeight: '500' }}>Discount:</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <span style={{ fontWeight: "500" }}>Discount:</span>
                       <span>₹ 0</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                      <span style={{ fontWeight: '500' }}>Tax:</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
+                      <span style={{ fontWeight: "500" }}>Tax:</span>
                       <span>₹ 0</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '16px', fontWeight: 'bold' }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        borderTop: "2px solid #333",
+                        paddingTop: "10px",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
                       <span>Total:</span>
-                      <span>₹ {(Number(selectedBill.totalAmt) || 0).toLocaleString('en-IN')}</span>
+                      <span>₹ {(Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}</span>
                     </div>
                   </div>
                 </div>
@@ -1097,13 +1104,14 @@ const Reports = () => {
 
               {/* Payment Information */}
               {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
-                <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-                  <p style={{ margin: '0 0 5px 0', fontSize: '13px' }}>
+                <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "4px" }}>
+                  <p style={{ margin: "0 0 5px 0", fontSize: "13px" }}>
                     <strong>Payment Method:</strong> {selectedBill.paymentMethod}
                   </p>
                   {selectedBill.paymentCollectedAt && (
-                    <p style={{ margin: '0', fontSize: '13px' }}>
-                      <strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString('en-IN')}
+                    <p style={{ margin: "0", fontSize: "13px" }}>
+                      <strong>Payment Collected:</strong>{" "}
+                      {new Date(selectedBill.paymentCollectedAt).toLocaleString("en-IN")}
                     </p>
                   )}
                 </div>

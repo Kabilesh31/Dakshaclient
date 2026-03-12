@@ -1,10 +1,5 @@
 import React, { useMemo, useEffect, useRef, useState, useCallback } from "react";
-import {
-  GoogleMap,
-  Marker,
-  InfoWindow,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from "@react-google-maps/api";
 
 const containerStyle = {
   width: "100%",
@@ -13,12 +8,7 @@ const containerStyle = {
 
 const fallbackCenter = { lat: 11.0168, lng: 76.9558 };
 
-const CustomerLiveMap = ({
-  staff,
-  customers = [],
-  selectedCustomer,
-  travelMode = "DRIVING",
-}) => {
+const CustomerLiveMap = ({ staff, customers = [], selectedCustomer, travelMode = "DRIVING" }) => {
   const mapRef = useRef(null);
   const polylineRef = useRef(null);
   const [routePath, setRoutePath] = useState([]);
@@ -43,10 +33,7 @@ const CustomerLiveMap = ({
   /* ================= VALID CUSTOMERS ================= */
   const assignedCustomers = useMemo(() => {
     return customers.filter(
-      (c) =>
-        c.geoLocation &&
-        !isNaN(Number(c.geoLocation.lat)) &&
-        !isNaN(Number(c.geoLocation.long))
+      (c) => c.geoLocation && !isNaN(Number(c.geoLocation.lat)) && !isNaN(Number(c.geoLocation.long)),
     );
   }, [customers]);
 
@@ -65,25 +52,24 @@ const CustomerLiveMap = ({
   }, [selectedCustomer]);
 
   /* ================= MAP CENTER ================= */
- 
 
   useEffect(() => {
-  // When staff changes (refresh / new tracking)
-  // reset customer selection
-  if (staff) {
-    setInfoWindowOpen(false);
-  }
-}, [staff]);
+    // When staff changes (refresh / new tracking)
+    // reset customer selection
+    if (staff) {
+      setInfoWindowOpen(false);
+    }
+  }, [staff]);
   /* ================= AUTO FOCUS ON SELECTED CUSTOMER ================= */
   useEffect(() => {
     if (selectedCustomerPosition && mapRef.current) {
       // Pan to selected customer and zoom in
       mapRef.current.panTo(selectedCustomerPosition);
       mapRef.current.setZoom(16);
-      
+
       // Auto-open info window for selected customer
       setInfoWindowOpen(true);
-      
+
       // Add a highlight pulse effect
       if (window.google) {
         const pulseMarker = new window.google.maps.Marker({
@@ -98,7 +84,7 @@ const CustomerLiveMap = ({
           },
           map: mapRef.current,
         });
-        
+
         // Remove pulse marker after 3 seconds
         setTimeout(() => {
           pulseMarker.setMap(null);
@@ -118,7 +104,7 @@ const CustomerLiveMap = ({
 
     try {
       const directionsService = new window.google.maps.DirectionsService();
-      
+
       const origin = {
         lat: Number(sortedCustomers[0].geoLocation.lat),
         lng: Number(sortedCustomers[0].geoLocation.long),
@@ -149,23 +135,22 @@ const CustomerLiveMap = ({
           setIsCalculatingRoute(false);
           if (status === "OK") {
             const path = [];
-            result.routes[0].legs.forEach(leg => {
-              leg.steps.forEach(step => {
+            result.routes[0].legs.forEach((leg) => {
+              leg.steps.forEach((step) => {
                 path.push(...step.path);
               });
             });
             setRoutePath(path);
-            
+
             if (mapRef.current) {
               const bounds = new window.google.maps.LatLngBounds();
-              path.forEach(point => bounds.extend(point));
+              path.forEach((point) => bounds.extend(point));
               mapRef.current.fitBounds(bounds);
             }
           } else {
             console.error("Route calculation failed:", status);
-            
           }
-        }
+        },
       );
     } catch (error) {
       setIsCalculatingRoute(false);
@@ -173,13 +158,13 @@ const CustomerLiveMap = ({
       alert("Error calculating route. Check console for details.");
     }
   }, [sortedCustomers, travelMode]);
-const center = useMemo(() => {
-  // Initially always staff
-  if (staffPosition) return staffPosition;
+  const center = useMemo(() => {
+    // Initially always staff
+    if (staffPosition) return staffPosition;
 
-  // Fallback (rare case)
-  return fallbackCenter;
-}, [staffPosition]);
+    // Fallback (rare case)
+    return fallbackCenter;
+  }, [staffPosition]);
   /* ================= CREATE/DESTROY POLYLINE ================= */
   useEffect(() => {
     if (!window.google || !mapRef.current) return;
@@ -220,7 +205,7 @@ const center = useMemo(() => {
 
     try {
       const directionsService = new window.google.maps.DirectionsService();
-      
+
       const destination = {
         lat: Number(sortedCustomers[0].geoLocation.lat),
         lng: Number(sortedCustomers[0].geoLocation.long),
@@ -236,13 +221,13 @@ const center = useMemo(() => {
           setIsCalculatingRoute(false);
           if (status === "OK") {
             const path = [];
-            result.routes[0].legs.forEach(leg => {
-              leg.steps.forEach(step => {
+            result.routes[0].legs.forEach((leg) => {
+              leg.steps.forEach((step) => {
                 path.push(...step.path);
               });
             });
             setRoutePath(path);
-            
+
             if (mapRef.current) {
               const bounds = new window.google.maps.LatLngBounds();
               bounds.extend(staffPosition);
@@ -253,7 +238,7 @@ const center = useMemo(() => {
             console.error("Staff route failed:", status);
             alert(`Staff route failed: ${status}`);
           }
-        }
+        },
       );
     } catch (error) {
       setIsCalculatingRoute(false);
@@ -271,12 +256,12 @@ const center = useMemo(() => {
     if (!mapRef.current || (sortedCustomers.length === 0 && !staffPosition)) return;
 
     const bounds = new window.google.maps.LatLngBounds();
-    
+
     if (staffPosition) {
       bounds.extend(staffPosition);
     }
-    
-    sortedCustomers.forEach(customer => {
+
+    sortedCustomers.forEach((customer) => {
       if (customer.geoLocation) {
         bounds.extend({
           lat: Number(customer.geoLocation.lat),
@@ -284,7 +269,7 @@ const center = useMemo(() => {
         });
       }
     });
-    
+
     if (!bounds.isEmpty()) {
       mapRef.current.fitBounds(bounds);
       setTimeout(() => {
@@ -294,56 +279,55 @@ const center = useMemo(() => {
       }, 100);
     }
   }, [sortedCustomers, staffPosition]);
-useEffect(() => {
-  if (selectedCustomer && sortedCustomers.length >= 2) {
-    // Calculate route between customers when a customer is selected
-    calculateRoute();
-  }
-}, [selectedCustomer, sortedCustomers, calculateRoute]);
+  useEffect(() => {
+    if (selectedCustomer && sortedCustomers.length >= 2) {
+      // Calculate route between customers when a customer is selected
+      calculateRoute();
+    }
+  }, [selectedCustomer, sortedCustomers, calculateRoute]);
   /* ================= AUTO CALCULATE ROUTE ================= */
-// useEffect(() => {
-//   if (
-//     isLoaded &&
-//     sortedCustomers.length >= 2 &&
-//     !selectedCustomer
-//   ) {
-//     setTimeout(calculateRoute, 1000);
-//   }
-// }, [isLoaded, sortedCustomers.length, calculateRoute, selectedCustomer]);
-
+  // useEffect(() => {
+  //   if (
+  //     isLoaded &&
+  //     sortedCustomers.length >= 2 &&
+  //     !selectedCustomer
+  //   ) {
+  //     setTimeout(calculateRoute, 1000);
+  //   }
+  // }, [isLoaded, sortedCustomers.length, calculateRoute, selectedCustomer]);
 
   /* ================= AUTO FIT MAP ON LOAD ================= */
- useEffect(() => {
-  if (!isLoaded || !mapRef.current) return;
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
 
-  // If customer selected → focus customer
-  if (selectedCustomerPosition) {
-    mapRef.current.panTo(selectedCustomerPosition);
-    mapRef.current.setZoom(16);
-  }
-  // Otherwise → always focus staff
-  else if (staffPosition) {
-    mapRef.current.panTo(staffPosition);
-    mapRef.current.setZoom(14);
-  }
-}, [isLoaded, selectedCustomerPosition, staffPosition]);
-
-
+    // If customer selected → focus customer
+    if (selectedCustomerPosition) {
+      mapRef.current.panTo(selectedCustomerPosition);
+      mapRef.current.setZoom(16);
+    }
+    // Otherwise → always focus staff
+    else if (staffPosition) {
+      mapRef.current.panTo(staffPosition);
+      mapRef.current.setZoom(14);
+    }
+  }, [isLoaded, selectedCustomerPosition, staffPosition]);
 
   if (!isLoaded) return <p>Loading map...</p>;
 
   return (
     <div style={{ position: "relative" }}>
       {/* Navigation Controls */}
-      <div style={{
-        position: "absolute",
-        top: "57px",
-        left: "10px",
-        right: "10px",
-        display: "flex",
-        gap: "8px",
-        zIndex: 10,
-      }}>
+      <div
+        style={{
+          position: "absolute",
+          top: "57px",
+          left: "10px",
+          right: "10px",
+          display: "flex",
+          gap: "8px",
+          zIndex: 10,
+        }}
+      >
         <button
           onClick={fitMapToBounds}
           style={{
@@ -360,7 +344,7 @@ useEffect(() => {
         >
           Fit View
         </button>
-        
+
         {sortedCustomers.length >= 2 && (
           <button
             onClick={calculateRoute}
@@ -381,7 +365,7 @@ useEffect(() => {
             {isCalculatingRoute ? "Calculating..." : "Show Route"}
           </button>
         )}
-        
+
         {staffPosition && sortedCustomers.length > 0 && (
           <button
             onClick={calculateRouteFromStaff}
@@ -402,7 +386,7 @@ useEffect(() => {
             Staff Route
           </button>
         )}
-        
+
         {routePath.length > 0 && (
           <button
             onClick={clearRoute}
@@ -461,7 +445,7 @@ useEffect(() => {
           // Determine marker icon
           let iconUrl = "/icons/store.png";
           let iconSize = 36;
-          
+
           if (isSelected) {
             iconUrl = "/icons/store-selected.png";
             iconSize = 52; // Much larger for selected
@@ -558,9 +542,7 @@ useEffect(() => {
                   position={position}
                   icon={{
                     path: window.google.maps.SymbolPath.CIRCLE,
-                    fillColor: isSelected ? "#1e88e5" : 
-                              isFirst ? "#4CAF50" : 
-                              isLast ? "#f44336" : "#FF9800",
+                    fillColor: isSelected ? "#1e88e5" : isFirst ? "#4CAF50" : isLast ? "#f44336" : "#FF9800",
                     fillOpacity: 1,
                     strokeWeight: 2,
                     strokeColor: "white",
@@ -606,15 +588,11 @@ useEffect(() => {
             onCloseClick={() => setHoveredCustomer(null)}
           >
             <div style={{ padding: "8px", maxWidth: "200px" }}>
-              <div style={{ fontWeight: "bold", fontSize: "13px" }}>
-                {hoveredCustomer.name}
-              </div>
+              <div style={{ fontWeight: "bold", fontSize: "13px" }}>{hoveredCustomer.name}</div>
               <div style={{ fontSize: "12px", margin: "4px 0" }}>
                 Line: <strong>{hoveredCustomer.lineNo}</strong>
               </div>
-              <div style={{ fontSize: "11px", color: "#666" }}>
-                Click on map to select
-              </div>
+              <div style={{ fontSize: "11px", color: "#666" }}>Click on map to select</div>
             </div>
           </InfoWindow>
         )}
@@ -622,43 +600,49 @@ useEffect(() => {
 
       {/* Selected Customer Card (always visible) */}
       {selectedCustomer && (
-        <div style={{
-          position: "absolute",
-          bottom: "10px",
-          left: "10px",
-          background: "white",
-          padding: "12px 16px",
-          borderRadius: "10px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          zIndex: 10,
-          maxWidth: "320px",
-          // borderLeft: "5px solid #1e88e5",
-          animation: "slideUp 0.3s ease",
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: "10px",
+            left: "10px",
+            background: "white",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 10,
+            maxWidth: "320px",
+            // borderLeft: "5px solid #1e88e5",
+            animation: "slideUp 0.3s ease",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "10px" }}>
-            <div style={{
-              background: "#1e88e5",
-              color: "white",
-              minWidth: "32px",
-              height: "32px",
-              
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "14px",
-              fontWeight: "bold",
-              marginRight: "12px",
-              flexShrink: 0,
-            }}>
+            <div
+              style={{
+                background: "#1e88e5",
+                color: "white",
+                minWidth: "32px",
+                height: "32px",
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "14px",
+                fontWeight: "bold",
+                marginRight: "12px",
+                flexShrink: 0,
+              }}
+            >
               {selectedCustomer.lineNo}
             </div>
             <div>
-              <div style={{ 
-                fontWeight: "bold", 
-                fontSize: "16px", 
-                color: "#1e88e5",
-                marginBottom: "2px"
-              }}>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  color: "#1e88e5",
+                  marginBottom: "2px",
+                }}
+              >
                 {selectedCustomer.name}
               </div>
               {/* <div style={{ 
@@ -672,7 +656,7 @@ useEffect(() => {
               </div> */}
             </div>
           </div>
-          
+
           <div style={{ fontSize: "13px", color: "#444", lineHeight: "1.5" }}>
             {selectedCustomer.address && (
               <div style={{ marginBottom: "6px" }}>
@@ -694,7 +678,7 @@ useEffect(() => {
               Coordinates: {Number(selectedCustomer.geoLocation?.lat || 0).toFixed(6)}, {Number(selectedCustomer.geoLocation?.long || 0).toFixed(6)}
             </div> */}
           </div>
-          
+
           <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
             <button
               onClick={() => {
@@ -722,7 +706,6 @@ useEffect(() => {
             >
               <span>📍</span> Focus on Map
             </button>
-           
           </div>
         </div>
       )}

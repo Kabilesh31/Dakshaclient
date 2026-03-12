@@ -5,52 +5,46 @@ import { findUpper } from "../../../utils/Utils";
 import { Icon, UserAvatar, LinkList, LinkItem } from "../../../components/Component";
 
 const MessageProfileSidebar = ({ id, sidebar, profile }) => {
-  const [allocatedData, setAllocatedData] = useState([])
-  const [facultyData, setFacultyData] = useState([])
-// GETTING ASSIGNED FACULTY DATA BY SUBJECT_PACKET_NO
-  const subject_no = profile.answer_packet_number
-  const facultyId = allocatedData?.ov_faculty_id
-  useEffect(()=> {
-    const getAllocatedData = async() => {
-      try{
-        const response = await fetch(process.env.REACT_APP_BACKENDURL+`/getassignpacket/${subject_no}`)
-      const resData = await response.json()
-      if(response.ok){
-        setAllocatedData(resData.data)
+  const [allocatedData, setAllocatedData] = useState([]);
+  const [facultyData, setFacultyData] = useState([]);
+  // GETTING ASSIGNED FACULTY DATA BY SUBJECT_PACKET_NO
+  const subject_no = profile.answer_packet_number;
+  const facultyId = allocatedData?.ov_faculty_id;
+  useEffect(() => {
+    const getAllocatedData = async () => {
+      try {
+        const response = await fetch(process.env.REACT_APP_BACKENDURL + `/getassignpacket/${subject_no}`);
+        const resData = await response.json();
+        if (response.ok) {
+          setAllocatedData(resData.data);
+        } else {
+          console.log(resData.message);
+        }
+      } catch (err) {
+        console.log(err);
       }
-      else{
-        console.log(resData.message)
-      }
-      }catch(err){
-        console.log(err)
-      }
-    }
-    getAllocatedData()
-  }, [id, subject_no])
-
-
+    };
+    getAllocatedData();
+  }, [id, subject_no]);
 
   // Gettong Faculty Data
-  
-    useEffect(()=> {
-      const getfacultyData = async() => {
-        try{
-          const response = await fetch(process.env.REACT_APP_BACKENDURL+`/api/facultylist/${facultyId}`)
-        const resData = await response.json()
-        
-        if(response.ok){
-          setFacultyData(resData)
-        }
-        else{
-          
-        }
-        }catch(err){
-          console.log(err)
-        }
-      }
-        getfacultyData()
-    },[subject_no, id, facultyId])
 
+  useEffect(() => {
+    const getfacultyData = async () => {
+      try {
+        const response = await fetch(process.env.REACT_APP_BACKENDURL + `/api/facultylist/${facultyId}`);
+        const resData = await response.json();
+
+        if (response.ok) {
+          setFacultyData(resData);
+        } else {
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getfacultyData();
+  }, [subject_no, id, facultyId]);
 
   return (
     <SimpleBar className={`nk-msg-profile ${sidebar ? "visible" : ""}`}>

@@ -50,55 +50,43 @@ const StaffDetails = ({ match }) => {
   }, [data]);
 
   // fetch users list
- const fetchStaffData = async () => {
-  try {
+  const fetchStaffData = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      {
+      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/staff`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 200) {
+        setData(response.data);
       }
-    );
+    } catch (err) {
+      console.log("Fetch staff data error:", err);
 
-    if (response.status === 200) {
-      setData(response.data);
-    }
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-  } catch (err) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-    console.log("Fetch staff data error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          window.location.href = "/login";
+        }
+      } else {
+        console.log("Network error");
       }
-
-    } else {
-      console.log("Network error");
     }
-  }
-};
+  };
 
   useEffect(() => {
     const id = match.params.id;

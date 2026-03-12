@@ -99,61 +99,47 @@ const ProductsListCompact = () => {
   }, [data]);
 
   // fetch users list
-const fetchProductData = async () => {
-  try {
+  const fetchProductData = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        setData([]);
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      setData([]);
-      return;
-    }
-
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/product`,
-      {
+      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
-      }
-    );
+      });
 
-    if (Array.isArray(response.data)) {
-      setData([...response.data].reverse());
-    } else {
-      console.warn("Product data format unexpected:", response.data);
+      if (Array.isArray(response.data)) {
+        setData([...response.data].reverse());
+      } else {
+        console.warn("Product data format unexpected:", response.data);
+        setData([]);
+      }
+    } catch (err) {
+      console.log("PRODUCT FETCH ERROR:", err);
+
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+        }
+      }
+
       setData([]);
     }
-
-  } catch (err) {
-
-    console.log("PRODUCT FETCH ERROR:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
-      }
-
-    }
-
-    setData([]);
-
-  }
-};
+  };
 
   // Sorting data
   const sortFunc = (params) => {
@@ -184,8 +170,6 @@ const fetchProductData = async () => {
   const onFilterChange = (e) => {
     setSearchText(e.target.value);
   };
-
-
 
   const resetForm = () => {
     setFormData({

@@ -5,7 +5,11 @@
   background: #0f0f23;
   position: relative;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 /* Animated Background */
@@ -20,22 +24,21 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    135deg,
-    #0f0f23 0%,
-    #1a1a2e 25%,
-    #16213e 50%,
-    #0f3460 75%,
-    #533483 100%
-  );
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
   background-size: 400% 400%;
   animation: gradientMove 15s ease infinite;
 }
 
 @keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .floating-particle {
@@ -71,7 +74,7 @@
 .shape {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
   animation: shapeFloat 20s infinite linear;
 }
 
@@ -108,7 +111,8 @@
 }
 
 @keyframes shapeFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) rotate(0deg);
   }
   25% {
@@ -134,7 +138,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  margin-left:40px; 
+  margin-left: 40px;
 }
 
 .hero-overlay {
@@ -148,13 +152,12 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
- 
 }
 .hero-logo img {
   width: 380px;
   height: auto;
   object-fit: contain;
-   margin-left: 15px; 
+  margin-left: 15px;
 }
 .hero-logo-icon {
   font-size: 3rem;
@@ -162,8 +165,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .hero-title {
@@ -303,7 +311,7 @@
 }
 
 .form-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -346,8 +354,12 @@
 }
 
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .logo-text {
@@ -536,7 +548,7 @@
 }
 
 .checkbox-input:checked + .checkbox-custom::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -567,7 +579,7 @@
 }
 
 .submit-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -576,7 +588,9 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .submit-btn:hover::before {
@@ -594,8 +608,13 @@
 }
 
 @keyframes buttonPulse {
-  0%, 100% { transform: translateY(-2px); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 /* Divider */
@@ -607,7 +626,7 @@
 
 .divider::before,
 .divider::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
@@ -717,7 +736,7 @@
   border-radius: 6px;
   color: #00d4ff;
   font-size: 0.85rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 /* Footer */
@@ -748,15 +767,15 @@
   .hero-section {
     display: none;
   }
-  
+
   .form-section {
     padding: 1rem;
   }
-  
+
   .form-card {
     padding: 2rem;
   }
-  
+
   .hero-title {
     font-size: 3rem;
   }
@@ -766,15 +785,15 @@
   .form-card {
     padding: 1.5rem;
   }
-  
+
   .social-auth {
     flex-direction: column;
   }
-  
+
   .hero-stats {
     gap: 1.5rem;
   }
-  
+
   .stat-number {
     font-size: 2rem;
   }

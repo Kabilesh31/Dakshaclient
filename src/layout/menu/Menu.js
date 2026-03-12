@@ -166,10 +166,7 @@ const MenuItem = ({ icon, link, text, sub, newTab, sidebarToggle, mobileView, ba
               <Icon name={icon} />
             </span>
           ) : null}
-          <span
-            style={{ fontFamily: "'Nunito Sans', sans-serif", fontWeight: 600 }}
-            className="nk-menu-text"
-          >
+          <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontWeight: 600 }} className="nk-menu-text">
             {text}
           </span>
           {badge && <span className="nk-menu-badge">{badge}</span>}
@@ -221,7 +218,7 @@ const Menu = ({ sidebarToggle, mobileView }) => {
             sidebarToggle={sidebarToggle}
             mobileView={mobileView}
           />
-        )
+        ),
       )}
     </ul>
   );

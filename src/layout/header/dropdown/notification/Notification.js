@@ -1,30 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
-import {
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-} from "reactstrap";
+import { UncontrolledDropdown, DropdownToggle, DropdownMenu } from "reactstrap";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
 import Icon from "../../../../components/icon/Icon";
 import "./notification.css";
 
-const BACKEND_URL =
-  process.env.REACT_APP_BACKENDURL || "http://localhost:8000";
+const BACKEND_URL = process.env.REACT_APP_BACKENDURL || "http://localhost:8000";
 
-// ======================
-// Notification Item
-// ======================
-const NotificationItem = ({
-  id,
-  text,
-  timeAgo,
-  seen,
-  onMarkRead,
-  referenceId,
-  type,
-}) => {
+const NotificationItem = ({ id, text, timeAgo, seen, onMarkRead, referenceId, type }) => {
   const history = useHistory();
 
   const handleClick = async () => {
@@ -78,26 +62,21 @@ const Notification = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ======================
-  // FETCH EXISTING
-  // ======================
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/notifications`, 
-        {
+      const res = await axios.get(`${BACKEND_URL}/api/notifications`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
-      }
-      );
+      });
 
       const data = res.data.map((n) => ({
         ...n,
         id: n._id,
         text: n.message,
-        referenceId: n.referenceId, // ✅ correct field
-        type: n.type,               // ✅ correct field
+        referenceId: n.referenceId,
+        type: n.type,
         timeAgo: n.timeAgo,
       }));
 
@@ -109,9 +88,6 @@ const Notification = () => {
     }
   };
 
-  // ======================
-  // SOCKET CONNECTION
-  // ======================
   useEffect(() => {
     fetchNotifications();
 
@@ -126,7 +102,7 @@ const Notification = () => {
           ...notification,
           id: notification._id,
           text: notification.message,
-          referenceId: notification.referenceId, // ✅ correct
+          referenceId: notification.referenceId,
           type: notification.type,
           timeAgo: "just now",
           seen: false,
@@ -140,25 +116,20 @@ const Notification = () => {
     };
   }, []);
 
-  // ======================
-  // MARK READ
-  // ======================
   const markAsRead = async (id) => {
     try {
-     await axios.patch(
-  `${BACKEND_URL}/api/notifications/${id}/read`,
-  {},
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      "session-token": localStorage.getItem("sessionToken"),
-    },
-  }
-);
-
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, seen: true } : n))
+      await axios.patch(
+        `${BACKEND_URL}/api/notifications/${id}/read`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
+        },
       );
+
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, seen: true } : n)));
     } catch (err) {
       console.error(err);
     }
@@ -166,46 +137,37 @@ const Notification = () => {
 
   const markAllAsRead = async () => {
     try {
-    await axios.patch(
-  `${BACKEND_URL}/api/notifications/read-all`,
-  {}, // body (empty)
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      "session-token": localStorage.getItem("sessionToken"),
-    },
-  }
-);
-
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, seen: true }))
+      await axios.patch(
+        `${BACKEND_URL}/api/notifications/read-all`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
+        },
       );
+
+      setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
     } catch (err) {
       console.error(err);
     }
   };
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.seen).length,
-    [notifications]
-  );
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.seen).length, [notifications]);
 
   return (
     <UncontrolledDropdown className="user-dropdown">
       <DropdownToggle tag="a" className="dropdown-toggle nk-quick-nav-icon">
         <div className="icon-status icon-status-info">
           <Icon name="bell" />
-          {unreadCount > 0 && (
-            <span className="badge-dot">{unreadCount}</span>
-          )}
+          {unreadCount > 0 && <span className="badge-dot">{unreadCount}</span>}
         </div>
       </DropdownToggle>
 
       <DropdownMenu right className="dropdown-menu-xl dropdown-menu-s1">
         <div className="dropdown-head">
-          <span className="sub-title nk-dropdown-title">
-            Notifications
-          </span>
+          <span className="sub-title nk-dropdown-title">Notifications</span>
 
           <a
             href="#markasread"
@@ -230,29 +192,27 @@ const Notification = () => {
                   text={item.text}
                   timeAgo={item.timeAgo}
                   seen={item.seen}
-                  referenceId={item.referenceId} // ✅ correct
+                  referenceId={item.referenceId}
                   type={item.type}
                   onMarkRead={markAsRead}
                 />
               ))
             ) : (
-              <div className="text-center p-3">
-                No notifications
-              </div>
+              <div className="text-center p-3">No notifications</div>
             )}
           </div>
         </div>
 
         <div className="dropdown-foot center">
           <a
-  href="#viewall"
-  onClick={(e) => {
-    e.preventDefault();
-    history.push("/orders");
-  }}
->
-  View All
-</a>
+            href="#viewall"
+            onClick={(e) => {
+              e.preventDefault();
+              history.push("/orders");
+            }}
+          >
+            View All
+          </a>
         </div>
       </DropdownMenu>
     </UncontrolledDropdown>

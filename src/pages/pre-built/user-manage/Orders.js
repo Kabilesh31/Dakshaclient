@@ -32,10 +32,9 @@ const Orders = () => {
   const itemPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmModal, setConfirmModal] = useState(false);
-  const [actionType, setActionType] = useState(null); 
+  const [actionType, setActionType] = useState(null);
   const [actionOrderId, setActionOrderId] = useState(null);
   const [activeHighlight, setActiveHighlight] = useState(null);
-
 
   const modalRef = useRef();
   const hiddenPdfRef = useRef();
@@ -56,7 +55,7 @@ const Orders = () => {
           scale: 2.5,
           scrollY: 0,
           windowWidth: 794,
-          windowHeight: modalRef.current.scrollHeight, 
+          windowHeight: modalRef.current.scrollHeight,
         },
         jsPDF: {
           unit: "mm",
@@ -95,7 +94,7 @@ const Orders = () => {
         .save()
         .then(() => {
           hiddenPdfRef.current.classList.remove("pdf-mode");
-          setPdfOrder(null); 
+          setPdfOrder(null);
         });
     }, 100);
   };
@@ -103,170 +102,143 @@ const Orders = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
-    useEffect(() => {
-      if (highlightOrderId) {
-        setActiveHighlight(highlightOrderId);
+  useEffect(() => {
+    if (highlightOrderId) {
+      setActiveHighlight(highlightOrderId);
 
-        setTimeout(() => {
-          setActiveHighlight(null);
-        }, 5000); // highlight for 5 seconds
-      }
-    }, [highlightOrderId]);
-
-    useEffect(() => {
-      if (activeHighlight) {
-        const element = document.getElementById(activeHighlight);
-        element?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }, [activeHighlight]);
-
-const fetchOrders = async () => {
-  try {
-    setLoading(true);
-
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
-
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      setOrders([]);
-      setFiltered([]);
-      setLoading(false);
-      return;
+      setTimeout(() => {
+        setActiveHighlight(null);
+      }, 5000); // highlight for 5 seconds
     }
+  }, [highlightOrderId]);
 
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/bills`,
-      {
+  useEffect(() => {
+    if (activeHighlight) {
+      const element = document.getElementById(activeHighlight);
+      element?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [activeHighlight]);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
+
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        setOrders([]);
+        setFiltered([]);
+        setLoading(false);
+        return;
+      }
+
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/bills`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
-      }
-    );
+      });
 
-    const data = Array.isArray(res.data?.bills) ? res.data.bills : [];
+      const data = Array.isArray(res.data?.bills) ? res.data.bills : [];
 
-    setOrders(data);
-    setFiltered(data);
+      setOrders(data);
+      setFiltered(data);
+    } catch (err) {
+      console.error("FETCH ORDERS ERROR:", err);
 
-  } catch (err) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-    console.error("FETCH ORDERS ERROR:", err);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          window.location.href = "/login";
+        }
       }
 
+      setOrders([]);
+      setFiltered([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let data = [...orders];
+
+    // STATUS FILTER
+    if (statusFilter !== "all") {
+      data = data.filter((o) => o.orderStatus === statusFilter);
     }
 
-    setOrders([]);
-    setFiltered([]);
+    // DATE FILTER
+    if (selectedDates.length > 0) {
+      const formattedDates = selectedDates.map((d) => d.format("YYYY-MM-DD"));
 
-  } finally {
-    setLoading(false);
-  }
-};
+      data = data.filter((o) => {
+        const orderDate = new Date(o.createdAt).toISOString().split("T")[0];
 
- useEffect(() => {
-  let data = [...orders];
+        return formattedDates.includes(orderDate);
+      });
+    }
 
-  // STATUS FILTER
-  if (statusFilter !== "all") {
-    data = data.filter((o) => o.orderStatus === statusFilter);
-  }
+    // SEARCH FILTER
+    if (search.trim()) {
+      const keyword = search.toLowerCase();
+      data = data.filter(
+        (o) => o.customerName?.toLowerCase().includes(keyword) || o._id?.toLowerCase().includes(keyword),
+      );
+    }
 
-  // DATE FILTER
- if (selectedDates.length > 0) {
-  const formattedDates = selectedDates.map((d) =>
-    d.format("YYYY-MM-DD")
-  );
+    setFiltered(data);
+  }, [search, statusFilter, selectedDates, orders]);
 
-  data = data.filter((o) => {
-    const orderDate = new Date(o.createdAt)
-      .toISOString()
-      .split("T")[0];
+  const openConfirmModal = (id, type) => {
+    setActionOrderId(id);
+    setActionType(type);
+    setConfirmModal(true);
+  };
 
-    return formattedDates.includes(orderDate);
-  });
-}
+  const confirmAction = async () => {
+    if (!actionOrderId || !actionType) return;
 
+    try {
+      await changeStatus(actionOrderId, actionType);
+      setConfirmModal(false);
+      setActionOrderId(null);
+      setActionType(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  // SEARCH FILTER
-  if (search.trim()) {
-    const keyword = search.toLowerCase();
-    data = data.filter(
-      (o) =>
-        o.customerName?.toLowerCase().includes(keyword) ||
-        o._id?.toLowerCase().includes(keyword)
-    );
-  }
+  const changeStatus = async (id, status) => {
+    try {
+      const res = await axios.patch(`${process.env.REACT_APP_BACKENDURL}/api/bills/${id}/status`, {
+        orderStatus: status,
+      });
 
-  setFiltered(data);
-}, [search, statusFilter, selectedDates, orders]);
+      setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, orderStatus: status } : o)));
 
-const openConfirmModal = (id, type) => {
-  setActionOrderId(id);
-  setActionType(type);
-  setConfirmModal(true);
-};
-
-const confirmAction = async () => {
-  if (!actionOrderId || !actionType) return;
-
-  try {
-    await changeStatus(actionOrderId, actionType);
-    setConfirmModal(false);
-    setActionOrderId(null);
-    setActionType(null);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
- const changeStatus = async (id, status) => {
-  try {
-    const res = await axios.patch(
-      `${process.env.REACT_APP_BACKENDURL}/api/bills/${id}/status`,
-      { orderStatus: status }
-    );
-
-    setOrders((prev) =>
-      prev.map((o) =>
-        o._id === id ? { ...o, orderStatus: status } : o
-      )
-    );
-
-    return true; 
-  } catch (err) {
-    console.error(err);
-    return false; 
-  }
-};
-
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  };
 
   const statusColor = (s) => {
-  if (s === "approved") return "success";
-  if (s === "rejected") return "danger";
-  if (s === "delivered") return "primary";
-  return "warning"; // pending
-};
-
+    if (s === "approved") return "success";
+    if (s === "rejected") return "danger";
+    if (s === "delivered") return "primary";
+    return "warning"; // pending
+  };
 
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
@@ -275,8 +247,6 @@ const confirmAction = async () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, selectedDates]);
-
- 
 
   return (
     <>
@@ -287,30 +257,28 @@ const confirmAction = async () => {
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3"> Orders</BlockTitle>
-              
             </BlockHeadContent>
 
-          
             <div className="d-flex align-items-center gap-5">
-           <div className="position-relative">
-            <DatePicker
-              multiple
-              value={selectedDates}
-              onChange={setSelectedDates}
-              format="DD-MM-YYYY"
-              placeholder="    Select dates"
-              style={{
-                width: "160px",       
-                borderRadius: "8px",
-                border: "/weather-ddbea",
-                height: "38px",         
-                fontSize: "15px",      
-              }}
-              inputClass="form-control ps-3"  
-            />
-          </div>
+              <div className="position-relative">
+                <DatePicker
+                  multiple
+                  value={selectedDates}
+                  onChange={setSelectedDates}
+                  format="DD-MM-YYYY"
+                  placeholder="    Select dates"
+                  style={{
+                    width: "160px",
+                    borderRadius: "8px",
+                    border: "/weather-ddbea",
+                    height: "38px",
+                    fontSize: "15px",
+                  }}
+                  inputClass="form-control ps-3"
+                />
+              </div>
 
-            <div className="btn-group btn-group-sm ml-3">
+              <div className="btn-group btn-group-sm ml-3">
                 {["all", "pending", "approved", "rejected"].map((s) => (
                   <Button
                     key={s}
@@ -395,7 +363,7 @@ const confirmAction = async () => {
                 {/* Table Header */}
                 <thead>
                   <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
-                     <th className="px-3 py-2 text-center">S.No</th>
+                    <th className="px-3 py-2 text-center">S.No</th>
                     <th className="px-4 py-2 text-start">Date</th>
                     <th className="px-4 py-2 text-start">Customer</th>
                     <th className="px-4 py-2 text-start">Order ID</th>
@@ -404,13 +372,12 @@ const confirmAction = async () => {
                     <th className="px-4 py-2 text-end">Amount</th>
                     <th className="px-4 py-2 text-center">Status</th>
                     <th className="px-4 py-2 text-center">Actions</th>
-                    
                   </tr>
                 </thead>
 
                 {/* Table Body */}
-               <tbody>
-                {currentItems.length > 0 &&
+                <tbody>
+                  {currentItems.length > 0 &&
                     currentItems.map((order, index) => {
                       const isHighlighted = order._id === activeHighlight;
 
@@ -418,177 +385,142 @@ const confirmAction = async () => {
                         <tr
                           key={order._id}
                           id={order._id}
-                          className={`align-middle ${
-                            isHighlighted ? "highlight-row" : ""
-                          }`}
+                          className={`align-middle ${isHighlighted ? "highlight-row" : ""}`}
                           style={{
                             borderTop: "1px solid #e0e0e0",
                             borderBottom: "1px solid #e0e0e0",
                             textAlign: "left",
                           }}
                         >
-                        <td className="px-3 py-2 text-center">
-                          {indexOfFirstItem + index + 1}
-                        </td>
+                          <td className="px-3 py-2 text-center">{indexOfFirstItem + index + 1}</td>
 
-                        <td className="px-4 py-2 text-start">
-                          <span
+                          <td className="px-4 py-2 text-start">
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 10px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                backgroundColor: "#e0f2fe",
+                                color: "#0369a1",
+                                borderRadius: "20px",
+                              }}
+                            >
+                              {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                            </span>
+                          </td>
+                          <td className="py-2 text-start">
+                            {order.customerName?.charAt(0).toUpperCase() + order.customerName?.slice(1)}
+                          </td>
+
+                          <td className="px-4 py-2 text-start" title={order._id}>
+                            #{order._id.slice(-6)}
+                          </td>
+
+                          <td className="px-4 py-2 text-end" style={{ color: "#66BB6A", fontWeight: 600 }}>
+                            ₹ {order.totalAmt}
+                          </td>
+
+                          <td className="px-4 py-2 text-center">
+                            <span className={`tb-status text-${statusColor(order.orderStatus)}`}>
+                              {order.orderStatus.charAt(0).toUpperCase()}
+                              {order.orderStatus.slice(1)}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-2 text-center">
+                            <UncontrolledDropdown>
+                              <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                <Icon name="more-h" />
+                              </DropdownToggle>
+
+                              <DropdownMenu right>
+                                {order.orderStatus === "pending" && (
+                                  <>
+                                    <DropdownItem onClick={() => openConfirmModal(order._id, "approved")}>
+                                      <Icon name="check-circle" /> Approve
+                                    </DropdownItem>
+
+                                    <DropdownItem onClick={() => openConfirmModal(order._id, "rejected")}>
+                                      <Icon name="cross-circle" /> Reject
+                                    </DropdownItem>
+                                  </>
+                                )}
+
+                                <DropdownItem onClick={() => setSelectedOrder(order)}>
+                                  <Icon name="eye" /> View Details
+                                </DropdownItem>
+
+                                <DropdownItem onClick={() => downloadOrderDirect(order)}>
+                                  <Icon name="download" /> Download PDF
+                                </DropdownItem>
+                              </DropdownMenu>
+                            </UncontrolledDropdown>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+              <div className="card-inner">
+                {currentItems.length > 0 ? (
+                  <div className="d-flex justify-content-center align-items-center">
+                    {/* Previous */}
+                    <button
+                      className="btn btn-icon btn-sm btn-outline-light mx-1"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      style={{ borderRadius: "6px" }}
+                    >
+                      <em className="icon ni ni-chevron-left"></em>
+                    </button>
+
+                    {/* Page Numbers */}
+                    {[...Array(Math.ceil(filtered.length / itemPerPage))].map((_, index) => {
+                      const pageNumber = index + 1;
+                      const totalPages = Math.ceil(filtered.length / itemPerPage);
+
+                      if (
+                        pageNumber === currentPage ||
+                        pageNumber === currentPage - 1 ||
+                        pageNumber === currentPage + 1
+                      ) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => setCurrentPage(pageNumber)}
+                            className={`btn btn-sm mx-1 ${
+                              currentPage === pageNumber ? "btn-primary" : "btn-outline-light"
+                            }`}
                             style={{
-                              display: "inline-block",
-                              padding: "4px 10px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              backgroundColor: "#e0f2fe",
-                              color: "#0369a1",
-                              borderRadius: "20px"
+                              minWidth: "36px",
+                              borderRadius: "6px",
+                              fontWeight: 500,
                             }}
                           >
-                            {new Date(order.createdAt).toLocaleDateString("en-IN")}
-                          </span>
-                        </td>
-                       <td className="py-2 text-start">
-                          {order.customerName?.charAt(0).toUpperCase() + order.customerName?.slice(1)}
-                        </td>
+                            {pageNumber}
+                          </button>
+                        );
+                      }
+                      return null;
+                    })}
 
-                        <td
-                          className="px-4 py-2 text-start"
-                          title={order._id}
-                        >
-                          #{order._id.slice(-6)}
-                        </td>
-
-                        <td
-                          className="px-4 py-2 text-end"
-                          style={{ color: "#66BB6A", fontWeight: 600 }}
-                        >
-                           ₹ {order.totalAmt}
-                        </td>
-
-                        <td className="px-4 py-2 text-center">
-                          <span
-                            className={`tb-status text-${statusColor(
-                              order.orderStatus
-                            )}`}
-                          >
-                           {order.orderStatus.charAt(0).toUpperCase()}{order.orderStatus.slice(1)}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-2 text-center">
-                          <UncontrolledDropdown>
-                            <DropdownToggle
-                              tag="a"
-                              className="btn btn-icon btn-trigger"
-                            >
-                              <Icon name="more-h" />
-                            </DropdownToggle>
-
-                            <DropdownMenu right>
-                              {order.orderStatus === "pending" && (
-                                <>
-                                  <DropdownItem
-                                    onClick={() =>
-                                      openConfirmModal(order._id, "approved")
-                                    }
-                                  >
-                                    <Icon name="check-circle" /> Approve
-                                  </DropdownItem>
-
-                                  <DropdownItem
-                                    onClick={() =>
-                                      openConfirmModal(order._id, "rejected")
-                                    }
-                                  >
-                                    <Icon name="cross-circle" /> Reject
-                                  </DropdownItem>
-                                </>
-                              )}
-
-                              <DropdownItem
-                                onClick={() => setSelectedOrder(order)}
-                              >
-                                <Icon name="eye" /> View Details
-                              </DropdownItem>
-
-                              <DropdownItem
-                                onClick={() => downloadOrderDirect(order)}
-                              >
-                                <Icon name="download" /> Download PDF
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </UncontrolledDropdown>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-
-            </table>
-           <div className="card-inner">
-  {currentItems.length > 0 ? (
-    <div className="d-flex justify-content-center align-items-center">
-
-      {/* Previous */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage((prev) => prev - 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-left"></em>
-      </button>
-
-      {/* Page Numbers */}
-      {[...Array(Math.ceil(filtered.length / itemPerPage))].map((_, index) => {
-        const pageNumber = index + 1;
-        const totalPages = Math.ceil(filtered.length / itemPerPage);
-
-        if (
-          pageNumber === currentPage ||
-          pageNumber === currentPage - 1 ||
-          pageNumber === currentPage + 1
-        ) {
-          return (
-            <button
-              key={pageNumber}
-              onClick={() => setCurrentPage(pageNumber)}
-              className={`btn btn-sm mx-1 ${
-                currentPage === pageNumber
-                  ? "btn-primary"
-                  : "btn-outline-light"
-              }`}
-              style={{
-                minWidth: "36px",
-                borderRadius: "6px",
-                fontWeight: 500,
-              }}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
-        return null;
-      })}
-
-      {/* Next */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={
-          currentPage === Math.ceil(filtered.length / itemPerPage)
-        }
-        onClick={() => setCurrentPage((prev) => prev + 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-right"></em>
-      </button>
-
-    </div>
-  ) : (
-    <div className="text-center">
-      <span className="text-silent">No data found</span>
-    </div>
-  )}
-</div>
+                    {/* Next */}
+                    <button
+                      className="btn btn-icon btn-sm btn-outline-light mx-1"
+                      disabled={currentPage === Math.ceil(filtered.length / itemPerPage)}
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      style={{ borderRadius: "6px" }}
+                    >
+                      <em className="icon ni ni-chevron-right"></em>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <span className="text-silent">No data found</span>
+                  </div>
+                )}
+              </div>
             </DataTable>
           )}
         </Block>
@@ -623,7 +555,8 @@ const confirmAction = async () => {
                     <strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleDateString()}
                   </p>
                   <span className={`tb-status text-${statusColor(selectedOrder.orderStatus)}`}>
-                    {selectedOrder.orderStatus.slice(0, 1).toUpperCase()}{selectedOrder.orderStatus.slice(1)}
+                    {selectedOrder.orderStatus.slice(0, 1).toUpperCase()}
+                    {selectedOrder.orderStatus.slice(1)}
                   </span>
                 </div>
               </div>
@@ -678,7 +611,6 @@ const confirmAction = async () => {
                       </tr>
                     )}
                   </tbody>
-                  
                 </table>
               </div>
 
@@ -704,19 +636,15 @@ const confirmAction = async () => {
               </div>
             </div>
 
-
             {/* PDF Button */}
             <div className="text-end mt-3">
               <Button color="primary" className="mr-1" size="sm" onClick={downloadPDF}>
-                <Icon name="download" /> 
-                
+                <Icon name="download" />
               </Button>
-             
             </div>
           </ModalBody>
         </Modal>
       )}
-
 
       <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         <div ref={hiddenPdfRef} className="order-invoice-pdf">
@@ -733,14 +661,10 @@ const confirmAction = async () => {
                     <strong>Order ID:</strong> #{pdfOrder._id.slice(-6)}
                   </p>
                   <p style={{ margin: 0 }}>
-                    <strong>Date:</strong>{" "}
-                    {new Date(pdfOrder.createdAt).toLocaleDateString("en-IN")}
+                    <strong>Date:</strong> {new Date(pdfOrder.createdAt).toLocaleDateString("en-IN")}
                   </p>
                   <p style={{ margin: 0 }}>
-                    <strong>Status:</strong>{" "}
-                    <span style={{ textTransform: "capitalize" }}>
-                      {pdfOrder.orderStatus}
-                    </span>
+                    <strong>Status:</strong> <span style={{ textTransform: "capitalize" }}>{pdfOrder.orderStatus}</span>
                   </p>
                 </div>
               </div>
@@ -753,16 +677,13 @@ const confirmAction = async () => {
                 <div style={{ width: "48%" }}>
                   <h6 style={{ marginBottom: "4px" }}>Customer Details</h6>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Name:</strong>{" "}
-                    {pdfOrder.customerDetails?.name || pdfOrder.customerName || "-"}
+                    <strong>Name:</strong> {pdfOrder.customerDetails?.name || pdfOrder.customerName || "-"}
                   </p>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Mobile:</strong>{" "}
-                    {pdfOrder.customerDetails?.mobile || "-"}
+                    <strong>Mobile:</strong> {pdfOrder.customerDetails?.mobile || "-"}
                   </p>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Address:</strong>{" "}
-                    {pdfOrder.customerDetails?.address || "-"}
+                    <strong>Address:</strong> {pdfOrder.customerDetails?.address || "-"}
                   </p>
                 </div>
 
@@ -770,27 +691,19 @@ const confirmAction = async () => {
                 <div style={{ width: "48%", marginLeft: "350px" }}>
                   <h6 style={{ marginBottom: "4px" }}>Staff Details</h6>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Name:</strong>{" "}
-                    {pdfOrder.staffDetails?.name || "Unassigned"}
+                    <strong>Name:</strong> {pdfOrder.staffDetails?.name || "Unassigned"}
                   </p>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Role:</strong>{" "}
-                    {pdfOrder.staffDetails?.type || "-"}
+                    <strong>Role:</strong> {pdfOrder.staffDetails?.type || "-"}
                   </p>
                   <p style={{ margin: "2px 0" }}>
-                    <strong>Mobile:</strong>{" "}
-                    {pdfOrder.staffDetails?.mobile || "-"}
+                    <strong>Mobile:</strong> {pdfOrder.staffDetails?.mobile || "-"}
                   </p>
                 </div>
               </div>
 
               {/* PRODUCT TABLE */}
-              <table
-                width="100%"
-                border="1"
-                cellPadding="6"
-                style={{ borderCollapse: "collapse", marginTop: "10px" }}
-              >
+              <table width="100%" border="1" cellPadding="6" style={{ borderCollapse: "collapse", marginTop: "10px" }}>
                 <thead>
                   <tr>
                     <th>S.No</th>
@@ -833,58 +746,48 @@ const confirmAction = async () => {
           )}
         </div>
       </div>
-    <Modal isOpen={confirmModal} centered>
-      <ModalBody className="p-4">
+      <Modal isOpen={confirmModal} centered>
+        <ModalBody className="p-4">
+          <h5 className="fw-bold mb-3">{actionType === "approved" ? "Approve Order" : "Reject Order"}</h5>
 
-        <h5 className="fw-bold mb-3">
-          {actionType === "approved"
-            ? "Approve Order"
-            : "Reject Order"}
-        </h5>
+          <p className="mb-4">
+            Are you sure you want to <span className="fw-bold">{actionType === "approved" ? "approve" : "reject"}</span>{" "}
+            this order?
+          </p>
 
-        <p className="mb-4">
-          Are you sure you want to{" "}
-          <span className="fw-bold">
-            {actionType === "approved" ? "approve" : "reject"}
-          </span>{" "}
-          this order?
-        </p>
+          <div className="d-flex justify-content-end" style={{ gap: "18px" }}>
+            <Button
+              style={{
+                backgroundColor: "#eeeeee",
+                border: "1px solid #dddddd",
+                color: "#333",
+                fontWeight: "600",
+                padding: "10px 32px",
+                borderRadius: "0",
+                fontSize: "15px",
+              }}
+              onClick={() => setConfirmModal(false)}
+            >
+              Cancel
+            </Button>
 
-        <div className="d-flex justify-content-end" style={{ gap: "18px" }}>
-          <Button
-            style={{
-              backgroundColor: "#eeeeee",
-              border: "1px solid #dddddd",
-              color: "#333",
-              fontWeight: "600",
-              padding: "10px 32px",
-              borderRadius: "0",
-              fontSize: "15px",
-            }}
-            onClick={() => setConfirmModal(false)}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            style={{
-              backgroundColor: "#888890",
-              border: "1px solid #888888",
-              color: "#fff",
-              fontWeight: "600",
-              padding: "10px 36px",
-              borderRadius: "0",
-              fontSize: "15px",
-            }}
-            onClick={confirmAction}
-          >
-            Confirm
-          </Button>
-        </div>
-
-      </ModalBody>
-    </Modal>
-
+            <Button
+              style={{
+                backgroundColor: "#888890",
+                border: "1px solid #888888",
+                color: "#fff",
+                fontWeight: "600",
+                padding: "10px 36px",
+                borderRadius: "0",
+                fontSize: "15px",
+              }}
+              onClick={confirmAction}
+            >
+              Confirm
+            </Button>
+          </div>
+        </ModalBody>
+      </Modal>
     </>
   );
 };

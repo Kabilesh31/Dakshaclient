@@ -76,92 +76,80 @@ const UserListCompact = () => {
     }
   }, [data]);
 
-    // fetch users list
-const fetchUserData = async () => {
-  try {
+  // fetch users list
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/user`,
-      {
+      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/user`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 201) {
+        const users = response.data.data || [];
+
+        const reversed = [...users].reverse();
+
+        setOriginalData(reversed);
+        setData(reversed);
       }
-    );
+    } catch (err) {
+      console.log("Fetch users error:", err);
 
-    if (response.status === 201) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-      const users = response.data.data || [];
+          // optional logout
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-      const reversed = [...users].reverse(); 
-
-      setOriginalData(reversed);
-      setData(reversed);
-    }
-
-  } catch (err) {
-
-    console.log("Fetch users error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        // optional logout
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
+          window.location.href = "/login";
+        }
+      } else {
+        console.log("Network error");
       }
-
-    } else {
-      console.log("Network error");
     }
-  }
-};
+  };
 
   // Sorting data
   const sortFunc = (order) => {
-  let sorted = [...data].sort((a, b) => {
-    if (order === "asc") {
-      return a.name.localeCompare(b.name);
-    } else {
-      return b.name.localeCompare(a.name);
-    }
-  });
+    let sorted = [...data].sort((a, b) => {
+      if (order === "asc") {
+        return a.name.localeCompare(b.name);
+      } else {
+        return b.name.localeCompare(a.name);
+      }
+    });
 
-  setData(sorted);
-  setSortState(order);
-};
-
+    setData(sorted);
+    setSortState(order);
+  };
 
   localStorage.setItem("isGridView", false);
 
   // Changing state value when searching name
- useEffect(() => {
-  if (onSearchText !== "") {
-    const filtered = originalData.filter((item) =>
-      item.name.toLowerCase().includes(onSearchText.toLowerCase()) ||
-      item.email.toLowerCase().includes(onSearchText.toLowerCase())
-    );
-    setData(filtered);
-  } else {
-    setData(originalData);
-  }
-}, [onSearchText, originalData]);
-
+  useEffect(() => {
+    if (onSearchText !== "") {
+      const filtered = originalData.filter(
+        (item) =>
+          item.name.toLowerCase().includes(onSearchText.toLowerCase()) ||
+          item.email.toLowerCase().includes(onSearchText.toLowerCase()),
+      );
+      setData(filtered);
+    } else {
+      setData(originalData);
+    }
+  }, [onSearchText, originalData]);
 
   // onChange function for searching name
   const onFilterChange = (e) => {
@@ -186,154 +174,124 @@ const fetchUserData = async () => {
   };
 
   // submit function to add a new item
- const onFormSubmit = async (submitData) => {
-  const { name, email, role, phone, status } = submitData;
+  const onFormSubmit = async (submitData) => {
+    const { name, email, role, phone, status } = submitData;
 
-  let submittedData = {
-    name: name,
-    role: formData.role,
-    email: email,
-    phone: phone,
-    status: formData.status,
-    password: phone,
-    confirmPassword: phone,
-    createdBy: userData._id,
-  };
+    let submittedData = {
+      name: name,
+      role: formData.role,
+      email: email,
+      phone: phone,
+      status: formData.status,
+      password: phone,
+      confirmPassword: phone,
+      createdBy: userData._id,
+    };
 
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/user/signup`,
-      submittedData,
-      {
+      const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/user/signup`, submittedData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
-      }
-    );
+      });
 
-    if (response.status === 201 || response.status === 200) {
+      if (response.status === 201 || response.status === 200) {
+        successToast("User Created Successfully");
 
-      successToast("User Created Successfully");
-
-      resetForm();
-      setModal({ edit: false, add: false });
-      fetchUserData();
-
-    } else {
-      warningToast();
-    }
-
-  } catch (err) {
-
-    console.log("Create user error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+        resetForm();
+        setModal({ edit: false, add: false });
+        fetchUserData();
       } else {
-          
-      successToast("User Created Successfully");
-
-      resetForm();
-      setModal({ edit: false, add: false });
-      fetchUserData();
+        warningToast();
       }
+    } catch (err) {
+      console.log("Create user error:", err);
 
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+        } else {
+          successToast("User Created Successfully");
+
+          resetForm();
+          setModal({ edit: false, add: false });
+          fetchUserData();
+        }
+      } else {
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
+      }
     }
-  }
-};
+  };
 
   // submit function to update a new item
-const onEditSubmit = async (submitData) => {
-  const { name, phone } = submitData;
+  const onEditSubmit = async (submitData) => {
+    const { name, phone } = submitData;
 
-  const submittedData = {
-    name: name,
-    role: formData.role,
-    status: formData.status,
-    phone: phone,
-  };
+    const submittedData = {
+      name: name,
+      role: formData.role,
+      status: formData.status,
+      phone: phone,
+    };
 
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.put(
-      `${process.env.REACT_APP_BACKENDURL}/api/user/${editId}`,
-      submittedData,
-      {
+      const response = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/user/${editId}`, submittedData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 200) {
+        successToast("Updated Successfully");
+
+        setModal({ edit: false });
+
+        fetchUserData();
       }
-    );
+    } catch (err) {
+      console.log("Update user error:", err);
 
-    if (response.status === 200) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-      successToast("Updated Successfully");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-      setModal({ edit: false });
-
-      fetchUserData();
-    }
-
-  } catch (err) {
-
-    console.log("Update user error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          window.location.href = "/login";
+        } else {
+          errorToast(err.response.data?.message || "Something Went Wrong");
+        }
       } else {
-        errorToast(err.response.data?.message || "Something Went Wrong");
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
     }
-  }
-};
+  };
   // function that loads the want to editted data
   const onEditClick = (id) => {
     data.forEach((item) => {
@@ -772,11 +730,9 @@ const onEditSubmit = async (submitData) => {
                           </div>
                           {/* </Link> */}
                         </DataTableRow>
-                       <DataTableRow size="md">
-  <span>
-    {item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}
-  </span>
-</DataTableRow>
+                        <DataTableRow size="md">
+                          <span>{item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}</span>
+                        </DataTableRow>
                         <DataTableRow size="sm">
                           <span>{item.email}</span>
                         </DataTableRow>
@@ -929,31 +885,29 @@ const onEditSubmit = async (submitData) => {
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Name</label>
-                     <input
-  className="form-control"
-  type="text"
-  name="name"
-  defaultValue={formData.name}
-  placeholder="Enter name"
-  onInput={(e) => {
-    // Remove special characters (allow only letters + space)
-    e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                      <input
+                        className="form-control"
+                        type="text"
+                        name="name"
+                        defaultValue={formData.name}
+                        placeholder="Enter name"
+                        onInput={(e) => {
+                          // Remove special characters (allow only letters + space)
+                          e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
 
-    // Capitalize first letter
-    if (e.target.value.length > 0) {
-      e.target.value =
-        e.target.value.charAt(0).toUpperCase() +
-        e.target.value.slice(1);
-    }
-  }}
-  ref={register({
-    required: "This field is required",
-    pattern: {
-      value: /^[A-Za-z\s]+$/,
-      message: "Special characters are not allowed",
-    },
-  })}
-/>
+                          // Capitalize first letter
+                          if (e.target.value.length > 0) {
+                            e.target.value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1);
+                          }
+                        }}
+                        ref={register({
+                          required: "This field is required",
+                          pattern: {
+                            value: /^[A-Za-z\s]+$/,
+                            message: "Special characters are not allowed",
+                          },
+                        })}
+                      />
 
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>

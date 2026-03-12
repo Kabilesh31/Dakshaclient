@@ -1,5 +1,5 @@
 // components/BrandAssign.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -35,8 +35,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
-} from '@mui/material';
+  MenuItem,
+} from "@mui/material";
 import {
   Edit as EditIcon,
   Store as StoreIcon,
@@ -52,14 +52,14 @@ import {
   Save as SaveIcon,
   Clear as ClearIcon,
   Add as AddIcon,
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
-import axios from 'axios';
+  Refresh as RefreshIcon,
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
+import axios from "axios";
 
 const BrandChip = styled(Chip)(({ theme }) => ({
   margin: theme.spacing(0.5),
-  '& .MuiChip-label': {
+  "& .MuiChip-label": {
     fontWeight: 500,
   },
 }));
@@ -68,12 +68,12 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
   const [openAssignDialog, setOpenAssignDialog] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedBrands, setSelectedBrands] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [brandSearchTerm, setBrandSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [brandSearchTerm, setBrandSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [availableBrands, setAvailableBrands] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,20 +90,20 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/product/brands`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (response.status === 200) {
-        const brands = response.data.data
+        const brands = response.data.data;
         setAvailableBrands(brands);
       }
     } catch (err) {
       console.log(err);
       setSnackbar({
         open: true,
-        message: 'Error fetching brands',
-        severity: 'error'
+        message: "Error fetching brands",
+        severity: "error",
       });
     } finally {
       setLoading(false);
@@ -113,9 +113,9 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
   useEffect(() => {
     fetchBrandList();
   }, []);
-useEffect(() => {
-  setCurrentPage(1);
-}, [searchTerm]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
   // Handle assign button click
   const handleAssignClick = (staff) => {
     setSelectedStaff(staff);
@@ -125,20 +125,16 @@ useEffect(() => {
 
   // Handle brand selection
   const handleBrandToggle = (brand) => {
-    setSelectedBrands(prev =>
-      prev.includes(brand)
-        ? prev.filter(b => b !== brand)
-        : [...prev, brand]
-    );
+    setSelectedBrands((prev) => (prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]));
   };
 
   // Save assignments to backend
   const handleSaveAssignments = async () => {
     if (!selectedStaff) return;
-    
+
     setSaving(true);
     const token = localStorage.getItem("accessToken");
-    
+
     try {
       const response = await axios.put(
         `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedStaff._id}/assign-brands`,
@@ -146,40 +142,38 @@ useEffect(() => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+            "Content-Type": "application/json",
+          },
+        },
       );
 
       if (response.status === 200) {
         // Update local staff data
-        const updatedStaff = localStaff.map(staff =>
-          staff._id === selectedStaff._id
-            ? { ...staff, assignedBrands: selectedBrands }
-            : staff
+        const updatedStaff = localStaff.map((staff) =>
+          staff._id === selectedStaff._id ? { ...staff, assignedBrands: selectedBrands } : staff,
         );
-        
+
         setLocalStaff(updatedStaff);
-        
+
         // Notify parent component if callback provided
         if (onStaffUpdate) {
           onStaffUpdate(updatedStaff);
         }
-        
+
         setOpenAssignDialog(false);
-        
+
         setSnackbar({
           open: true,
           message: `Brands assigned to ${selectedStaff.name} successfully!`,
-          severity: 'success'
+          severity: "success",
         });
       }
     } catch (err) {
-      console.error('Error saving assignments:', err);
+      console.error("Error saving assignments:", err);
       setSnackbar({
         open: true,
-        message: err.response?.data?.message || 'Error saving assignments',
-        severity: 'error'
+        message: err.response?.data?.message || "Error saving assignments",
+        severity: "error",
       });
     } finally {
       setSaving(false);
@@ -189,77 +183,72 @@ useEffect(() => {
   // Handle remove brand from staff
   const handleRemoveBrand = async (staffId, brandToRemove) => {
     const token = localStorage.getItem("accessToken");
-    
+
     try {
       const response = await axios.delete(
         `${process.env.REACT_APP_BACKENDURL}/api/staff/${staffId}/brands/${encodeURIComponent(brandToRemove)}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       if (response.status === 200) {
         // Update local staff data
-        const updatedStaff = localStaff.map(staff =>
+        const updatedStaff = localStaff.map((staff) =>
           staff._id === staffId
-            ? { ...staff, assignedBrands: staff.assignedBrands.filter(b => b !== brandToRemove) }
-            : staff
+            ? { ...staff, assignedBrands: staff.assignedBrands.filter((b) => b !== brandToRemove) }
+            : staff,
         );
-        
+
         setLocalStaff(updatedStaff);
-        
+
         if (onStaffUpdate) {
           onStaffUpdate(updatedStaff);
         }
-        
+
         setSnackbar({
           open: true,
           message: `Brand "${brandToRemove}" removed successfully!`,
-          severity: 'success'
+          severity: "success",
         });
       }
     } catch (err) {
-      console.error('Error removing brand:', err);
+      console.error("Error removing brand:", err);
       setSnackbar({
         open: true,
-        message: err.response?.data?.message || 'Error removing brand',
-        severity: 'error'
+        message: err.response?.data?.message || "Error removing brand",
+        severity: "error",
       });
     }
   };
 
   // Filter staff based on search and status
-  const filteredStaff = localStaff.filter(staff => {
-    const matchesSearch = 
-      (staff.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (staff.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (staff.staffCode?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (staff.assignedBrands || []).some(brand => 
-        (brand || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    
-    const matchesStatus = filterStatus === 'all' || staff.staffStatus === filterStatus;
+  const filteredStaff = localStaff.filter((staff) => {
+    const matchesSearch =
+      (staff.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (staff.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (staff.staffCode?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (staff.assignedBrands || []).some((brand) => (brand || "").toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesStatus = filterStatus === "all" || staff.staffStatus === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   // Filter brands based on search
-  const filteredBrands = availableBrands.filter(brand =>
-    brand?.toLowerCase().includes(brandSearchTerm.toLowerCase())
+  const filteredBrands = availableBrands.filter((brand) =>
+    brand?.toLowerCase().includes(brandSearchTerm.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
 
-const paginatedStaff = filteredStaff.slice(
-  (currentPage - 1) * itemsPerPage,
-  currentPage * itemsPerPage
-);
+  const paginatedStaff = filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <Box sx={{ p: 0, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: 0, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       {/* Search and Filter Bar */}
-      <Paper sx={{ p: 2, mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Paper sx={{ p: 2, mb: 2, display: "flex", gap: 2, alignItems: "center" }}>
         <TextField
           size="small"
           placeholder="Search staff or brands..."
@@ -274,7 +263,7 @@ const paginatedStaff = filteredStaff.slice(
           }}
           sx={{ flex: 1 }}
         />
-        
+
         {/* <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Status</InputLabel>
           <Select
@@ -296,9 +285,9 @@ const paginatedStaff = filteredStaff.slice(
       </Paper>
 
       {/* Staff Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: "hidden" }}>
         <Table>
-          <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+          <TableHead sx={{ bgcolor: "#f8f9fa" }}>
             <TableRow>
               <TableCell>Staff Member</TableCell>
               <TableCell>Assigned Brands</TableCell>
@@ -318,7 +307,7 @@ const paginatedStaff = filteredStaff.slice(
               paginatedStaff.map((staff) => (
                 <TableRow key={staff._id} hover>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                       <Avatar src={staff.img} alt={staff.name}>
                         {!staff.img && <PersonIcon />}
                       </Avatar>
@@ -327,22 +316,17 @@ const paginatedStaff = filteredStaff.slice(
                           {staff.name}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
-                         Staff Code - {staff.staffCode} 
+                          Staff Code - {staff.staffCode}
                         </Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5 }}>
                       {staff.assignedBrands?.length > 0 ? (
                         staff.assignedBrands.map((brand, index) => (
                           <Tooltip key={index}>
-                            <BrandChip
-                              label={brand}
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
+                            <BrandChip label={brand} size="small" color="primary" variant="outlined" />
                           </Tooltip>
                         ))
                       ) : (
@@ -360,7 +344,7 @@ const paginatedStaff = filteredStaff.slice(
                         startIcon={<AssignmentIcon />}
                         onClick={() => handleAssignClick(staff)}
                         disabled={loading}
-                        sx={{ bgcolor: '#9929EA', '&:hover': { bgcolor: '#7e22ce' } }}
+                        sx={{ bgcolor: "#9929EA", "&:hover": { bgcolor: "#7e22ce" } }}
                       >
                         Manage
                       </Button>
@@ -372,79 +356,64 @@ const paginatedStaff = filteredStaff.slice(
           </TableBody>
         </Table>
       </TableContainer>
-<Box sx={{ p: 2 }}>
-  <div className="card-inner">
-    <div className="d-flex justify-content-center align-items-center">
-
-      {/* Previous */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage(currentPage - 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-left"></em>
-      </button>
-
-      {/* Page Numbers */}
-      {[...Array(totalPages)].map((_, index) => {
-        const pageNumber = index + 1;
-
-        if (
-          pageNumber === currentPage ||
-          pageNumber === currentPage - 1 ||
-          pageNumber === currentPage + 1
-        ) {
-          return (
+      <Box sx={{ p: 2 }}>
+        <div className="card-inner">
+          <div className="d-flex justify-content-center align-items-center">
+            {/* Previous */}
             <button
-              key={pageNumber}
-              onClick={() => setCurrentPage(pageNumber)}
-              className={`btn btn-sm mx-1 ${
-                currentPage === pageNumber
-                  ? "btn-primary"
-                  : "btn-outline-light"
-              }`}
-              style={{
-                minWidth: "36px",
-                borderRadius: "6px",
-                fontWeight: 500
-              }}
+              className="btn btn-icon btn-sm btn-outline-light mx-1"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+              style={{ borderRadius: "6px" }}
             >
-              {pageNumber}
+              <em className="icon ni ni-chevron-left"></em>
             </button>
-          );
-        }
-        return null;
-      })}
 
-      {/* Next */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === totalPages}
-        onClick={() => setCurrentPage(currentPage + 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-right"></em>
-      </button>
+            {/* Page Numbers */}
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNumber = index + 1;
 
-    </div>
-  </div>
-</Box>
+              if (pageNumber === currentPage || pageNumber === currentPage - 1 || pageNumber === currentPage + 1) {
+                return (
+                  <button
+                    key={pageNumber}
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`btn btn-sm mx-1 ${currentPage === pageNumber ? "btn-primary" : "btn-outline-light"}`}
+                    style={{
+                      minWidth: "36px",
+                      borderRadius: "6px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              }
+              return null;
+            })}
+
+            {/* Next */}
+            <button
+              className="btn btn-icon btn-sm btn-outline-light mx-1"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+              style={{ borderRadius: "6px" }}
+            >
+              <em className="icon ni ni-chevron-right"></em>
+            </button>
+          </div>
+        </div>
+      </Box>
       {/* Brand Assignment Dialog */}
-      <Dialog 
-        open={openAssignDialog} 
-        onClose={() => !saving && setOpenAssignDialog(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ borderBottom: '1px solid #e0e0e0', pb: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Dialog open={openAssignDialog} onClose={() => !saving && setOpenAssignDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ borderBottom: "1px solid #e0e0e0", pb: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Assign Brands to Staff
               </Typography>
               {selectedStaff && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
                   <Avatar src={selectedStaff.img} sx={{ width: 30, height: 30 }}>
                     <PersonIcon fontSize="small" />
                   </Avatar>
@@ -459,7 +428,7 @@ const paginatedStaff = filteredStaff.slice(
             </IconButton>
           </Box>
         </DialogTitle>
-        
+
         <DialogContent sx={{ pt: 3 }}>
           <Box sx={{ mb: 3 }}>
             <TextField
@@ -481,11 +450,11 @@ const paginatedStaff = filteredStaff.slice(
 
           {/* Selected Brands Preview */}
           {selectedBrands?.length > 0 && (
-            <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: '#f8f9fa' }}>
-              <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+            <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "#f8f9fa" }}>
+              <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
                 Currently Selected ({selectedBrands.length}):
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {selectedBrands.map((brand, index) => (
                   <Chip
                     key={index}
@@ -505,19 +474,16 @@ const paginatedStaff = filteredStaff.slice(
           <Typography variant="subtitle2" gutterBottom>
             Available Brands ({filteredBrands.length})
           </Typography>
-          
+
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress />
             </Box>
           ) : (
-            <List sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid #e0e0e0', borderRadius: 1 }}>
+            <List sx={{ maxHeight: 300, overflow: "auto", border: "1px solid #e0e0e0", borderRadius: 1 }}>
               {filteredBrands.length === 0 ? (
                 <ListItem>
-                  <ListItemText 
-                    primary="No brands found" 
-                    secondary="Try adjusting your search"
-                  />
+                  <ListItemText primary="No brands found" secondary="Try adjusting your search" />
                 </ListItem>
               ) : (
                 filteredBrands.map((brand, index) => (
@@ -528,9 +494,9 @@ const paginatedStaff = filteredStaff.slice(
                     onClick={() => !saving && handleBrandToggle(brand)}
                     disabled={saving}
                     sx={{
-                      '&:hover': { bgcolor: '#f5f5f5' },
-                      borderBottom: index < filteredBrands.length - 1 ? '1px solid #f0f0f0' : 'none',
-                      opacity: saving ? 0.7 : 1
+                      "&:hover": { bgcolor: "#f5f5f5" },
+                      borderBottom: index < filteredBrands.length - 1 ? "1px solid #f0f0f0" : "none",
+                      opacity: saving ? 0.7 : 1,
                     }}
                   >
                     <ListItemIcon>
@@ -542,22 +508,16 @@ const paginatedStaff = filteredStaff.slice(
                         disabled={saving}
                       />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary={brand}
-                    />
+                    <ListItemText primary={brand} />
                   </ListItem>
                 ))
               )}
             </List>
           )}
         </DialogContent>
-        
-        <DialogActions sx={{ borderTop: '1px solid #e0e0e0', p: 2 }}>
-          <Button 
-            onClick={() => setOpenAssignDialog(false)} 
-            variant="outlined"
-            disabled={saving}
-          >
+
+        <DialogActions sx={{ borderTop: "1px solid #e0e0e0", p: 2 }}>
+          <Button onClick={() => setOpenAssignDialog(false)} variant="outlined" disabled={saving}>
             Cancel
           </Button>
           <Button
@@ -565,9 +525,9 @@ const paginatedStaff = filteredStaff.slice(
             variant="contained"
             startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
             disabled={saving || !selectedStaff}
-            sx={{ bgcolor: '#9929EA', '&:hover': { bgcolor: '#7e22ce' } }}
+            sx={{ bgcolor: "#9929EA", "&:hover": { bgcolor: "#7e22ce" } }}
           >
-            {saving ? 'Saving...' : 'Save Assignments'}
+            {saving ? "Saving..." : "Save Assignments"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -577,13 +537,9 @@ const paginatedStaff = filteredStaff.slice(
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity}
-          variant="filled"
-        >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} variant="filled">
           {snackbar.message}
         </Alert>
       </Snackbar>

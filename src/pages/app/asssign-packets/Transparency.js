@@ -2,13 +2,23 @@ import React, { useEffect, useState } from "react";
 import Head from "../../../layout/head/Head";
 import TransparencyItem from "./TransparencyItem";
 import Simplebar from "simplebar-react";
-import { BlockBetween, BlockDes, BlockHead, BlockHeadContent, BlockTitle, Button, Icon, PaginationComponent, UserAvatar } from "../../../components/Component";
+import {
+  BlockBetween,
+  BlockDes,
+  BlockHead,
+  BlockHeadContent,
+  BlockTitle,
+  Button,
+  Icon,
+  PaginationComponent,
+  UserAvatar,
+} from "../../../components/Component";
 import { messageData } from "./MessageData";
 import PaginationNext from "../../../components/pagination/PaginationNext";
 import ContentCard from "../../../layout/content/ContentCard";
 import { Modal, ModalBody, UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
 import Dropzone from "react-dropzone";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 import { toast } from "react-toastify";
 import { useContext } from "react";
@@ -42,7 +52,7 @@ const Transparency = () => {
     }
   }, [staffData]);
 
-  console.log(staffData)
+  console.log(staffData);
 
   const fetchStaffData = async () => {
     try {
@@ -71,20 +81,16 @@ const Transparency = () => {
   const handleStaffSelection = (staff) => {
     if (staff === null) {
       setSelectedStaff("All");
-      setSelectedStaffId(null); 
+      setSelectedStaffId(null);
     } else {
       setSelectedStaff(staff.name);
       setSelectedStaffId(staff._id);
     }
-  
-  
-    const filteredByStaff = staff === null
-      ? customerData 
-      : customerData.filter((item) => item.staff === staff._id);
-  
-      setFilterCustomerType(filteredByStaff);
-    };
-  
+
+    const filteredByStaff = staff === null ? customerData : customerData.filter((item) => item.staff === staff._id);
+
+    setFilterCustomerType(filteredByStaff);
+  };
 
   const handleTypeSelection = (type) => {
     setSelectedType(type);
@@ -102,31 +108,28 @@ const Transparency = () => {
     setFilterCustomerType(filteredData);
   };
 
-
   const handlePaymentSelection = (payment) => {
-  setSelectedPayment(payment);
+    setSelectedPayment(payment);
 
-  let filteredData = customerData;
+    let filteredData = customerData;
 
-  // filter by staff if selected
-  if (selectedStaffId) {
-    filteredData = filteredData.filter((item) => item.staff === selectedStaffId);
-  }
+    // filter by staff if selected
+    if (selectedStaffId) {
+      filteredData = filteredData.filter((item) => item.staff === selectedStaffId);
+    }
 
-  if (payment === "Not Paid") {
-    filteredData = filteredData.filter((item) => item.paymentPending === true);
-  } else if (payment === "Paid") {
-    filteredData = filteredData.filter((item) => item.paymentPending !== true); // everything else is Paid
-  }
-  // if "All", no extra filtering
+    if (payment === "Not Paid") {
+      filteredData = filteredData.filter((item) => item.paymentPending === true);
+    } else if (payment === "Paid") {
+      filteredData = filteredData.filter((item) => item.paymentPending !== true); // everything else is Paid
+    }
+    // if "All", no extra filtering
 
-  setFilterCustomerType(filteredData);
-};
-
+    setFilterCustomerType(filteredData);
+  };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  
   return (
     <React.Fragment>
       <Head title="App Messages" />
@@ -138,46 +141,45 @@ const Transparency = () => {
           </BlockTitle>
 
           <div style={{ display: "flex", gap: "1rem" }}>
-          <UncontrolledDropdown>
-            <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
-              <Icon className="d-none d-sm-inline" name="user" />
-              <span>
-                <span className="d-none d-md-inline">{selectedStaff || "Select Staff"}</span>
-              </span>
-              <Icon className="dd-indc" name="chevron-right" />
-            </DropdownToggle>
-            <DropdownMenu>
-              <ul className="link-list-opt no-bdr">
-                <li>
-                  <DropdownItem
-                    tag="a"
-                    onClick={(ev) => {
-                      ev.preventDefault();
-                      handleStaffSelection(null); // For "All", pass null or a special value
-                    }}
-                    href="#dropdownitem"
-                  >
-                    <span>All</span>
-                  </DropdownItem>
-                </li>
-                {staffData.map((staff) => (
-                  <li key={staff._id}>
+            <UncontrolledDropdown>
+              <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
+                <Icon className="d-none d-sm-inline" name="user" />
+                <span>
+                  <span className="d-none d-md-inline">{selectedStaff || "Select Staff"}</span>
+                </span>
+                <Icon className="dd-indc" name="chevron-right" />
+              </DropdownToggle>
+              <DropdownMenu>
+                <ul className="link-list-opt no-bdr">
+                  <li>
                     <DropdownItem
                       tag="a"
                       onClick={(ev) => {
                         ev.preventDefault();
-                        handleStaffSelection(staff);
+                        handleStaffSelection(null); // For "All", pass null or a special value
                       }}
                       href="#dropdownitem"
                     >
-                      <span>{staff.name}</span>
+                      <span>All</span>
                     </DropdownItem>
                   </li>
-                ))}
-              </ul>
-            </DropdownMenu>
-          </UncontrolledDropdown>
-
+                  {staffData.map((staff) => (
+                    <li key={staff._id}>
+                      <DropdownItem
+                        tag="a"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          handleStaffSelection(staff);
+                        }}
+                        href="#dropdownitem"
+                      >
+                        <span>{staff.name}</span>
+                      </DropdownItem>
+                    </li>
+                  ))}
+                </ul>
+              </DropdownMenu>
+            </UncontrolledDropdown>
 
             <UncontrolledDropdown>
               <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
@@ -281,11 +283,7 @@ const Transparency = () => {
           </div>
         </div>
 
-        {auOverview ? (
-          <Grouping getTransparencyList={getTransparencyList} currentItems={filterCustomerType} />
-        ) : (
-          <></>
-        )}
+        {auOverview ? <Grouping getTransparencyList={getTransparencyList} currentItems={filterCustomerType} /> : <></>}
       </Content>
     </React.Fragment>
   );

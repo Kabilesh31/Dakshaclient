@@ -9,7 +9,7 @@ import Error404Classic from "./pages/error/404-classic";
 import Error404Modern from "./pages/error/404-modern";
 import Error504Modern from "./pages/error/504-modern";
 import Error504Classic from "./pages/error/504-classic";
-import DataContext, {DataProvider} from "./utils/DataContext"
+import DataContext, { DataProvider } from "./utils/DataContext";
 
 import Faq from "./pages/others/Faq";
 import Terms from "./pages/others/Terms";
@@ -47,11 +47,10 @@ const App = () => {
       <Route exact path={`${process.env.PUBLIC_URL}/errors/504-modern`} component={Error504Modern}></Route>
       <Route exact path={`${process.env.PUBLIC_URL}/errors/404-modern`} component={Error404Modern}></Route>
       <Route exact path={`${process.env.PUBLIC_URL}/errors/504-classic`} component={Error504Classic}></Route>
-      
 
       {/*Main Routes*/}
       <DataProvider>
-      <PrivateRoute exact path="" component={Layout}></PrivateRoute>
+        <PrivateRoute exact path="" component={Layout}></PrivateRoute>
       </DataProvider>
       <Route component={RedirectAs404}></Route>
     </Switch>

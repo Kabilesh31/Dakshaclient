@@ -69,58 +69,46 @@ const StaffListCompact = () => {
   });
 
   /* ================= FETCH ================= */
-const fetchStaff = async () => {
-  try {
+  const fetchStaff = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const res = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/staff`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (res.status === 200) {
+        setData(res.data);
       }
-    );
+    } catch (err) {
+      console.log("Fetch staff error:", err);
 
-    if (res.status === 200) {
-      setData(res.data);
-    }
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-  } catch (err) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-    console.log("Fetch staff error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          window.location.href = "/login";
+        } else {
+          errorToast(err.response.data?.message || "Failed to fetch staff");
+        }
       } else {
-        errorToast(err.response.data?.message || "Failed to fetch staff");
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
     }
-  }
-};
+  };
 
   useEffect(() => {
     fetchStaff();
@@ -174,92 +162,69 @@ const fetchStaff = async () => {
     setModalAdd(true);
   };
 
- const onAddSubmit = async (e) => {
-  e.preventDefault();
-  setAddLoading(true);
+  const onAddSubmit = async (e) => {
+    e.preventDefault();
+    setAddLoading(true);
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  Object.keys(formData).forEach((k) => {
-    if (k === "documents" && formData.documents.length > 0) {
-      formData.documents.forEach((file) => fd.append("documents", file));
-    } else if (
-      formData[k] !== undefined &&
-      formData[k] !== null &&
-      formData[k] !== ""
-    ) {
-      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
-    }
-  });
+    Object.keys(formData).forEach((k) => {
+      if (k === "documents" && formData.documents.length > 0) {
+        formData.documents.forEach((file) => fd.append("documents", file));
+      } else if (formData[k] !== undefined && formData[k] !== null && formData[k] !== "") {
+        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+      }
+    });
 
-  fd.append("createdBy", userData._id);
+    fd.append("createdBy", userData._id);
 
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff`,
-      fd,
-      {
+      const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/staff`, fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        successToast("Staff added successfully");
+
+        setModalAdd(false);
+        resetForm();
+        fetchStaff();
       }
-    );
+    } catch (err) {
+      console.log("Add staff error:", err);
 
-    if (response.status === 201 || response.status === 200) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-      successToast("Staff added successfully");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-      setModalAdd(false);
-      resetForm();
-      fetchStaff();
-    }
+          window.location.href = "/login";
+        } else {
+          const message = err.response?.data?.message || err.response?.data?.error || "Add staff failed";
 
-  } catch (err) {
-
-    console.log("Add staff error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          errorToast(message);
+        }
       } else {
-
-        const message =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Add staff failed";
-
-        errorToast(message);
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
+    } finally {
+      setAddLoading(false);
     }
-
-  } finally {
-    setAddLoading(false);
-  }
-};
+  };
 
   // ================= EDIT STAFF =================
   const onEditClick = (item) => {
@@ -279,177 +244,145 @@ const fetchStaff = async () => {
     setModalEdit(true);
   };
 
- const onEditSubmit = async (e) => {
-  e.preventDefault();
-  setEditLoading(true);
+  const onEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
 
-  const fd = new FormData();
+    const fd = new FormData();
 
-  Object.keys(formData).forEach((k) => {
-    if (k === "documents" && formData.documents.length > 0) {
-      formData.documents.forEach((file) => fd.append("documents", file));
-    } else if (formData[k]) {
-      fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
-    }
-  });
+    Object.keys(formData).forEach((k) => {
+      if (k === "documents" && formData.documents.length > 0) {
+        formData.documents.forEach((file) => fd.append("documents", file));
+      } else if (formData[k]) {
+        fd.append(k, formData[k] instanceof File ? formData[k] : formData[k]);
+      }
+    });
 
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.put(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
-      fd,
-      {
+      const response = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`, fd, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 200) {
+        successToast("Staff updated successfully");
+
+        setModalEdit(false);
+        resetForm();
+        fetchStaff();
       }
-    );
+    } catch (err) {
+      console.log("Update staff error:", err);
 
-    if (response.status === 200) {
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-      successToast("Staff updated successfully");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-      setModalEdit(false);
-      resetForm();
-      fetchStaff();
-    }
+          window.location.href = "/login";
+        } else {
+          const message = err.response?.data?.message || err.response?.data?.error || "Update failed";
 
-  } catch (err) {
-
-    console.log("Update staff error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          errorToast(message);
+        }
       } else {
-
-        const message =
-          err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Update failed";
-
-        errorToast(message);
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
+    } finally {
+      setEditLoading(false);
     }
-
-  } finally {
-    setEditLoading(false);
-  }
-};
+  };
   // ================= DELETE STAFF =================
   const onDeleteConfirm = async () => {
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.delete(
-      `${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`,
-      {
+      const response = await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/staff/${selectedId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
+      });
+
+      if (response.status === 200) {
+        successToast("Staff deleted successfully");
+        setModalDelete(false);
+        fetchStaff();
       }
-    );
+    } catch (err) {
+      console.log("Delete staff error:", err);
 
-    if (response.status === 200) {
-      successToast("Staff deleted successfully");
-      setModalDelete(false);
-      fetchStaff();
-    }
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
-  } catch (err) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
 
-    console.log("Delete staff error:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+          window.location.href = "/login";
+        } else {
+          errorToast(err.response.data?.message || "Delete failed");
+        }
       } else {
-        errorToast(err.response.data?.message || "Delete failed");
+        console.log("Network error");
+        errorToast("Network error. Please check your connection");
       }
-
-    } else {
-      console.log("Network error");
-      errorToast("Network error. Please check your connection");
     }
-  }
-};
-const exportToExcel = () => {
-  if (!data || data.length === 0) {
-    errorToast("No data to export");
-    return;
-  }
+  };
+  const exportToExcel = () => {
+    if (!data || data.length === 0) {
+      errorToast("No data to export");
+      return;
+    }
 
-  // Format data for Excel
-  const exportData = data.map((item, index) => ({
-    SNo: index + 1,
-    Name: item.name,
-    Email: item.email,
-    Mobile: item.mobile,
-    Type: item.type,
-    StaffCode: item.staffCode || "--",
-    BloodGroup: item.bloodGroup || "--",
-    DutyStatus: item.dutyStatus,
-    StaffStatus: item.staffStatus,
-  }));
+    // Format data for Excel
+    const exportData = data.map((item, index) => ({
+      SNo: index + 1,
+      Name: item.name,
+      Email: item.email,
+      Mobile: item.mobile,
+      Type: item.type,
+      StaffCode: item.staffCode || "--",
+      BloodGroup: item.bloodGroup || "--",
+      DutyStatus: item.dutyStatus,
+      StaffStatus: item.staffStatus,
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(exportData);
-  const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Staff List");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Staff List");
 
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
-  });
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
 
-  const blob = new Blob([excelBuffer], {
-    type:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-  });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
 
-  saveAs(blob, "Staff_List.xlsx");
-};
+    saveAs(blob, "Staff_List.xlsx");
+  };
 
   /* ================= UI ================= */
   return (
@@ -478,11 +411,7 @@ const exportToExcel = () => {
                 <div className="toggle-expand-content" style={{ display: sm ? "block" : "none" }}>
                   <ul className="nk-block-tools g-3">
                     <li>
-                      <a
-                        href="#export"
-                        onClick={exportToExcel}
-                        className="btn btn-white btn-outline-light"
-                      >
+                      <a href="#export" onClick={exportToExcel} className="btn btn-white btn-outline-light">
                         <Icon name="download-cloud"></Icon>
                         <span>Export</span>
                       </a>
@@ -631,7 +560,7 @@ const exportToExcel = () => {
                     Email
                   </span>
                 </DataTableRow>
-                 <DataTableRow>
+                <DataTableRow>
                   <span style={{ fontWeight: "bold" }} className="sub-text">
                     Mobile
                   </span>
@@ -660,37 +589,32 @@ const exportToExcel = () => {
                 <DataTableRow className="nk-tb-col-tools">
                   <span style={{ fontWeight: "bold" }} className="sub-text">
                     Actions
-                  </span> </DataTableRow>
+                  </span>{" "}
+                </DataTableRow>
               </DataTableHead>
 
               {currentItems.map((item) => (
                 <DataTableItem key={item._id}>
                   <DataTableRow>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-  <img
-    src={item.img ? item.img : "/default-avatar.png"}
-    alt="profile"
-    style={{
-      width: "30px",
-      height: "30px",
-      borderRadius: "50%",
-      objectFit: "cover",
-    }}
-  />
-</div>
-
+                      <img
+                        src={item.img ? item.img : "/default-avatar.png"}
+                        alt="profile"
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
                   </DataTableRow>
 
-                 <DataTableRow>
-  <Link
-    className="tb-lead"
-    to={`${process.env.PUBLIC_URL}/staff/${item._id}`}
-  >
-    {item.name && item.name.length > 20
-      ? item.name.slice(0, 20) + "..."
-      : item.name}
-  </Link>
-</DataTableRow>
+                  <DataTableRow>
+                    <Link className="tb-lead" to={`${process.env.PUBLIC_URL}/staff/${item._id}`}>
+                      {item.name && item.name.length > 20 ? item.name.slice(0, 20) + "..." : item.name}
+                    </Link>
+                  </DataTableRow>
 
                   <DataTableRow>{item.email}</DataTableRow>
                   <DataTableRow>{item.mobile}</DataTableRow>
@@ -700,9 +624,7 @@ const exportToExcel = () => {
                     </span>
                   </DataTableRow>
 
-                  <DataTableRow>
-  {item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}
-</DataTableRow>
+                  <DataTableRow>{item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}</DataTableRow>
                   <DataTableRow>{item.staffCode || "--"}</DataTableRow>
                   <DataTableRow>
                     <span className={`tb-status text-${item.staffStatus === "active" ? "success" : "danger"}`}>
@@ -750,68 +672,62 @@ const exportToExcel = () => {
             </DataTableBody>
 
             {/* PAGINATION */}
-         <div className="card-inner">
-  {currentItems.length > 0 ? (
-    <div className="d-flex justify-content-center align-items-center">
+            <div className="card-inner">
+              {currentItems.length > 0 ? (
+                <div className="d-flex justify-content-center align-items-center">
+                  {/* Previous Button */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-left"></em>
+                  </button>
 
-      {/* Previous Button */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage(currentPage - 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-left"></em>
-      </button>
+                  {/* Page Numbers (Only show current-1, current, current+1) */}
+                  {[...Array(Math.ceil(data.length / itemPerPage))].map((_, index) => {
+                    const pageNumber = index + 1;
 
-      {/* Page Numbers (Only show current-1, current, current+1) */}
-      {[...Array(Math.ceil(data.length / itemPerPage))].map((_, index) => {
-        const pageNumber = index + 1;
+                    if (
+                      pageNumber === currentPage ||
+                      pageNumber === currentPage - 1 ||
+                      pageNumber === currentPage + 1
+                    ) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`btn btn-sm mx-1 ${
+                            currentPage === pageNumber ? "btn-primary" : "btn-outline-light"
+                          }`}
+                          style={{
+                            minWidth: "36px",
+                            borderRadius: "6px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {pageNumber}
+                        </button>
+                      );
+                    }
+                    return null;
+                  })}
 
-        if (
-          pageNumber === currentPage ||
-          pageNumber === currentPage - 1 ||
-          pageNumber === currentPage + 1
-        ) {
-          return (
-            <button
-              key={pageNumber}
-              onClick={() => setCurrentPage(pageNumber)}
-              className={`btn btn-sm mx-1 ${
-                currentPage === pageNumber
-                  ? "btn-primary"
-                  : "btn-outline-light"
-              }`}
-              style={{
-                minWidth: "36px",
-                borderRadius: "6px",
-                fontWeight: 500
-              }}
-            >
-              {pageNumber}
-            </button>
-          );
-        }
-        return null;
-      })}
-
-      {/* Next Button */}
-      <button
-        className="btn btn-icon btn-sm btn-outline-light mx-1"
-        disabled={
-          currentPage === Math.ceil(data.length / itemPerPage)
-        }
-        onClick={() => setCurrentPage(currentPage + 1)}
-        style={{ borderRadius: "6px" }}
-      >
-        <em className="icon ni ni-chevron-right"></em>
-      </button>
-
-    </div>
-  ) : (
-    <div className="text-center text-silent">No data found</div>
-  )}
-</div>
+                  {/* Next Button */}
+                  <button
+                    className="btn btn-icon btn-sm btn-outline-light mx-1"
+                    disabled={currentPage === Math.ceil(data.length / itemPerPage)}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    style={{ borderRadius: "6px" }}
+                  >
+                    <em className="icon ni ni-chevron-right"></em>
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center text-silent">No data found</div>
+              )}
+            </div>
           </DataTable>
         </Block>
       </Content>
@@ -831,38 +747,38 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Add Staff</h5>
             <Form className="row gy-4" onSubmit={onAddSubmit}>
-             <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Name</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Name"
-      value={formData.name}
-      onChange={(e) => {
-        let value = e.target.value;
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      let value = e.target.value;
 
-        // Allow only letters, dot and space
-        value = value.replace(/[^a-zA-Z.\s]/g, "");
+                      // Allow only letters, dot and space
+                      value = value.replace(/[^a-zA-Z.\s]/g, "");
 
-        // Allow only one space total
-        const spaceCount = (value.match(/\s/g) || []).length;
-        if (spaceCount > 1) return;
+                      // Allow only one space total
+                      const spaceCount = (value.match(/\s/g) || []).length;
+                      if (spaceCount > 1) return;
 
-        // Prevent space at beginning
-        if (value.startsWith(" ")) return;
+                      // Prevent space at beginning
+                      if (value.startsWith(" ")) return;
 
-        // Capitalize first letter
-        if (value.length > 0) {
-          value = value.charAt(0).toUpperCase() + value.slice(1);
-        }
+                      // Capitalize first letter
+                      if (value.length > 0) {
+                        value = value.charAt(0).toUpperCase() + value.slice(1);
+                      }
 
-        setFormData({ ...formData, name: value });
-      }}
-      required
-    />
-  </FormGroup>
-</Col>
+                      setFormData({ ...formData, name: value });
+                    }}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -886,11 +802,11 @@ const exportToExcel = () => {
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
                     onChange={(e) => {
-  const value = e.target.value.replace(/\D/g, ""); // only numbers
-  if (value.length <= 10) {
-    setFormData({ ...formData, mobile: value });
-  }
-}}
+                      const value = e.target.value.replace(/\D/g, ""); // only numbers
+                      if (value.length <= 10) {
+                        setFormData({ ...formData, mobile: value });
+                      }
+                    }}
                     required
                   />
                 </FormGroup>
@@ -900,19 +816,16 @@ const exportToExcel = () => {
                 <FormGroup>
                   <label className="form-label">* Type</label>
                   <select
-  className="form-control"
-  value={formData.type}
-  onChange={(e) =>
-    setFormData({ ...formData, type: e.target.value })
-  }
-  required
->
-  <option value="">Select Type</option>
-  <option value="sales">Sales</option>
-  <option value="delivery">Delivery</option>
-  <option value="manager">Manager</option>
-</select>
-
+                    className="form-control"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Type</option>
+                    <option value="sales">Sales</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="manager">Manager</option>
+                  </select>
                 </FormGroup>
               </Col>
 
@@ -945,22 +858,19 @@ const exportToExcel = () => {
                 </FormGroup>
               </Col>
               <Col md="6">
-  <FormGroup>
-    <label className="form-label">Duty Status</label>
-    <select
-      className="form-control"
-      value={formData.dutyStatus}
-      onChange={(e) =>
-        setFormData({ ...formData, dutyStatus: e.target.value })
-      }
-      disabled   // 👈 This makes it disabled
-    >
-      <option value="active">active</option>
-      <option value="inactive">inactive</option>
-    </select>
-  </FormGroup>
-</Col>
-
+                <FormGroup>
+                  <label className="form-label">Duty Status</label>
+                  <select
+                    className="form-control"
+                    value={formData.dutyStatus}
+                    onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
+                    disabled // 👈 This makes it disabled
+                  >
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                  </select>
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -1021,16 +931,15 @@ const exportToExcel = () => {
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
-  {addLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Saving...
-    </>
-  ) : (
-    "Save"
-  )}
-</Button>
-
+                  {addLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
               </Col>
             </Form>
           </div>
@@ -1053,38 +962,38 @@ const exportToExcel = () => {
           <div className="p-2">
             <h5 className="title">Edit Staff</h5>
             <Form className="row gy-4" onSubmit={onEditSubmit}>
-             <Col md="6">
-  <FormGroup>
-    <label className="form-label">* Name</label>
-    <input
-      type="text"
-      className="form-control"
-      placeholder="Enter Name"
-      value={formData.name}
-      onChange={(e) => {
-        let value = e.target.value;
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">* Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      let value = e.target.value;
 
-        // Allow only letters, dot and space
-        value = value.replace(/[^a-zA-Z.\s]/g, "");
+                      // Allow only letters, dot and space
+                      value = value.replace(/[^a-zA-Z.\s]/g, "");
 
-        // Prevent space at beginning
-        if (value.startsWith(" ")) return;
+                      // Prevent space at beginning
+                      if (value.startsWith(" ")) return;
 
-        // Allow only one space total
-        const spaces = (value.match(/\s/g) || []).length;
-        if (spaces > 1) return;
+                      // Allow only one space total
+                      const spaces = (value.match(/\s/g) || []).length;
+                      if (spaces > 1) return;
 
-        // Capitalize first letter
-        if (value.length > 0) {
-          value = value.charAt(0).toUpperCase() + value.slice(1);
-        }
+                      // Capitalize first letter
+                      if (value.length > 0) {
+                        value = value.charAt(0).toUpperCase() + value.slice(1);
+                      }
 
-        setFormData({ ...formData, name: value });
-      }}
-      required
-    />
-  </FormGroup>
-</Col>
+                      setFormData({ ...formData, name: value });
+                    }}
+                    required
+                  />
+                </FormGroup>
+              </Col>
 
               <Col md="6">
                 <FormGroup>
@@ -1107,12 +1016,12 @@ const exportToExcel = () => {
                     className="form-control"
                     placeholder="Enter Mobile Number"
                     value={formData.mobile}
-                   onChange={(e) => {
-  const value = e.target.value.replace(/\D/g, ""); // only numbers
-  if (value.length <= 10) {
-    setFormData({ ...formData, mobile: value });
-  }
-}}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ""); // only numbers
+                      if (value.length <= 10) {
+                        setFormData({ ...formData, mobile: value });
+                      }
+                    }}
                     required
                   />
                 </FormGroup>
@@ -1122,26 +1031,20 @@ const exportToExcel = () => {
                 <FormGroup>
                   <label className="form-label">* Type</label>
                   <select
-  className="form-control"
-  value={formData.type}
-  onChange={(e) =>
-    setFormData({ ...formData, type: e.target.value })
-  }
-  disabled={formData.dutyStatus === "active"}  // 🔥 Important line
-  required
->
-
-  <option value="">Select Type</option>
-  <option value="sales">Sales</option>
-  <option value="delivery">Delivery</option>
-  <option value="manager">Manager</option>
-</select>
-{formData.dutyStatus === "active" && (
-  <small className="text-danger">
-    Cannot change type while staff is On Duty
-  </small>
-)}
-
+                    className="form-control"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    disabled={formData.dutyStatus === "active"} // 🔥 Important line
+                    required
+                  >
+                    <option value="">Select Type</option>
+                    <option value="sales">Sales</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                  {formData.dutyStatus === "active" && (
+                    <small className="text-danger">Cannot change type while staff is On Duty</small>
+                  )}
                 </FormGroup>
               </Col>
 
@@ -1258,16 +1161,15 @@ const exportToExcel = () => {
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={editLoading}>
-  {editLoading ? (
-    <>
-      <span className="spinner-border spinner-border-sm me-2"></span>
-      Updating...
-    </>
-  ) : (
-    "Update"
-  )}
-</Button>
-
+                  {editLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Updating...
+                    </>
+                  ) : (
+                    "Update"
+                  )}
+                </Button>
               </Col>
             </Form>
           </div>

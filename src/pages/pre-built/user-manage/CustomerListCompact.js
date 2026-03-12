@@ -43,7 +43,7 @@ const CustomerListCompact = () => {
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [sort, setSort] = useState("dsc");
-  
+
   const [routes, setRoutes] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
@@ -83,29 +83,23 @@ const CustomerListCompact = () => {
 
   const fetchCustomers = async () => {
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_BACKENDURL}/api/customer`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-            "session-token": localStorage.getItem("sessionToken"),
-          },
-        }
-      );
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
 
       const filtered = res.data.filter((c) => !c.isDeleted);
-      const sorted = filtered.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
+      const sorted = filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       setData(sorted);
-      
+
       // Extract unique routes and categories for filters
-      const routes = [...new Set(sorted.map(c => c.routeName).filter(Boolean))];
-      const categories = [...new Set(sorted.map(c => c.category).filter(Boolean))];
-      
+      const routes = [...new Set(sorted.map((c) => c.routeName).filter(Boolean))];
+      const categories = [...new Set(sorted.map((c) => c.category).filter(Boolean))];
+
       setUniqueRoutes(routes);
-  
     } catch (err) {
       if (err.response?.status === 401) {
         localStorage.removeItem("accessToken");
@@ -122,24 +116,22 @@ const CustomerListCompact = () => {
   // Apply filters whenever data, routeFilter, or categoryFilter changes
   useEffect(() => {
     let filtered = [...data];
-    
+
     // Apply route filter
     if (routeFilter !== "All") {
-      filtered = filtered.filter(c => c.routeName === routeFilter);
+      filtered = filtered.filter((c) => c.routeName === routeFilter);
     }
-    
+
     // Apply category filter
     if (categoryFilter !== "All") {
-      filtered = filtered.filter(c => c.category === categoryFilter);
+      filtered = filtered.filter((c) => c.category === categoryFilter);
     }
-    
+
     // Apply search filter if search text exists
     if (searchText) {
-      filtered = filtered.filter(c => 
-        c.name.toLowerCase().includes(searchText.toLowerCase())
-      );
+      filtered = filtered.filter((c) => c.name.toLowerCase().includes(searchText.toLowerCase()));
     }
-    
+
     setFilteredData(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }, [data, routeFilter, categoryFilter, searchText]);
@@ -157,14 +149,12 @@ const CustomerListCompact = () => {
   const fetchRoutes = async () => {
     try {
       setLoadingRoutes(true);
-      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, 
-         {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/route`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
-      }
-      );
+      });
       const options = res.data.data.map((r) => ({
         value: r._id,
         label: r.routeName,
@@ -183,13 +173,15 @@ const CustomerListCompact = () => {
 
   const createRoute = async (routeName) => {
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/route`, { routeName },
-         {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          "session-token": localStorage.getItem("sessionToken"),
+      const res = await axios.post(
+        `${process.env.REACT_APP_BACKENDURL}/api/route`,
+        { routeName },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "session-token": localStorage.getItem("sessionToken"),
+          },
         },
-      }
       );
       const newRoute = {
         value: res.data.data._id,
@@ -206,7 +198,6 @@ const CustomerListCompact = () => {
       errorToast("Route creation failed");
     }
   };
-
 
   useEffect(() => {
     const indexOfLast = currentPage * itemPerPage;
@@ -249,7 +240,7 @@ const CustomerListCompact = () => {
   const handleFileSelect = (files) => {
     const file = files[0];
     setUploadedFile(file);
-    
+
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
@@ -288,8 +279,7 @@ const CustomerListCompact = () => {
     fd.append("createdBy", userData._id);
 
     try {
-      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/customer`, fd, 
-       {
+      await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/customer`, fd, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
@@ -334,7 +324,7 @@ const CustomerListCompact = () => {
     } else {
       setImagePreview(null);
     }
-    
+
     setUploadedFile(null);
     setModalEdit(true);
   };
@@ -357,8 +347,7 @@ const CustomerListCompact = () => {
     if (uploadedFile) fd.append("img", uploadedFile);
 
     try {
-      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`, fd,
-       {
+      await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`, fd, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
@@ -377,8 +366,7 @@ const CustomerListCompact = () => {
 
   const onDeleteConfirm = async () => {
     try {
-      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`,
-       {
+      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/customer/${selectedId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
@@ -403,7 +391,7 @@ const CustomerListCompact = () => {
     setFormData({
       ...formData,
       category: category,
-      creditDays: creditDays
+      creditDays: creditDays,
     });
   };
   return (
@@ -416,15 +404,10 @@ const CustomerListCompact = () => {
               <BlockTitle tag="h3">Customer List</BlockTitle>
               <div className="mt-1">
                 <span className="text-soft">
-                  You Have Total {" "} 
-                  <span className="fw-bold mr-1">
-                    {filteredData.length}
-                  </span>
+                  You Have Total <span className="fw-bold mr-1">{filteredData.length}</span>
                   Customers
                   {(routeFilter !== "All" || categoryFilter !== "All" || searchText) && (
-                    <span className="text-primary ms-2">
-                      (Filtered)
-                    </span>
+                    <span className="text-primary ms-2">(Filtered)</span>
                   )}
                 </span>
               </div>
@@ -437,9 +420,7 @@ const CustomerListCompact = () => {
                 <DropdownToggle tag="a" className="dropdown-toggle btn btn-white btn-dim btn-outline-light">
                   <Icon name="map" className="d-none d-sm-inline" />
                   <span>
-                    <span className="d-none d-md-inline">
-                      {routeFilter === "All" ? "All Routes" : routeFilter}
-                    </span>
+                    <span className="d-none d-md-inline">{routeFilter === "All" ? "All Routes" : routeFilter}</span>
                   </span>
                   <Icon className="dd-indc" name="chevron-right" />
                 </DropdownToggle>
@@ -519,7 +500,9 @@ const CustomerListCompact = () => {
               </UncontrolledDropdown>
 
               {/* Add Customer Button */}
-              <Button color="primary" className="btn-icon"
+              <Button
+                color="primary"
+                className="btn-icon"
                 onClick={() => {
                   resetForm();
                   setModalAdd(true);
@@ -585,20 +568,12 @@ const CustomerListCompact = () => {
                               <span>Order</span>
                             </li>
                             <li className={sort === "dsc" ? "active" : ""}>
-                              <DropdownItem
-                                tag="a"
-                                href="#"
-                                onClick={() => setSort("dsc")}
-                              >
+                              <DropdownItem tag="a" href="#" onClick={() => setSort("dsc")}>
                                 DESC
                               </DropdownItem>
                             </li>
                             <li className={sort === "asc" ? "active" : ""}>
-                              <DropdownItem
-                                tag="a"
-                                href="#"
-                                onClick={() => setSort("asc")}
-                              >
+                              <DropdownItem tag="a" href="#" onClick={() => setSort("asc")}>
                                 ASC
                               </DropdownItem>
                             </li>
@@ -699,9 +674,7 @@ const CustomerListCompact = () => {
                             objectFit: "cover",
                           }}
                         />
-                        <span className="tb-lead">
-                          {item.name?.charAt(0).toUpperCase() + item.name?.slice(1)}
-                        </span>
+                        <span className="tb-lead">{item.name?.charAt(0).toUpperCase() + item.name?.slice(1)}</span>
                       </div>
                     </DataTableRow>
                     <DataTableRow>{item.phone}</DataTableRow>
@@ -750,15 +723,18 @@ const CustomerListCompact = () => {
                   </DataTableItem>
                 ))
               ) : (
-               <tr>
-    <td colSpan="9" style={{ 
-      textAlign: 'center', 
-      padding: '20px',
-      backgroundColor: '#fff'
-    }}>
-      No customers found
-    </td>
-  </tr>
+                <tr>
+                  <td
+                    colSpan="9"
+                    style={{
+                      textAlign: "center",
+                      padding: "20px",
+                      backgroundColor: "#fff",
+                    }}
+                  >
+                    No customers found
+                  </td>
+                </tr>
               )}
             </DataTableBody>
 
@@ -789,14 +765,12 @@ const CustomerListCompact = () => {
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
                           className={`btn btn-sm mx-1 ${
-                            currentPage === pageNumber
-                              ? "btn-primary"
-                              : "btn-outline-light"
+                            currentPage === pageNumber ? "btn-primary" : "btn-outline-light"
                           }`}
                           style={{
                             minWidth: "36px",
                             borderRadius: "6px",
-                            fontWeight: 500
+                            fontWeight: 500,
                           }}
                         >
                           {pageNumber}
@@ -809,9 +783,7 @@ const CustomerListCompact = () => {
                   {/* Next */}
                   <button
                     className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={
-                      currentPage === Math.ceil(filteredData.length / itemPerPage)
-                    }
+                    disabled={currentPage === Math.ceil(filteredData.length / itemPerPage)}
                     onClick={() => setCurrentPage(currentPage + 1)}
                     style={{ borderRadius: "6px" }}
                   >
@@ -949,15 +921,10 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-           <Col md="4">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Category *</label>
-                <select
-                  className="form-control"
-                  value={formData.category}
-                  required
-                  onChange={handleCategoryChange}
-                >
+                <select className="form-control" value={formData.category} required onChange={handleCategoryChange}>
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
@@ -966,16 +933,10 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-             <Col md="4">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Credit Days</label>
-                <input
-                  className="form-control"
-                  value={formData.creditDays}
-                  disabled
-                >
-
-                </input>
+                <input className="form-control" value={formData.creditDays} disabled></input>
               </FormGroup>
             </Col>
 
@@ -1026,7 +987,7 @@ const CustomerListCompact = () => {
             <Col md="12">
               <FormGroup>
                 <label className="form-label">Customer Image</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <Dropzone multiple={false} onDrop={handleFileSelect}>
                     {({ getRootProps, getInputProps }) => (
                       <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
@@ -1034,27 +995,27 @@ const CustomerListCompact = () => {
                         {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
                         <div className="text-soft medium mt-1">PNG or JPG only (max 5MB)</div>
                       </div>
-                      
-                      
                     )}
                   </Dropzone>
-                  
+
                   {imagePreview && (
-                    <div style={{ 
-                      width: '60px', 
-                      height: '60px', 
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: '2px solid #e5e9f2',
-                      flexShrink: 0
-                    }}>
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'cover' 
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "2px solid #e5e9f2",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
                         }}
                       />
                     </div>
@@ -1178,16 +1139,10 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-        
-
-           <Col md="4">
+            <Col md="4">
               <FormGroup>
                 <label className="form-label">Category *</label>
-                <select
-                  className="form-control"
-                  value={formData.category}
-                  onChange={handleCategoryChange}
-                >
+                <select className="form-control" value={formData.category} onChange={handleCategoryChange}>
                   <option value="">Select Category</option>
                   <option value="Electrical">Electrical</option>
                   <option value="FMCG">FMCG</option>
@@ -1198,12 +1153,7 @@ const CustomerListCompact = () => {
             <Col md="4">
               <FormGroup>
                 <label className="form-label">Credit Days *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formData.creditDays}
-                  disabled
-                />
+                <input type="text" className="form-control" value={formData.creditDays} disabled />
               </FormGroup>
             </Col>
 
@@ -1237,7 +1187,6 @@ const CustomerListCompact = () => {
               </FormGroup>
             </Col>
 
-            
             <Col md="4">
               <FormGroup>
                 <label className="form-label">Pincode *</label>
@@ -1253,33 +1202,35 @@ const CustomerListCompact = () => {
             <Col md="12">
               <FormGroup>
                 <label className="form-label">Customer Image</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <Dropzone multiple={false} onDrop={handleFileSelect}>
                     {({ getRootProps, getInputProps }) => (
                       <div {...getRootProps()} className="dropzone upload-zone small bg-lighter" style={{ flex: 1 }}>
                         <input {...getInputProps()} />
                         {uploadedFile ? uploadedFile.name : "Upload Customer Image"}
-                         <div className="text-soft medium mt-1">PNG or JPG only (max 5MB)</div>
+                        <div className="text-soft medium mt-1">PNG or JPG only (max 5MB)</div>
                       </div>
                     )}
                   </Dropzone>
-                  
+
                   {imagePreview && (
-                    <div style={{ 
-                      width: '60px', 
-                      height: '60px', 
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: '2px solid #e5e9f2',
-                      flexShrink: 0
-                    }}>
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'cover' 
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "2px solid #e5e9f2",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
                         }}
                       />
                     </div>

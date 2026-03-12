@@ -112,7 +112,7 @@ import StockList from "../pages/pre-built/user-manage/StockList";
 import CustomerListCompact from "../pages/pre-built/user-manage/CustomerListCompact";
 import ItemsList from "../pages/pre-built/user-manage/ItemsList";
 import CustomerDetails from "../pages/pre-built/user-manage/CustomerDetails";
-import ReportsList from "../pages/pre-built/user-manage/ReportsList"
+import ReportsList from "../pages/pre-built/user-manage/ReportsList";
 import StaffListCompact from "../pages/pre-built/user-manage/StaffListCompact";
 import Transparency from "../pages/app/asssign-packets/Transparency";
 import StaffDetails from "../pages/pre-built/user-manage/StaffDetails";
@@ -122,8 +122,6 @@ import VehicleDetails from "../pages/pre-built/user-manage/VehicleDetails";
 import Delivery from "../pages/pre-built/user-manage/Delivery";
 import Sales from "../pages/pre-built/user-manage/Sales";
 import StaffReport from "../pages/others/StaffReport";
-
-
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -160,7 +158,7 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
-        <Route 
+        <Route
           exact
           path={`${process.env.PUBLIC_URL}/Orders`}
           render={() => (
@@ -169,23 +167,22 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
-         <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/products`}
           render={() => (
             <UserContextProvider>
-              <ProductsListCompact/>
+              <ProductsListCompact />
             </UserContextProvider>
           )}
         ></Route>
 
-          <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/items`}
           render={() => (
             <UserContextProvider>
-              <ItemsList/>
-              
+              <ItemsList />
             </UserContextProvider>
           )}
         ></Route>
@@ -194,42 +191,41 @@ const Pages = () => {
           path={`${process.env.PUBLIC_URL}/customers`}
           render={() => (
             <UserContextProvider>
-            <CustomerListCompact/>
+              <CustomerListCompact />
             </UserContextProvider>
           )}
         ></Route>
 
-         <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/delivery`}
           render={() => (
             <UserContextProvider>
-              <Delivery/>
+              <Delivery />
             </UserContextProvider>
           )}
         ></Route>
-
 
         <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff`}
           render={() => (
             <UserContextProvider>
-            <StaffListCompact/>
+              <StaffListCompact />
             </UserContextProvider>
           )}
         ></Route>
-         <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/vehicle`}
           render={() => (
             <UserContextProvider>
-            <VehicleListCompact/>
+              <VehicleListCompact />
             </UserContextProvider>
           )}
         ></Route>
 
-          <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff-details/:id`}
           render={(props) => (
@@ -244,28 +240,26 @@ const Pages = () => {
           path={`${process.env.PUBLIC_URL}/blank`}
           render={(props) => (
             <UserContextProvider>
-              <StaffAttendance {...props}/>
+              <StaffAttendance {...props} />
             </UserContextProvider>
           )}
         ></Route>
-       
 
-
-         <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/reports`}
           render={() => (
             <UserContextProvider>
-            <BlankPage/>
+              <BlankPage />
             </UserContextProvider>
           )}
         ></Route>
-         <Route //Context Api added
+        <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff-report`}
           render={() => (
             <UserContextProvider>
-         <StaffReport/>
+              <StaffReport />
             </UserContextProvider>
           )}
         ></Route>
@@ -278,7 +272,7 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
-        
+
         <Route exact path={`${process.env.PUBLIC_URL}/user-profile-regular/`} component={UserProfileLayout}></Route>
         <Route
           exact
@@ -298,8 +292,8 @@ const Pages = () => {
         ></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-list-regular`} component={KycListRegular}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/kyc-details-regular/:id`} component={KycDetailsRegular}></Route>
-   
-         <Route exact path={`${process.env.PUBLIC_URL}/sales`} component={Sales}></Route>
+
+        <Route exact path={`${process.env.PUBLIC_URL}/sales`} component={Sales}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/transaction-crypto`} component={TransListCrypto}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/product-list`} component={ProductList}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
@@ -429,7 +423,11 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/components/form-elements`} component={FormElements}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/components/form-layouts`} component={FormLayouts}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/components/checkbox-radio`} component={CheckboxRadio}></Route>
-        <Route exact path={`${process.env.PUBLIC_URL}/components/advanced-control`} component={AdvancedControls}></Route>
+        <Route
+          exact
+          path={`${process.env.PUBLIC_URL}/components/advanced-control`}
+          component={AdvancedControls}
+        ></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/components/input-group`} component={InputGroup}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/components/form-upload`} component={FormUpload}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/components/number-spinner`} component={NumberSpinner}></Route>

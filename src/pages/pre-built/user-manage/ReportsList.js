@@ -75,57 +75,44 @@ const ReportsList = () => {
   }, [data]);
 
   // fetch users list
-const fetchUserData = async () => {
-  try {
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        setData([]);
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      setData([]);
-      return;
-    }
-
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKENDURL}/api/customer`,
-      {
+      const response = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/customer`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "session-token": sessionToken
+          "session-token": sessionToken,
+        },
+      });
+
+      if (response.status === 200) {
+        setData(response.data?.data || []);
+      }
+    } catch (err) {
+      console.log("CUSTOMER FETCH ERROR:", err);
+
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
         }
       }
-    );
 
-    if (response.status === 200) {
-      setData(response.data?.data || []);
+      setData([]);
     }
-
-  } catch (err) {
-
-    console.log("CUSTOMER FETCH ERROR:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message || "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
-      }
-
-    }
-
-    setData([]);
-
-  }
-};
+  };
   // Sorting data
   const sortFunc = (params) => {
     let defaultData = data;
@@ -158,7 +145,6 @@ const fetchUserData = async () => {
     setSearchText(e.target.value);
   };
 
-
   // function to reset the form
   const resetForm = () => {
     setFormData({
@@ -177,77 +163,63 @@ const fetchUserData = async () => {
   };
 
   // submit function to add a new item
- const onFormSubmit = async (submitData) => {
-  const { name, email, role, phone, status } = submitData;
+  const onFormSubmit = async (submitData) => {
+    const { name, email, role, phone, status } = submitData;
 
-  const submittedData = {
-    name,
-    role: formData.role,
-    email,
-    phone,
-    status: formData.status,
-    password: phone,
-    confirmPassword: phone,
-    createdBy: userData._id,
-  };
+    const submittedData = {
+      name,
+      role: formData.role,
+      email,
+      phone,
+      status: formData.status,
+      password: phone,
+      confirmPassword: phone,
+      createdBy: userData._id,
+    };
 
-  try {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const sessionToken = localStorage.getItem("sessionToken");
 
-    const token = localStorage.getItem("accessToken");
-    const sessionToken = localStorage.getItem("sessionToken");
+      if (!token || !sessionToken) {
+        console.log("User not authenticated");
+        return;
+      }
 
-    if (!token || !sessionToken) {
-      console.log("User not authenticated");
-      return;
-    }
-
-    const response = await axios.post(
-      `${process.env.REACT_APP_BACKENDURL}/api/user/signup`,
-      submittedData,
-      {
+      const response = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/user/signup`, submittedData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "session-token": sessionToken,
         },
-      }
-    );
+      });
 
-    if (response.status === 201) {
-      successToast("User Created Successfully");
-      resetForm();
-      setModal({ edit: false, add: false });
-      fetchUserData();
-    } else {
-      warningToast();
-    }
-
-  } catch (err) {
-
-    console.log("CREATE USER ERROR:", err);
-
-    if (err.response) {
-
-      if (err.response.status === 401) {
-
-        console.log(
-          err.response.data?.message ||
-          "Session expired. Please login again"
-        );
-
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("sessionToken");
-
-        window.location.href = "/login";
-
+      if (response.status === 201) {
+        successToast("User Created Successfully");
+        resetForm();
+        setModal({ edit: false, add: false });
+        fetchUserData();
       } else {
-        errorToast(err.response.data?.message || "Please Provide All Details");
+        warningToast();
       }
+    } catch (err) {
+      console.log("CREATE USER ERROR:", err);
 
-    } else {
-      errorToast("Network error");
+      if (err.response) {
+        if (err.response.status === 401) {
+          console.log(err.response.data?.message || "Session expired. Please login again");
+
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("sessionToken");
+
+          window.location.href = "/login";
+        } else {
+          errorToast(err.response.data?.message || "Please Provide All Details");
+        }
+      } else {
+        errorToast("Network error");
+      }
     }
-  }
-};
+  };
 
   // submit function to update a new item
   const onEditSubmit = async (submitData) => {
@@ -261,7 +233,6 @@ const fetchUserData = async () => {
     };
 
     try {
-
       const token = localStorage.getItem("accessToken");
       const sessionToken = localStorage.getItem("sessionToken");
 
@@ -270,49 +241,35 @@ const fetchUserData = async () => {
         return;
       }
 
-      const response = await axios.put(
-        `${process.env.REACT_APP_BACKENDURL}/api/user/${editId}`,
-        submittedData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "session-token": sessionToken,
-          },
-        }
-      );
+      const response = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/user/${editId}`, submittedData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "session-token": sessionToken,
+        },
+      });
 
       if (response.status === 200) {
         successToast("Updated Successfully");
         setModal({ edit: false });
         fetchUserData();
       }
-
     } catch (err) {
-
       console.log("UPDATE USER ERROR:", err);
 
       if (err.response) {
-
         if (err.response.status === 401) {
-
-          console.log(
-            err.response.data?.message ||
-            "Session expired. Please login again"
-          );
+          console.log(err.response.data?.message || "Session expired. Please login again");
 
           localStorage.removeItem("accessToken");
           localStorage.removeItem("sessionToken");
 
           window.location.href = "/login";
-
         } else {
           errorToast(err.response.data?.message || "Something Went Wrong");
         }
-
       } else {
         errorToast("Network error");
       }
-
     }
   };
 

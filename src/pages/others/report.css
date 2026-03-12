@@ -311,8 +311,8 @@
   font-weight: 600;
 }
 
-.staff-name{
-font-size: small;
+.staff-name {
+  font-size: small;
 }
 .customer-header-name {
   font-size: 1.2rem;
@@ -366,7 +366,6 @@ font-size: small;
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  
 }
 
 .stat-icon.blue {
@@ -457,7 +456,7 @@ font-size: small;
   background: #e9ecef;
   color: #495057;
   font-weight: 500;
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -467,7 +466,6 @@ font-size: small;
   border-bottom: 1px solid #e9ecef;
   color: #1a2b3c;
   font-size: 0.9rem;
-  
 }
 
 .transactions-table tbody tr:hover {
@@ -549,13 +547,15 @@ font-size: small;
 }
 
 /* No Data / Select Customer */
-.no-data, .select-customer-prompt {
+.no-data,
+.select-customer-prompt {
   text-align: center;
   padding: 3rem;
   color: #6c757d;
 }
 
-.no-data i, .select-customer-prompt i {
+.no-data i,
+.select-customer-prompt i {
   font-size: 4rem;
   margin-bottom: 1rem;
   opacity: 0.3;
@@ -590,12 +590,12 @@ font-size: small;
     flex-direction: column;
     height: auto;
   }
-  
+
   .customers-panel {
     width: 100%;
     max-height: 400px;
   }
-  
+
   .stats-row .col-md-3 {
     margin-bottom: 1rem;
   }
@@ -605,31 +605,31 @@ font-size: small;
   .reports-container {
     padding: 1rem;
   }
-  
+
   .action-bar {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .export-buttons {
     justify-content: stretch;
   }
-  
+
   .export-btn {
     flex: 1;
     justify-content: center;
   }
-  
+
   .customer-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .transactions-table {
     font-size: 0.8rem;
   }
-  
+
   .transactions-table th,
   .transactions-table td {
     padding: 0.75rem;
@@ -1102,11 +1102,11 @@ font-size: small;
   .export-btn.ultra-compact span {
     display: none;
   }
-  
+
   .export-btn.ultra-compact {
     padding: 0.4rem;
   }
-  
+
   .date-picker-wrapper.ultra-compact .date-picker-button span {
     max-width: 100px;
     overflow: hidden;
@@ -1401,15 +1401,15 @@ font-size: small;
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .invoice-summary {
     max-width: 100%;
   }
-  
+
   .items-table {
     font-size: 0.875rem;
   }
-  
+
   .items-table th,
   .items-table td {
     padding: 0.75rem;
@@ -1690,17 +1690,17 @@ font-size: small;
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .totals-section {
     max-width: 100%;
   }
-  
+
   .products-table th,
   .products-table td {
     padding: 0.75rem;
     font-size: 0.875rem;
   }
-  
+
   .products-table th:nth-child(4),
   .products-table td:nth-child(4),
   .products-table th:nth-child(5),
@@ -1726,7 +1726,7 @@ font-size: small;
 
 .action-btn:hover {
   background: #525465;
- 
+
   box-shadow: 0 4px 10px rgba(115, 119, 144, 0.3);
 }
 
@@ -1751,7 +1751,6 @@ font-size: small;
   border: none;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
-
 
 .invoice-modal .modal-header {
   background: white;
@@ -1886,7 +1885,6 @@ font-size: small;
   margin-left: 8px;
 }
 
-
 /* Order status badges in table */
 .order-status-badge {
   display: inline-block;
@@ -1933,11 +1931,11 @@ font-size: small;
   .stats-row .col-md-3 {
     width: 50%;
   }
-  
+
   .transactions-table {
     font-size: 12px;
   }
-  
+
   .transactions-table th,
   .transactions-table td {
     padding: 6px 8px;
@@ -1999,7 +1997,8 @@ font-size: small;
   white-space: nowrap;
 }
 
-.transactions-table td:nth-child(4) { /* Address column */
+.transactions-table td:nth-child(4) {
+  /* Address column */
   max-width: 150px;
 }
 
@@ -2008,7 +2007,7 @@ font-size: small;
   .transactions-table {
     font-size: 11px;
   }
-  
+
   .transactions-table th,
   .transactions-table td {
     padding: 6px;
@@ -2041,7 +2040,7 @@ font-size: small;
 
 /* Main stamp circle with uneven ink effect */
 .paid-stamp-round::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -2051,36 +2050,27 @@ font-size: small;
   background: rgba(40, 167, 69, 0.08);
   border: 6px solid #28a745;
   opacity: 0.7;
-  
+
   /* Uneven ink effect */
-  filter: url('#rough-paper');
+  filter: url("#rough-paper");
   -webkit-filter: blur(0.3px);
-  
+
   /* Create uneven border effect */
-  border-image: repeating-linear-gradient(
-    45deg,
-    #28a745,
-    #28a745 4px,
-    transparent 4px,
-    transparent 8px
-  ) 30;
-  
+  border-image: repeating-linear-gradient(45deg, #28a745, #28a745 4px, transparent 4px, transparent 8px) 30;
+
   /* Ink bleeds and imperfections */
-  box-shadow: 
+  box-shadow:
     0 0 0 2px rgba(40, 167, 69, 0.1),
     2px 3px 4px rgba(0, 0, 0, 0.1),
     inset 0 0 10px rgba(40, 167, 69, 0.2);
-  
+
   /* Uneven edges */
-  clip-path: polygon(
-    0% 0%, 100% 0%, 100% 100%, 0% 100%,
-    2% 2%, 98% 2%, 98% 98%, 2% 98%
-  );
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 2% 2%, 98% 2%, 98% 98%, 2% 98%);
 }
 
 /* Inner stamp texture - cement/paper effect */
 .paid-stamp-round::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 12px;
   left: 12px;
@@ -2090,15 +2080,15 @@ font-size: small;
   background: rgba(40, 167, 69, 0.03);
   border: 2px dashed #28a745;
   opacity: 0.4;
-  
+
   /* Create distressed texture */
-  background-image: 
+  background-image:
     radial-gradient(circle at 30% 40%, rgba(40, 167, 69, 0.1) 2px, transparent 2px),
     radial-gradient(circle at 70% 60%, rgba(40, 167, 69, 0.1) 3px, transparent 3px),
     radial-gradient(circle at 45% 80%, rgba(40, 167, 69, 0.08) 4px, transparent 4px),
     radial-gradient(circle at 80% 20%, rgba(40, 167, 69, 0.12) 2px, transparent 2px),
     radial-gradient(circle at 20% 70%, rgba(40, 167, 69, 0.08) 3px, transparent 3px);
-  
+
   /* Uneven opacity for ink bleed effect */
   mask-image: radial-gradient(circle at 30% 40%, black 60%, transparent 100%);
   -webkit-mask-image: radial-gradient(circle at 30% 40%, black 60%, transparent 100%);
@@ -2123,33 +2113,26 @@ font-size: small;
   color: #28a745;
   text-transform: uppercase;
   letter-spacing: 6px;
-  text-shadow: 
+  text-shadow:
     1px 1px 0 rgba(255, 255, 255, 0.3),
     -1px -1px 0 rgba(0, 0, 0, 0.1),
     2px 3px 4px rgba(0, 0, 0, 0.1);
   transform: rotate(6deg) scale(0.95);
-  font-family: 'Arial Black', 'Impact', sans-serif;
-  
+  font-family: "Arial Black", "Impact", sans-serif;
+
   /* Uneven ink distribution effect */
   opacity: 0.9;
-  background: linear-gradient(
-    135deg,
-    #28a745 0%,
-    #28a745 45%,
-    #1e7e34 50%,
-    #28a745 55%,
-    #28a745 100%
-  );
+  background: linear-gradient(135deg, #28a745 0%, #28a745 45%, #1e7e34 50%, #28a745 55%, #28a745 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  
+
   /* Add ink splatter effect */
   position: relative;
 }
 
 .stamp-text::before {
-  content: 'PAID';
+  content: "PAID";
   position: absolute;
   top: 0;
   left: 0;
@@ -2163,7 +2146,7 @@ font-size: small;
 }
 
 .stamp-text::after {
-  content: '';
+  content: "";
   position: absolute;
   top: -10px;
   left: -10px;
@@ -2189,7 +2172,7 @@ font-size: small;
   background: #28a745;
   border-radius: 50%;
   opacity: 0.4;
-  
+
   /* Uneven distribution */
   &:nth-child(odd) {
     opacity: 0.6;
@@ -2197,7 +2180,7 @@ font-size: small;
     height: 5px;
     filter: blur(0.5px);
   }
-  
+
   &:nth-child(3n) {
     opacity: 0.3;
     width: 3px;
@@ -2249,14 +2232,13 @@ font-size: small;
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background-image: 
-    repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0, 0.02) 0px,
-      rgba(0, 0, 0, 0.02) 2px,
-      transparent 2px,
-      transparent 4px
-    );
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.02) 0px,
+    rgba(0, 0, 0, 0.02) 2px,
+    transparent 2px,
+    transparent 4px
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -2288,15 +2270,10 @@ font-size: small;
 /* Alternative distressed style */
 .paid-stamp-round.distressed {
   &::before {
-    border-image: repeating-radial-gradient(
-      circle at 30% 40%,
-      #28a745,
-      #28a745 3px,
-      transparent 3px,
-      transparent 6px
-    ) 30;
+    border-image: repeating-radial-gradient(circle at 30% 40%, #28a745, #28a745 3px, transparent 3px, transparent 6px)
+      30;
   }
-  
+
   .stamp-text {
     letter-spacing: 4px;
     transform: rotate(3deg) scale(0.92);
@@ -2310,7 +2287,7 @@ font-size: small;
   overflow: hidden;
   min-height: 600px;
   background: #fff;
-  background-image: 
+  background-image:
     linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%);
   background-size: 20px 20px;
@@ -2423,16 +2400,16 @@ font-size: small;
   .customer-notes-section {
     padding: 12px 16px;
   }
-  
+
   .note-details {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .note-label {
     min-width: auto;
   }
-  
+
   .note-text {
     width: 100%;
   }
@@ -2485,7 +2462,7 @@ font-size: small;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 4px;
-  font-family: 'Arial Black', sans-serif;
+  font-family: "Arial Black", sans-serif;
   transform: scale(1.1);
   text-shadow: 2px 2px 4px rgba(220, 38, 38, 0.2);
 }

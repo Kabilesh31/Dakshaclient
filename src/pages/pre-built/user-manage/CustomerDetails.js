@@ -49,14 +49,12 @@ const CustomerDetails = ({ match }) => {
   // fetch users list
   const fetchStaffData = async () => {
     try {
-      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer", 
-         {
+      const response = await axios.get(process.env.REACT_APP_BACKENDURL + "/api/customer", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           "session-token": localStorage.getItem("sessionToken"),
         },
-      }
-      );
+      });
       setData(response.data);
     } catch (err) {
       console.log(err);
