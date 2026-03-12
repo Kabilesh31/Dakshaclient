@@ -70,6 +70,8 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [brandSearchTerm, setBrandSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [filterStatus, setFilterStatus] = useState('all');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [availableBrands, setAvailableBrands] = useState([]);
@@ -111,7 +113,9 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
   useEffect(() => {
     fetchBrandList();
   }, []);
-
+useEffect(() => {
+  setCurrentPage(1);
+}, [searchTerm]);
   // Handle assign button click
   const handleAssignClick = (staff) => {
     setSelectedStaff(staff);
@@ -245,6 +249,13 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
     brand?.toLowerCase().includes(brandSearchTerm.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
+
+const paginatedStaff = filteredStaff.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+);
+
   return (
     <Box sx={{ p: 0, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
       {/* Search and Filter Bar */}
@@ -304,7 +315,7 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredStaff.map((staff) => (
+              paginatedStaff.map((staff) => (
                 <TableRow key={staff._id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -361,7 +372,64 @@ const BrandAssign = ({ salesStaff, onStaffUpdate }) => {
           </TableBody>
         </Table>
       </TableContainer>
+<Box sx={{ p: 2 }}>
+  <div className="card-inner">
+    <div className="d-flex justify-content-center align-items-center">
 
+      {/* Previous */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage(currentPage - 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-left"></em>
+      </button>
+
+      {/* Page Numbers */}
+      {[...Array(totalPages)].map((_, index) => {
+        const pageNumber = index + 1;
+
+        if (
+          pageNumber === currentPage ||
+          pageNumber === currentPage - 1 ||
+          pageNumber === currentPage + 1
+        ) {
+          return (
+            <button
+              key={pageNumber}
+              onClick={() => setCurrentPage(pageNumber)}
+              className={`btn btn-sm mx-1 ${
+                currentPage === pageNumber
+                  ? "btn-primary"
+                  : "btn-outline-light"
+              }`}
+              style={{
+                minWidth: "36px",
+                borderRadius: "6px",
+                fontWeight: 500
+              }}
+            >
+              {pageNumber}
+            </button>
+          );
+        }
+        return null;
+      })}
+
+      {/* Next */}
+      <button
+        className="btn btn-icon btn-sm btn-outline-light mx-1"
+        disabled={currentPage === totalPages}
+        onClick={() => setCurrentPage(currentPage + 1)}
+        style={{ borderRadius: "6px" }}
+      >
+        <em className="icon ni ni-chevron-right"></em>
+      </button>
+
+    </div>
+  </div>
+</Box>
       {/* Brand Assignment Dialog */}
       <Dialog 
         open={openAssignDialog} 
