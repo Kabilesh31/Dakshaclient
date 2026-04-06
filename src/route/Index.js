@@ -122,6 +122,9 @@ import VehicleDetails from "../pages/pre-built/user-manage/VehicleDetails";
 import Delivery from "../pages/pre-built/user-manage/Delivery";
 import Sales from "../pages/pre-built/user-manage/Sales";
 import StaffReport from "../pages/others/StaffReport";
+import Settings from "../pages/pre-built/user-manage/Settings";
+import Bills from "../pages/pre-built/user-manage/Bills";
+import SiteManagement from "../pages/pre-built/user-manage/SiteManagement";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -221,6 +224,33 @@ const Pages = () => {
           render={() => (
             <UserContextProvider>
               <VehicleListCompact />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Settings`}
+          render={() => (
+            <UserContextProvider>
+              <Settings />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Bills`}
+          render={() => (
+            <UserContextProvider>
+              <Bills />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/SiteManagement`}
+          render={() => (
+            <UserContextProvider>
+              <SiteManagement />
             </UserContextProvider>
           )}
         ></Route>

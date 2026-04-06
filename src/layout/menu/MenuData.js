@@ -15,15 +15,15 @@ const menu = [
 //   link: "/staff",
 // },
   
-  {
-    icon: "package",          // ni ni-cart
-    text: "Inventory",
-    link: "/items",
-  },
+  
   {
     icon: "file-text",      // ni ni-user-alt
     text: "Bills",
-    link: "/customers",
+    link: "/Bills",
+  },{
+    icon: "user-list",      // ni ni-user-list
+    text: "Site Management",
+    link: "/SiteManagement",
   },
   // {
   //   icon: "truck",         // ni ni-truck
@@ -46,11 +46,11 @@ const menu = [
     text: "Reports",
     active: false,
     subMenu: [
-      {
-        icon: "user-alt",
-        text: "Customers",
-        link: "/reports", // existing page
-      },
+      // {
+      //   icon: "user-alt",
+      //   text: "Customers",
+      //   link: "/reports", // existing page
+      // },
       {
         icon: "user-list",
         text: "Staffs",
@@ -64,9 +64,13 @@ const menu = [
     text: "Staff Attendance",
     link: "/blank",
   },{
+    icon: "package",          // ni ni-cart
+    text: "Inventory",
+    link: "/items",
+  },{
   icon: "setting",
   text: "Settings",
-  link: "/schedule",
+  link: "/Settings",
 }
 
    // {
