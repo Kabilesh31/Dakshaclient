@@ -71,6 +71,7 @@
     "react-to-print": "^3.0.2",
     "react-toastify": "^8.2.0",
     "reactstrap": "^8.10.0",
+    "recharts": "^3.8.1",
     "sass": "1.32",
     "simplebar-react": "^2.3.5",
     "slick-carousel": "^1.8.1",

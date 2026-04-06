@@ -6,54 +6,43 @@ const menu = [
   },
   {
     icon: "users",         // ni ni-users
-    text: "Users",
+    text: "User Management",
     link: "/user-list-compact",
   },
+//   {
+//   icon: "user-check",
+//   text: "Staff List",
+//   link: "/staff",
+// },
+  
   {
-    icon: "user-list",     // ni ni-user-list
-    text: "Employees List",
-    active: false,
-    subMenu: [
-      {
-        icon: "truck",     // ni ni-truck
-        text: "Vehicle",
-        link: "/vehicle",
-      },
-      {
-        icon: "user",      // ni ni-user
-        text: "Employee",
-        link: "/staff",
-      }
-    ],
-  },
-  {
-    icon: "user-alt",      // ni ni-user-alt
-    text: "Customers List",
-    link: "/customers",
-  },
-  {
-    icon: "cart",          // ni ni-cart
-    text: "Product List",
+    icon: "package",          // ni ni-cart
+    text: "Inventory",
     link: "/items",
   },
   {
-    icon: "truck",         // ni ni-truck
-    text: "Delivery",
-    link: "/delivery",
+    icon: "file-text",      // ni ni-user-alt
+    text: "Bills",
+    link: "/customers",
   },
+  // {
+  //   icon: "truck",         // ni ni-truck
+  //   text: "Delivery",
+  //   link: "/delivery",
+  // },
+  // {
+  //   icon: "growth",        // ni ni-growth
+  //   text: "Sales",
+  //   link: "/sales",
+  // },
   {
-    icon: "growth",        // ni ni-growth
-    text: "Sales",
-    link: "/sales",
-  },
-  {
-    icon: "box",
+    icon: "bag",
     text: "Orders",
     link: "/Orders"
 
   },
    {
-    icon: "reports",
+    icon: "bar-chart",
     text: "Reports",
     active: false,
     subMenu: [
@@ -71,10 +60,14 @@ const menu = [
   },
 
   {
-    icon: "check-circle-cut",
+    icon: "calendar-check",
     text: "Staff Attendance",
     link: "/blank",
-  },
+  },{
+  icon: "setting",
+  text: "Settings",
+  link: "/schedule",
+}
 
    // {
   //   icon: "search",

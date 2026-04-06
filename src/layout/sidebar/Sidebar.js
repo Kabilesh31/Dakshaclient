@@ -4,6 +4,7 @@ import SimpleBar from "simplebar-react";
 import Logo from "../logo/Logo";
 import Menu from "../menu/Menu";
 import Toggle from "./Toggle";
+import "./Sidebar.css";
 
 const Sidebar = ({ fixed, theme, className, sidebarToggle, mobileView, ...props }) => {
   const [collapseSidebar, setSidebar] = useState(false);
@@ -16,16 +17,16 @@ const Sidebar = ({ fixed, theme, className, sidebarToggle, mobileView, ...props 
   const handleMouseEnter = () => setMouseEnter(true);
   const handleMouseLeave = () => setMouseEnter(false);
 
-  const classes = classNames({
-    "nk-sidebar": true,
-    "nk-sidebar-fixed": fixed,
-    "is-compact": collapseSidebar,
-    "has-hover": collapseSidebar && mouseEnter,
-    [`is-light`]: theme === "white",
-    [`is-${theme}`]: theme !== "white" && theme !== "light",
-    [`${className}`]: className,
-  });
-
+const classes = classNames({
+  "nk-sidebar": true,
+  "custom-sidebar": true, // 👈 add this
+  "nk-sidebar-fixed": fixed,
+  "is-compact": collapseSidebar,
+  "has-hover": collapseSidebar && mouseEnter,
+  [`is-light`]: theme === "white",
+  [`is-${theme}`]: theme !== "white" && theme !== "light",
+  [`${className}`]: className,
+});
   return (
     <div className={classes}>
       <div className="nk-sidebar-element nk-sidebar-head">

@@ -2,13 +2,18 @@ import React from "react";
 import LogoLight2x from "../../images/logo2x.png";
 import LogoDark2x from "../../images/logo-dark2x.png";
 import {Link} from "react-router-dom";
+import LogoImg from "../../images/dak.png";
 
 const Logo = () => {
   return (
     <Link to={`${process.env.PUBLIC_URL}/`} className="logo-link">
     {/* <img className="logo-light logo-img" src={LogoLight2x} alt="logo" />
     <img className="logo-dark logo-img" src={LogoDark2x} alt="logo" /> */}
-     <h4 style={{ color: "white", marginTop:"5px",fontFamily: "'Ubuntu', sans-serif" }}>Retail Pulse</h4>
+    <img
+  src={LogoImg}
+  alt="Daksha Logo"
+  style={{ height: "140px", width: "280px", marginLeft: "-40px",marginTop: "10px" }}
+/>
   </Link>
   );
 };

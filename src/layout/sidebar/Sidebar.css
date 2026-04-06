@@ -1,0 +1,83 @@
+.nk-sidebar {
+  background: linear-gradient(180deg, #19253f, #0374a9) !important; /* change to any color */
+}
+.custom-sidebar {
+  background: linear-gradient(180deg, #0f172a, #020617);
+}
+.nk-sidebar .nk-menu-text {
+  color: #cbd5e1 !important; /* light gray */
+}
+/* Default text */
+.nk-sidebar .nk-menu-link {
+  color: #cbd5e1;
+}
+
+/* 🔥 Hover text color */
+.nk-sidebar .nk-menu-link:hover .nk-menu-text {
+  color: #22c55e; /* change to your color */
+}
+
+/* 🔥 Hover icon color */
+.nk-sidebar .nk-menu-link:hover .nk-menu-icon {
+  color: #b6c391;
+}
+
+/* 🔥 Active menu text */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text {
+  color: #38bdf8; /* active color */
+}
+
+/* 🔥 Active icon */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
+  color: #38bdf8;
+}/* Default */
+.nk-sidebar .nk-menu-link .nk-menu-text {
+  color: #cbd5e1;
+}
+
+/* 🔥 Hover - TEXT */
+.nk-sidebar .nk-menu-link:hover .nk-menu-text {
+  color: #d0b519 !important;
+}
+
+/* 🔥 Hover - ICON */
+.nk-sidebar .nk-menu-link:hover .nk-menu-icon {
+  color: #d0b519 !important;
+}
+
+/* 🔥 Active - TEXT */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text {
+  color: #f3d950 !important;
+}
+
+/* 🔥 Active - ICON */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
+  color: #f3d950 !important;
+}
+/* Base link style */
+.nk-sidebar .nk-menu-link {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* 🔥 Hover - full background */
+.nk-sidebar .nk-menu-link:hover {
+  background: rgba(99, 102, 241, 0.15); /* soft indigo */
+}
+
+/* 🔥 Hover text + icon */
+.nk-sidebar .nk-menu-link:hover .nk-menu-text,
+.nk-sidebar .nk-menu-link:hover .nk-menu-icon {
+  color: #e09436 !important;
+}
+
+/* 🔥 Active - full background */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link {
+  background: rgba(34, 197, 94, 0.15); /* soft green */
+}
+
+/* 🔥 Active text + icon */
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text,
+.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
+  color: #cf9323 !important;
+}
