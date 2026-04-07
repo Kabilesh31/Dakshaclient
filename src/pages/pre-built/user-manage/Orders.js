@@ -5,6 +5,7 @@ import html2pdf from "html2pdf.js";
 import DatePicker from "react-multi-date-picker";
 import Head from "../../../layout/head/Head";
 import { useLocation } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import "./staff.css";
 import {
   Block,
@@ -39,7 +40,9 @@ const Orders = () => {
 
   const location = useLocation();
   const highlightOrderId = location.state?.highlightOrderId;
+  const history = useHistory();
 
+  
   const downloadPDF = () => {
     if (!modalRef.current) return;
 
@@ -153,7 +156,48 @@ const Orders = () => {
       setLoading(false);
     }
   };
-
+const dummyOrders = [
+  {
+    _id: "ORD001",
+    customerName: "Ravi Kumar",
+    createdAt: new Date(),
+    totalAmt: 2500,
+    orderStatus: "Work in progress",
+    siteName: "Site A",
+    staffDetails: { name: "Suresh", type: "Technician", mobile: "9876543210" },
+    orderedProducts: [{ productName: "Cement", qty: 10, value: 200 }],
+  },
+  {
+    _id: "ORD002",
+    customerName: "Arun",
+    createdAt: new Date(),
+    totalAmt: 1800,
+    orderStatus: "Yet to Start",
+    siteName: "Site B",
+    staffDetails: {},
+    orderedProducts: [{ productName: "Bricks", qty: 100, value: 10 }],
+  },
+  {
+    _id: "ORD003",
+    customerName: "Karthik",
+    createdAt: new Date(),
+    totalAmt: 3200,
+    orderStatus: "Work in progress",
+    siteName: "Site C",
+    staffDetails: { name: "Mani", type: "Supervisor", mobile: "9999999999" },
+    orderedProducts: [{ productName: "Steel", qty: 20, value: 150 }],
+  },
+  {
+    _id: "ORD004",
+    customerName: "Vignesh",
+    createdAt: new Date(),
+    totalAmt: 900,
+    orderStatus: "Yet to Start",
+    siteName: "Site D",
+    staffDetails: {},
+    orderedProducts: [{ productName: "Sand", qty: 5, value: 100 }],
+  },
+];
   useEffect(() => {
     let data = [...orders];
 
@@ -335,7 +379,11 @@ const Orders = () => {
                           </td>
                           <td className="py-2 text-start">
                             <button
-                              onClick={() => openDetailModal(order)}
+                             onClick={() =>
+  history.push(`/orders/${order._id}`, {
+    order,
+  })
+}
                               style={{
                                 background: "none",
                                 border: "none",

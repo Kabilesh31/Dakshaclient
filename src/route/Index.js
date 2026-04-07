@@ -125,6 +125,7 @@ import StaffReport from "../pages/others/StaffReport";
 import Settings from "../pages/pre-built/user-manage/Settings";
 import Bills from "../pages/pre-built/user-manage/Bills";
 import SiteManagement from "../pages/pre-built/user-manage/SiteManagement";
+import OrderDetails from "../pages/pre-built/user-manage/OrderDetails";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -170,6 +171,15 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+        <Route
+  exact
+  path={`${process.env.PUBLIC_URL}/orders/:id`}
+  render={(props) => (
+    <UserContextProvider>
+      <OrderDetails {...props} />
+    </UserContextProvider>
+  )}
+></Route>
         <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/products`}
@@ -330,6 +340,7 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/vehicle/:id`} component={VehicleDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/staff/:id`} component={StaffDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
+        
         <Route // context api added
           exact
           path={`${process.env.PUBLIC_URL}/product-card`}
