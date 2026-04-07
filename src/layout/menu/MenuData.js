@@ -15,15 +15,20 @@ const menu = [
 //   link: "/staff",
 // },
   
-  
+  {
+    icon: "user-list",      // ni ni-user-list
+    text: "Project Management",
+    link: "/SiteManagement",
+  },{
+    icon: "bag",
+    text: "Orders",
+    link: "/Orders"
+
+  },
   {
     icon: "file-text",      // ni ni-user-alt
     text: "Bills",
     link: "/Bills",
-  },{
-    icon: "user-list",      // ni ni-user-list
-    text: "Site Management",
-    link: "/SiteManagement",
   },
   // {
   //   icon: "truck",         // ni ni-truck
@@ -35,12 +40,7 @@ const menu = [
   //   text: "Sales",
   //   link: "/sales",
   // },
-  {
-    icon: "bag",
-    text: "Orders",
-    link: "/Orders"
-
-  },
+  
    {
     icon: "bar-chart",
     text: "Reports",

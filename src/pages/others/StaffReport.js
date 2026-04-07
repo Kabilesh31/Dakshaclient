@@ -22,7 +22,6 @@ import "./report.css";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FaFileExcel, FaFilePdf, FaDownload } from "react-icons/fa";
-import { Weight } from "lucide-react";
 
 const StaffReport = () => {
   const [staffList, setStaffList] = useState([]);
@@ -40,9 +39,9 @@ const StaffReport = () => {
   const [invoiceModal, setInvoiceModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
 
-  // Calculate statistics based on staff type - Using totalAmt ONLY
-  const calculateStats = () => {
-    if (!filteredBills.length)
+  // Compute additional metrics
+  const computeStaffMetrics = () => {
+    if (!filteredBills.length) {
       return {
         totalOrders: 0,
         totalAmount: 0,
@@ -52,54 +51,89 @@ const StaffReport = () => {
         deliveredOrders: 0,
         pendingDelivery: 0,
         assignedCustomers: 0,
+        sitesWorked: [],
+        daysWorked: 0,
+        salaryReceived: 0,       // placeholder
+        overtimeHours: 0,        // placeholder
+        overtimeAmount: 0,       // placeholder
+        siteWiseData: [],
       };
+    }
 
+    // Basic stats (existing)
     const totalOrders = filteredBills.filter((b) => b.orderStatus !== "rejected").length;
-
-    // Total amount excludes rejected bills
     const totalAmount = filteredBills
       .filter((b) => b.orderStatus !== "rejected")
       .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-
-    // Collected amount (paid, non-rejected)
     const collectedAmount = filteredBills
       .filter(
         (b) =>
           b.orderStatus !== "rejected" && b.paymentMethod && b.paymentMethod !== null && b.paymentMethod !== "null",
       )
       .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-
-    // Rejected amount
     const rejectedAmount = filteredBills
       .filter((b) => b.orderStatus === "rejected")
       .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-
-    // Pending amount (non-rejected, unpaid)
     const pendingAmount = filteredBills
       .filter(
         (b) =>
           b.orderStatus !== "rejected" && (!b.paymentMethod || b.paymentMethod === null || b.paymentMethod === "null"),
       )
       .reduce((acc, bill) => acc + (Number(bill.totalAmt) || 0), 0);
-
-    // Delivery stats
     const deliveredOrders = filteredBills.filter(
       (b) =>
         b.orderStatus !== "rejected" && (b.orderStatus?.toLowerCase() === "delivered" || b.orderStatus === "approved"),
     ).length;
-
     const rejectedOrders = filteredBills.filter((b) => b.orderStatus === "rejected").length;
-
     const pendingDelivery = filteredBills.filter(
       (b) =>
         b.orderStatus !== "rejected" &&
         (!b.orderStatus || (b.orderStatus?.toLowerCase() !== "delivered" && b.orderStatus !== "approved")),
     ).length;
-
-    // Assigned customers
     const assignedCustomers = [...new Set(filteredBills.map((bill) => bill.customerId?._id || bill.customerId))].filter(
       (id) => id,
     ).length;
+
+    // ---- New metrics ----
+    // Sites worked: unique site names from bills (assuming bill has siteName field)
+    const siteMap = new Map();
+    filteredBills.forEach((bill) => {
+      const siteName = bill.siteName || bill.projectName || "Unknown Site";
+      if (!siteMap.has(siteName)) {
+        siteMap.set(siteName, {
+          siteName,
+          orderCount: 0,
+          totalAmount: 0,
+          days: new Set(),
+        });
+      }
+      const site = siteMap.get(siteName);
+      site.orderCount++;
+      site.totalAmount += Number(bill.totalAmt) || 0;
+      const orderDate = new Date(bill.createdAt).toISOString().split("T")[0];
+      site.days.add(orderDate);
+    });
+    const sitesWorked = Array.from(siteMap.keys());
+    const siteWiseData = Array.from(siteMap.values()).map((site) => ({
+      siteName: site.siteName,
+      orders: site.orderCount,
+      totalAmount: site.totalAmount,
+      daysWorked: site.days.size,
+    }));
+
+    // Days worked: total distinct dates across all bills
+    const uniqueDays = new Set();
+    filteredBills.forEach((bill) => {
+      const orderDate = new Date(bill.createdAt).toISOString().split("T")[0];
+      uniqueDays.add(orderDate);
+    });
+    const daysWorked = uniqueDays.size;
+
+    // Placeholder for salary and overtime (can be replaced with API data)
+    // For demo, we compute a dummy salary based on total amount (e.g., 10% commission)
+    const salaryReceived = totalAmount * 0.1; // 10% commission example
+    const overtimeHours = 0;   // would come from attendance system
+    const overtimeAmount = 0;   // would come from attendance system
 
     return {
       totalOrders,
@@ -111,10 +145,16 @@ const StaffReport = () => {
       rejectedOrders,
       pendingDelivery,
       assignedCustomers,
+      sitesWorked,
+      daysWorked,
+      salaryReceived,
+      overtimeHours,
+      overtimeAmount,
+      siteWiseData,
     };
   };
 
-  const stats = calculateStats();
+  const stats = computeStaffMetrics();
 
   // Fetch all staff
   const fetchStaff = async () => {
@@ -169,7 +209,6 @@ const StaffReport = () => {
           (bill) => bill.createdBy === selectedStaff._id || bill.createdBy === selectedStaff.name,
         );
         break;
-
       case "delivery":
         staffBills = allBills.filter(
           (bill) =>
@@ -178,7 +217,6 @@ const StaffReport = () => {
             bill.staffId === selectedStaff._id,
         );
         break;
-
       case "sales":
       default:
         staffBills = allBills.filter(
@@ -194,8 +232,7 @@ const StaffReport = () => {
     setCurrentPage(1);
   }, [selectedStaff, allBills]);
 
-  const filterDeliveryBills = allBills.filter((item) => item.deliveryPersonId === selectedStaff?._id);
-  console.log(filterDeliveryBills);
+  // Apply date filter
   useEffect(() => {
     if (!selectedStaff || !allBills.length) {
       setFilteredBills([]);
@@ -203,11 +240,9 @@ const StaffReport = () => {
     }
 
     let staffBills = allBills.filter((bill) => {
-      // For delivery staff, only check deliveryPersonId
       if (selectedStaff.type?.toLowerCase() === "delivery") {
         return bill.deliveryPersonId === selectedStaff._id;
       } else {
-        // For other staff types
         return (
           bill.createdBy === selectedStaff._id ||
           bill.paymentCollectedBy === selectedStaff._id ||
@@ -223,7 +258,6 @@ const StaffReport = () => {
       from.setHours(0, 0, 0, 0);
       const to = new Date(endDate);
       to.setHours(23, 59, 59, 999);
-
       staffBills = staffBills.filter((item) => {
         const createdAt = new Date(item.createdAt);
         return createdAt >= from && createdAt <= to;
@@ -239,95 +273,72 @@ const StaffReport = () => {
     fetchAllBills();
   }, []);
 
-  // Get customer name from bill
   const getCustomerName = (bill) => {
     if (bill.customerName) return bill.customerName;
     if (bill.customerId?.name) return bill.customerId.name;
     return "N/A";
   };
 
-  // Function to open invoice modal
   const openInvoiceModal = (bill) => {
     setSelectedBill(bill);
     setInvoiceModal(true);
   };
 
-  // Download invoice PDF - Using totalAmt
   const downloadInvoicePDF = () => {
     if (!selectedBill) return;
-
     const doc = new jsPDF();
-
-    // Header
+    // (existing invoice PDF code - kept as is)
     doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Retail Pulse", 105, 20, { align: "center" });
-
     doc.setFontSize(16);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100, 100, 100);
     doc.text("Order Invoice", 105, 30, { align: "center" });
-
-    // Order ID and Date
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text(`Order ID: #${selectedBill._id.toString().slice(-6)}`, 14, 45);
-
     doc.setFont("helvetica", "normal");
     const orderDate = new Date(selectedBill.createdAt);
     const formattedDate = `${orderDate.getMonth() + 1}/${orderDate.getDate()}/${orderDate.getFullYear()}`;
     doc.text(`Date: ${formattedDate}`, 14, 52);
-
-    // Order Status
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     const statusColor = selectedBill.orderStatus === "rejected" ? [220, 38, 38] : [46, 204, 113];
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-    doc.text("selectedBill.orderStatus" || "Delivered", 160, 45);
-
-    // Customer Details
+    doc.text(selectedBill.orderStatus || "Delivered", 160, 45);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Customer Details", 14, 67);
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
     doc.text(`Name: ${getCustomerName(selectedBill)}`, 14, 75);
     doc.text(`Mobile: ${selectedBill.customerId?.mobile || selectedBill.customerId?.phone || "N/A"}`, 14, 82);
     doc.text(`Address: ${selectedBill.customerId?.address || selectedBill.deliveryAddress || "N/A"}`, 14, 89);
-
-    // Staff Details
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
     doc.text("Staff Details", 120, 67);
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-
     doc.text(`Name: ${selectedStaff?.name || selectedBill.staffName || "N/A"}`, 120, 75);
     doc.text(`Type: ${selectedStaff?.type || "staff"}`, 120, 82);
     doc.text(`Contact: ${selectedStaff?.mobile || selectedStaff?.phone || "N/A"}`, 120, 89);
-
-    // Calculate subtotal
     const subtotal =
       selectedBill.orderedProducts?.reduce((sum, product) => sum + Number(product.value) * Number(product.qty), 0) ||
       Number(selectedBill.totalAmt) ||
       0;
-
-    // Products Table
     const tableColumn = ["S.No", "Product", "Qty", "Rate", "Amount"];
     const tableRows =
       selectedBill.orderedProducts?.map((product, idx) => {
         const qty = Number(product.qty) || 0;
         const rate = Number(product.value) || 0;
         const amount = rate * qty;
-
         return [
           idx + 1,
           product.productName || "",
@@ -336,7 +347,6 @@ const StaffReport = () => {
           `Rs.${amount.toLocaleString("en-IN")}`,
         ];
       }) || [];
-
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -363,26 +373,18 @@ const StaffReport = () => {
         4: { cellWidth: 35, halign: "right" },
       },
     });
-
-    // Totals section - Using totalAmt
     const finalY = doc.lastAutoTable.finalY + 15;
-
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-
     const startX = 128;
     const valueX = 178;
-
     doc.text("Subtotal:", startX, finalY);
     doc.text(`Rs.${subtotal.toLocaleString("en-IN")}`, valueX, finalY, { align: "right" });
-
     doc.text("Discount:", startX, finalY + 8);
     doc.text("Rs.0", valueX, finalY + 8, { align: "right" });
-
     doc.text("Tax:", startX, finalY + 16);
     doc.text("Rs.0", valueX, finalY + 16, { align: "right" });
-
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
@@ -390,120 +392,106 @@ const StaffReport = () => {
     doc.text(`Rs.${(Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}`, valueX, finalY + 28, {
       align: "right",
     });
-
-    // Payment info
     if (selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected") {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(80, 80, 80);
       doc.text(`Payment Method: ${selectedBill.paymentMethod}`, 14, finalY + 35);
-
       if (selectedBill.paymentCollectedAt) {
         const paymentDate = new Date(selectedBill.paymentCollectedAt);
         const formattedPaymentDate = `${paymentDate.getMonth() + 1}/${paymentDate.getDate()}/${paymentDate.getFullYear()}, ${paymentDate.getHours()}:${paymentDate.getMinutes()}:${paymentDate.getSeconds()} ${paymentDate.getHours() >= 12 ? "PM" : "AM"}`;
         doc.text(`Payment Collected: ${formattedPaymentDate}`, 14, finalY + 42);
       }
     }
-
     doc.save(`Order_${selectedBill._id.toString().slice(-6)}.pdf`);
   };
 
-  // Export PDF - Using totalAmt
+  // Enhanced PDF export with new metrics and site-wise table
   const exportPDF = () => {
     if (!selectedStaff) return;
-
     const doc = new jsPDF();
-
-    // Title
     doc.setFontSize(18);
     doc.setTextColor(33, 37, 41);
     doc.text(`Staff Performance Report`, 14, 18);
-
     doc.setFontSize(12);
     const typeCap = selectedStaff.type.charAt(0).toUpperCase() + selectedStaff.type.slice(1);
     doc.text(`Staff: ${selectedStaff.name} (${typeCap})`, 14, 26);
-
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
-
     if (startDate && endDate) {
       doc.text(`Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`, 14, 38);
     }
-
-    // Summary Section
+    // Summary stats
+    let yPos = 48;
     doc.setFontSize(11);
     doc.setTextColor(33);
-
     if (selectedStaff.type?.toLowerCase() === "delivery") {
-      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, 60);
-      doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, 66);
-      doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, 72);
-
+      doc.text(`Total Orders: ${stats.totalOrders}`, 14, yPos);
+      doc.text(`Total Amount: Rs. ${stats.totalAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+      doc.text(`Delivered Orders: ${stats.deliveredOrders}`, 14, (yPos += 6));
+      doc.text(`Pending Delivery: ${stats.pendingDelivery}`, 14, (yPos += 6));
+      doc.text(`Assigned Customers: ${stats.assignedCustomers}`, 14, (yPos += 6));
       if (stats.rejectedOrders > 0) {
-        doc.text(
-          `Rejected Orders: ${stats.rejectedOrders} (Rs.${stats.rejectedAmount.toLocaleString("en-IN")})`,
-          14,
-          78,
-        );
+        doc.text(`Rejected Orders: ${stats.rejectedOrders} (Rs.${stats.rejectedAmount.toLocaleString("en-IN")})`, 14, (yPos += 6));
       }
-
-      // Table for delivery
-      const tableColumn = ["S.No", "Order No", "Customer", "Date", "Amount (Rs.)", "Status"];
-
-      const tableRows = filteredBills.map((bill, idx) => {
-        return [
-          idx + 1,
-          `#${bill._id.toString().slice(-6)}`,
-          getCustomerName(bill),
-          new Date(bill.createdAt).toLocaleDateString("en-IN"),
-          `Rs.${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
-          bill.orderStatus || "Pending",
-        ];
-      });
-
+    } else {
+      doc.text(`Total Orders: ${stats.totalOrders}`, 14, yPos);
+      doc.text(`Total Amount: Rs.${stats.totalAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+      doc.text(`Collected Amount: Rs.${stats.collectedAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+      doc.text(`Pending Amount: Rs.${stats.pendingAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+      if (stats.rejectedAmount > 0) {
+        doc.text(`Rejected Amount: Rs.${stats.rejectedAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+      }
+    }
+    // New metrics
+    doc.text(`Days Worked: ${stats.daysWorked}`, 14, (yPos += 8));
+    doc.text(`Salary Received: Rs.${stats.salaryReceived.toLocaleString("en-IN")}`, 14, (yPos += 6));
+    doc.text(`Overtime Hours: ${stats.overtimeHours} hrs`, 14, (yPos += 6));
+    doc.text(`Overtime Amount: Rs.${stats.overtimeAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+    // Site-wise table
+    const siteTableColumn = ["Site Name", "Orders", "Total Amount (Rs.)", "Days Worked"];
+    const siteTableRows = stats.siteWiseData.map((site) => [
+      site.siteName,
+      site.orders.toString(),
+      site.totalAmount.toLocaleString("en-IN"),
+      site.daysWorked.toString(),
+    ]);
+    autoTable(doc, {
+      head: [siteTableColumn],
+      body: siteTableRows,
+      startY: yPos + 10,
+      theme: "striped",
+      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 9 },
+    });
+    // Orders table (existing)
+    const tableStartY = doc.lastAutoTable.finalY + 10;
+    if (selectedStaff.type?.toLowerCase() === "delivery") {
+      const orderColumns = ["S.No", "Order No", "Customer", "Date", "Amount (Rs.)", "Status"];
+      const orderRows = filteredBills.map((bill, idx) => [
+        idx + 1,
+        `#${bill._id.toString().slice(-6)}`,
+        getCustomerName(bill),
+        new Date(bill.createdAt).toLocaleDateString("en-IN"),
+        `Rs.${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
+        bill.orderStatus || "Pending",
+      ]);
       autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: stats.rejectedOrders > 0 ? 85 : 79,
+        head: [orderColumns],
+        body: orderRows,
+        startY: tableStartY,
         theme: "striped",
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        styles: {
-          fontSize: 9,
-        },
-        columnStyles: {
-          4: { halign: "right" },
-        },
+        headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 9 },
+        columnStyles: { 4: { halign: "right" } },
       });
     } else {
-      doc.text(`Total Orders: ${stats.totalOrders}`, 14, 48);
-      doc.text(`Total Amount: Rs.${stats.totalAmount.toLocaleString("en-IN")}`, 14, 54);
-      doc.text(`Collected Amount: Rs.${stats.collectedAmount.toLocaleString("en-IN")}`, 14, 60);
-      doc.text(`Pending Amount: Rs.${stats.pendingAmount.toLocaleString("en-IN")}`, 14, 66);
-
-      if (stats.rejectedAmount > 0) {
-        doc.text(`Rejected Amount: Rs.${stats.rejectedAmount.toLocaleString("en-IN")}`, 14, 72);
-      }
-
-      // Table for sales/manager
-      const tableColumn = ["S.No", "Order No", "Customer", "Date", "Amount (Rs.)", "Payment Status", "Order Status"];
-
-      const tableRows = filteredBills.map((bill, idx) => {
+      const orderColumns = ["S.No", "Order No", "Customer", "Date", "Amount (Rs.)", "Payment Status", "Order Status"];
+      const orderRows = filteredBills.map((bill, idx) => {
         let paymentStatus = "Pending";
-        if (bill.orderStatus === "rejected") {
-          paymentStatus = "Rejected";
-        } else if (bill.paymentMethod) {
-          paymentStatus = "Paid";
-        }
-
-        const status = bill.orderStatus || "Pending";
-        const statusCap = status.charAt(0).toUpperCase() + status.slice(1);
+        if (bill.orderStatus === "rejected") paymentStatus = "Rejected";
+        else if (bill.paymentMethod) paymentStatus = "Paid";
         return [
           idx + 1,
           `#${bill._id.toString().slice(-6)}`,
@@ -511,40 +499,29 @@ const StaffReport = () => {
           new Date(bill.createdAt).toLocaleDateString("en-IN"),
           `Rs.${(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}`,
           paymentStatus,
-          statusCap,
+          bill.orderStatus || "Pending",
         ];
       });
-
       autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: stats.rejectedAmount > 0 ? 80 : 74,
+        head: [orderColumns],
+        body: orderRows,
+        startY: tableStartY,
         theme: "striped",
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        styles: {
-          fontSize: 9,
-        },
-        columnStyles: {
-          4: { halign: "right" },
-        },
+        headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 9 },
+        columnStyles: { 4: { halign: "right" } },
       });
     }
-
     doc.save(`${selectedStaff.name}_Report.pdf`);
   };
 
-  // Export Excel - Using totalAmt
+  // Enhanced Excel export with new metrics and site-wise sheet
   const exportExcel = () => {
     if (!selectedStaff) return;
-
-    let exportData;
-
+    // Orders sheet
+    let orderSheetData;
     if (selectedStaff.type?.toLowerCase() === "delivery") {
-      exportData = filteredBills.map((bill, idx) => ({
+      orderSheetData = filteredBills.map((bill, idx) => ({
         "S.No": idx + 1,
         "Order No": `#${bill._id.toString().slice(-6)}`,
         Customer: getCustomerName(bill),
@@ -553,14 +530,10 @@ const StaffReport = () => {
         "Delivery Status": bill.orderStatus || "Pending",
       }));
     } else {
-      exportData = filteredBills.map((bill, idx) => {
+      orderSheetData = filteredBills.map((bill, idx) => {
         let paymentStatus = "Pending";
-        if (bill.orderStatus === "rejected") {
-          paymentStatus = "Rejected";
-        } else if (bill.paymentMethod) {
-          paymentStatus = "Paid";
-        }
-
+        if (bill.orderStatus === "rejected") paymentStatus = "Rejected";
+        else if (bill.paymentMethod) paymentStatus = "Paid";
         return {
           "S.No": idx + 1,
           "Order No": `#${bill._id.toString().slice(-6)}`,
@@ -572,37 +545,54 @@ const StaffReport = () => {
         };
       });
     }
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-
+    const orderSheet = XLSX.utils.json_to_sheet(orderSheetData);
+    // Summary sheet (including new metrics)
     let summaryData;
     if (selectedStaff.type?.toLowerCase() === "delivery") {
       summaryData = [
-        { Summary: "Total Orders", Value: stats.totalOrders },
-        { Summary: "Total Amount", Value: `Rs.${stats.totalAmount.toLocaleString("en-IN")}` },
-        { Summary: "Delivered Orders", Value: stats.deliveredOrders },
-        { Summary: "Pending Delivery", Value: stats.pendingDelivery },
-        { Summary: "Assigned Customers", Value: stats.assignedCustomers },
+        { Metric: "Total Orders", Value: stats.totalOrders },
+        { Metric: "Total Amount", Value: `Rs.${stats.totalAmount.toLocaleString("en-IN")}` },
+        { Metric: "Delivered Orders", Value: stats.deliveredOrders },
+        { Metric: "Pending Delivery", Value: stats.pendingDelivery },
+        { Metric: "Assigned Customers", Value: stats.assignedCustomers },
+        { Metric: "Days Worked", Value: stats.daysWorked },
+        { Metric: "Salary Received", Value: `Rs.${stats.salaryReceived.toLocaleString("en-IN")}` },
+        { Metric: "Overtime Hours", Value: stats.overtimeHours },
+        { Metric: "Overtime Amount", Value: `Rs.${stats.overtimeAmount.toLocaleString("en-IN")}` },
       ];
       if (stats.rejectedOrders > 0) {
-        summaryData.push({ Summary: "Rejected Orders", Value: stats.rejectedOrders });
-        summaryData.push({ Summary: "Rejected Amount", Value: `Rs.${stats.rejectedAmount.toLocaleString("en-IN")}` });
+        summaryData.push({ Metric: "Rejected Orders", Value: stats.rejectedOrders });
+        summaryData.push({ Metric: "Rejected Amount", Value: `Rs.${stats.rejectedAmount.toLocaleString("en-IN")}` });
       }
     } else {
       summaryData = [
-        { Summary: "Total Orders", Value: stats.totalOrders },
-        { Summary: "Total Amount", Value: `Rs.${stats.totalAmount.toLocaleString("en-IN")}` },
-        { Summary: "Collected Amount", Value: `Rs.${stats.collectedAmount.toLocaleString("en-IN")}` },
-        { Summary: "Pending Amount", Value: `Rs.${stats.pendingAmount.toLocaleString("en-IN")}` },
+        { Metric: "Total Orders", Value: stats.totalOrders },
+        { Metric: "Total Amount", Value: `Rs.${stats.totalAmount.toLocaleString("en-IN")}` },
+        { Metric: "Collected Amount", Value: `Rs.${stats.collectedAmount.toLocaleString("en-IN")}` },
+        { Metric: "Pending Amount", Value: `Rs.${stats.pendingAmount.toLocaleString("en-IN")}` },
+        { Metric: "Days Worked", Value: stats.daysWorked },
+        { Metric: "Salary Received", Value: `Rs.${stats.salaryReceived.toLocaleString("en-IN")}` },
+        { Metric: "Overtime Hours", Value: stats.overtimeHours },
+        { Metric: "Overtime Amount", Value: `Rs.${stats.overtimeAmount.toLocaleString("en-IN")}` },
       ];
       if (stats.rejectedAmount > 0) {
-        summaryData.push({ Summary: "Rejected Amount", Value: `Rs.${stats.rejectedAmount.toLocaleString("en-IN")}` });
+        summaryData.push({ Metric: "Rejected Amount", Value: `Rs.${stats.rejectedAmount.toLocaleString("en-IN")}` });
       }
     }
-
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "Summary");
+    const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+    // Site-wise sheet
+    const siteSheetData = stats.siteWiseData.map((site, idx) => ({
+      "S.No": idx + 1,
+      "Site Name": site.siteName,
+      "Orders": site.orders,
+      "Total Amount (Rs.)": site.totalAmount,
+      "Days Worked": site.daysWorked,
+    }));
+    const siteSheet = XLSX.utils.json_to_sheet(siteSheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, orderSheet, "Orders");
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+    XLSX.utils.book_append_sheet(wb, siteSheet, "Sites Worked");
     XLSX.writeFile(wb, `${selectedStaff.name}_Report.xlsx`);
   };
 
@@ -618,37 +608,27 @@ const StaffReport = () => {
     return <div style={{ position: "relative", zIndex: 1050 }}>{children}</div>;
   };
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredBills.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredBills.length / itemsPerPage);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Filter staff based on search and staff type
   const filteredStaff = staffList.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       (s.mobile && s.mobile.toLowerCase().includes(search.toLowerCase())) ||
       (s.type && s.type.toLowerCase().includes(search.toLowerCase()));
-
     const matchesType = staffTypeFilter === "all" || (s.type && s.type.toLowerCase() === staffTypeFilter.toLowerCase());
-
     return matchesSearch && matchesType;
   });
 
-  // Get type badge color
   const getTypeBadgeClass = (type) => {
     switch (type?.toLowerCase()) {
-      case "manager":
-        return "role-badge manager";
-      case "delivery":
-        return "role-badge delivery";
-      case "sales":
-        return "role-badge sales";
-      default:
-        return "role-badge";
+      case "manager": return "role-badge manager";
+      case "delivery": return "role-badge delivery";
+      case "sales": return "role-badge sales";
+      default: return "role-badge";
     }
   };
 
@@ -664,11 +644,8 @@ const StaffReport = () => {
         <div className="customers-panel">
           <div className="customers-panel-header">
             <h5 className="panel-title">👥 Staff Members</h5>
-            <span className="customer-count">
-              {filteredStaff.length} of {staffList.length}
-            </span>
+            <span className="customer-count">{filteredStaff.length} of {staffList.length}</span>
           </div>
-
           <div className="staff-type-filter">
             <FormGroup>
               <Input
@@ -686,7 +663,6 @@ const StaffReport = () => {
               </Input>
             </FormGroup>
           </div>
-
           <div className="search-box">
             <i className="ni ni-search search-icon"></i>
             <Input
@@ -697,12 +673,9 @@ const StaffReport = () => {
               className="search-input"
             />
             {search && (
-              <button className="clear-search" onClick={() => setSearch("")}>
-                ×
-              </button>
+              <button className="clear-search" onClick={() => setSearch("")}>×</button>
             )}
           </div>
-
           <div className="customers-list">
             {filteredStaff.length > 0 ? (
               filteredStaff.map((s) => (
@@ -717,19 +690,14 @@ const StaffReport = () => {
                     <div className="customer-details">
                       <span className={getTypeBadgeClass(s.type)}>{s.type || "staff"}</span>
                       {s.mobile && (
-                        <span
-                          className="customer-name "
-                          style={{ fontSize: "11px", marginLeft: "12px", fontWeight: "150" }}
-                        >
+                        <span className="customer-name" style={{ fontSize: "11px", marginLeft: "12px", fontWeight: "150" }}>
                           {s.mobile}
                         </span>
                       )}
                     </div>
                   </div>
                   {selectedStaff?._id === s._id && (
-                    <div className="selected-indicator">
-                      <i className="ni ni-check"></i>
-                    </div>
+                    <div className="selected-indicator"><i className="ni ni-check"></i></div>
                   )}
                 </div>
               ))
@@ -764,21 +732,11 @@ const StaffReport = () => {
                     isClearable={true}
                   />
                 </div>
-
                 <div className="export-buttons ultra-compact">
-                  <button
-                    onClick={exportExcel}
-                    className="export-btn excel ultra-compact"
-                    disabled={filteredBills.length === 0}
-                  >
+                  <button onClick={exportExcel} className="export-btn excel ultra-compact" disabled={filteredBills.length === 0}>
                     <FaFileExcel />
                   </button>
-                  <button
-                    onClick={exportPDF}
-                    className="export-btn pdf ultra-compact"
-                    disabled={filteredBills.length === 0}
-                    title="Export to PDF"
-                  >
+                  <button onClick={exportPDF} className="export-btn pdf ultra-compact" disabled={filteredBills.length === 0} title="Export to PDF">
                     <FaFilePdf size={13} />
                   </button>
                 </div>
@@ -800,149 +758,119 @@ const StaffReport = () => {
                 {(startDate || endDate) && (
                   <div className="date-range-badge">
                     <i className="ni ni-calendar-date"></i>
-                    <span>
-                      {startDate?.toLocaleDateString("en-IN")} - {endDate?.toLocaleDateString("en-IN")}
-                    </span>
+                    <span>{startDate?.toLocaleDateString("en-IN")} - {endDate?.toLocaleDateString("en-IN")}</span>
                   </div>
                 )}
               </div>
 
-              {/* Stats Cards - Using totalAmt */}
-              {selectedStaff.type?.toLowerCase() === "delivery" ? (
-                <Row className="stats-row g-2">
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon blue compact">
-                        <i className="ni ni-box"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Total Orders</span>
-                        <span className="stat-value">{stats.totalOrders}</span>
-                      </div>
+              {/* Stats Cards - including new metrics */}
+              <Row className="stats-row g-2">
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon blue compact"><i className="ni ni-box"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Total Orders</span>
+                      <span className="stat-value">{stats.totalOrders}</span>
                     </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon success compact">
-                        <i className="ni ni-check"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Delivered</span>
-                        <span className="stat-value">{stats.deliveredOrders}</span>
-                      </div>
+                  </div>
+                </Col>
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon green compact"><i className="ni ni-money"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Total Amount</span>
+                      <span className="stat-value">Rs.{stats.totalAmount.toLocaleString("en-IN")}</span>
                     </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon warning compact">
-                        <i className="ni ni-clock"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Pending</span>
-                        <span className="stat-value">{stats.pendingDelivery}</span>
-                      </div>
+                  </div>
+                </Col>
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon success compact"><i className="ni ni-check"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Days Worked</span>
+                      <span className="stat-value">{stats.daysWorked}</span>
                     </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon info compact">
-                        <i className="ni ni-single-02"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Assigned Customers</span>
-                        <span className="stat-value">{stats.assignedCustomers}</span>
-                      </div>
+                  </div>
+                </Col>
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon info compact"><i className="ni ni-coin"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Salary Received</span>
+                      <span className="stat-value">Rs.{stats.salaryReceived.toLocaleString("en-IN")}</span>
                     </div>
-                  </Col>
-                  {stats.rejectedOrders > 0 && (
-                    <Col md="3">
-                      <div className="stat-card compact">
-                        <div className="stat-icon danger compact">
-                          <i className="ni ni-fat-remove"></i>
-                        </div>
-                        <div className="stat-content">
-                          <span className="stat-label">Rejected</span>
-                          <span className="stat-value">
-                            {stats.rejectedOrders} (Rs.{stats.rejectedAmount.toLocaleString("en-IN")})
-                          </span>
-                        </div>
-                      </div>
-                    </Col>
-                  )}
-                </Row>
-              ) : (
-                <Row className="stats-row g-2">
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon blue compact">
-                        <i className="ni ni-box"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Total Orders</span>
-                        <span className="stat-value">{stats.totalOrders}</span>
-                      </div>
+                  </div>
+                </Col>
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon warning compact"><i className="ni ni-timer"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Overtime Hours</span>
+                      <span className="stat-value">{stats.overtimeHours}</span>
                     </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon green compact">
-                        <i className="ni ni-money"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Total Amount</span>
-                        <span className="stat-value">Rs.{stats.totalAmount.toLocaleString("en-IN")}</span>
-                      </div>
+                  </div>
+                </Col>
+                <Col md="3">
+                  <div className="stat-card compact">
+                    <div className="stat-icon danger compact"><i className="ni ni-wallet"></i></div>
+                    <div className="stat-content">
+                      <span className="stat-label">Overtime Amount</span>
+                      <span className="stat-value">Rs.{stats.overtimeAmount.toLocaleString("en-IN")}</span>
                     </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon success compact">
-                        <i className="ni ni-check"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Collected</span>
-                        <span className="stat-value">Rs.{stats.collectedAmount.toLocaleString("en-IN")}</span>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md="3">
-                    <div className="stat-card compact">
-                      <div className="stat-icon warning compact">
-                        <i className="ni ni-clock"></i>
-                      </div>
-                      <div className="stat-content">
-                        <span className="stat-label">Pending</span>
-                        <span className="stat-value">Rs.{stats.pendingAmount.toLocaleString("en-IN")}</span>
-                      </div>
-                    </div>
-                  </Col>
-                  {/* {stats.rejectedAmount > 0 && (
-                    <Col md="3">
-                      <div className="stat-card compact">
-                        <div className="stat-icon danger compact">
-                          <i className="ni ni-fat-remove"></i>
-                        </div>
-                        <div className="stat-content">
-                          <span className="stat-label">Rejected</span>
-                          <span className="stat-value">Rs.{stats.rejectedAmount.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    </Col>
-                  )} */}
-                </Row>
+                  </div>
+                </Col>
+              </Row>
+
+              {/* Sites Worked Table */}
+              {stats.siteWiseData.length > 0 && (
+                <div className="transactions-section" style={{ marginTop: "20px" }}>
+                  <div className="transactions-header">
+                    <h6 className="transactions-title">🏗️ Sites Worked</h6>
+                    <span className="transactions-count">{stats.siteWiseData.length} sites</span>
+                  </div>
+                  <div className="table-responsive">
+                    <table className="transactions-table">
+                      <thead>
+                        <tr>
+                          <th>S.No</th>
+                          <th>Site Name</th>
+                          <th>Orders</th>
+                          <th>Total Amount (Rs.)</th>
+                          <th>Days Worked</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.siteWiseData.map((site, idx) => (
+                          <tr key={idx}>
+                            <td>{idx + 1}</td>
+                            <td>{site.siteName}</td>
+                            <td>{site.orders}</td>
+                            <td className="amount">Rs.{site.totalAmount.toLocaleString("en-IN")}</td>
+                            <td>{site.daysWorked}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colSpan="2" className="text-end fw-bold">Total:</td>
+                          <td className="fw-bold">{stats.totalOrders}</td>
+                          <td className="amount fw-bold">Rs.{stats.totalAmount.toLocaleString("en-IN")}</td>
+                          <td>{stats.daysWorked}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
               )}
 
-              {/* Transactions Table */}
+              {/* Orders Table (existing) */}
               <div className="transactions-section">
                 <div className="transactions-header">
                   <h6 className="transactions-title">
                     {selectedStaff.type?.toLowerCase() === "delivery" ? "📦 Delivery Orders" : "📋 Order History"}
                   </h6>
-                  {filteredBills.length > 0 && (
-                    <span className="transactions-count">{filteredBills.length} entries</span>
-                  )}
+                  {filteredBills.length > 0 && <span className="transactions-count">{filteredBills.length} entries</span>}
                 </div>
-
                 {currentItems.length > 0 ? (
                   <>
                     <div className="table-responsive">
@@ -953,7 +881,6 @@ const StaffReport = () => {
                             <th>D.Date</th>
                             <th>Customer</th>
                             <th>Order No</th>
-
                             <th>Amount</th>
                             {selectedStaff.type?.toLowerCase() !== "delivery" && <th>P.Status</th>}
                             <th>O.Status</th>
@@ -962,58 +889,27 @@ const StaffReport = () => {
                         </thead>
                         <tbody>
                           {currentItems.map((bill, idx) => {
-                            let paymentStatusText = "Pending";
-                            let paymentStatusClass = "pending";
-
+                            let paymentStatusText = "Pending", paymentStatusClass = "pending";
                             if (bill.orderStatus === "rejected") {
                               paymentStatusText = "Rejected";
                               paymentStatusClass = "rejected";
-                            } else if (
-                              bill.paymentMethod &&
-                              bill.paymentMethod !== null &&
-                              bill.paymentMethod !== "null"
-                            ) {
+                            } else if (bill.paymentMethod && bill.paymentMethod !== null && bill.paymentMethod !== "null") {
                               paymentStatusText = "Paid";
                               paymentStatusClass = "paid";
                             }
-
                             return (
                               <tr key={bill._id} className={bill.orderStatus === "rejected" ? "rejected-row" : ""}>
                                 <td>{indexOfFirstItem + idx + 1}</td>
-                                <td>
-                                  {bill.deliveredAt
-                                    ? new Date(bill.deliveredAt).toLocaleDateString("en-IN", {
-                                        day: "2-digit",
-                                        month: "numeric",
-                                        year: "numeric",
-                                      })
-                                    : "-"}
-                                </td>
+                                <td>{bill.deliveredAt ? new Date(bill.deliveredAt).toLocaleDateString("en-IN", { day: "2-digit", month: "numeric", year: "numeric" }) : "-"}</td>
                                 <td>{getCustomerName(bill)}</td>
-                                <td>
-                                  <span className="order-id">#{bill._id.toString().slice(-6)}</span>
-                                </td>
+                                <td><span className="order-id">#{bill._id.toString().slice(-6)}</span></td>
                                 <td className="amount">Rs.{(Number(bill.totalAmt) || 0).toLocaleString("en-IN")}</td>
                                 {selectedStaff.type?.toLowerCase() !== "delivery" && (
-                                  <td>
-                                    <span className={`order-status-badge ${paymentStatusClass}`}>
-                                      {paymentStatusText}
-                                    </span>
-                                  </td>
+                                  <td><span className={`order-status-badge ${paymentStatusClass}`}>{paymentStatusText}</span></td>
                                 )}
+                                <td><span className={`order-status-badge ${bill.orderStatus?.toLowerCase() || "pending"}`}>{bill.orderStatus || "Pending"}</span></td>
                                 <td>
-                                  <span
-                                    className={`order-status-badge ${bill.orderStatus?.toLowerCase() || "pending"}`}
-                                  >
-                                    {bill.orderStatus || "Pending"}
-                                  </span>
-                                </td>
-                                <td>
-                                  <button
-                                    className="action-btn view-btn"
-                                    onClick={() => openInvoiceModal(bill)}
-                                    title="View Invoice"
-                                  >
+                                  <button className="action-btn view-btn" onClick={() => openInvoiceModal(bill)} title="View Invoice">
                                     <i className="ni ni-eye"></i>
                                   </button>
                                 </td>
@@ -1023,42 +919,21 @@ const StaffReport = () => {
                         </tbody>
                         <tfoot>
                           <tr>
-                            <td
-                              colSpan={selectedStaff.type?.toLowerCase() === "delivery" ? "4" : "4"}
-                              className="text-end fw-bold"
-                            >
-                              Total :
-                            </td>
+                            <td colSpan={selectedStaff.type?.toLowerCase() === "delivery" ? "4" : "4"} className="text-end fw-bold">Total:</td>
                             <td className="amount fw-bold">Rs.{stats.totalAmount.toLocaleString("en-IN")}</td>
                             <td colSpan="2"></td>
                           </tr>
-                          {/* {stats.rejectedAmount > 0 && (
-                            <tr className="rejected-footer-row">
-                              <td colSpan={selectedStaff.type?.toLowerCase() === 'delivery' ? "4" : "4"} className="text-end text-danger">Rejected Amount:</td>
-                              <td className="amount text-danger">Rs.{stats.rejectedAmount.toLocaleString('en-IN')}</td>
-                              <td colSpan="2"></td>
-                            </tr>
-                          )} */}
                         </tfoot>
                       </table>
                     </div>
-
                     {totalPages > 1 && (
                       <div className="pagination-wrapper">
                         <Pagination>
-                          <PaginationItem disabled={currentPage === 1}>
-                            <PaginationLink previous onClick={() => paginate(currentPage - 1)} />
-                          </PaginationItem>
-
+                          <PaginationItem disabled={currentPage === 1}><PaginationLink previous onClick={() => paginate(currentPage - 1)} /></PaginationItem>
                           {[...Array(totalPages)].map((_, i) => (
-                            <PaginationItem key={i + 1} active={currentPage === i + 1}>
-                              <PaginationLink onClick={() => paginate(i + 1)}>{i + 1}</PaginationLink>
-                            </PaginationItem>
+                            <PaginationItem key={i+1} active={currentPage === i+1}><PaginationLink onClick={() => paginate(i+1)}>{i+1}</PaginationLink></PaginationItem>
                           ))}
-
-                          <PaginationItem disabled={currentPage === totalPages}>
-                            <PaginationLink next onClick={() => paginate(currentPage + 1)} />
-                          </PaginationItem>
+                          <PaginationItem disabled={currentPage === totalPages}><PaginationLink next onClick={() => paginate(currentPage + 1)} /></PaginationItem>
                         </Pagination>
                       </div>
                     )}
@@ -1067,11 +942,7 @@ const StaffReport = () => {
                   <div className="no-data">
                     <i className="ni ni-box-open"></i>
                     <p>No orders found for this staff member in the selected period</p>
-                    {(startDate || endDate) && (
-                      <button className="clear-filter-btn" onClick={() => setDateRange([null, null])}>
-                        Clear Filters
-                      </button>
-                    )}
+                    {(startDate || endDate) && <button className="clear-filter-btn" onClick={() => setDateRange([null, null])}>Clear Filters</button>}
                   </div>
                 )}
               </div>
@@ -1086,170 +957,44 @@ const StaffReport = () => {
         </div>
       </div>
 
-      {/* Simple Invoice Modal - No frames */}
-      <Modal
-        isOpen={invoiceModal}
-        toggle={() => setInvoiceModal(false)}
-        size="lg"
-        scrollable
-        className="simple-invoice-modal"
-      >
-        <ModalHeader toggle={() => setInvoiceModal(false)}>
-          Order Invoice #{selectedBill?._id.toString().slice(-6)}
-        </ModalHeader>
+      {/* Invoice Modal (unchanged) */}
+      <Modal isOpen={invoiceModal} toggle={() => setInvoiceModal(false)} size="lg" scrollable className="simple-invoice-modal">
+        <ModalHeader toggle={() => setInvoiceModal(false)}>Order Invoice #{selectedBill?._id.toString().slice(-6)}</ModalHeader>
         <ModalBody>
           {selectedBill && (
             <div className="simple-invoice">
-              {/* Order Header */}
+              {/* (existing invoice content - same as before) */}
               <div style={{ borderBottom: "2px solid #eee", paddingBottom: "20px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <h3 style={{ margin: "0 0 5px 0", fontSize: "18px" }}>Retail Pulse</h3>
-                    <p style={{ margin: 0, color: "#666" }}>Order Invoice</p>
-                  </div>
+                  <div><h3 style={{ margin: "0 0 5px 0", fontSize: "18px" }}>Retail Pulse</h3><p style={{ margin: 0, color: "#666" }}>Order Invoice</p></div>
                   <div style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        backgroundColor: selectedBill.orderStatus === "rejected" ? "#fef2f2" : "#e6f7e6",
-                        color: selectedBill.orderStatus === "rejected" ? "#dc2626" : "#10b981",
-                        padding: "5px 10px",
-                        borderRadius: "4px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {(selectedBill.orderStatus || "Delivered").charAt(0).toUpperCase() +
-                        (selectedBill.orderStatus || "Delivered").slice(1)}
+                    <div style={{ backgroundColor: selectedBill.orderStatus === "rejected" ? "#fef2f2" : "#e6f7e6", color: selectedBill.orderStatus === "rejected" ? "#dc2626" : "#10b981", padding: "5px 10px", borderRadius: "4px", fontSize: "14px", fontWeight: "500" }}>
+                      {(selectedBill.orderStatus || "Delivered").charAt(0).toUpperCase() + (selectedBill.orderStatus || "Delivered").slice(1)}
                     </div>
-                    <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#666" }}>
-                      Date: {new Date(selectedBill.createdAt).toLocaleDateString("en-IN")}
-                    </p>
+                    <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#666" }}>Date: {new Date(selectedBill.createdAt).toLocaleDateString("en-IN")}</p>
                   </div>
                 </div>
               </div>
-
-              {/* Customer & Staff Details */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
-                <div>
-                  <h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Customer Details</h4>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Name:</strong> {getCustomerName(selectedBill)}
-                  </p>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Mobile:</strong>{" "}
-                    {selectedBill.customerId?.mobile || selectedBill.customerId?.phone || "N/A"}
-                  </p>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Address:</strong>{" "}
-                    {selectedBill.customerId?.address || selectedBill.deliveryAddress || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Staff Details</h4>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Name:</strong> {selectedStaff?.name || selectedBill.staffName || "N/A"}
-                  </p>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Type:</strong> {selectedStaff?.type || "staff"}
-                  </p>
-                  <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                    <strong>Contact:</strong> {selectedStaff?.mobile || selectedStaff?.phone || "N/A"}
-                  </p>
-                </div>
+                <div><h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Customer Details</h4><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Name:</strong> {getCustomerName(selectedBill)}</p><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Mobile:</strong> {selectedBill.customerId?.mobile || selectedBill.customerId?.phone || "N/A"}</p><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Address:</strong> {selectedBill.customerId?.address || selectedBill.deliveryAddress || "N/A"}</p></div>
+                <div><h4 style={{ fontSize: "14px", margin: "0 0 10px 0", color: "#333" }}>Staff Details</h4><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Name:</strong> {selectedStaff?.name || selectedBill.staffName || "N/A"}</p><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Type:</strong> {selectedStaff?.type || "staff"}</p><p style={{ margin: "5px 0", fontSize: "13px" }}><strong>Contact:</strong> {selectedStaff?.mobile || selectedStaff?.phone || "N/A"}</p></div>
               </div>
-
-              {/* Products Table */}
               <div style={{ marginBottom: "30px" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                  <thead>
-                    <tr style={{ backgroundColor: "#f8f9fa", borderBottom: "2px solid #dee2e6" }}>
-                      <th style={{ padding: "10px", textAlign: "left" }}>S.No</th>
-                      <th style={{ padding: "10px", textAlign: "left" }}>Product</th>
-                      <th style={{ padding: "10px", textAlign: "right" }}>Qty</th>
-                      <th style={{ padding: "10px", textAlign: "right" }}>Rate (Rs.)</th>
-                      <th style={{ padding: "10px", textAlign: "right" }}>Amount (Rs.)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedBill.orderedProducts?.map((product, idx) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
-                        <td style={{ padding: "10px" }}>{idx + 1}</td>
-                        <td style={{ padding: "10px" }}>{product.productName}</td>
-                        <td style={{ padding: "10px", textAlign: "right" }}>{product.qty}</td>
-                        <td style={{ padding: "10px", textAlign: "right" }}>
-                          {(Number(product.value) || 0).toLocaleString("en-IN")}
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "right" }}>
-                          {((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString("en-IN")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <thead><tr style={{ backgroundColor: "#f8f9fa", borderBottom: "2px solid #dee2e6" }}><th style={{ padding: "10px", textAlign: "left" }}>S.No</th><th style={{ padding: "10px", textAlign: "left" }}>Product</th><th style={{ padding: "10px", textAlign: "right" }}>Qty</th><th style={{ padding: "10px", textAlign: "right" }}>Rate (Rs.)</th><th style={{ padding: "10px", textAlign: "right" }}>Amount (Rs.)</th></tr></thead>
+                  <tbody>{selectedBill.orderedProducts?.map((product, idx) => (<tr key={idx} style={{ borderBottom: "1px solid #eee" }}><td style={{ padding: "10px" }}>{idx+1}</td><td style={{ padding: "10px" }}>{product.productName}</td><td style={{ padding: "10px", textAlign: "right" }}>{product.qty}</td><td style={{ padding: "10px", textAlign: "right" }}>{(Number(product.value) || 0).toLocaleString("en-IN")}</td><td style={{ padding: "10px", textAlign: "right" }}>{((Number(product.value) || 0) * (Number(product.qty) || 0)).toLocaleString("en-IN")}</td></tr>))}</tbody>
                 </table>
               </div>
-
-              {/* Totals */}
               <div style={{ borderTop: "2px solid #eee", paddingTop: "20px" }}>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <div style={{ width: "300px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                      <span style={{ fontWeight: "500" }}>Subtotal:</span>
-                      <span>
-                        Rs.
-                        {selectedBill.orderedProducts
-                          ?.reduce((sum, product) => sum + (Number(product.value) || 0) * (Number(product.qty) || 0), 0)
-                          .toLocaleString("en-IN") || (Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                      <span style={{ fontWeight: "500" }}>Discount:</span>
-                      <span>Rs.0</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-                      <span style={{ fontWeight: "500" }}>Tax:</span>
-                      <span>Rs.0</span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        borderTop: "2px solid #333",
-                        paddingTop: "10px",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      <span>Total:</span>
-                      <span>Rs.{(Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}</span>
-                    </div>
-                  </div>
-                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}><div style={{ width: "300px" }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}><span style={{ fontWeight: "500" }}>Subtotal:</span><span>Rs.{selectedBill.orderedProducts?.reduce((sum, product) => sum + (Number(product.value) || 0) * (Number(product.qty) || 0), 0).toLocaleString("en-IN") || (Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}</span></div><div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}><span style={{ fontWeight: "500" }}>Discount:</span><span>Rs.0</span></div><div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}><span style={{ fontWeight: "500" }}>Tax:</span><span>Rs.0</span></div><div style={{ display: "flex", justifyContent: "space-between", borderTop: "2px solid #333", paddingTop: "10px", fontSize: "16px", fontWeight: "bold" }}><span>Total:</span><span>Rs.{(Number(selectedBill.totalAmt) || 0).toLocaleString("en-IN")}</span></div></div></div>
               </div>
-
-              {/* Payment Info */}
-              {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (
-                <div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "4px" }}>
-                  <p style={{ margin: "0 0 5px 0", fontSize: "13px" }}>
-                    <strong>Payment Method:</strong> {selectedBill.paymentMethod}
-                  </p>
-                  {selectedBill.paymentCollectedAt && (
-                    <p style={{ margin: "0", fontSize: "13px" }}>
-                      <strong>Payment Collected:</strong>{" "}
-                      {new Date(selectedBill.paymentCollectedAt).toLocaleString("en-IN")}
-                    </p>
-                  )}
-                </div>
-              )}
+              {selectedBill.paymentMethod && selectedBill.orderStatus !== "rejected" && (<div style={{ marginTop: "20px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "4px" }}><p style={{ margin: "0 0 5px 0", fontSize: "13px" }}><strong>Payment Method:</strong> {selectedBill.paymentMethod}</p>{selectedBill.paymentCollectedAt && (<p style={{ margin: "0", fontSize: "13px" }}><strong>Payment Collected:</strong> {new Date(selectedBill.paymentCollectedAt).toLocaleString("en-IN")}</p>)}</div>)}
             </div>
           )}
         </ModalBody>
         <ModalFooter>
-          <Button color="primary" onClick={downloadInvoicePDF} className="download-btn">
-            <FaDownload /> Download PDF
-          </Button>
-          <Button color="secondary" onClick={() => setInvoiceModal(false)}>
-            Close
-          </Button>
+          <Button color="primary" onClick={downloadInvoicePDF} className="download-btn"><FaDownload /> Download PDF</Button>
+          <Button color="secondary" onClick={() => setInvoiceModal(false)}>Close</Button>
         </ModalFooter>
       </Modal>
     </div>

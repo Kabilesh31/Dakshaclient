@@ -44,6 +44,13 @@ import DataContext from "../../../utils/DataContext";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
+// Role options for Add/Edit user
+const roleOptions = [
+  { value: "admin", label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "supervisor", label: "Supervisor" },
+];
+
 const UserListCompact = () => {
   const { contextData } = useContext(UserContext);
   const [data, setData] = useState([]);
@@ -458,100 +465,6 @@ const UserListCompact = () => {
                                 <Icon name="arrow-left"></Icon>
                               </Button>
                             </li>
-                            {/* <li>
-                              <UncontrolledDropdown>
-                                <DropdownToggle tag="a" className="btn btn-trigger btn-icon dropdown-toggle">
-                                  <div className="dot dot-primary"></div>
-                                  <Icon name="filter-alt"></Icon>
-                                </DropdownToggle>
-                                <DropdownMenu
-                                  right
-                                  className="filter-wg dropdown-menu-xl"
-                                  style={{ overflow: "visible" }}
-                                >
-                                  <div className="dropdown-head">
-                                    <span className="sub-title dropdown-title">Filter Users</span>
-                                    <div className="dropdown">
-                                      <DropdownItem
-                                        href="#more"
-                                        onClick={(ev) => {
-                                          ev.preventDefault();
-                                        }}
-                                        className="btn btn-sm btn-icon"
-                                      >
-                                        <Icon name="more-h"></Icon>
-                                      </DropdownItem>
-                                    </div>
-                                  </div>
-                                  <div className="dropdown-body dropdown-body-rg">
-                                    <Row className="gx-6 gy-3">
-                                      <Col size="6">
-                                        <div className="custom-control custom-control-sm custom-checkbox">
-                                          <input
-                                            type="checkbox"
-                                            className="custom-control-input form-control"
-                                            id="hasBalance"
-                                          />
-                                          <label className="custom-control-label" htmlFor="hasBalance">
-                                            {" "}
-                                            Have Balance
-                                          </label>
-                                        </div>
-                                      </Col>
-                                      <Col size="6">
-                                        <div className="custom-control custom-control-sm custom-checkbox">
-                                          <input
-                                            type="checkbox"
-                                            className="custom-control-input form-control"
-                                            id="hasKYC"
-                                          />
-                                          <label className="custom-control-label" htmlFor="hasKYC">
-                                            {" "}
-                                            KYC Verified
-                                          </label>
-                                        </div>
-                                      </Col>
-                                      <Col size="6">
-                                        <FormGroup>
-                                          <label className="overline-title overline-title-alt">Role</label>
-                                          <RSelect options={filterRole} placeholder="Any Role" />
-                                        </FormGroup>
-                                      </Col>
-                                      <Col size="6">
-                                        <FormGroup>
-                                          <label className="overline-title overline-title-alt">Status</label>
-                                          <RSelect options={filterStatus} placeholder="Any Status" />
-                                        </FormGroup>
-                                      </Col>
-                                      <Col size="12">
-                                        <FormGroup className="form-group">
-                                          <Button color="secondary">Filter</Button>
-                                        </FormGroup>
-                                      </Col>
-                                    </Row>
-                                  </div>
-                                  <div className="dropdown-foot between">
-                                    <a
-                                      href="#reset"
-                                      onClick={(ev) => {
-                                        ev.preventDefault();
-                                      }}
-                                      className="clickable"
-                                    >
-                                      Reset Filter
-                                    </a>
-                                    <a
-                                      href="#save"
-                                      onClick={(ev) => {
-                                        ev.preventDefault();
-                                      }}
-                                    >
-                                      Save Filter
-                                    </a>
-                                  </div>
-                                </DropdownMenu>
-                              </UncontrolledDropdown>
-                            </li> */}
                             <li>
                               <UncontrolledDropdown>
                                 <DropdownToggle tag="a" className="btn btn-trigger btn-icon dropdown-toggle">
@@ -657,17 +570,7 @@ const UserListCompact = () => {
             </div>
             <DataTableBody compact>
               <DataTableHead>
-                <DataTableRow className="nk-tb-col-check">
-                  {/* <div className="custom-control custom-control-sm custom-checkbox notext">
-                    <input
-                      type="checkbox"
-                      className="custom-control-input form-control"
-                      onChange={(e) => selectorCheck(e)}
-                      id="uid"
-                    />
-                    <label className="custom-control-label" htmlFor="uid"></label>
-                  </div> */}
-                </DataTableRow>
+                <DataTableRow className="nk-tb-col-check"></DataTableRow>
                 <DataTableRow>
                   <span className="sub-text">User Name</span>
                 </DataTableRow>
@@ -680,15 +583,6 @@ const UserListCompact = () => {
                 <DataTableRow size="md">
                   <span className="sub-text">Phone</span>
                 </DataTableRow>
-                {/* <DataTableRow size="lg">
-                  <span className="sub-text">Company</span>
-                </DataTableRow> */}
-                {/* <DataTableRow size="lg">
-                  <span className="sub-text">Verified</span>
-                </DataTableRow> */}
-                {/* <DataTableRow size="lg">
-                  <span className="sub-text">Last Login</span>
-                </DataTableRow> */}
                 <DataTableRow>
                   <span className="sub-text">Status</span>
                 </DataTableRow>
@@ -696,27 +590,12 @@ const UserListCompact = () => {
                   <span>More</span>
                 </DataTableRow>
               </DataTableHead>
-              {/*Head*/}
               {currentItems.length > 0
                 ? currentItems.map((item) => {
                     return (
                       <DataTableItem key={item._id}>
-                        <DataTableRow className="nk-tb-col-check">
-                          {/* <div className="custom-control custom-control-sm custom-checkbox notext">
-                            <input
-                              type="checkbox" 
-                              className="custom-control-input form-control"
-                              defaultChecked={item.checked}     
-                              
-                              id={item.id + "uid1"}
-                              key={Math.random()}
-                              onChange={(e) => onSelectChange(e, item.id)}
-                            />
-                            <label className="custom-control-label" htmlFor={item.id + "uid1"}></label>
-                          </div> */}
-                        </DataTableRow>
+                        <DataTableRow className="nk-tb-col-check"></DataTableRow>
                         <DataTableRow>
-                          {/* <Link to={`${process.env.PUBLIC_URL}/user-details-regular/${item._id}`}> */}
                           <div className="user-card">
                             <UserAvatar
                               theme={item.avatarBg}
@@ -728,7 +607,6 @@ const UserListCompact = () => {
                               <span className="tb-lead">{item.name} </span>
                             </div>
                           </div>
-                          {/* </Link> */}
                         </DataTableRow>
                         <DataTableRow size="md">
                           <span>{item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}</span>
@@ -739,35 +617,6 @@ const UserListCompact = () => {
                         <DataTableRow size="md">
                           <span>{item.phone}</span>
                         </DataTableRow>
-                        {/* <DataTableRow size="lg">
-                          <span>{item.country}</span>
-                        </DataTableRow> */}
-                        {/* <DataTableRow size="lg">
-                          <ul className="list-status">
-                            <li>
-                              <Icon
-                                className={`text-${
-                                  item.emailStatus === "success"
-                                    ? "success"
-                                    : item.emailStatus === "pending"
-                                    ? "info"
-                                    : "secondary"
-                                }`}
-                                name={`${
-                                  item.emailStatus === "success"
-                                    ? "check-circle"
-                                    : item.emailStatus === "alert"
-                                    ? "alert-circle"
-                                    : "alarm-alt"
-                                }`}
-                              ></Icon>{" "}
-                              <span>Email</span>
-                            </li>
-                          </ul>
-                        </DataTableRow> */}
-                        {/* <DataTableRow size="lg">
-                          <span>{item.lastLogin}</span>
-                        </DataTableRow> */}
                         <DataTableRow>
                           <span
                             className={`tb-status text-${
@@ -779,30 +628,6 @@ const UserListCompact = () => {
                         </DataTableRow>
                         <DataTableRow className="nk-tb-col-tools">
                           <ul className="nk-tb-actions gx-1">
-                            {/* <li className="nk-tb-action-hidden" onClick={() => onEditClick(item._id)}>
-                              <TooltipComponent
-                                tag="a"
-                                containerClassName="btn btn-trigger btn-icon"
-                                id={"edit" + item._id}
-                                icon="edit-alt-fill"
-                                direction="top"
-                                text="Edit"
-                              />
-                            </li> */}
-                            {/* {item.status !== "Suspend" && (
-                              <React.Fragment>
-                                <li className="nk-tb-action-hidden" onClick={() => suspendUser(item._id)}>
-                                  <TooltipComponent
-                                    tag="a"
-                                    containerClassName="btn btn-trigger btn-icon"
-                                    id={"suspend" + item._id}
-                                    icon="user-cross-fill"
-                                    direction="top"
-                                    text="Suspend"
-                                  />
-                                </li>
-                              </React.Fragment>
-                            )} */}
                             <li>
                               <UncontrolledDropdown>
                                 <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
@@ -822,23 +647,6 @@ const UserListCompact = () => {
                                         <span>Edit</span>
                                       </DropdownItem>
                                     </li>
-                                    {/* {item.status !== "Suspend" && (
-                                      <React.Fragment>
-                                        <li className="divider"></li>
-                                        <li onClick={() => suspendUser(item._id)}>
-                                          <DropdownItem
-                                            tag="a"
-                                            href="#suspend"
-                                            onClick={(ev) => {
-                                              ev.preventDefault();
-                                            }}
-                                          >
-                                            <Icon name="na"></Icon>
-                                            <span>Suspend User</span>
-                                          </DropdownItem>
-                                        </li>
-                                      </React.Fragment>
-                                    )} */}
                                   </ul>
                                 </DropdownMenu>
                               </UncontrolledDropdown>
@@ -892,10 +700,7 @@ const UserListCompact = () => {
                         defaultValue={formData.name}
                         placeholder="Enter name"
                         onInput={(e) => {
-                          // Remove special characters (allow only letters + space)
                           e.target.value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
-
-                          // Capitalize first letter
                           if (e.target.value.length > 0) {
                             e.target.value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1);
                           }
@@ -908,7 +713,6 @@ const UserListCompact = () => {
                           },
                         })}
                       />
-
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>
                   </Col>
@@ -942,7 +746,7 @@ const UserListCompact = () => {
                         placeholder="Enter phone"
                         defaultValue={formData.phone}
                         maxLength={10}
-                        onInput={(e) => (e.target.value = e.target.value.replace(/\D/g, ""))} // only digits
+                        onInput={(e) => (e.target.value = e.target.value.replace(/\D/g, ""))}
                         ref={register({
                           required: "This field is required",
                           pattern: {
@@ -953,27 +757,13 @@ const UserListCompact = () => {
                       />
                       {errors.phone && <span className="invalid">{errors.phone.message}</span>}
                     </FormGroup>
-
-                    {/* <FormGroup>
-                      <label className="form-label">Balance</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="balance"
-                        defaultValue={formData.balance}
-                        placeholder="Balance"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup> */}
                   </Col>
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Role</label>
                       <div className="form-control-wrap">
                         <RSelect
-                          options={filterRole}
-                          // defaultValue={{ value: "admin", label: "Admin" }}
+                          options={roleOptions}
                           onChange={(e) => {
                             setFormData({ ...formData, role: e.value });
                           }}
@@ -981,14 +771,12 @@ const UserListCompact = () => {
                       </div>
                     </FormGroup>
                   </Col>
-
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Status</label>
                       <div className="form-control-wrap">
                         <RSelect
                           options={filterStatus}
-                          // defaultValue={{ value:"active", label: "Active" }}
                           onChange={(e) => setFormData({ ...formData, status: e.value })}
                         />
                       </div>
@@ -1050,42 +838,6 @@ const UserListCompact = () => {
                       {errors.name && <span className="invalid">{errors.name.message}</span>}
                     </FormGroup>
                   </Col>
-                  {/* <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Email </label>
-                      <input
-                        className="form-control"
-                        type="text"
-                        name="email"
-                        disabled
-                        defaultValue={formData.email}
-                        placeholder="Enter email"
-                        ref={register({
-                          required: "This field is required",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: "invalid email address",
-                          },
-                        })}
-                      />
-                      {errors.email && <span className="invalid">{errors.email.message}</span>}
-                    </FormGroup>
-                  </Col> */}
-                  {/* <Col md="6">
-                    <FormGroup>
-                      <label className="form-label">Balance</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="balance"
-                        disabled
-                        defaultValue={""}
-                        placeholder="Balance"
-                        ref={register({ required: "This field is required" })}
-                      />
-                      {errors.balance && <span className="invalid">{errors.balance.message}</span>}
-                    </FormGroup>
-                  </Col> */}
                   <Col md="6">
                     <FormGroup>
                       <label className="form-label">Phone</label>
@@ -1105,11 +857,18 @@ const UserListCompact = () => {
                       <label className="form-label">Role</label>
                       <div className="form-control-wrap">
                         <RSelect
-                          options={filterRole}
+                          options={roleOptions}
                           disabled
                           defaultValue={{
                             value: formData.role,
-                            label: formData.role === "admin" ? "Admin" : "Manager",
+                            label:
+                              formData.role === "admin"
+                                ? "Admin"
+                                : formData.role === "manager"
+                                ? "Manager"
+                                : formData.role === "supervisor"
+                                ? "Supervisor"
+                                : formData.role,
                           }}
                           onChange={(e) => setFormData({ ...formData, role: e.value })}
                         />

@@ -11,7 +11,6 @@ import {
   Col,
   Button,
   Icon,
-  PreviewCard,
   BlockBetween,
 } from "../../../components/Component";
 import {
@@ -122,6 +121,7 @@ const SiteManagement = () => {
   const [sites, setSites] = useState([]);
   const [filteredSites, setFilteredSites] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [onSearch, setOnSearch] = useState(true);
   const [selectedSite, setSelectedSite] = useState(null);
   const [modal, setModal] = useState(false);
   const [addModal, setAddModal] = useState(false);
@@ -135,6 +135,7 @@ const SiteManagement = () => {
     image: "",
   });
   const [staffInput, setStaffInput] = useState("");
+  const [formErrors, setFormErrors] = useState({});
 
   // Load dummy data on mount
   useEffect(() => {
@@ -159,17 +160,24 @@ const SiteManagement = () => {
   }, [searchTerm, sites]);
 
   // ========== Handlers ==========
+  const toggleSearch = () => setOnSearch(!onSearch);
+
   const viewSiteDetails = (site) => {
     setSelectedSite(site);
     setModal(true);
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!newSite.name.trim()) errors.name = "Site name is required";
+    if (!newSite.location.trim()) errors.location = "Location is required";
+    if (!newSite.startDate) errors.startDate = "Start date is required";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddSite = () => {
-    // Simple validation
-    if (!newSite.name || !newSite.location || !newSite.startDate) {
-      alert("Please fill required fields: Name, Location, Start Date");
-      return;
-    }
+    if (!validateForm()) return;
 
     const newId = sites.length + 1;
     const siteToAdd = {
@@ -182,6 +190,10 @@ const SiteManagement = () => {
     };
     setSites([siteToAdd, ...sites]);
     setAddModal(false);
+    resetNewSiteForm();
+  };
+
+  const resetNewSiteForm = () => {
     setNewSite({
       name: "",
       location: "",
@@ -192,20 +204,21 @@ const SiteManagement = () => {
       image: "",
     });
     setStaffInput("");
-    alert("Site added successfully!");
+    setFormErrors({});
   };
 
   const handleAddStaff = () => {
-    if (staffInput.trim() && !newSite.staffAssigned.includes(staffInput.trim())) {
+    const staffName = staffInput.trim();
+    if (staffName && !newSite.staffAssigned.includes(staffName)) {
       setNewSite({
         ...newSite,
-        staffAssigned: [...newSite.staffAssigned, staffInput.trim()],
+        staffAssigned: [...newSite.staffAssigned, staffName],
       });
       setStaffInput("");
     }
   };
 
-  const removeStaff = (staffToRemove) => {
+  const handleRemoveStaff = (staffToRemove) => {
     setNewSite({
       ...newSite,
       staffAssigned: newSite.staffAssigned.filter((s) => s !== staffToRemove),
@@ -213,6 +226,7 @@ const SiteManagement = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const options = { year: "numeric", month: "short", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
@@ -242,107 +256,152 @@ const SiteManagement = () => {
             <BlockHeadContent>
               <Button color="primary" className="btn-icon" onClick={() => setAddModal(true)}>
                 <Icon name="plus" />
-                {/* <span>Add New Site</span> */}
               </Button>
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>
 
-        {/* Search Bar */}
-        <Block>
-          <Row className="g-gs">
-            <Col md="6" lg="4">
-              <FormGroup className="mb-0">
-                <Input
-                  type="text"
-                  placeholder="Search by site name, location, or assigned staff..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </FormGroup>
-            </Col>
-            {/* <Col md="6" lg="8" className="text-md-end">
-              <Button color="secondary" outline onClick={() => setSearchTerm("")}>
-                <Icon name="refresh" /> Reset
-              </Button>
-            </Col> */}
-          </Row>
-        </Block>
-
-        {/* Sites Cards Grid */}
-        <Block>
-          <Row className="g-gs">
-            {filteredSites.length > 0 ? (
-              filteredSites.map((site) => (
-                <Col xl="4" lg="6" md="6" key={site.id}>
-                  <Card className="site-card h-100 shadow-sm">
-                    <CardImg top src={site.image} alt={site.name} style={{ height: "180px", objectFit: "cover" }} />
-                    <CardBody>
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <CardTitle tag="h5" className="mb-0">
-                          {site.name}
-                        </CardTitle>
-                        {getStatusBadge(site.status)}
-                      </div>
-                      <CardText>
-                        <div className="mb-2">
-                          <Icon name="map-pin" size={14} className="me-1 text-muted" />
-                          <span className="small">{site.location}</span>
-                        </div>
-                        <div className="mb-2">
-                          <Icon name="calendar" size={14} className="me-1 text-muted" />
-                          <span className="small">Started: {formatDate(site.startDate)}</span>
-                        </div>
-                        <div className="mb-2">
-                          <Icon name="users" size={14} className="me-1 text-muted" />
-                          <span className="small">Staff: {site.staffAssigned.length} assigned</span>
-                        </div>
-                        {site.projectValue && (
-                          <div className="mb-2">
-                            <Icon name="trend-up" size={14} className="me-1 text-muted" />
-                            <span className="small">Value: {site.projectValue}</span>
-                          </div>
-                        )}
-                        {site.completion && site.status === "active" && (
-                          <div className="mt-2">
-                            <div className="d-flex justify-content-between small mb-1">
-                              <span>Completion</span>
-                              <span>{site.completion}%</span>
-                            </div>
-                            <div className="progress" style={{ height: "6px" }}>
-                              <div
-                                className="progress-bar bg-primary"
-                                style={{ width: `${site.completion}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
-                      </CardText>
-                    </CardBody>
-                    <CardFooter className="bg-transparent border-top-0 pb-3">
-                      <Button color="primary" outline block onClick={() => viewSiteDetails(site)}>
-                        View Details
+        {/* White container for search and cards */}
+        <Block className="card card-bordered">
+          {/* Search Bar */}
+          <div className="card-inner position-relative card-tools-toggle border-bottom">
+            <div className="card-title-group">
+              <div className="card-tools">
+                <div className="form-inline flex-nowrap gx-3">
+                  <div className="form-wrap"></div>
+                  <div className="btn-wrap">
+                    <span className="d-md-none">
+                      <Button color="light" outline className="btn-dim btn-icon">
+                        <Icon name="arrow-right"></Icon>
                       </Button>
-                    </CardFooter>
-                  </Card>
-                </Col>
-              ))
-            ) : (
-              <Col xs="12">
-                <div className="text-center py-5">
-                  <Icon name="building" size={48} className="text-soft" />
-                  <h5 className="mt-3">No sites found</h5>
-                  <p className="text-muted">Try adjusting your search or add a new site.</p>
+                    </span>
+                  </div>
                 </div>
-              </Col>
-            )}
-          </Row>
+              </div>
+              <div className="card-tools mr-n1">
+                <ul className="btn-toolbar gx-1">
+                  <li>
+                    <a
+                      href="#search"
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        toggleSearch();
+                      }}
+                      className="btn btn-icon search-toggle toggle-search"
+                    >
+                      <Icon name="search"></Icon>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div className={`card-search search-wrap ${!onSearch && "active"}`}>
+              <div className="card-body">
+                <div className="search-content">
+                  <Button
+                    className="search-back btn-icon toggle-search active"
+                    onClick={() => {
+                      setSearchTerm("");
+                      toggleSearch();
+                    }}
+                  >
+                    <Icon name="arrow-left"></Icon>
+                  </Button>
+                  <input
+                    type="text"
+                    className="border-transparent form-focus-none form-control"
+                    placeholder="Search by site name, location, or assigned staff..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Button className="search-submit btn-icon">
+                    <Icon name="search"></Icon>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sites Cards Grid */}
+          <div className="card-inner">
+            <Row className="g-gs">
+              {filteredSites.length > 0 ? (
+                filteredSites.map((site) => (
+                  <Col xxl="3" lg="4" md="6" key={site.id}>
+                    <Card className="site-card h-100 shadow-sm" style={{ borderRadius: "12px" }}>
+                      <CardImg
+                        top
+                        src={site.image}
+                        alt={site.name}
+                        style={{ height: "140px", objectFit: "cover", borderTopLeftRadius: "12px", borderTopRightRadius: "12px" }}
+                      />
+                      <CardBody className="p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <CardTitle tag="h6" className="mb-0 fw-bold" style={{ fontSize: "0.9rem" }}>
+                            {site.name}
+                          </CardTitle>
+                          {getStatusBadge(site.status)}
+                        </div>
+                        <CardText className="small">
+                          <div className="mb-1">
+                            <Icon name="map-pin" size={12} className="me-1 text-muted" />
+                            <span className="text-muted">{site.location}</span>
+                          </div>
+                          <div className="mb-1">
+                            <Icon name="calendar" size={12} className="me-1 text-muted" />
+                            <span className="text-muted">{formatDate(site.startDate)}</span>
+                          </div>
+                          <div className="mb-2">
+                            <Icon name="users" size={12} className="me-1 text-muted" />
+                            <span className="text-muted">{site.staffAssigned.length} staff</span>
+                          </div>
+                          {site.projectValue && (
+                            <div className="mb-2">
+                              <Icon name="trend-up" size={12} className="me-1 text-muted" />
+                              <span className="text-muted">{site.projectValue}</span>
+                            </div>
+                          )}
+                          {site.completion && site.status === "active" && (
+                            <div className="mt-2">
+                              <div className="d-flex justify-content-between small mb-1">
+                                <span>Completion</span>
+                                <span>{site.completion}%</span>
+                              </div>
+                              <div className="progress" style={{ height: "4px" }}>
+                                <div
+                                  className="progress-bar bg-primary"
+                                  style={{ width: `${site.completion}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </CardText>
+                      </CardBody>
+                      <CardFooter className="bg-transparent border-top-0 pb-3 pt-0 px-3">
+                        <Button color="primary" outline size="sm" block onClick={() => viewSiteDetails(site)}>
+                          View Details
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </Col>
+                ))
+              ) : (
+                <Col xs="12">
+                  <div className="text-center py-5">
+                    <Icon name="building" size={48} className="text-soft" />
+                    <h5 className="mt-3">No sites found</h5>
+                    <p className="text-muted">Try adjusting your search or add a new site.</p>
+                  </div>
+                </Col>
+              )}
+            </Row>
+          </div>
         </Block>
 
-        {/* Site Details Modal */}
+        {/* Site Details Modal - Scrollable with visible scrollbar */}
         <Modal isOpen={modal} toggle={() => setModal(false)} size="lg" className="site-modal">
           <ModalHeader toggle={() => setModal(false)}>Site Details</ModalHeader>
-          <ModalBody>
+          <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
             {selectedSite && (
               <div className="site-details">
                 <div className="text-center mb-4">
@@ -377,7 +436,7 @@ const SiteManagement = () => {
 
                 <div className="mb-4">
                   <strong>Description:</strong>
-                  <p>{selectedSite.description}</p>
+                  <p>{selectedSite.description || "No description provided."}</p>
                 </div>
 
                 <div className="mb-4">
@@ -418,10 +477,10 @@ const SiteManagement = () => {
           </ModalBody>
         </Modal>
 
-        {/* Add New Site Modal */}
-        <Modal isOpen={addModal} toggle={() => setAddModal(false)} size="lg">
-          <ModalHeader toggle={() => setAddModal(false)}>Add New Site</ModalHeader>
-          <ModalBody>
+        {/* Add New Site Modal - Scrollable with visible scrollbar */}
+        <Modal isOpen={addModal} toggle={() => { setAddModal(false); resetNewSiteForm(); }} size="lg">
+          <ModalHeader toggle={() => { setAddModal(false); resetNewSiteForm(); }}>Add New Site</ModalHeader>
+          <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
             <FormGroup>
               <label>Site Name *</label>
               <Input
@@ -429,7 +488,9 @@ const SiteManagement = () => {
                 placeholder="Enter site name"
                 value={newSite.name}
                 onChange={(e) => setNewSite({ ...newSite, name: e.target.value })}
+                invalid={!!formErrors.name}
               />
+              {formErrors.name && <div className="invalid-feedback d-block">{formErrors.name}</div>}
             </FormGroup>
             <FormGroup>
               <label>Location *</label>
@@ -438,7 +499,9 @@ const SiteManagement = () => {
                 placeholder="City, State"
                 value={newSite.location}
                 onChange={(e) => setNewSite({ ...newSite, location: e.target.value })}
+                invalid={!!formErrors.location}
               />
+              {formErrors.location && <div className="invalid-feedback d-block">{formErrors.location}</div>}
             </FormGroup>
             <FormGroup>
               <label>Start Date *</label>
@@ -446,7 +509,9 @@ const SiteManagement = () => {
                 type="date"
                 value={newSite.startDate}
                 onChange={(e) => setNewSite({ ...newSite, startDate: e.target.value })}
+                invalid={!!formErrors.startDate}
               />
+              {formErrors.startDate && <div className="invalid-feedback d-block">{formErrors.startDate}</div>}
             </FormGroup>
             <FormGroup>
               <label>Project Value (₹)</label>
@@ -475,15 +540,17 @@ const SiteManagement = () => {
                 value={newSite.image}
                 onChange={(e) => setNewSite({ ...newSite, image: e.target.value })}
               />
+              <small className="text-muted">Leave blank to use default image</small>
             </FormGroup>
             <FormGroup>
-              <label>Assign Staff</label>
+              <label>Assign Staff (multiple)</label>
               <div className="d-flex gap-2">
                 <Input
                   type="text"
-                  placeholder="Staff name"
+                  placeholder="Enter staff name"
                   value={staffInput}
                   onChange={(e) => setStaffInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddStaff()}
                 />
                 <Button color="secondary" onClick={handleAddStaff}>
                   Add
@@ -491,15 +558,25 @@ const SiteManagement = () => {
               </div>
               <div className="mt-2">
                 {newSite.staffAssigned.map((staff, idx) => (
-                  <Badge key={idx} color="primary" pill className="me-1 mb-1" style={{ cursor: "pointer" }} onClick={() => removeStaff(staff)}>
+                  <Badge 
+                    key={idx} 
+                    color="primary" 
+                    pill 
+                    className="me-1 mb-1" 
+                    style={{ cursor: "pointer", fontSize: "0.8rem", padding: "5px 10px" }}
+                    onClick={() => handleRemoveStaff(staff)}
+                  >
                     {staff} &times;
                   </Badge>
                 ))}
+                {newSite.staffAssigned.length === 0 && (
+                  <small className="text-muted">No staff added yet. Type name and click Add.</small>
+                )}
               </div>
-              <small className="text-muted">Click on a badge to remove</small>
+              <small className="text-muted">Click on a badge to remove staff</small>
             </FormGroup>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" onClick={() => setAddModal(false)}>
+              <Button color="secondary" onClick={() => { setAddModal(false); resetNewSiteForm(); }}>
                 Cancel
               </Button>
               <Button color="primary" onClick={handleAddSite}>

@@ -121,7 +121,7 @@ const Settings = () => {
 
         <Block>
           <Row className="g-gs">
-            <Col xl="3" lg="4">
+            <Col xl="2" lg="2">
               <PreviewCard className="settings-nav-card">
                 <div className="card-body p-0">
                   <Nav tabs className="nav-tabs-mb-icon flex-column nav-tabs-vertical">
@@ -131,30 +131,30 @@ const Settings = () => {
                         <span>Profile</span>
                       </NavLink>
                     </NavItem>
-                    <NavItem>
+                    {/* <NavItem>
                       <NavLink className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}>
                         <Icon name="bell" />
                         <span>Notifications</span>
                       </NavLink>
-                    </NavItem>
+                    </NavItem> */}
                     <NavItem>
                       <NavLink className={activeTab === "security" ? "active" : ""} onClick={() => setActiveTab("security")}>
                         <Icon name="shield" />
-                        <span>Security</span>
+                        <span>Password</span>
                       </NavLink>
                     </NavItem>
-                    <NavItem>
+                    {/* <NavItem>
                       <NavLink className={activeTab === "appearance" ? "active" : ""} onClick={() => setActiveTab("appearance")}>
                         <Icon name="monitor" />
                         <span>Appearance</span>
                       </NavLink>
-                    </NavItem>
-                    <NavItem>
-                      <NavLink className={activeTab === "privacy" ? "active" : ""} onClick={() => setActiveTab("privacy")}>
-                        <Icon name="lock" />
-                        <span>Privacy & Data</span>
-                      </NavLink>
-                    </NavItem>
+                    </NavItem> */}
+                        {/* <NavItem>
+                        <NavLink className={activeTab === "privacy" ? "active" : ""} onClick={() => setActiveTab("privacy")}>
+                            <Icon name="lock" />
+                            <span>Privacy & Data</span>
+                        </NavLink>
+                        </NavItem> */}
                   </Nav>
                 </div>
               </PreviewCard>
