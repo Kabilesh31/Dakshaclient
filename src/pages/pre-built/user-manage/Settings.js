@@ -25,7 +25,7 @@ import {
   FormText,
   CustomInput, // Use CustomInput for switches
 } from "reactstrap";
-
+import "./settings.css";
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -121,16 +121,16 @@ const Settings = () => {
 
         <Block>
           <Row className="g-gs">
-            <Col xl="2" lg="2">
+            {/* <Col xl="2" lg="2">
               <PreviewCard className="settings-nav-card">
                 <div className="card-body p-0">
-                  <Nav tabs className="nav-tabs-mb-icon flex-column nav-tabs-vertical">
-                    <NavItem>
+                  {/* <Nav tabs className="nav-tabs-mb-icon flex-column nav-tabs-vertical"> */}
+                    {/* <NavItem>
                       <NavLink className={activeTab === "profile" ? "active" : ""} onClick={() => setActiveTab("profile")}>
                         <Icon name="user" />
                         <span>Profile</span>
                       </NavLink>
-                    </NavItem>
+                    </NavItem> */}
                     {/* <NavItem>
                       <NavLink className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}>
                         <Icon name="bell" />
@@ -155,12 +155,12 @@ const Settings = () => {
                             <span>Privacy & Data</span>
                         </NavLink>
                         </NavItem> */}
-                  </Nav>
-                </div>
+                  {/* </Nav> */}
+                {/* </div>
               </PreviewCard>
-            </Col>
+            </Col> */} 
 
-            <Col xl="9" lg="8">
+            <Col xl="11" lg="12">
               <PreviewCard className="settings-content-card">
                 <div className="card-body">
                   <TabContent activeTab={activeTab}>
@@ -224,8 +224,8 @@ const Settings = () => {
                             </FormGroup>
                           </Col>
                         </Row>
-                        <div className="settings-actions mt-4">
-                          <Button color="primary" onClick={handleSaveSettings}>Save Profile Changes</Button>
+                        <div className="settings-actions mt-4 ">
+                          <Button color="primary" style={{ marginRight: "0.5rem" }} onClick={handleSaveSettings}>Save</Button>
                           <Button color="secondary" outline className="ms-2">Cancel</Button>
                         </div>
                       </div>

@@ -577,10 +577,10 @@ const viewSiteDetails = (site) => {
               <small className="text-muted">Click on a badge to remove staff</small>
             </FormGroup>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" onClick={() => { setAddModal(false); resetNewSiteForm(); }}>
+              <Button color="secondary" className="p-3" style={{ marginTop: "-1rem" }} onClick={() => { setAddModal(false); resetNewSiteForm(); }}>
                 Cancel
               </Button>
-              <Button color="primary" onClick={handleAddSite}>
+              <Button color="primary" className="p-3" style={{ marginTop: "-1rem" }} onClick={handleAddSite}>
                 Add Site
               </Button>
             </div>
