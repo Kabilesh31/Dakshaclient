@@ -148,11 +148,11 @@ const Homepage = () => {
                         <span className="fw-bold text-success">{activeStaff}</span>
                       </div>
                       <div className="detail-item d-flex justify-content-between mb-2">
-                        <span>😴 Inactive Staff:</span>
+                        <span> Inactive Staff:</span>
                         <span className="fw-bold text-danger">{inactiveStaff}</span>
                       </div>
                       <div className="detail-item d-flex justify-content-between">
-                        <span>📋 Managers:</span>
+                        <span> Managers:</span>
                         <span className="fw-bold">
                           {staffData.filter((s) => s.role === "Manager" || s.role === "Site Manager").length}
                         </span>
@@ -171,7 +171,7 @@ const Homepage = () => {
                     <div>
                       <h6 className="stats-title">TOTAL SITES</h6>
                       <div className="stats-badges">
-                        <span className="badge-info">🏗️ Projects & Locations</span>
+                        <span className="badge-info"> Projects & Locations</span>
                       </div>
                     </div>
                     <div
@@ -190,15 +190,15 @@ const Homepage = () => {
                   {showSitesDetails && (
                     <div className="stats-details mt-3 p-2" style={{ background: "#f8f9fa", borderRadius: "8px" }}>
                       <div className="detail-item d-flex justify-content-between mb-2">
-                        <span>✅ Active Sites:</span>
+                        <span> Active Sites:</span>
                         <span className="fw-bold text-success">{activeSites}</span>
                       </div>
                       <div className="detail-item d-flex justify-content-between mb-2">
-                        <span>⛔ Inactive Sites:</span>
+                        <span> Inactive Sites:</span>
                         <span className="fw-bold text-danger">{inactiveSites}</span>
                       </div>
                       <div className="detail-item d-flex justify-content-between">
-                        <span>👥 Total Staff on Sites:</span>
+                        <span> Total Staff on Sites:</span>
                         <span className="fw-bold">
                           {sitesData.reduce((sum, site) => sum + site.staffCount, 0)}
                         </span>
@@ -217,7 +217,7 @@ const Homepage = () => {
                     <div>
                       <h6 className="stats-title">ACTIVE STAFF</h6>
                       <div className="stats-badges">
-                        <span className="badge-info">✅ Currently Working</span>
+                        <span className="badge-info"> Currently Working</span>
                       </div>
                     </div>
                   </div>
@@ -383,7 +383,7 @@ const Homepage = () => {
                       color: "#1a2b3c",
                     }}
                   >
-                    📊 Staff Distribution Across Top Sites
+                     Staff Distribution Across Top Sites
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1.5rem" }}>
@@ -433,7 +433,7 @@ const Homepage = () => {
                   }}
                 >
                   <h6 className="card-title" style={{ margin: 0, fontWeight: "600" }}>
-                    🏢 Recent Sites
+                     Recent Sites
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1rem" }}>
@@ -480,7 +480,7 @@ const Homepage = () => {
                   }}
                 >
                   <h6 className="card-title" style={{ margin: 0, fontWeight: "600" }}>
-                    👤 Staff Highlights
+                     Staff Highlights
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1rem" }}>
