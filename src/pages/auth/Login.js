@@ -1,43 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Head from "../../layout/head/Head";
-import { Button, Col, Icon } from "../../components/Component";
-import { Form, FormGroup, Spinner, Alert, Row } from "reactstrap";
+import { Button, Icon } from "../../components/Component";
+import { Spinner } from "reactstrap";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { errorToast, successToast } from "../../utils/toaster";
 import "./Login.css";
-import Logo from "../../assets/images/image.png";
+import LogoImg from "../../images/logo1.png";
+
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const [passState, setPassState] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isHovered, setIsHovered] = useState(false);
 
-  const [particles, setParticles] = useState([]);
-
-  useEffect(() => {
-    const newParticles = Array.from({ length: 20 }).map(() => ({
-      id: Math.random(),
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 20 + 10,
-      speed: Math.random() * 0.5 + 0.2,
-      opacity: Math.random() * 0.3 + 0.1,
-    }));
-    setParticles(newParticles);
-  }, []);
-
-  const onFormSubmit = async (e) => {
+  const onFormSubmit = async () => {
     if (!email || !password) {
       errorToast("Email and Password are required");
       return;
     }
     setLoading(true);
-    const loginUser = {
-      email: email,
-      password: password,
-    };
+    const loginUser = { email, password };
     const postUser = {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -61,212 +44,191 @@ const Login = () => {
           window.history.pushState(
             `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`,
             "auth-login",
-            `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`,
+            `${process.env.PUBLIC_URL ? process.env.PUBLIC_URL : "/"}`
           );
           window.location.reload();
         }, 2000);
       }
     } catch (err) {
       console.log(err);
+      setLoading(false);
+      errorToast("Network error. Please try again.");
     }
   };
 
   const { errors, register, handleSubmit } = useForm();
 
   return (
-    <div className="premium-login-container">
+    <div className="modern-login-container">
       <Head title="Login | Retail Pulse" />
 
-      {/* Animated Background */}
-      <div className="animated-background">
-        <div className="gradient-bg"></div>
-        {particles.map((particle) => (
-          <div
-            key={particle.id}
-            className="floating-particle"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-              opacity: particle.opacity,
-              animationDuration: `${particle.speed * 10 + 5}s`,
-            }}
-          />
-        ))}
-        <div className="shapes">
-          <div className="shape shape-1"></div>
-          <div className="shape shape-2"></div>
-          <div className="shape shape-3"></div>
-          <div className="shape shape-4"></div>
-        </div>
+      {/* Animated Gradient Background */}
+      <div className="modern-bg">
+        <div className="bg-gradient"></div>
+        <div className="bg-orb bg-orb-1"></div>
+        <div className="bg-orb bg-orb-2"></div>
+        <div className="bg-orb bg-orb-3"></div>
       </div>
 
-      <Row className="no-gutters h-100">
-        {/* Hero Section */}
-        <Col lg="7" className="d-none d-lg-block hero-section">
-          <div className="hero-content">
-            <div className="hero-overlay">
-              <div className="hero-text">
-                <div className="hero-logo">
-                  <img src={Logo} alt="Retail Pulse Logo" className="hero-logo-img" />
-                </div>
+      <div className="login-grid">
+        {/* FORM PANEL - NOW ON LEFT */}
+        <div className="form-panel">
+          <div className="form-card-glass">
+            <div className="form-header-modern">
+              <h2>Welcome back</h2>
+              <p>Sign in to access your Business dashboard</p>
+            </div>
 
-                <div className="hero-features">
-                  <div className="feature-card">
-                    <div className="feature-icon">
-                      <Icon name="zap" />
-                    </div>
-                    <div className="feature-content">
-                      <h4>Real-time Tracking</h4>
-                      <p>Instant insights for smarter decisions</p>
-                    </div>
+            <form onSubmit={handleSubmit(onFormSubmit)} className="modern-form">
+              {/* Email Field */}
+              <div className="input-group-modern">
+                <label className="input-label-modern">
+                  <Icon name="mail" className="label-icon" />
+                  Email address
+                </label>
+                <div className="input-wrapper-modern">
+                  <Icon name="user" className="input-left-icon" />
+                  <input
+                    type="email"
+                    className={`modern-input ${errors.email ? "error" : ""}`}
+                    placeholder="your@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    ref={register({
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address",
+                      },
+                    })}
+                  />
+                </div>
+                {errors.email && (
+                  <div className="error-message-modern">
+                    <Icon name="alert-circle" size="sm" />
+                    <span>{errors.email.message}</span>
                   </div>
-                  <div className="feature-card">
-                    <div className="feature-icon"></div>
-                    <div className="feature-content">
-                      <h4>Products Management</h4>
-                      <p>Manage Your Products and Customers with us</p>
-                    </div>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="input-group-modern">
+                <div className="label-row">
+                  <label className="input-label-modern">
+                    <Icon name="lock" className="label-icon" />
+                    Password
+                  </label>
+                  <Link to={`${process.env.PUBLIC_URL}/auth-reset`} className="forgot-link-modern">
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="input-wrapper-modern">
+                  <Icon name="key" className="input-left-icon" />
+                  <input
+                    type={passState ? "text" : "password"}
+                    className={`modern-input ${errors.password ? "error" : ""}`}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    ref={register({
+                      required: "Password is required",
+                      minLength: {
+                        value: 6,
+                        message: "Minimum 6 characters required",
+                      },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-modern"
+                    onClick={() => setPassState(!passState)}
+                  >
+                    <Icon name={passState ? "eye-off" : "eye"} />
+                  </button>
+                </div>
+                {errors.password && (
+                  <div className="error-message-modern">
+                    <Icon name="alert-circle" size="sm" />
+                    <span>{errors.password.message}</span>
                   </div>
+                )}
+              </div>
+
+              <button type="submit" className="submit-button-modern" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Authenticating...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="log-in" className="mr-2" />
+                    Sign in to dashboard
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="form-footer-modern">
+              <p>© {new Date().getFullYear()} Retail Pulse. All rights reserved.</p>
+              <div className="footer-links">
+                <Link to="/privacy">Privacy</Link>
+                <span className="footer-divider">•</span>
+                <Link to="/terms">Terms</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* HERO PANEL - NOW ON RIGHT */}
+        <div className="hero-panel">
+          <div className="hero-content-inner">
+            <div className="hero-brand">
+             
+              <img src={LogoImg} alt="Retail Pulse" className="brand-logo-img" />
+            </div>
+
+           <h1 className="hero-title" style={{ marginTop: "-100px" }}>
+  Complete control over your{" "}
+  staff and progress
+</h1>
+            {/* <p className="hero-subtitle">
+              Real‑time inventory tracking, predictive analytics, and automated reporting —
+              all in one intelligent platform.
+            </p> */}
+
+            <div className="hero-features-list">
+              <div className="hero-feature-item">
+                <div className="feature-icon-circle">
+                  <Icon name="activity" />
+                </div>
+                <div className="feature-text">
+                  <h4>Live Insights</h4>
+                  <p>Monitor sales, stock, and customer trends as they happen</p>
+                </div>
+              </div>
+              {/* <div className="hero-feature-item">
+                <div className="feature-icon-circle">
+                  <Icon name="trending-up" />
+                </div>
+                <div className="feature-text">
+                  <h4>Smart Forecasting</h4>
+                  <p>AI‑driven predictions to optimize inventory and reduce waste</p>
+                </div>
+              </div> */}
+              <div className="hero-feature-item">
+                <div className="feature-icon-circle">
+                  <Icon name="shield" />
+                </div>
+                <div className="feature-text">
+                  <h4>Enterprise Security</h4>
+                  <p>Bank‑grade encryption and role‑based access control</p>
                 </div>
               </div>
             </div>
           </div>
-        </Col>
-
-        {/* Login Form Section */}
-        <Col lg="5" className="form-section">
-          <div className="form-container">
-            <div className="form-card">
-              {/* Form Header */}
-              <div className="form-header">
-                <div className="form-brand">
-                  <h3 className="brand-name">Retail Pulse</h3>
-                </div>
-                <h2 className="welcome-text">
-                  Welcome Back<span className="welcome-dot"></span>
-                </h2>
-                <p className="form-subtitle">Sign in to access your retail analytics dashboard</p>
-              </div>
-
-              {/* Login Form */}
-              <Form onSubmit={handleSubmit(onFormSubmit)} className="premium-form">
-                <FormGroup className="form-group-premium">
-                  <div className="input-header">
-                    <label className="input-label " style={{ color: "whitesmoke" }}>
-                      <Icon name="mail" className="label-icon mr-1" />
-                      Email Address
-                    </label>
-                  </div>
-                  <div className="input-wrapper">
-                    <div className="input-group">
-                      <input
-                        type="email"
-                        className="form-input"
-                        placeholder="Enter your work email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        ref={register({
-                          required: "Email is required",
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: "Invalid email address",
-                          },
-                        })}
-                      />
-                      <div className="input-border"></div>
-                      <Icon name="user" className="input-icon" />
-                    </div>
-                    {errors.email && (
-                      <div className="error-message">
-                        <Icon name="alert-circle" size="sm" />
-                        <span>{errors.email.message}</span>
-                      </div>
-                    )}
-                  </div>
-                </FormGroup>
-
-                <FormGroup className="form-group-premium">
-                  <div className="input-header">
-                    <label className="input-label" style={{ color: "whitesmoke" }}>
-                      <Icon name="lock" className="label-icon mr-1" />
-                      Password
-                    </label>
-                    <Link to={`${process.env.PUBLIC_URL}/auth-reset`} className="forgot-link">
-                      Forgot Password?
-                    </Link>
-                  </div>
-                  <div className="input-wrapper">
-                    <div className="input-group">
-                      <input
-                        type={passState ? "text" : "password"}
-                        className="form-input"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        ref={register({
-                          required: "Password is required",
-                          minLength: {
-                            value: 6,
-                            message: "Minimum 6 characters required",
-                          },
-                        })}
-                      />
-                      <div className="input-border"></div>
-                      <Icon name="key" className="input-icon" />
-                      <button type="button" className="password-toggle" onClick={() => setPassState(!passState)}>
-                        <Icon name={passState ? "eye-off" : "eye"} />
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <div className="error-message">
-                        <Icon name="alert-circle" size="sm" />
-                        <span>{errors.password.message}</span>
-                      </div>
-                    )}
-                  </div>
-                </FormGroup>
-
-                <div className="form-options"></div>
-
-                <Button
-                  className={`submit-btn ${isHovered ? "hovered" : ""}`}
-                  type="submit"
-                  disabled={loading}
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                >
-                  {loading ? (
-                    <>
-                      <Spinner size="sm" className="mr-2" />
-                      Authenticating...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="log-in" className="mr-2" />
-                      Sign In to Dashboard
-                    </>
-                  )}
-                </Button>
-              </Form>
-            </div>
-
-            {/* Footer */}
-            <div className="form-footer">
-              <p className="footer-text">
-                © {new Date().getFullYear()} Retail Pulse. All rights reserved.
-                <Link to="/privacy" className="footer-link">
-                  Privacy Policy
-                </Link>
-                <Link to="/terms" className="footer-link">
-                  Terms of Service
-                </Link>
-              </p>
-            </div>
-          </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
     </div>
   );
 };

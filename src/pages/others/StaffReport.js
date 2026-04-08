@@ -159,47 +159,108 @@ const StaffReport = () => {
   }, [selectedStaff, startDate, endDate]);
 
   const exportPDF = () => {
-    if (!selectedStaff) return;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(33, 37, 41);
-    doc.text(`Staff Performance Report`, 14, 18);
-    doc.setFontSize(12);
-    doc.text(`Staff: ${selectedStaff.name}`, 14, 26);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, 14, 32);
-    if (startDate && endDate) {
-      doc.text(`Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`, 14, 38);
-    }
+  if (!selectedStaff) return;
 
-    let yPos = 48;
-    doc.setFontSize(11);
-    doc.setTextColor(33);
-    doc.text(`Total Sites: ${metrics.totalSites}`, 14, yPos);
-    doc.text(`Days Worked: ${metrics.daysWorked}`, 14, (yPos += 6));
-    doc.text(`Total Hours: ${metrics.totalHours} hrs`, 14, (yPos += 6));
-    doc.text(`Overtime Hours: ${metrics.overtimeHours} hrs`, 14, (yPos += 6));
-    doc.text(`Salary Received: Rs.${metrics.salaryReceived.toLocaleString("en-IN")}`, 14, (yPos += 6));
-    doc.text(`Overtime Amount: Rs.${metrics.overtimeAmount.toLocaleString("en-IN")}`, 14, (yPos += 6));
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let y = 20;
 
-    const siteTableColumn = ["Site Name", "Days Worked", "Total Hours", "Overtime Hrs"];
-    const siteTableRows = metrics.siteWiseData.map((site) => [
-      site.siteName,
-      site.daysWorked.toString(),
-      site.totalHours.toString(),
-      site.overtimeHours.toString(),
-    ]);
-    autoTable(doc, {
-      head: [siteTableColumn],
-      body: siteTableRows,
-      startY: yPos + 10,
-      theme: "striped",
-      headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: "bold" },
-      styles: { fontSize: 9 },
-    });
-    doc.save(`${selectedStaff.name}_Report.pdf`);
-  };
+  // Title
+  doc.setFontSize(18);
+  doc.setTextColor(33, 37, 41);
+  doc.text("Staff Performance Report", margin, y);
+  y += 8;
+
+  // Subtitle / generated date
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${new Date().toLocaleDateString("en-IN")}`, margin, y);
+  y += 6;
+
+  // Period if selected
+  if (startDate && endDate) {
+    doc.text(
+      `Period: ${startDate.toLocaleDateString("en-IN")} - ${endDate.toLocaleDateString("en-IN")}`,
+      margin,
+      y
+    );
+    y += 8;
+  } else {
+    y += 4;
+  }
+
+  // ----- TWO COLUMN LAYOUT -----
+  const leftX = margin;
+  const rightX = pageWidth / 2 + 5;
+  const lineHeight = 7;
+  let leftY = y;
+  let rightY = y;
+
+  // Left column: Staff details
+  doc.setFontSize(12);
+  doc.setTextColor(33);
+  doc.setFont("helvetica", "bold");
+  doc.text("Staff Details", leftX, leftY);
+  leftY += lineHeight;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Name: ${selectedStaff.name}`, leftX, leftY);
+  leftY += lineHeight;
+  doc.text(`Mobile: ${selectedStaff.mobile || selectedStaff.phone || "N/A"}`, leftX, leftY);
+  leftY += lineHeight;
+  // Optional: add any other staff field (e.g., designation) if available
+  if (selectedStaff.designation) {
+    doc.text(`Designation: ${selectedStaff.designation}`, leftX, leftY);
+    leftY += lineHeight;
+  }
+
+  // Right column: Summary metrics
+  doc.setFont("helvetica", "bold");
+  doc.text("Performance Summary", rightX, rightY);
+  rightY += lineHeight;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Total Sites: ${metrics.totalSites}`, rightX, rightY);
+  rightY += lineHeight;
+  doc.text(`Days Worked: ${metrics.daysWorked}`, rightX, rightY);
+  rightY += lineHeight;
+  doc.text(`Total Hours: ${metrics.totalHours} hrs`, rightX, rightY);
+  rightY += lineHeight;
+  doc.text(`Overtime Hours: ${metrics.overtimeHours} hrs`, rightX, rightY);
+  rightY += lineHeight;
+  doc.text(`Salary Received: Rs.${metrics.salaryReceived.toLocaleString("en-IN")}`, rightX, rightY);
+  rightY += lineHeight;
+  doc.text(`Overtime Amount: Rs.${metrics.overtimeAmount.toLocaleString("en-IN")}`, rightX, rightY);
+
+  // Determine the max Y used by both columns
+  const maxY = Math.max(leftY, rightY);
+  y = maxY + 8; // space before table
+
+  // ----- Site‑wise Table -----
+  const siteTableColumn = ["Site Name", "Days Worked", "Total Hours", "Overtime Hrs", "Dates Worked (sample)"];
+  const siteTableRows = metrics.siteWiseData.map((site) => [
+    site.siteName,
+    site.daysWorked.toString(),
+    site.totalHours.toString(),
+    site.overtimeHours.toString(),
+    site.datesWorked.slice(0, 3).join(", ") + (site.datesWorked.length > 3 ? "…" : ""),
+  ]);
+
+  autoTable(doc, {
+    head: [siteTableColumn],
+    body: siteTableRows,
+    startY: y,
+    theme: "striped",
+    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255], fontStyle: "bold" },
+    styles: { fontSize: 9 },
+    columnStyles: {
+      4: { cellWidth: 40 }, // restrict dates column width
+    },
+  });
+
+  doc.save(`${selectedStaff.name}_Report.pdf`);
+};
 
   const exportExcel = () => {
     if (!selectedStaff) return;
@@ -292,11 +353,11 @@ const StaffReport = () => {
                   <div className="customer-avatar">{s.name.charAt(0)}</div>
                   <div className="customer-info">
                     <div className="customer-name">{s.name}</div>
-                    {s.mobile && (
+                    {/* {s.mobile && (
                       <div className="customer-details" style={{ fontSize: "12px", color: "#666" }}>
                         {s.mobile}
                       </div>
-                    )}
+                    )} */}
                   </div>
                   {selectedStaff?._id === s._id && (
                     <div className="selected-indicator"><i className="ni ni-check"></i></div>
@@ -370,7 +431,7 @@ const StaffReport = () => {
                     <h3 className="customer-header-name">{selectedStaff.name}</h3>
                     <p className="customer-header-meta">
                       {selectedStaff.mobile || selectedStaff.phone || "No mobile"}
-                      {selectedStaff.email && ` • ${selectedStaff.email}`}
+                     
                     </p>
                   </div>
                 </div>

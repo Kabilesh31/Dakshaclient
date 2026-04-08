@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Head from "../../../layout/head/Head";
 import Content from "../../../layout/content/Content";
+import { useHistory } from "react-router-dom";
 import {
   Block,
   BlockHead,
@@ -136,7 +137,7 @@ const SiteManagement = () => {
   });
   const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
-
+const history = useHistory();
   // Load dummy data on mount
   useEffect(() => {
     setSites(dummySites);
@@ -162,10 +163,10 @@ const SiteManagement = () => {
   // ========== Handlers ==========
   const toggleSearch = () => setOnSearch(!onSearch);
 
-  const viewSiteDetails = (site) => {
-    setSelectedSite(site);
-    setModal(true);
-  };
+ // Replace the viewSiteDetails function
+const viewSiteDetails = (site) => {
+  history.push(`/SiteManagement/site/${site.id}`, { site });
+};
 
   const validateForm = () => {
     const errors = {};

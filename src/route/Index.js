@@ -126,6 +126,7 @@ import Settings from "../pages/pre-built/user-manage/Settings";
 import Bills from "../pages/pre-built/user-manage/Bills";
 import SiteManagement from "../pages/pre-built/user-manage/SiteManagement";
 import OrderDetails from "../pages/pre-built/user-manage/OrderDetails";
+import SiteDetail from "../pages/pre-built/user-manage/SiteDetail";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -264,6 +265,16 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+         <Route
+  exact
+  path={`${process.env.PUBLIC_URL}/SiteManagement/site/:id`}
+  render={(props) => (
+    <UserContextProvider>
+      <SiteDetail {...props} />
+    </UserContextProvider>
+  )}
+/>
+        
 
         <Route //Context Api added
           exact
