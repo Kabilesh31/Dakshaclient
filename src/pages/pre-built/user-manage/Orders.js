@@ -159,45 +159,116 @@ const Orders = () => {
 const dummyOrders = [
   {
     _id: "ORD001",
-    customerName: "Ravi Kumar",
-    createdAt: new Date(),
-    totalAmt: 2500,
+    siteName: "Sunrise Villa Project",
+    siteAddress: "12, Lake View Road, Anna Nagar, Chennai",
+    location: "Chennai, Tamil Nadu",
+
+    orderedBy: "Rajesh Kumar",
+
+    totalAmt: 250000,
+    estimatedCost: 270000,
+
     orderStatus: "Work in progress",
-    siteName: "Site A",
-    staffDetails: { name: "Suresh", type: "Technician", mobile: "9876543210" },
-    orderedProducts: [{ productName: "Cement", qty: 10, value: 200 }],
+
+    startDate: "2026-04-01",
+    targetDate: "2026-04-20",
+
+    staffList: [
+      { name: "Suresh Kumar", role: "Site Engineer", mobile: "9876543210" },
+      { name: "Ravi", role: "Mason", mobile: "9123456780" },
+      { name: "Karthik", role: "Helper", mobile: "9988776655" },
+      { name: "Vijay", role: "Electrician", mobile: "9090909090" },
+    ],
+
+    supervisor: {
+      name: "Mani",
+      mobile: "9999999999",
+    },
+
+    orderedProducts: [
+      { productName: "Cement (50kg bags)", qty: 100, value: 400 },
+      { productName: "River Sand (loads)", qty: 50, value: 150 },
+      { productName: "Steel Rod (TMT 12mm)", qty: 30, value: 800 },
+      { productName: "Bricks (1000 pcs)", qty: 5, value: 6000 },
+    ],
+
+    progress: 65,
+    notes: "Foundation completed. Column work in progress.",
   },
+
   {
     _id: "ORD002",
-    customerName: "Arun",
-    createdAt: new Date(),
-    totalAmt: 1800,
+    siteName: "Green Field Apartment",
+    siteAddress: "45, Avinashi Road, Coimbatore",
+    location: "Coimbatore, Tamil Nadu",
+
+    orderedBy: "Prakash R",
+
+    totalAmt: 180000,
+    estimatedCost: 200000,
+
     orderStatus: "Yet to Start",
-    siteName: "Site B",
-    staffDetails: {},
-    orderedProducts: [{ productName: "Bricks", qty: 100, value: 10 }],
+
+    startDate: "2026-04-05",
+    targetDate: "2026-04-25",
+
+    staffList: [
+      { name: "Arun", role: "Supervisor", mobile: "9000000001" },
+      { name: "Bala", role: "Mason", mobile: "9000000002" },
+    ],
+
+    supervisor: {
+      name: "Murugan",
+      mobile: "9111111111",
+    },
+
+    orderedProducts: [
+      { productName: "Bricks", qty: 2000, value: 8 },
+      { productName: "Cement", qty: 80, value: 420 },
+    ],
+
+    progress: 10,
+    notes: "Project scheduled to start next week.",
   },
+
   {
     _id: "ORD003",
-    customerName: "Karthik",
-    createdAt: new Date(),
-    totalAmt: 3200,
+    siteName: "Lake View Residency",
+    siteAddress: "78, Trichy Main Road, Salem",
+    location: "Salem, Tamil Nadu",
+
+    orderedBy: "Sathish Kumar",
+
+    totalAmt: 320000,
+    estimatedCost: 300000,
+
     orderStatus: "Work in progress",
-    siteName: "Site C",
-    staffDetails: { name: "Mani", type: "Supervisor", mobile: "9999999999" },
-    orderedProducts: [{ productName: "Steel", qty: 20, value: 150 }],
-  },
-  {
-    _id: "ORD004",
-    customerName: "Vignesh",
-    createdAt: new Date(),
-    totalAmt: 900,
-    orderStatus: "Yet to Start",
-    siteName: "Site D",
-    staffDetails: {},
-    orderedProducts: [{ productName: "Sand", qty: 5, value: 100 }],
+
+    startDate: "2026-03-20",
+    targetDate: "2026-04-30",
+
+    staffList: [
+      { name: "Dinesh", role: "Engineer", mobile: "9888888888" },
+      { name: "Hari", role: "Plumber", mobile: "9777777777" },
+      { name: "Gopi", role: "Helper", mobile: "9666666666" },
+    ],
+
+    supervisor: {
+      name: "Kumar",
+      mobile: "9555555555",
+    },
+
+    orderedProducts: [
+      { productName: "Steel Rod", qty: 50, value: 750 },
+      { productName: "Sand", qty: 70, value: 120 },
+      { productName: "Cement", qty: 120, value: 410 },
+    ],
+
+    progress: 80,
+    notes: "Finishing stage ongoing. Painting work started.",
   },
 ];
+
   useEffect(() => {
     let data = [...orders];
 

@@ -17,7 +17,7 @@ const menu = [
   
   {
     icon: "user-list",      // ni ni-user-list
-    text: "Project Management",
+    text: "Ongoing Projects",
     link: "/SiteManagement",
   },{
     icon: "bag",
