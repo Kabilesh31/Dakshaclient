@@ -137,12 +137,12 @@ const Settings = () => {
                         <span>Notifications</span>
                       </NavLink>
                     </NavItem> */}
-                    <NavItem>
+                    {/* <NavItem>
                       <NavLink className={activeTab === "security" ? "active" : ""} onClick={() => setActiveTab("security")}>
                         <Icon name="shield" />
                         <span>Password</span>
                       </NavLink>
-                    </NavItem>
+                    </NavItem> */}
                     {/* <NavItem>
                       <NavLink className={activeTab === "appearance" ? "active" : ""} onClick={() => setActiveTab("appearance")}>
                         <Icon name="monitor" />

@@ -26,7 +26,7 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #192238 0%, #19213C 50%, #1F2A48 100%);
+  background: linear-gradient(135deg, #3e5295 0%, #83879b 50%, #3d424f 100%);
 }
 
 .bg-orb {
@@ -140,7 +140,7 @@
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, #575454 0%, #94A3B8 100%);
+  background: linear-gradient(135deg, #a4978fe7 0%, #ada19e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

@@ -204,7 +204,7 @@ const Login = () => {
                 </div>
                 <div className="feature-text">
                   <h4>Live Insights</h4>
-                  <p>Monitor sales, stock, and customer trends as they happen</p>
+                  <p>Monitor staff, stock, and customer trends as they happen</p>
                 </div>
               </div>
               {/* <div className="hero-feature-item">
