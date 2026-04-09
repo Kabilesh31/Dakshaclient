@@ -36,6 +36,10 @@ const StaffAttendance = () => {
   const [monthlyOvertime, setMonthlyOvertime] = useState(0);
   const [dailySiteMap, setDailySiteMap] = useState({});
   const [dailyOvertimeMap, setDailyOvertimeMap] = useState({});
+  
+  // NEW: state for staff daily wage (dummy)
+  const [staffDailyWage, setStaffDailyWage] = useState(0);
+  const [monthlyTotalSalary, setMonthlyTotalSalary] = useState(0);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -53,6 +57,38 @@ const StaffAttendance = () => {
     if (!text) return "-";
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
+
+  // Helper to get daily wage based on staff type
+  const getDailyWage = (staff) => {
+    if (!staff) return 500;
+    const type = staff.type?.toLowerCase();
+    if (type === "supervisor") return 800;
+    if (type === "worker") return 500;
+    if (type === "manager") return 1000;
+    if (type === "engineer") return 700;
+    return 500; // default
+  };
+
+  // Calculate daily salary for a given day
+  const getDailySalary = (day, staff) => {
+    if (!staff) return 0;
+    const date = new Date(year, month, day);
+    const isSunday = date.getDay() === 0;
+    if (isSunday) return 0;
+    const record = attendance[year]?.[months[month]]?.[staff._id]?.[day];
+    const isPresent = record && (record.status === "present" || record.status === "working");
+    if (!isPresent) return 0;
+    return getDailyWage(staff);
+  };
+
+  // Recalculate total salary when attendance, month, year, or staff changes
+  useEffect(() => {
+    if (selectedStaff) {
+      const total = daysInMonth.reduce((sum, day) => sum + getDailySalary(day, selectedStaff), 0);
+      setMonthlyTotalSalary(total);
+      setStaffDailyWage(getDailyWage(selectedStaff));
+    }
+  }, [attendance, month, year, selectedStaff, daysInMonth]);
 
   useEffect(() => {
     fetchStaff();
@@ -292,6 +328,7 @@ const StaffAttendance = () => {
       const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const overtime = dailyOvertimeMap[dateStr] || 0;
       const sites = (dailySiteMap[dateStr] || []).join(", ");
+      const dailySalary = getDailySalary(day, selectedStaff);
       return {
         Date: `${day} ${months[month]} ${year}`,
         Day: dayName,
@@ -301,6 +338,7 @@ const StaffAttendance = () => {
         "Work Hours": record?.checkIn ? calculateHours(record.checkIn, record.checkOut) : "-",
         Overtime: overtime.toFixed(2),
         Sites: sites || "-",
+        "Salary (₹)": dailySalary,
         Remarks: isSunday ? "Weekly Off" : record ? "" : "No attendance record",
       };
     });
@@ -314,7 +352,8 @@ const StaffAttendance = () => {
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
   const currentItems = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
-const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
+  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
+
   return (
     <div style={{ padding: "20px" }}>
       {!selectedStaff && (
@@ -399,11 +438,12 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
           <div style={{ display: "flex", gap: "20px", marginBottom: "30px", alignItems: "stretch" }}>
             {/* LEFT: Calendar + summary cards */}
             <div style={{ flex: "1 1 0", minWidth: 0, background: "#fff", padding: "20px", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+              <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
                 <div style={{ flex: 1, background: "#e8f5e9", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#2e7d32", marginBottom: "5px" }}>Present</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#2e7d32" }}>{calculateAttendanceSummary().present}</div></div>
-                <div style={{ flex: 1, background: "#fff3e0", padding: "12px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#ef6c00", marginBottom: "5px" }}>Absent</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#ef6c00" }}>{daysInMonth.filter(day => { const date = new Date(year, month, day); const isSunday = date.toLocaleDateString('en-US',{weekday:'long'}) === 'Sunday'; const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day]; return !isSunday && !record; }).length}</div></div>
+                <div style={{ flex: 1, background: "#fff3e0", padding: "12px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#ef6c00", marginBottom: "5px" }}>Absent</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#ef6c00" }}>{daysInMonth.filter(day => { const date = new Date(year, month, day); const isSunday = date.getDay() === 0; const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day]; return !isSunday && !record; }).length}</div></div>
                 <div style={{ flex: 1, background: "#f3e5f5", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#6a1b9a", marginBottom: "5px" }}>Sites Worked (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#6a1b9a" }}>{monthlySites.length}</div></div>
                 <div style={{ flex: 1, background: "#ffebee", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#c62828", marginBottom: "5px" }}>Total Overtime (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#c62828" }}>{monthlyOvertime.toFixed(2)} hrs</div></div>
+                {/* <div style={{ flex: 1, background: "#e0f7fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#00838f", marginBottom: "5px" }}>Total Salary (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#00838f" }}>₹{monthlyTotalSalary.toLocaleString()}</div></div> */}
               </div>
               <div style={{ display: "flex", gap: "22px", alignItems: "center", justifyContent: "center", marginBottom: "20px", fontSize: "14px", fontWeight: 500, background: "#f8f9fa", padding: "5px 5px", borderRadius: "8px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><div style={{ width: "16px", height: "16px", backgroundColor: "#81c784", borderRadius: "4px" }}></div><span>Present</span></div>
@@ -412,92 +452,85 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
               </div>
               <div style={{ display: "flex", justifyContent: "center", width: "100%", flex: 1 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px", width: "100%" }}>
-  
-  {/* Week Headers */}
-  {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(day => (
-    <div key={day} style={{
-      textAlign: "center",
-      fontSize: "12px",
-      fontWeight: "600",
-      color: "#666",
-      padding: "8px 2px",
-      background: "#f8f9fa",
-      borderRadius: "6px"
-    }}>
-      {day}
-    </div>
-  ))}
-
-  {/* EMPTY SPACES BEFORE MONTH START */}
-  {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-    <div key={"empty-" + i}></div>
-  ))}
-
-  {/* ACTUAL DAYS */}
-  {daysInMonth.map((day) => {
-    const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
-    const isSelected = selectedDay === day;
-    const date = new Date(year, month, day);
-    const isSunday = date.getDay() === 0; // ✅ better way
-
-    let bgColor;
-    if (isSunday) {
-      bgColor = "#ffffff";
-    } else if (record && (record.status === "present" || record.status === "working")) {
-      bgColor = "#81c784";
-    } else {
-      bgColor = "#ffe0b2";
-    }
-
-    return (
-      <div
-        key={day}
-        onClick={() => {
-          if (record || isSunday) {
-            if (isSunday && !record) {
-              setSelectedDateDetails({ status: "sunday", isSunday: true });
-            } else {
-              setSelectedDateDetails(record);
-            }
-            setSelectedDay(day);
-          } else {
-            setSelectedDateDetails({ status: "absent" });
-            setSelectedDay(day);
-          }
-        }}
-        style={{
-          aspectRatio: "3/2",
-          borderRadius: "8px",
-          backgroundColor: bgColor,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          fontWeight: 600,
-          boxShadow: isSelected
-            ? "0 0 0 3px #007bff"
-            : "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        {day}
-      </div>
-    );
-  })}
-</div>
+                  {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(day => (
+                    <div key={day} style={{
+                      textAlign: "center",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "#666",
+                      padding: "8px 2px",
+                      background: "#f8f9fa",
+                      borderRadius: "6px"
+                    }}>
+                      {day}
+                    </div>
+                  ))}
+                  {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                    <div key={"empty-" + i}></div>
+                  ))}
+                  {daysInMonth.map((day) => {
+                    const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
+                    const isSelected = selectedDay === day;
+                    const date = new Date(year, month, day);
+                    const isSunday = date.getDay() === 0;
+                    let bgColor;
+                    if (isSunday) {
+                      bgColor = "#ffffff";
+                    } else if (record && (record.status === "present" || record.status === "working")) {
+                      bgColor = "#81c784";
+                    } else {
+                      bgColor = "#ffe0b2";
+                    }
+                    return (
+                      <div
+                        key={day}
+                        onClick={() => {
+                          if (record || isSunday) {
+                            if (isSunday && !record) {
+                              setSelectedDateDetails({ status: "sunday", isSunday: true });
+                            } else {
+                              setSelectedDateDetails(record);
+                            }
+                            setSelectedDay(day);
+                          } else {
+                            setSelectedDateDetails({ status: "absent" });
+                            setSelectedDay(day);
+                          }
+                        }}
+                        style={{
+                          aspectRatio: "3/2",
+                          borderRadius: "8px",
+                          backgroundColor: bgColor,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          boxShadow: isSelected
+                            ? "0 0 0 3px #007bff"
+                            : "0 2px 4px rgba(0,0,0,0.1)",
+                        }}
+                      >
+                        {day}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* RIGHT: Day details (unchanged, shows working vs present) */}
+            {/* RIGHT: Day details */}
             <div style={{ flex: "1 1 0", minWidth: 0, background: "#fff", padding: "30px", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column" }}>
               <h4 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: "600", color: "#333", borderBottom: "2px solid #f0f0f0", paddingBottom: "12px" }}>Day Details {selectedDay && `- ${selectedDay} ${months[month]} ${year}`}</h4>
               <div style={{ flex: 1, display: "flex", alignItems: "flex-start" }}>
                 {selectedDay ? (() => {
                   const record = getSelectedDateRecord();
                   const date = new Date(year, month, selectedDay);
-                  const isSunday = date.toLocaleDateString('en-US', { weekday: 'long' }) === 'Sunday';
+                  const isSunday = date.getDay() === 0;
                   const isAbsent = !record && !isSunday;
                   const sites = getSelectedDateSites();
                   const overtime = getSelectedDateOvertime();
+                  const dailySalary = getDailySalary(selectedDay, selectedStaff);
                   return (
                     <div style={{ fontSize: "16px", lineHeight: "2.2", width: "100%", height: "100%" }}>
                       <div style={{ background: "#f8f9fa", padding: "25px", height: "100%", borderRadius: "8px" }}>
@@ -507,6 +540,7 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
                           <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}><strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Check Out:</strong><span style={{ marginLeft: "10px", color: "#444", fontSize: "16px" }}>{formatTimeOnly(record.checkOut)}</span></p>
                           <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}><strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Work Hours:</strong><span style={{ marginLeft: "10px", fontWeight: "600", color: "#1565c0", fontSize: "18px" }}>{calculateHours(record.checkIn, record.checkOut)}</span></p>
                           <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}><strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Overtime:</strong><span style={{ marginLeft: "10px", fontWeight: "600", color: "#c62828", fontSize: "18px" }}>{overtime.toFixed(2)} hrs</span></p>
+                          <p style={{ margin: "0 0 20px 0", display: "flex", alignItems: "center" }}><strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Salary:</strong><span style={{ marginLeft: "10px", fontWeight: "600", color: "#00838f", fontSize: "18px" }}>₹{dailySalary}</span></p>
                           {sites.length > 0 && <p style={{ margin: "0", display: "flex", alignItems: "flex-start" }}><strong style={{ display: "inline-block", width: "100px", fontSize: "16px" }}>Site(s):</strong><span style={{ marginLeft: "10px", color: "#444", fontSize: "16px", flex: 1 }}>{sites.join(", ")}</span></p>}
                         </>)}
                         {isAbsent && <p style={{ margin: "0", color: "#666", textAlign: "center", fontSize: "16px" }}>No attendance record for this date</p>}
@@ -521,21 +555,31 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
             </div>
           </div>
 
-          {/* Monthly Attendance Table (unchanged, still shows "Working" in status) */}
+          {/* Monthly Attendance Table with Salary Column */}
           <div style={{ background: "#fff", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: "20px", marginTop: "20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
-              <div><h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>Monthly Attendance Report</h4><p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>{months[month]} {year} • {selectedStaff.name}</p></div>
+              <div><h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>Monthly Attendance Report</h4><p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>{months[month]} {year} • {selectedStaff.name} • Daily Wage: ₹{staffDailyWage}</p></div>
               <div><button onClick={exportToExcel} style={{ padding: "8px 16px", background: "#4F46E5", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}><span>📊</span> Export to Excel</button></div>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-                <thead><tr style={{ background: "#f8f9fa", borderBottom: "2px solid #e0e0e0" }}><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Date</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Day</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Status</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check In</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check Out</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Work Hours</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Overtime</th><th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Site(s)</th></tr></thead>
+                <thead><tr style={{ background: "#f8f9fa", borderBottom: "2px solid #e0e0e0" }}>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Date</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Day</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Status</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check In</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Check Out</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Work Hours</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Overtime</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Site(s)</th>
+                  <th style={{ padding: "12px 15px", textAlign: "left", fontWeight: "600", color: "#444" }}>Salary (₹)</th>
+                </tr></thead>
                 <tbody>
                   {daysInMonth.map((day) => {
                     const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
                     const date = new Date(year, month, day);
                     const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
-                    const isSunday = date.toLocaleDateString('en-US', { weekday: 'long' }) === 'Sunday';
+                    const isSunday = date.getDay() === 0;
                     let statusDisplay = "-", statusColor = "#666", statusBg = "#f5f5f5";
                     if (isSunday) { statusDisplay = "Sunday"; statusColor = "#9e9e9e"; statusBg = "#f5f5f5"; }
                     else if (record?.status === "present") { statusDisplay = "Present"; statusColor = "#2e7d32"; statusBg = "#e8f5e9"; }
@@ -544,6 +588,7 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
                     const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
                     const sitesForDay = dailySiteMap[dateStr] || [];
                     const overtimeForDay = dailyOvertimeMap[dateStr] || 0;
+                    const dailySalary = getDailySalary(day, selectedStaff);
                     return (
                       <tr key={day} onClick={() => { setSelectedDay(day); if (record || isSunday) { if (isSunday && !record) setSelectedDateDetails({ status: "sunday", isSunday: true }); else setSelectedDateDetails(record); } else { setSelectedDateDetails({ status: "absent" }); } }} style={{ borderBottom: "1px solid #f0f0f0", cursor: "pointer", backgroundColor: selectedDay === day ? "#f0f7ff" : "transparent", transition: "background-color 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedDay === day ? "#f0f7ff" : "transparent"}>
                         <td style={{ padding: "12px 15px", fontWeight: "500" }}>{day} {months[month]} {year}</td>
@@ -554,6 +599,7 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
                         <td style={{ padding: "12px 15px", fontWeight: "600", color: record?.checkIn ? "#1565c0" : "#999" }}>{record?.checkIn ? calculateHours(record.checkIn, record.checkOut) : "-"}</td>
                         <td style={{ padding: "12px 15px", fontWeight: "600", color: overtimeForDay > 0 ? "#c62828" : "#999" }}>{overtimeForDay > 0 ? overtimeForDay.toFixed(2) + " hrs" : "-"}</td>
                         <td style={{ padding: "12px 15px", color: "#444", fontSize: "13px" }}>{sitesForDay.length ? sitesForDay.join(", ") : "-"}</td>
+                        <td style={{ padding: "12px 15px", fontWeight: "600", color: dailySalary > 0 ? "#00838f" : "#999" }}>₹{dailySalary}</td>
                       </tr>
                     );
                   })}
@@ -564,9 +610,10 @@ const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
               <div style={{ display: "flex", gap: "25px", flexWrap: "wrap" }}>
                 <div><span style={{ color: "#666" }}>Total Days: </span><span style={{ fontWeight: "600" }}>{daysInMonth.length}</span></div>
                 <div><span style={{ color: "#666" }}>Present: </span><span style={{ fontWeight: "600", color: "#2e7d32" }}>{calculateAttendanceSummary().present + calculateAttendanceSummary().working}</span></div>
-                <div><span style={{ color: "#666" }}>Absent: </span><span style={{ fontWeight: "600", color: "#d32f2f" }}>{daysInMonth.filter(day => { const date = new Date(year, month, day); const isSunday = date.toLocaleDateString('en-US',{weekday:'long'}) === 'Sunday'; const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day]; return !isSunday && !record; }).length}</span></div>
-                <div><span style={{ color: "#666" }}>Sundays: </span><span style={{ fontWeight: "600", color: "#9e9e9e" }}>{daysInMonth.filter(day => new Date(year, month, day).toLocaleDateString('en-US',{weekday:'long'}) === 'Sunday').length}</span></div>
+                <div><span style={{ color: "#666" }}>Absent: </span><span style={{ fontWeight: "600", color: "#d32f2f" }}>{daysInMonth.filter(day => { const date = new Date(year, month, day); const isSunday = date.getDay() === 0; const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day]; return !isSunday && !record; }).length}</span></div>
+                <div><span style={{ color: "#666" }}>Sundays: </span><span style={{ fontWeight: "600", color: "#9e9e9e" }}>{daysInMonth.filter(day => new Date(year, month, day).getDay() === 0).length}</span></div>
                 <div><span style={{ color: "#666" }}>Total Overtime: </span><span style={{ fontWeight: "600", color: "#c62828" }}>{monthlyOvertime.toFixed(2)} hrs</span></div>
+                <div><span style={{ color: "#666" }}>Total Salary: </span><span style={{ fontWeight: "600", color: "#00838f" }}>₹{monthlyTotalSalary.toLocaleString()}</span></div>
               </div>
               <div style={{ color: "#666", fontSize: "12px" }}>* Overtime = Work Hours - 8 (standard workday)</div>
             </div>

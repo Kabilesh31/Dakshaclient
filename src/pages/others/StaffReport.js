@@ -326,7 +326,7 @@ const StaffReport = () => {
         {/* Left Panel - Staff List */}
         <div className="customers-panel">
           <div className="customers-panel-header">
-            <h5 className="panel-title">👥 Staff Members</h5>
+            <h5 className="panel-title"> Staff Members</h5>
             <span className="customer-count">{filteredStaff.length} of {staffList.length}</span>
           </div>
           <div className="search-box">
@@ -496,7 +496,7 @@ const StaffReport = () => {
               {metrics.siteWiseData.length > 0 && (
                 <div className="transactions-section" style={{ marginTop: "20px" }}>
                   <div className="transactions-header">
-                    <h6 className="transactions-title">🏗️ Sites Worked</h6>
+                    <h6 className="transactions-title"> Sites Worked</h6>
                     <span className="transactions-count">{metrics.siteWiseData.length} sites</span>
                   </div>
                   <div className="table-responsive">

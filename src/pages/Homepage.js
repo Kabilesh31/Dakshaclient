@@ -125,7 +125,7 @@ const Homepage = () => {
                     <div>
                       <h6 className="stats-title">TOTAL STAFF</h6>
                       <div className="stats-badges">
-                        <span className="badge-info">👥 All Personnel</span>
+                        <span className="badge-info"> All Personnel</span>
                       </div>
                     </div>
                     <div
@@ -243,7 +243,7 @@ const Homepage = () => {
                     <div>
                       <h6 className="stats-title">ACTIVE SITES</h6>
                       <div className="stats-badges">
-                        <span className="badge-info">🚧 Operational Locations</span>
+                        <span className="badge-info"> Operational Locations</span>
                       </div>
                     </div>
                   </div>
@@ -285,7 +285,7 @@ const Homepage = () => {
                       color: "#1a2b3c",
                     }}
                   >
-                    👥 Staff Status Distribution
+                     Staff Status Distribution
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1.5rem" }}>
@@ -337,7 +337,7 @@ const Homepage = () => {
                       color: "#1a2b3c",
                     }}
                   >
-                    🏗️ Sites Status Overview
+                     Sites Status Overview
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1.5rem" }}>
@@ -454,7 +454,7 @@ const Homepage = () => {
                             <td>{site.location}</td>
                             <td>
                               <span
-                                className={`badge ${site.status === "active" ? "bg-success" : "bg-secondary"}`}
+                                className={`badge ${site.status === "active" ? "bg-success" : "bg-danger"}`}
                                 style={{ padding: "5px 10px", borderRadius: "20px" }}
                               >
                                 {site.status === "active" ? "Active" : "Inactive"}

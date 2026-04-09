@@ -431,11 +431,11 @@ const Bills = () => {
                   </Table>
                 </div>
 
-                <div className="d-flex justify-content-end gap-2">
-                  <Button color="secondary" onClick={() => setModal(false)}>
+                <div className="d-flex justify-content-end gap-2 ">
+                  <Button color="secondary" className="p-2" onClick={() => setModal(false)}>
                     Close
                   </Button>
-                  <Button color="primary">Download PDF</Button>
+                  <Button className="p-2" color="primary">Download PDF</Button>
                 </div>
               </div>
             )}

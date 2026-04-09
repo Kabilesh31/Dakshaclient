@@ -637,8 +637,8 @@ const SiteDetail = () => {
               </div>
             </FormGroup>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" onClick={() => setEditModal(false)}>Cancel</Button>
-              <Button color="primary" onClick={handleEditSite}>Save Changes</Button>
+              <Button color="secondary" className="p-3 " style={{ marginTop: "-1rem" }} onClick={() => setEditModal(false)}>Cancel</Button>
+              <Button color="primary" className="p-3 " style={{ marginTop: "-1rem" }} onClick={handleEditSite}>Save Changes</Button>
             </div>
           </ModalBody>
         </Modal>
