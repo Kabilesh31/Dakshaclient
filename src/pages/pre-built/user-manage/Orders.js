@@ -572,7 +572,7 @@ const dummyOrders = [
               </a>
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div>
-                  <h4>Retail Pulse</h4>
+                  <h4>Sree Daksha</h4>
                   <p className="text-muted mb-0">Order Invoice</p>
                 </div>
                 <div className="text-end">
@@ -718,7 +718,7 @@ const dummyOrders = [
             <>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                 <div>
-                  <h4 style={{ margin: 0 }}>Retail Pulse</h4>
+                  <h4 style={{ margin: 0 }}>Sree Daksha</h4>
                   <small>Order Invoice</small>
                 </div>
                 <div style={{ textAlign: "right" }}>

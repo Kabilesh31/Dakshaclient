@@ -60,7 +60,7 @@ const Login = () => {
 
   return (
     <div className="modern-login-container">
-      <Head title="Login | Retail Pulse" />
+      <Head title="Login | Sree Daksha" />
 
       {/* Animated Gradient Background */}
       <div className="modern-bg">
@@ -91,7 +91,7 @@ const Login = () => {
                   <input
                     type="email"
                     className={`modern-input ${errors.email ? "error" : ""}`}
-                    placeholder="your@company.com"
+                    placeholder="Enter email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     ref={register({
@@ -163,14 +163,14 @@ const Login = () => {
                 ) : (
                   <>
                     <Icon name="log-in" className="mr-2" />
-                    Sign in to dashboard
+                    Sign in
                   </>
                 )}
               </button>
             </form>
 
             <div className="form-footer-modern">
-              <p>© {new Date().getFullYear()} Retail Pulse. All rights reserved.</p>
+              <p>© {new Date().getFullYear()} Sree Daksha. All rights reserved.</p>
               <div className="footer-links">
                 <Link to="/privacy">Privacy</Link>
                 <span className="footer-divider">•</span>
@@ -185,7 +185,7 @@ const Login = () => {
           <div className="hero-content-inner">
             <div className="hero-brand">
              
-              <img src={LogoImg} alt="Retail Pulse" className="brand-logo-img" />
+              <img src={LogoImg} alt="Sree Daksha" className="brand-logo-img" />
             </div>
 
            <h1 className="hero-title" style={{ marginTop: "-100px" }}>

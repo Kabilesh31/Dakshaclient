@@ -125,7 +125,7 @@ const selectedCustomer = JSON.parse(localStorage.getItem('selectedCustomer'))
 
   {/* Company Details Section */}
   <div className="invoice-company-details" style={{ textAlign: 'left', flex: '1' }}>
-    <h2>Retail Pulse</h2>
+    <h2>Sree Daksha</h2>
     <p>1320a Thadagam Main Road, R.S.Puram</p>
     <p>Coimbatore, Tamilnadu</p>
     <p>GSTIN: 33ARGPD2779J2ZO</p>
