@@ -363,7 +363,7 @@ const SiteDetail = () => {
             </BlockHeadContent>
             <BlockHeadContent>
               <Button color="primary" outline size="sm" onClick={() => setEditModal(true)}>
-                <Icon name="edit" /> Edit Site
+                <Icon name="edit" /> Edit Project
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -473,13 +473,13 @@ const SiteDetail = () => {
 
             {/* Project Gallery Section */}
             <div className="mt-5">
-              <div className="d-flex justify-content-between align-items-center">
+              <div className="d-flex mb-2 justify-content-between align-items-center">
                 <h5>Project Gallery</h5>
                 <Button color="primary" outline onClick={() => setPhotoModal(true)}>
                   <Icon name="plus" /> Add Photo
                 </Button>
               </div>
-              <Row className="mt-3 g-3">
+              <Row className="g-3">
                 {photos.map((photo, idx) => (
                   <Col md="4" key={idx}>
                     <img
@@ -499,7 +499,7 @@ const SiteDetail = () => {
 
             {/* Site Plan Images Section */}
             <div className="mt-5">
-              <h5>Site Plan Images</h5>
+              <h5>Project Plan Images</h5>
               <Row className="mt-3 g-3">
                 {sitePlanImages.map((img, idx) => (
                   <Col md="4" key={idx}>
@@ -548,7 +548,7 @@ const SiteDetail = () => {
         {/* Edit Site Modal */}
         <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} size="lg">
           <ModalHeader toggle={() => { setEditModal(false); setFormErrors({}); }}>
-            Edit Site Details
+            Edit Project Details
           </ModalHeader>
           <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
             <FormGroup>

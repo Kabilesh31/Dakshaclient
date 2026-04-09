@@ -264,7 +264,7 @@ const Reports = () => {
     doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(33, 37, 41);
-    doc.text("Retail Pulse", 105, 20, { align: "center" });
+    doc.text("Sree Daksha", 105, 20, { align: "center" });
 
     doc.setFontSize(16);
     doc.setFont("helvetica", "normal");
@@ -971,7 +971,7 @@ const Reports = () => {
               <div style={{ borderBottom: "2px solid #eee", paddingBottom: "20px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <h3 style={{ margin: "0 0 5px 0", fontSize: "18px" }}>Retail Pulse</h3>
+                    <h3 style={{ margin: "0 0 5px 0", fontSize: "18px" }}>Sree Daksha</h3>
                     <p style={{ margin: 0, color: "#666" }}>Order Invoice</p>
                   </div>
                   <div style={{ textAlign: "right" }}>

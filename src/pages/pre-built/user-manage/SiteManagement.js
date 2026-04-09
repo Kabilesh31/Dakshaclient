@@ -242,13 +242,13 @@ const viewSiteDetails = (site) => {
 
   return (
     <React.Fragment>
-      <Head title="Site Management | Projects" />
+      <Head title="Project Management | Projects" />
       <Content>
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle page tag="h3">
-                Site Management
+                Project Management
               </BlockTitle>
               <BlockDes className="text-soft">
                 <p>Manage all construction and project sites</p>

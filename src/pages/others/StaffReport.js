@@ -318,7 +318,7 @@ const StaffReport = () => {
   return (
     <div className="reports-container">
       <div className="reports-header">
-        <h2 className="reports-title">👥 Staff Performance Reports</h2>
+        <h2 className="mt-5 reports-title">Staff Reports</h2>
         <p className="reports-subtitle">View staff working hours, sites, and earnings</p>
       </div>
 
