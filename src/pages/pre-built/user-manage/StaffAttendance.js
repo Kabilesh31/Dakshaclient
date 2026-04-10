@@ -562,7 +562,7 @@ const StaffAttendance = () => {
           <div style={{ background: "#fff", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", padding: "20px", marginTop: "20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
               <div><h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>Monthly Attendance Report</h4><p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>{months[month]} {year} • {selectedStaff.name} • Daily Wage: ₹{staffDailyWage}</p></div>
-              <div><button onClick={exportToExcel} style={{ padding: "8px 16px", background: "#4F46E5", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}><span>📊</span> Export to Excel</button></div>
+              <div><button onClick={exportToExcel} style={{ padding: "8px 16px", background: "#644634", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}> Export to Excel</button></div>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>

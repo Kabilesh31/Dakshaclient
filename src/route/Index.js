@@ -127,6 +127,7 @@ import Bills from "../pages/pre-built/user-manage/Bills";
 import SiteManagement from "../pages/pre-built/user-manage/SiteManagement";
 import OrderDetails from "../pages/pre-built/user-manage/OrderDetails";
 import SiteDetail from "../pages/pre-built/user-manage/SiteDetail";
+import Quotation from "../pages/pre-built/user-manage/Quotation";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -258,6 +259,16 @@ const Pages = () => {
         ></Route>
         <Route //Context Api added
           exact
+          path={`${process.env.PUBLIC_URL}/Quotation`}
+          render={() => (
+            <UserContextProvider>
+              <Quotation />
+            </UserContextProvider>
+          )}
+        ></Route>
+
+        <Route //Context Api added
+          exact
           path={`${process.env.PUBLIC_URL}/SiteManagement`}
           render={() => (
             <UserContextProvider>
@@ -274,7 +285,7 @@ const Pages = () => {
     </UserContextProvider>
   )}
 />
-        
+
 
         <Route //Context Api added
           exact

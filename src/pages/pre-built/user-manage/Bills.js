@@ -343,7 +343,13 @@ const Bills = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button color="primary" className="btn-icon" onClick={openAddModal}>
+              <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 6px"
+  }} className="btn-icon" onClick={openAddModal}>
                 <Icon name="plus" /> 
               </Button>
             </BlockHeadContent>
@@ -417,9 +423,24 @@ const Bills = () => {
                         <td>{formatDate(bill.createdAt)}</td>
                         <td className="fw-bold">₹{bill.totalAmt.toLocaleString("en-IN")}</td>
                         <td>
-                          <span className={`badge ${bill.orderStatus === "approved" ? "bg-primary" : bill.orderStatus === "pending" ? "bg-warning" : bill.orderStatus === "delivered" ? "bg-success" : "bg-danger"}`} style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}>
-                            {bill.orderStatus}
-                          </span>
+                          <span
+  className={`badge ${
+    bill.orderStatus === "approved"
+      ? "bg-primary"
+      : bill.orderStatus === "pending"
+      ? "bg-warning"
+      : bill.orderStatus === "delivered"
+      ? "bg-success"
+      : "bg-danger"
+  }`}
+  style={{
+    padding: "5px 10px",
+    color: "white",
+    borderRadius: "14px",
+  }}
+>
+  {bill.orderStatus.charAt(0).toUpperCase() + bill.orderStatus.slice(1)}
+</span>
                         </td>
                         <td>
                           <span className={`badge ${bill.paidStatus ? "bg-success" : "bg-warning"}`} style={{ padding: bill.paidStatus ? "5px 18px" : "5px 10px", borderRadius: "14px", color: "white" }}>
@@ -554,7 +575,13 @@ const Bills = () => {
                 </div>
                 <div className="d-flex justify-content-end gap-2">
                   <Button color="secondary" className="p-2" onClick={() => setViewModal(false)}>Close</Button>
-                  <Button color="primary"className="p-2">Download PDF</Button>
+                  <Button  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }}className="p-2">Download PDF</Button>
                 </div>
               </div>
             )}
@@ -696,7 +723,13 @@ const Bills = () => {
 
             <div className="d-flex justify-content-end gap-2 mt-4">
               <Button color="secondary"className="p-2" onClick={() => setFormModal(false)}>Cancel</Button>
-              <Button color="primary"className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
+              <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }}className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
             </div>
           </ModalBody>
         </Modal>

@@ -207,7 +207,7 @@ const dummyOrders = [
     totalAmt: 180000,
     estimatedCost: 200000,
 
-    orderStatus: "Yet to Start",
+    orderStatus: "Work in progress",
 
     startDate: "2026-04-05",
     targetDate: "2026-04-25",
@@ -293,9 +293,10 @@ const dummyOrders = [
   }, [search, selectedDates, orders]);
 
   const statusColor = (status) => {
-    if (status === "Work in progress") return "warning";
-    return "secondary"; // Yet to Start
-  };
+  if (status === "Work in progress") return "success"; // green
+  if (status === "Yet to Start") return "warning";     // yellow
+  return "secondary"; // fallback
+};
 
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
@@ -475,10 +476,22 @@ const dummyOrders = [
                             ₹ {order.totalAmt}
                           </td>
                           <td className="px-4 py-2 text-center">
-                            <span className={`tb-status text-${statusColor(order.orderStatus)}`}>
-                              {order.orderStatus === "Work in progress" ? "Work in progress" : "Yet to Start"}
-                            </span>
-                          </td>
+  <span
+    className="badge"
+    style={{
+      backgroundColor: "#f6c90e", // yellow
+      color: "#fff",              // white text
+      padding: "6px 12px",
+      borderRadius: "12px",
+      fontSize: "12px",
+      fontWeight: "500",
+    }}
+  >
+    {order.orderStatus === "Work in progress"
+      ? "Work in progress"
+      : "Yet to Start"}
+  </span>
+</td>
                           <td className="px-4 py-2 text-center">
                             <UncontrolledDropdown>
                               <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
@@ -650,7 +663,13 @@ const dummyOrders = [
               </div>
             </div>
             <div className="text-end mt-3">
-              <Button color="primary" className="mr-1" size="sm" onClick={downloadPDF}>
+              <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }} className="mr-1" size="sm" onClick={downloadPDF}>
                 <Icon name="download" />
               </Button>
             </div>

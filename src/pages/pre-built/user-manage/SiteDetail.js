@@ -283,12 +283,29 @@ const SiteDetail = () => {
   };
 
   const getStatusBadge = (status) => {
-    return status === "active" ? (
-      <Badge color="success" pill>Active</Badge>
-    ) : (
-      <Badge color="secondary" pill>Completed</Badge>
-    );
-  };
+  return (
+    <span
+      className="badge"
+      style={{
+        backgroundColor:
+          site.status === "Active"
+            ? "#06c96a"   // green
+            : site.status === "Completed"
+            ? "#dc3545"   // red
+            : "#6c757d",  // fallback (grey)
+        color: "#fff",
+        padding: "5px 12px",
+        borderRadius: "14px",
+        textTransform: "capitalize",
+        display: "inline-block",
+        minWidth: "90px",
+        textAlign: "center",
+      }}
+    >
+      {site.status}
+    </span>
+  );
+};
 
   const handleAddPhoto = () => {
     if (newPhotoUrl.trim()) {
@@ -362,8 +379,14 @@ const SiteDetail = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button color="primary"  outline size="sm" onClick={() => setEditModal(true)}>
-                <Icon name="edit" /> Edit 
+              <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }}  outline size="sm" onClick={() => setEditModal(true)}>
+                 Edit 
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -389,7 +412,7 @@ const SiteDetail = () => {
               <Col lg="6">
                 <div className="d-flex justify-content-between align-items-start">
                   <h4>{site.name}</h4>
-                  <div>{getStatusBadge(site.status)}</div>
+                  {/* <div>{getStatusBadge(site.status)}</div> */}
                 </div>
                 <p className="text-muted mt-2">
                   <Icon name="map-pin" /> {site.location}
@@ -475,7 +498,13 @@ const SiteDetail = () => {
             <div className="mt-5">
               <div className="d-flex mb-2 justify-content-between align-items-center">
                 <h5>Project Gallery</h5>
-                <Button color="primary" outline onClick={() => setPhotoModal(true)}>
+                <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    
+    color: "#fff",
+    padding: "6px 20px"
+  }} outline onClick={() => setPhotoModal(true)}>
                   <Icon name="plus" /> Add Photo
                 </Button>
               </div>
@@ -638,7 +667,13 @@ const SiteDetail = () => {
             </FormGroup>
             <div className="d-flex justify-content-end gap-2 mt-3">
               <Button color="secondary" className="p-3 " style={{ marginTop: "-1rem" }} onClick={() => setEditModal(false)}>Cancel</Button>
-              <Button color="primary" className="p-3 " style={{ marginTop: "-1rem" }} onClick={handleEditSite}>Save Changes</Button>
+              <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    marginTop: "-1rem",
+    color: "#fff",
+    padding: "6px 20px"
+  }} className="p-3 " onClick={handleEditSite}>Save Changes</Button>
             </div>
           </ModalBody>
         </Modal>

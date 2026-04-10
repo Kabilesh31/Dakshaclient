@@ -1,0 +1,18 @@
+/* Active page */
+.pagination .active .page-link {
+  background-color: #644634 !important;
+  border-color: #644634 !important;
+  color: #fff !important;
+}
+
+/* Normal page */
+.pagination .page-link {
+  color: #644634 !important;
+}
+
+/* Hover */
+.pagination .page-link:hover {
+  background-color: #644634 !important;
+  border-color: #644634 !important;
+  color: #fff !important;
+}

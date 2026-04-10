@@ -239,3 +239,13 @@ body.modal-open {
 .texting {
   margin-left: 335px;
 }
+.btn-primary {
+  background-color: #644634 !important;
+  border-color: #644634 !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover {
+  background-color: #52382a !important;
+  border-color: #52382a !important;
+}

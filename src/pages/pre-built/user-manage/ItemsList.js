@@ -320,7 +320,13 @@ const ProductsListCompact = () => {
                     <ul className="nk-block-tools g-3">
                       <li className="nk-block-tools-opt">
                         <Button
-                          color="primary"
+                          style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 6px"
+  }} 
                           className="btn-icon"
                           onClick={() => {
                             resetForm();
@@ -478,10 +484,13 @@ const ProductsListCompact = () => {
                         <DataTableRow>
                           <div className="user-card">
                             <UserAvatar
-                              theme="primary"
-                              className="xs"
-                              text={findUpper(item.itemName)}
-                            />
+  className="xs"
+  text={findUpper(item.itemName)}
+  style={{
+    backgroundColor: "#644634",
+    color: "#fff"
+  }}
+/>
                             <div className="user-info ml-2">
                               <span className="tb-lead">{item.itemName}</span>
                             </div>
@@ -741,7 +750,13 @@ const ProductsListCompact = () => {
                 </FormGroup>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">
+                <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }}  type="submit">
                   Update Item
                 </Button>
               </Col>
@@ -777,7 +792,13 @@ const ProductsListCompact = () => {
                 <small className="text-muted">Available: {selectedItem?.quantity || 0}</small>
               </FormGroup>
               <div className="mt-3">
-                <Button color="primary" onClick={handleAssignSubmit}>
+                <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }}  onClick={handleAssignSubmit}>
                   Assign
                 </Button>
               </div>
@@ -800,7 +821,13 @@ const ProductsListCompact = () => {
             <Button color="secondary" onClick={() => setDeleteModal(false)}>
               Cancel
             </Button>
-            <Button color="danger" onClick={handleDelete}>
+            <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "8px 20px"
+  }} onClick={handleDelete}>
               Delete
             </Button>
           </div>
