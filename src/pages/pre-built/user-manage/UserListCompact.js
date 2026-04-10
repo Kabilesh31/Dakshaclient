@@ -618,11 +618,10 @@ const UserListCompact = () => {
                           <span>{item.phone}</span>
                         </DataTableRow>
                         <DataTableRow>
-                          <span
-                            className={`tb-status text-${
-                              item.status === "active" ? "success" : item.status === "suspend" ? "warning" : "danger"
-                            }`}
-                          >
+                         <span
+                                className={`badge ${item.status === "active" ? "bg-success" : "bg-danger"}`}
+                                style={{ padding: "4px 10px", color: "white", borderRadius: "14px" }}
+                              >
                             {item.status === "active" ? "Active" : "Deactive"}
                           </span>
                         </DataTableRow>

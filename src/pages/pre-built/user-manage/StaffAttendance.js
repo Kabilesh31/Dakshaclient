@@ -403,7 +403,10 @@ const StaffAttendance = () => {
                   <DataTableRow><span className="tb-lead" style={{ cursor: "pointer" }} onClick={() => { setSelectedStaff(emp); setSelectedDateDetails(null); setSelectedDay(null); }}>{emp.name}</span></DataTableRow>
                   <DataTableRow>{emp.mobile}</DataTableRow>
                   <DataTableRow>{capitalizeFirst(emp.type)}</DataTableRow>
-                  <DataTableRow><span style={{ color: getStaffStatusColor(emp.staffStatus), fontWeight: 500 }}>{capitalizeFirst(emp.staffStatus)}</span></DataTableRow>
+                  <DataTableRow><span
+                                className={`badge ${emp.staffStatus === "active" ? "bg-success" : "bg-danger"}`}
+                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
+                              >{capitalizeFirst(emp.staffStatus)}</span></DataTableRow>
                 </DataTableItem>
               ))}
             </DataTableBody>

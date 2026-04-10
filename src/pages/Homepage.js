@@ -89,6 +89,13 @@ const Homepage = () => {
   const [showStaffDetails, setShowStaffDetails] = useState(false);
   const [showSitesDetails, setShowSitesDetails] = useState(false);
 
+   const getStatusBadge = (qty) => {
+    if (qty === 0) return <span className="badge bg-danger">Out of Stock</span>;
+    if (qty < 10) return <span className="badge bg-warning text-dark">Low Stock</span>;
+    return <span className="badge bg-success">In Stock</span>;
+  };
+
+
   return (
     <React.Fragment>
       <Head title="Dashboard | Staff & Sites Overview" />
@@ -455,7 +462,7 @@ const Homepage = () => {
                             <td>
                               <span
                                 className={`badge ${site.status === "active" ? "bg-success" : "bg-danger"}`}
-                                style={{ padding: "5px 10px", borderRadius: "20px" }}
+                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
                               >
                                 {site.status === "active" ? "Active" : "Inactive"}
                               </span>
@@ -502,7 +509,7 @@ const Homepage = () => {
                             <td>
                               <span
                                 className={`badge ${staff.status === "active" ? "bg-success" : "bg-danger"}`}
-                                style={{ padding: "5px 10px", borderRadius: "20px" }}
+                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
                               >
                                 {staff.status === "active" ? "Active" : "Inactive"}
                               </span>
