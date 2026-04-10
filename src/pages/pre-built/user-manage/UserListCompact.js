@@ -43,6 +43,7 @@ import axios from "axios";
 import DataContext from "../../../utils/DataContext";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import "./pagination.css"
 
 // Role options for Add/Edit user
 const roleOptions = [
@@ -402,9 +403,17 @@ const UserListCompact = () => {
                       </a>
                     </li>
                     <li className="nk-block-tools-opt">
-                      <Button color="primary" className="btn-icon" onClick={() => setModal({ add: true })}>
-                        <Icon name="plus"></Icon>
-                      </Button>
+                      <Button
+  className="btn-icon"
+  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    color: "#fff"
+  }}
+  onClick={() => setModal({ add: true })}
+>
+  <Icon name="plus" />
+</Button>
                     </li>
                   </ul>
                 </div>
@@ -429,7 +438,7 @@ const UserListCompact = () => {
                           className="btn-dim  btn-icon"
                           onClick={(e) => onActionClick(e)}
                         >
-                          <Icon name="arrow-right"></Icon>
+                          <Icon name="arrow-left" size="sm" className="text-gray" />
                         </Button>
                       </span>
                     </div>
@@ -784,7 +793,13 @@ const UserListCompact = () => {
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
-                        <Button color="primary" size="md" type="submit">
+                        <Button  className="btn-icon"
+  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    color: "#fff",
+    padding: "6px 20px"
+  }}size="md" type="submit">
                           Add User
                         </Button>
                       </li>
@@ -892,7 +907,13 @@ const UserListCompact = () => {
                   <Col size="12">
                     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2">
                       <li>
-                        <Button color="primary" size="md" type="submit">
+                        <Button className="btn-icon"
+  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    color: "#fff",
+    padding: "6px 20px"
+  }} size="md" type="submit">
                           Update User
                         </Button>
                       </li>

@@ -1,0 +1,722 @@
+/* Quotations.css */
+.quotations-container {
+  padding: 2rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.quotations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.quotations-header h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.quotations-table-wrapper {
+  background: white;
+  border-radius: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+.quotations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.quotations-table th {
+  text-align: left;
+  padding: 1rem 1.2rem;
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.quotations-table td {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid #eef2ff;
+  color: #334155;
+}
+
+.quote-link-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.quote-link-btn:hover {
+  color: #1d4ed8;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+
+.action-btn.edit {
+  color: #3b82f6;
+}
+.action-btn.edit:hover {
+  background: #eff6ff;
+}
+.action-btn.delete {
+  color: #ef4444;
+}
+.action-btn.delete:hover {
+  background: #fef2f2;
+}
+.action-btn.view {
+  color: #10b981;
+}
+.action-btn.view:hover {
+  background: #ecfdf5;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+/* Modal Styles */
+.quotation-modal .modal-content,
+.detail-modal .modal-content {
+  border-radius: 28px;
+  border: none;
+  overflow: hidden;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-section {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1.5rem;
+}
+
+.form-section h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.product-search-area {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.search-input-wrapper {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.search-input-wrapper input {
+  padding-left: 38px;
+}
+
+.product-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 10;
+  margin-top: 4px;
+}
+
+.product-option {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.product-option:hover {
+  background: #f8fafc;
+}
+
+.product-price {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.line-items-table {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.line-items-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.line-items-table th {
+  text-align: left;
+  padding: 0.5rem 0.25rem;
+  color: #475569;
+}
+
+.line-items-table td {
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.quantity-input {
+  width: 80px;
+  padding: 0.3rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  text-align: center;
+}
+
+.remove-item-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.totals-section {
+  border-bottom: none;
+}
+
+.totals-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.discount-box {
+  width: 220px;
+}
+
+.totals-box {
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+  border-radius: 20px;
+  min-width: 240px;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.grand-total {
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Detail Modal Invoice Style */
+.quotation-invoice {
+  padding: 0.5rem;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.invoice-icon {
+  font-size: 28px;
+  color: #3b82f6;
+}
+
+.quote-meta {
+  text-align: right;
+}
+
+.quote-meta h4 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.client-details {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+.client-details h5 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.invoice-table th {
+  background: #f1f5f9;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.grand-total-row {
+  font-weight: 700;
+  background: #fef9c3;
+}
+
+@media (max-width: 768px) {
+  .quotations-container {
+    padding: 1rem;
+  }
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .totals-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .discount-box {
+    width: 100%;
+  }
+  .invoice-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .quote-meta {
+    text-align: left;
+  }
+}
+/* ... keep existing styles ... */
+
+/* Additional styles for three-dot menu, search/filter bar, hidden scrollbar, etc. */
+
+/* Search & Filter Bar */
+.filters-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 2;
+  position: relative;
+  min-width: 200px;
+}
+
+.search-wrapper .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.search-wrapper .search-input {
+  padding-left: 36px;
+}
+
+.date-filter-wrapper {
+  position: relative;
+  width: 180px;
+}
+
+.date-filter-wrapper .filter-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.date-filter-select {
+  width: 100%;
+  padding: 0.5rem 0.5rem 0.5rem 36px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* Three-dot action menu */
+.actions-cell {
+  position: relative;
+}
+
+.action-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.action-menu-trigger:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
+  margin-top: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.action-menu-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #334155;
+  transition: background 0.2s;
+}
+
+.action-menu-dropdown button:hover {
+  background: #f8fafc;
+}
+
+.action-menu-dropdown button:first-child {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+.action-menu-dropdown button:last-child {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Remove underline from quote number link */
+.quote-link-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none !important;
+}
+
+.quote-link-btn:hover {
+  text-decoration: none !important;
+  color: #1d4ed8;
+}
+
+/* Scrollable modals with hidden scrollbar */
+.scrollable-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.scrollable-modal .modal-body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+/* Client name cell */
+.client-name-cell {
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filters-bar {
+    flex-direction: column;
+  }
+  .date-filter-wrapper {
+    width: 100%;
+  }
+  .action-menu-dropdown {
+    right: auto;
+    left: 0;
+  }
+}
+/* Existing styles keep everything except replace .filters-bar and add new styles */
+
+.quotations-container {
+  padding: 1.5rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.quotations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Card search style (from your snippet) */
+.card-search {
+  background: white;
+  border-radius: 30px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
+  min-width: 260px;
+}
+
+.card-search .card-body {
+  padding: 0;
+}
+
+.card-search .search-content {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 30px;
+  padding: 0 0.5rem 0 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.card-search .search-content input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  background: transparent;
+}
+
+.card-search .search-submit {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.5rem;
+  border-radius: 40px;
+  transition: all 0.2s;
+}
+
+.card-search .search-submit:hover {
+  color: #3b82f6;
+  background: #f1f5f9;
+}
+
+/* Date picker wrapper */
+.date-picker-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 30px;
+  border: 1px solid #e2e8f0;
+  padding: 0.4rem 1rem;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.date-picker-icon {
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.date-picker-input {
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  padding: 0.2rem 0;
+  background: transparent;
+  color: #1e293b;
+}
+
+.clear-date-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin-left: 0.25rem;
+}
+
+.clear-date-btn:hover {
+  color: #ef4444;
+}
+
+/* White container for table */
+.quotations-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.quotations-table-wrapper {
+  overflow-x: auto;
+}
+
+.quotations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* ... rest of your existing table styles (quotations-table th, td, etc.) remain ... */
+
+/* Responsive */
+@media (max-width: 768px) {
+  .quotations-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .header-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .card-search {
+    width: 100%;
+  }
+  .date-picker-wrapper {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+/* Reduce size and change color of the back arrow in active search bar */
+/* Remove background and border from the search back button, make arrow gray */
+.card-search .search-back.btn-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #6c757d !important;   /* gray color */
+  padding: 4px;
+  width: auto;
+  height: auto;
+}
+
+/* Ensure no background on hover/focus */
+.card-search .search-back.btn-icon:hover,
+.card-search .search-back.btn-icon:focus {
+  background: transparent !important;
+  border: none !important;
+  color: #5a6268 !important;   /* slightly darker gray on hover */
+}
+.card-search .search-content input::placeholder {
+  margin-left: 25px;
+}
+/* Add left padding to the search input so placeholder text starts with 2px gap */
+.card-search .search-content input {
+  padding-left: 10px;
+}
+
+/* If you only want the placeholder text to shift but not the typed text, you can use text-indent */
+.card-search .search-content input {
+  text-indent: 10px;
+}

@@ -201,17 +201,7 @@ const Settings = () => {
                               <FormText color="muted">Role cannot be changed. Contact support for role changes.</FormText>
                             </FormGroup>
                           </Col>
-                          <Col md="6">
-                            <FormGroup>
-                              <Label>Language</Label>
-                              <Input type="select" name="language" value={profile.language} onChange={handleProfileChange}>
-                                <option value="english">English</option>
-                                <option value="hindi">Hindi</option>
-                                <option value="tamil">Tamil</option>
-                                <option value="telugu">Telugu</option>
-                              </Input>
-                            </FormGroup>
-                          </Col>
+                          
                           <Col md="6">
                             <FormGroup>
                               <Label>Time Zone</Label>
@@ -225,7 +215,13 @@ const Settings = () => {
                           </Col>
                         </Row>
                         <div className="settings-actions mt-4 ">
-                          <Button color="primary" style={{ marginRight: "0.5rem" }} onClick={handleSaveSettings}>Save</Button>
+                          <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   marginRight: "0.5rem",
+    color: "#fff",
+    padding: "8px 20px"
+  }} onClick={handleSaveSettings}>Save</Button>
                           <Button color="secondary" outline className="ms-2">Cancel</Button>
                         </div>
                       </div>

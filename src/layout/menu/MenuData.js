@@ -29,6 +29,10 @@ const menu = [
     icon: "file-text",      // ni ni-user-alt
     text: "Bills",
     link: "/Bills",
+  },{
+    icon: "file-text",      // ni ni-user-alt
+    text: "Quotation",
+    link: "/Quotation",
   },
   // {
   //   icon: "truck",         // ni ni-truck

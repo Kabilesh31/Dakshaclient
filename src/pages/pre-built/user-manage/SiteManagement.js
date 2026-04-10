@@ -232,13 +232,30 @@ const viewSiteDetails = (site) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const getStatusBadge = (status) => {
-    return status === "active" ? (
-      <Badge color="success" pill>Active</Badge>
-    ) : (
-      <Badge color="secondary" pill>Completed</Badge>
-    );
-  };
+ const getStatusBadge = (status) => {
+  return (
+    <span
+      className="badge"
+      style={{
+        backgroundColor:
+          status === "Active"
+            ? "#06c96a"   // green
+            : status === "Completed"
+            ? "#dc3545"   // red
+            : "#03a458",  // fallback (grey)
+        color: "#fff",
+        padding: "5px 12px",
+        borderRadius: "14px",
+        textTransform: "capitalize",
+        display: "inline-block",
+        minWidth: "90px",
+        textAlign: "center",
+      }}
+    >
+      {status}
+    </span>
+  );
+};
 
   return (
     <React.Fragment>
@@ -255,7 +272,12 @@ const viewSiteDetails = (site) => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button color="primary" className="btn-icon" onClick={() => setAddModal(true)}>
+              <Button 
+  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    color: "#fff"
+  }} className="btn-icon" onClick={() => setAddModal(true)}>
                 <Icon name="plus" />
               </Button>
             </BlockHeadContent>
@@ -379,7 +401,13 @@ const viewSiteDetails = (site) => {
                         </CardText>
                       </CardBody>
                       <CardFooter className="bg-transparent border-top-0 pb-3 pt-0 px-3">
-                        <Button color="primary" outline size="sm" block onClick={() => viewSiteDetails(site)}>
+                        <Button style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+   
+    color: "#fff",
+    padding: "6px 20px"
+  }} outline size="sm" block onClick={() => viewSiteDetails(site)}>
                           View Details
                         </Button>
                       </CardFooter>
@@ -580,7 +608,14 @@ const viewSiteDetails = (site) => {
               <Button color="secondary" className="p-3" style={{ marginTop: "-1rem" }} onClick={() => { setAddModal(false); resetNewSiteForm(); }}>
                 Cancel
               </Button>
-              <Button color="primary" className="p-3" style={{ marginTop: "-1rem" }} onClick={handleAddSite}>
+              <Button 
+  style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    marginTop: "-1rem",
+    color: "#fff",
+    padding: "6px 20px"
+  }} className="p-3"  onClick={handleAddSite}>
                 Add Site
               </Button>
             </div>
