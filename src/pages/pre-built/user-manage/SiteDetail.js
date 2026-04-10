@@ -362,8 +362,8 @@ const SiteDetail = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button color="primary" outline size="sm" onClick={() => setEditModal(true)}>
-                <Icon name="edit" /> Edit Project
+              <Button color="primary"  outline size="sm" onClick={() => setEditModal(true)}>
+                <Icon name="edit" /> Edit 
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -521,7 +521,7 @@ const SiteDetail = () => {
 
             {/* Close button */}
             <div className="d-flex justify-content-end gap-3 mt-5">
-              <Button color="secondary" onClick={() => history.push("/SiteManagement")}>
+              <Button color="secondary" className="p-2" onClick={() => history.push("/SiteManagement")}>
                 Close
               </Button>
             </div>
@@ -539,8 +539,8 @@ const SiteDetail = () => {
               onChange={(e) => setNewPhotoUrl(e.target.value)}
             />
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" onClick={() => setPhotoModal(false)}>Cancel</Button>
-              <Button color="primary" onClick={handleAddPhoto}>Add to Gallery</Button>
+              <Button color="secondary" className="p-2" onClick={() => setPhotoModal(false)}>Cancel</Button>
+              <Button color="primary" className="p-2" onClick={handleAddPhoto}>Add to Gallery</Button>
             </div>
           </ModalBody>
         </Modal>

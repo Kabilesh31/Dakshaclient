@@ -136,13 +136,29 @@ const Bills = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBill, setSelectedBill] = useState(null);
-  const [modal, setModal] = useState(false);
+  const [viewModal, setViewModal] = useState(false);
+  const [formModal, setFormModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    _id: "",
+    billNumber: "",
+    customerId: "",
+    customerName: "",
+    customerMobile: "",
+    deliveryAddress: "",
+    paymentMethod: "Cash",
+    orderStatus: "pending",
+    paidStatus: false,
+    items: [{ product: "", qty: 1, price: 0, total: 0 }],
+    totalAmt: 0,
+    createdBy: "Staff",
+    createdAt: new Date().toISOString(),
+  });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Load dummy data on mount
   useEffect(() => {
-    // Simulate API call
     setBills(dummyBills);
     setFilteredBills(dummyBills);
   }, []);
@@ -151,12 +167,10 @@ const Bills = () => {
   useEffect(() => {
     let result = [...bills];
 
-    // Status filter
     if (statusFilter !== "all") {
       result = result.filter((bill) => bill.orderStatus === statusFilter);
     }
 
-    // Search filter (bill number, customer name, mobile)
     if (searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -168,7 +182,7 @@ const Bills = () => {
     }
 
     setFilteredBills(result);
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   }, [searchTerm, statusFilter, bills]);
 
   // ========== Pagination ==========
@@ -179,24 +193,129 @@ const Bills = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // ========== Handlers ==========
+  // ========== Helper Functions ==========
+  const generateId = () => "BILL-" + String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+  const generateBillNumber = () => {
+    const year = new Date().getFullYear();
+    const random = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+    return `INV-${year}-${random}`;
+  };
+  const generateCustomerId = () => "CUST-" + String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+
+  const recalcTotal = (items) => {
+    return items.reduce((sum, item) => sum + (item.total || 0), 0);
+  };
+
+  const updateItemTotal = (items, index, field, value) => {
+    const updated = [...items];
+    if (field === "qty" || field === "price") {
+      updated[index][field] = parseFloat(value) || 0;
+      updated[index].total = updated[index].qty * updated[index].price;
+    } else {
+      updated[index][field] = value;
+    }
+    const newTotal = recalcTotal(updated);
+    setFormData((prev) => ({ ...prev, items: updated, totalAmt: newTotal }));
+  };
+
+  const addItemRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      items: [...prev.items, { product: "", qty: 1, price: 0, total: 0 }],
+    }));
+  };
+
+  const removeItemRow = (index) => {
+    if (formData.items.length === 1) return;
+    const updated = formData.items.filter((_, i) => i !== index);
+    const newTotal = recalcTotal(updated);
+    setFormData((prev) => ({ ...prev, items: updated, totalAmt: newTotal }));
+  };
+
+  // ========== Modal Handlers ==========
+  const openAddModal = () => {
+    setIsEditMode(false);
+    setFormData({
+      _id: "",
+      billNumber: "",
+      customerId: "",
+      customerName: "",
+      customerMobile: "",
+      deliveryAddress: "",
+      paymentMethod: "Cash",
+      orderStatus: "pending",
+      paidStatus: false,
+      items: [{ product: "", qty: 1, price: 0, total: 0 }],
+      totalAmt: 0,
+      createdBy: "Staff",
+      createdAt: new Date().toISOString(),
+    });
+    setFormModal(true);
+  };
+
+  const openEditModal = (bill) => {
+    setIsEditMode(true);
+    setFormData({
+      ...bill,
+      items: bill.items.map((item) => ({ ...item })),
+    });
+    setFormModal(true);
+  };
+
+  const handleFormSubmit = () => {
+    // Basic validation
+    if (!formData.customerName.trim()) {
+      alert("Customer name is required");
+      return;
+    }
+    if (!formData.customerMobile.trim()) {
+      alert("Customer mobile is required");
+      return;
+    }
+    if (formData.items.length === 0 || formData.items.some((item) => !item.product.trim())) {
+      alert("At least one valid item with product name is required");
+      return;
+    }
+
+    if (isEditMode) {
+      // Update existing bill
+      const updatedBills = bills.map((bill) =>
+        bill._id === formData._id ? { ...formData, totalAmt: recalcTotal(formData.items) } : bill
+      );
+      setBills(updatedBills);
+    } else {
+      // Create new bill
+      const newBill = {
+        ...formData,
+        _id: generateId(),
+        billNumber: formData.billNumber || generateBillNumber(),
+        customerId: generateCustomerId(),
+        createdAt: new Date().toISOString(),
+        totalAmt: recalcTotal(formData.items),
+      };
+      setBills([newBill, ...bills]);
+    }
+    setFormModal(false);
+  };
+
+  const deleteBill = (billId) => {
+    if (window.confirm("Are you sure you want to delete this bill?")) {
+      setBills(bills.filter((bill) => bill._id !== billId));
+    }
+  };
+
   const viewBillDetails = (bill) => {
     setSelectedBill(bill);
-    setModal(true);
+    setViewModal(true);
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "approved":
-        return <Badge color="success">Approved</Badge>;
-      case "pending":
-        return <Badge color="warning">Pending</Badge>;
-      case "rejected":
-        return <Badge color="danger">Rejected</Badge>;
-      case "delivered":
-        return <Badge color="info">Delivered</Badge>;
-      default:
-        return <Badge color="secondary">{status}</Badge>;
+      case "approved": return <Badge color="success">Approved</Badge>;
+      case "pending": return <Badge color="warning">Pending</Badge>;
+      case "rejected": return <Badge color="danger">Rejected</Badge>;
+      case "delivered": return <Badge color="info">Delivered</Badge>;
+      default: return <Badge color="secondary">{status}</Badge>;
     }
   };
 
@@ -224,9 +343,8 @@ const Bills = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button color="primary" className="btn-icon">
-                <Icon name="plus" />
-                {/* <span>New Bill</span> */}
+              <Button color="primary" className="btn-icon" onClick={openAddModal}>
+                <Icon name="plus" /> 
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -239,7 +357,7 @@ const Bills = () => {
               <Row className="g-gs">
                 <Col md="6">
                   <FormGroup>
-                    <Label>Search</Label>
+                    <Label className="ml-1">Search</Label>
                     <Input
                       type="text"
                       placeholder="Search by Bill No., Customer, Mobile..."
@@ -250,7 +368,7 @@ const Bills = () => {
                 </Col>
                 <Col md="4">
                   <FormGroup>
-                    <Label>Order Status</Label>
+                    <Label className="ml-1">Order Status</Label>
                     <Input
                       type="select"
                       value={statusFilter}
@@ -298,8 +416,16 @@ const Bills = () => {
                         </td>
                         <td>{formatDate(bill.createdAt)}</td>
                         <td className="fw-bold">₹{bill.totalAmt.toLocaleString("en-IN")}</td>
-                        <td>{getStatusBadge(bill.orderStatus)}</td>
-                        <td>{getPaymentBadge(bill.paidStatus)}</td>
+                        <td>
+                          <span className={`badge ${bill.orderStatus === "approved" ? "bg-primary" : bill.orderStatus === "pending" ? "bg-warning" : bill.orderStatus === "delivered" ? "bg-success" : "bg-danger"}`} style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}>
+                            {bill.orderStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${bill.paidStatus ? "bg-success" : "bg-warning"}`} style={{ padding: bill.paidStatus ? "5px 18px" : "5px 10px", borderRadius: "14px", color: "white" }}>
+                            {bill.paidStatus ? "Paid" : "Pending"}
+                          </span>
+                        </td>
                         <td>
                           <UncontrolledDropdown>
                             <DropdownToggle tag="a" className="btn btn-sm btn-icon btn-trigger">
@@ -309,11 +435,11 @@ const Bills = () => {
                               <DropdownItem onClick={() => viewBillDetails(bill)}>
                                 <Icon name="eye" /> View Details
                               </DropdownItem>
-                              <DropdownItem>
+                              <DropdownItem onClick={() => openEditModal(bill)}>
                                 <Icon name="edit" /> Edit
                               </DropdownItem>
                               <DropdownItem divider />
-                              <DropdownItem className="text-danger">
+                              <DropdownItem className="text-danger" onClick={() => deleteBill(bill._id)}>
                                 <Icon name="trash" /> Delete
                               </DropdownItem>
                             </DropdownMenu>
@@ -366,9 +492,9 @@ const Bills = () => {
           </PreviewCard>
         </Block>
 
-        {/* Bill Details Modal */}
-        <Modal isOpen={modal} toggle={() => setModal(false)} size="lg" className="bill-modal">
-          <ModalHeader toggle={() => setModal(false)}>Bill Details</ModalHeader>
+        {/* View Details Modal (unchanged) */}
+        <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="lg" className="bill-modal"scrollable>
+          <ModalHeader toggle={() => setViewModal(false)}>Bill Details</ModalHeader>
           <ModalBody>
             {selectedBill && (
               <div className="bill-details">
@@ -384,7 +510,6 @@ const Bills = () => {
                     </Col>
                   </Row>
                 </div>
-
                 <Row className="mb-4">
                   <Col md="6">
                     <strong>Customer Information</strong>
@@ -398,7 +523,6 @@ const Bills = () => {
                     <p className="mb-0">Payment Method: {selectedBill.paymentMethod}</p>
                   </Col>
                 </Row>
-
                 <div className="bill-items mb-4">
                   <strong>Items</strong>
                   <Table size="sm" className="mt-2">
@@ -422,23 +546,158 @@ const Bills = () => {
                     </tbody>
                     <tfoot>
                       <tr>
-                        <th colSpan="3" className="text-end">
-                          Grand Total:
-                        </th>
+                        <th colSpan="3" className="text-end">Grand Total:</th>
                         <th>₹{selectedBill.totalAmt.toLocaleString("en-IN")}</th>
                       </tr>
                     </tfoot>
                   </Table>
                 </div>
-
-                <div className="d-flex justify-content-end gap-2 ">
-                  <Button color="secondary" className="p-2" onClick={() => setModal(false)}>
-                    Close
-                  </Button>
-                  <Button className="p-2" color="primary">Download PDF</Button>
+                <div className="d-flex justify-content-end gap-2">
+                  <Button color="secondary" className="p-2" onClick={() => setViewModal(false)}>Close</Button>
+                  <Button color="primary"className="p-2">Download PDF</Button>
                 </div>
               </div>
             )}
+          </ModalBody>
+        </Modal>
+
+        {/* Add/Edit Bill Modal */}
+        <Modal isOpen={formModal} toggle={() => setFormModal(false)} size="lg" className="bill-form-modal"scrollable>
+          <ModalHeader toggle={() => setFormModal(false)}>
+            {isEditMode ? "Edit Bill" : "Create New Bill"}
+          </ModalHeader>
+          <ModalBody>
+            <FormGroup>
+              <Label>Customer Name *</Label>
+              <Input
+                type="text"
+                value={formData.customerName}
+                onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+              />
+            </FormGroup>
+            <Row>
+              <Col md="6">
+                <FormGroup>
+                  <Label>Customer Mobile *</Label>
+                  <Input
+                    type="text"
+                    value={formData.customerMobile}
+                    onChange={(e) => setFormData({ ...formData, customerMobile: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <Label>Payment Method</Label>
+                  <Input
+                    type="select"
+                    value={formData.paymentMethod}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  >
+                    <option>Cash</option>
+                    <option>UPI</option>
+                    <option>Card</option>
+                    <option>Credit</option>
+                  </Input>
+                </FormGroup>
+              </Col>
+            </Row>
+            <FormGroup>
+              <Label>Delivery Address</Label>
+              <Input
+                type="textarea"
+                rows="2"
+                value={formData.deliveryAddress}
+                onChange={(e) => setFormData({ ...formData, deliveryAddress: e.target.value })}
+              />
+            </FormGroup>
+            <Row>
+              <Col md="6">
+                <FormGroup>
+                  <Label>Order Status</Label>
+                  <Input
+                    type="select"
+                    value={formData.orderStatus}
+                    onChange={(e) => setFormData({ ...formData, orderStatus: e.target.value })}
+                  >
+                    <option>pending</option>
+                    <option>approved</option>
+                    <option>rejected</option>
+                    <option>delivered</option>
+                  </Input>
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <Label>Paid Status</Label>
+                  <Input
+                    type="select"
+                    value={formData.paidStatus}
+                    onChange={(e) => setFormData({ ...formData, paidStatus: e.target.value === "true" })}
+                  >
+                    <option value="false">Unpaid</option>
+                    <option value="true">Paid</option>
+                  </Input>
+                </FormGroup>
+              </Col>
+            </Row>
+            <FormGroup>
+              <Label>Created By</Label>
+              <Input
+                type="text"
+                value={formData.createdBy}
+                onChange={(e) => setFormData({ ...formData, createdBy: e.target.value })}
+              />
+            </FormGroup>
+
+            <Label>Items *</Label>
+            {formData.items.map((item, idx) => (
+              <Row key={idx} className="mb-2">
+                <Col md="4">
+                  <Input
+                    placeholder="Product name"
+                    value={item.product}
+                    onChange={(e) => updateItemTotal(formData.items, idx, "product", e.target.value)}
+                  />
+                </Col>
+                <Col md="2">
+                  <Input
+                    type="number"
+                    placeholder="Qty"
+                    value={item.qty}
+                    onChange={(e) => updateItemTotal(formData.items, idx, "qty", e.target.value)}
+                  />
+                </Col>
+                <Col md="2">
+                  <Input
+                    type="number"
+                    placeholder="Price"
+                    value={item.price}
+                    onChange={(e) => updateItemTotal(formData.items, idx, "price", e.target.value)}
+                  />
+                </Col>
+                <Col md="3">
+                  <Input plaintext readOnly value={`₹ ${item.total.toFixed(2)}`} />
+                </Col>
+                <Col md="1">
+                  <Button color="danger" size="sm" outline onClick={() => removeItemRow(idx)}>
+                    <Icon name="trash" />
+                  </Button>
+                </Col>
+              </Row>
+            ))}
+            <Button color="secondary" size="sm" onClick={addItemRow} className="mb-3">
+              <Icon name="plus" /> Add Item
+            </Button>
+
+            <div className="text-end fw-bold fs-5 mt-2">
+              Grand Total: ₹ {formData.totalAmt.toLocaleString("en-IN")}
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button color="secondary"className="p-2" onClick={() => setFormModal(false)}>Cancel</Button>
+              <Button color="primary"className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
+            </div>
           </ModalBody>
         </Modal>
       </Content>
