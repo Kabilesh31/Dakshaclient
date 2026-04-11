@@ -330,7 +330,7 @@ const StaffReport = () => {
             <span className="customer-count">{filteredStaff.length} of {staffList.length}</span>
           </div>
           <div className="search-box">
-            <i className="ni ni-search search-icon"></i>
+            <i className="ni ni-search search-icon ml-4"></i>
             <Input
               type="text"
               placeholder="Search staff by name or mobile..."
