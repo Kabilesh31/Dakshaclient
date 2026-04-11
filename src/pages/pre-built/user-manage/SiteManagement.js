@@ -242,7 +242,7 @@ const viewSiteDetails = (site) => {
             ? "#06c96a"   // green
             : status === "Completed"
             ? "#dc3545"   // red
-            : "#03a458",  // fallback (grey)
+            : "#6c757d",  // fallback (grey)
         color: "#fff",
         padding: "5px 12px",
         borderRadius: "14px",
@@ -581,11 +581,17 @@ const viewSiteDetails = (site) => {
                   onChange={(e) => setStaffInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddStaff()}
                 />
-                <Button color="secondary" onClick={handleAddStaff}>
+                <Button color="secondary" style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    marginTop: "0.3rem",
+    color: "#fff",
+    padding: "12px 20px"
+  }}  onClick={handleAddStaff}>
                   Add
                 </Button>
               </div>
-              <div className="mt-2">
+              <div className="mt-4">
                 {newSite.staffAssigned.map((staff, idx) => (
                   <Badge 
                     key={idx} 
@@ -599,7 +605,7 @@ const viewSiteDetails = (site) => {
                   </Badge>
                 ))}
                 {newSite.staffAssigned.length === 0 && (
-                  <small className="text-muted">No staff added yet. Type name and click Add.</small>
+                  <small className="text-muted" style={{marginTop:"3px"}}>No staff added yet. Type name and click Add.</small>
                 )}
               </div>
               <small className="text-muted">Click on a badge to remove staff</small>

@@ -195,11 +195,20 @@
 /* Right Panel - Reports */
 .reports-panel {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1rem;
+  padding-left: 0.1rem; /* 👈 reduce left space */
   overflow-y: auto;
   background: #ffffff;
 }
-
+.stat-card.compact {
+  padding: 8px 30px;      /* ↓ reduce inner spacing */
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;               /* ↓ reduce gap */
+  min-height: 55px; 
+  min-width: 40px;      /* ↓ reduce height */
+}
 /* Action Bar */
 .action-bar {
   display: flex;
@@ -286,12 +295,65 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 2.5rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 16px;
 }
+.action-bar.ultra-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px; /* 👈 bottom space */
+}
 
+/* Month + Date picker wrapper */
+.action-bar .react-datepicker-wrapper {
+  width: auto !important;
+}
+
+/* Custom buttons (Select Month / Date Range) */
+.action-bar button,
+.action-bar .custom-date-btn,
+.action-bar .month-picker-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  height: 30px;
+  min-width: 140px; /* 👈 reduced width */
+}
+
+/* Even smaller if needed */
+.action-bar .small-picker {
+  min-width: 120px;
+}
+
+/* Export buttons alignment */
+/* Export buttons - NORMAL but slightly smaller */
+.export-buttons .export-btn {
+  padding: 6px 8px;   /* 👈 not too small */
+  height: 25px;
+  min-width: 30px;     /* 👈 keeps shape */
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.transactions-table th,
+.transactions-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+.transactions-section .transactions-table th,
+.transactions-section .transactions-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+/* Icon size */
+.export-buttons .export-btn svg {
+  font-size: 14px;
+}
 .customer-header-info {
   display: flex;
   align-items: center;
