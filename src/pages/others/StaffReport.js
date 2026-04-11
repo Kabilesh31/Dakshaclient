@@ -300,7 +300,7 @@ const StaffReport = () => {
 
   const MonthPickerButton = forwardRef(({ value, onClick }, ref) => (
     <button className="date-picker-button month-picker" onClick={onClick} ref={ref}>
-      <i className="ni ni-calendar-date"></i>
+      
       <span>{value || "Select Month"}</span>
       <i className="ni ni-chevron-down"></i>
     </button>
@@ -377,52 +377,59 @@ const StaffReport = () => {
         <div className="reports-panel">
           {selectedStaff ? (
             <>
-              <div className="action-bar ultra-compact">
-                {/* Month Picker */}
-                <div className="date-picker-wrapper ultra-compact">
-                  <DatePicker
-                    selected={selectedMonth}
-                    onChange={handleMonthChange}
-                    showMonthYearPicker
-                    dateFormat="MMMM yyyy"
-                    customInput={<MonthPickerButton />}
-                    popperPlacement="bottom-start"
-                    popperContainer={PopperContainer}
-                    isClearable={true}
-                  />
-                </div>
-                {/* Date Range Picker */}
-                <div className="date-picker-wrapper ultra-compact">
-                  <DatePicker
-                    selectsRange
-                    startDate={startDate}
-                    endDate={endDate}
-                    onChange={(update) => {
-                      setDateRange(update);
-                      setSelectedMonth(null); // clear month selection when using date range
-                    }}
-                    customInput={<CustomDateButton />}
-                    popperPlacement="bottom-start"
-                    popperContainer={PopperContainer}
-                    shouldCloseOnSelect={false}
-                    placeholderText="Select Range"
-                    isClearable={true}
-                  />
-                </div>
-                {selectedMonth && (
-                  <Button size="sm" color="link" onClick={clearMonth} className="clear-month-btn">
-                    Clear Month
-                  </Button>
-                )}
-                <div className="export-buttons ultra-compact">
-                  <button onClick={exportExcel} className="export-btn excel ultra-compact">
-                    <FaFileExcel />
-                  </button>
-                  <button onClick={exportPDF} className="export-btn pdf ultra-compact" title="Export to PDF">
-                    <FaFilePdf size={13} />
-                  </button>
-                </div>
-              </div>
+              <div className="action-bar ultra-compact d-flex align-items-center justify-content-end gap-2 flex-wrap">
+
+  {/* Month Picker */}
+  <div className="picker-wrapper">
+    <DatePicker
+      selected={selectedMonth}
+      onChange={handleMonthChange}
+      showMonthYearPicker
+      dateFormat="MMMM yyyy"
+      customInput={<MonthPickerButton />}
+      popperPlacement="bottom-start"
+      popperContainer={PopperContainer}
+      isClearable={true}
+    />
+  </div>
+
+  {/* Date Range Picker */}
+  <div className="picker-wrapper">
+    <DatePicker
+      selectsRange
+      startDate={startDate}
+      endDate={endDate}
+      onChange={(update) => {
+        setDateRange(update);
+        setSelectedMonth(null);
+      }}
+      customInput={<CustomDateButton />}
+      popperPlacement="bottom-start"
+      popperContainer={PopperContainer}
+      shouldCloseOnSelect={false}
+      placeholderText="Select Range"
+      isClearable={true}
+    />
+  </div>
+
+  {/* Clear Button */}
+  {selectedMonth && (
+    <Button size="sm" color="link" onClick={clearMonth} className="clear-month-btn p-0">
+      ✕
+    </Button>
+  )}
+
+  {/* Export Buttons */}
+  <div className="export-buttons ultra-compact d-flex align-items-center gap-1">
+    <button onClick={exportExcel} className="export-btn excel ultra-compact">
+      <FaFileExcel />
+    </button>
+    <button onClick={exportPDF} className="export-btn pdf ultra-compact">
+      <FaFilePdf size={13} />
+    </button>
+  </div>
+
+</div>
 
               <div className="customer-header">
                 <div className="customer-header-info">

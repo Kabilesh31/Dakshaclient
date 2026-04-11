@@ -244,6 +244,8 @@ const SiteDetail = () => {
   const [editedSite, setEditedSite] = useState({});
   const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     let currentSite;
@@ -339,6 +341,29 @@ const SiteDetail = () => {
       setStaffInput("");
     }
   };
+  const handleDocumentUpload = (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
+  setUploading(true);
+  // Simulate upload (replace with actual API call)
+  setTimeout(() => {
+    const newDocs = files.map((file) => ({
+      id: Date.now() + Math.random(),
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + ' KB',
+      url: URL.createObjectURL(file), // temporary local preview URL
+      file: file,
+    }));
+    setUploadedDocuments([...uploadedDocuments, ...newDocs]);
+    setUploading(false);
+    e.target.value = ''; // reset input
+  }, 500);
+};
+
+const handleRemoveDocument = (docId) => {
+  setUploadedDocuments(uploadedDocuments.filter(doc => doc.id !== docId));
+};
 
   const handleRemoveStaff = (staffToRemove) => {
     setEditedSite({
@@ -547,6 +572,54 @@ const SiteDetail = () => {
                 ))}
               </Row>
             </div>
+            {/* Document Upload Section - Added at the very end */}
+<div className="mt-5">
+  <h5>Project Documents</h5>
+  <div className="mt-3">
+    <label className="form-label">
+  <Icon name="file" /> Upload documents (plans, reports, contracts)
+</label>
+    <input
+      type="file"
+      className="form-control"
+      multiple
+      accept=".pdf,.doc,.docx,.txt,.jpg,.png"
+      onChange={handleDocumentUpload}
+      disabled={uploading}
+    />
+    {uploading && <small className="text-muted">Uploading...</small>}
+  </div>
+
+  {uploadedDocuments.length > 0 && (
+    <div className="mt-3">
+      <strong>Uploaded Documents</strong>
+      
+      <ul className="list-group mt-2">
+       
+        {uploadedDocuments.map((doc) => (
+          <li key={doc.id} className="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+               <Icon name="file" /> {doc.name} <small className="text-muted">({doc.size})</small>
+            </div>
+            <Button
+              style={{
+    backgroundColor: "#644634",
+    borderColor: "#800000",
+    
+    color: "#fff",
+    padding: "6px 20px"
+  }}
+              size="sm"
+              onClick={() => handleRemoveDocument(doc.id)}
+            >
+              <Icon name="trash" /> Remove
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
 
             {/* Close button */}
             <div className="d-flex justify-content-end gap-3 mt-5">

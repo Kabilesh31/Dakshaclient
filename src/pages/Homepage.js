@@ -274,56 +274,77 @@ const Homepage = () => {
         <Block>
           <Row className="g-gs">
             {/* Pie Chart: Staff Status Distribution */}
-            <Col xl="6" lg="6">
-              <PreviewCard className="chart-card h-100">
-                <div
-                  className="card-head chart-header"
-                  style={{
-                    padding: "1rem 1.25rem",
-                    borderBottom: "1px solid #e9ecef",
-                  }}
-                >
-                  <h6
-                    className="chart-title"
-                    style={{
-                      fontSize: "1rem",
-                      margin: 0,
-                      fontWeight: "600",
-                      color: "#1a2b3c",
-                    }}
-                  >
-                     Staff Status Distribution
-                  </h6>
-                </div>
-                <div className="card-body" style={{ padding: "1.5rem" }}>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={staffStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {staffStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [`${value} staff`, "Count"]} />
-                      <Legend verticalAlign="bottom" height={36} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="text-center mt-3">
-                    <p className="text-soft small">
-                      Active staff make up {Math.round((activeStaff / totalStaff) * 100)}% of the workforce
-                    </p>
-                  </div>
-                </div>
-              </PreviewCard>
-            </Col>
+          <Col xl="6" lg="6">
+  <PreviewCard className="chart-card h-100" style={{ borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+    
+    {/* Header */}
+    <div
+      className="card-head chart-header"
+      style={{
+        padding: "12px 16px",
+        borderBottom: "1px solid #f1f1f1",
+      }}
+    >
+      <h6
+        style={{
+          fontSize: "14px",
+          margin: 0,
+          fontWeight: "600",
+          color: "#1e293b",
+        }}
+      >
+        Staff Status Distribution
+      </h6>
+    </div>
+
+    {/* Body */}
+    <div className="card-body" style={{ padding: "12px" }}>
+      <ResponsiveContainer width="100%" height={260}>
+        <PieChart>
+          <Pie
+            data={staffStatusData}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}     // 🔥 makes it donut
+            outerRadius={90}
+            paddingAngle={3}
+            dataKey="value"
+          >
+            {staffStatusData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+
+          <Tooltip
+            formatter={(value) => [`${value} staff`, "Count"]}
+            contentStyle={{
+              borderRadius: "8px",
+              border: "none",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+            }}
+          />
+
+          <Legend
+            verticalAlign="bottom"
+            iconType="circle"
+            wrapperStyle={{ fontSize: "12px" }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+
+      {/* Footer text */}
+      <div className="text-center mt-2">
+        <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
+          Active staff:{" "}
+          <strong>
+            {Math.round((activeStaff / totalStaff) * 100)}%
+          </strong>
+        </p>
+      </div>
+    </div>
+
+  </PreviewCard>
+</Col>
 
             {/* Bar Chart: Sites Status Distribution */}
             <Col xl="6" lg="6">
