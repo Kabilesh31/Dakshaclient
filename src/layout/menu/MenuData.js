@@ -26,6 +26,34 @@ const menu = [
 
   },
   {
+  icon: "truck",   // good for supplier/logistics
+  text: "Suppliers",
+  link: "/suppliers",
+},
+
+{
+  icon: "cart",   // main buying icon
+  text: "Buying",
+  active: false,
+  subMenu: [
+    {
+      icon: "package",   // item icon
+      text: "Items",
+      link: "/items",
+    },
+    {
+      icon: "clipboard",   // request icon
+      text: "Material Request",
+      link: "/material-request",
+    },
+    {
+      icon: "file-text",   // order icon
+      text: "Purchase Order",
+      link: "/purchase-order",
+    },
+  ],
+},
+  {
     icon: "file-text",      // ni ni-user-alt
     text: "Bills",
     link: "/Bills",

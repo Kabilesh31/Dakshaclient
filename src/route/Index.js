@@ -128,6 +128,10 @@ import SiteManagement from "../pages/pre-built/user-manage/SiteManagement";
 import OrderDetails from "../pages/pre-built/user-manage/OrderDetails";
 import SiteDetail from "../pages/pre-built/user-manage/SiteDetail";
 import Quotation from "../pages/pre-built/user-manage/Quotation";
+import Suppliers from "../pages/pre-built/user-manage/Suppliers";
+import BuyingItemsPage from "../pages/pre-built/user-manage/Buying-Items";
+import MaterialRequestPage from "../pages/pre-built/user-manage/Material-request";
+import PurchaseOrderPage from "../pages/pre-built/user-manage/Purchase-order";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -316,6 +320,48 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Suppliers`}
+          render={() => (
+            <UserContextProvider>
+              <Suppliers />
+            </UserContextProvider>
+          )}
+        ></Route>
+
+
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Buying-items`}
+          render={() => (
+            <UserContextProvider>
+              <BuyingItemsPage/>
+            </UserContextProvider>
+          )}
+        ></Route>
+         <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Material-request`}
+          render={() => (
+            <UserContextProvider>
+              <MaterialRequestPage />
+            </UserContextProvider>
+          )}
+        ></Route>
+         <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Purchase-order`}
+          render={() => (
+            <UserContextProvider>
+              <PurchaseOrderPage />
+            </UserContextProvider>
+          )}
+        ></Route>
+
+
+
         <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/staff-report`}
