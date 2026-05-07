@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useHistory } from "react-router-dom";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import {
@@ -15,7 +16,6 @@ import {
 import {
   Modal,
   ModalBody,
-  ModalHeader,
   UncontrolledDropdown,
   DropdownToggle,
   DropdownMenu,
@@ -303,7 +303,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
 };
 
 // ----------------------------------------------------------------------
-// Supplier Form Modal (styled like UserListCompact)
+// Supplier Form Modal
 // ----------------------------------------------------------------------
 const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existingGroups }) => {
   const [name, setName] = useState("");
@@ -328,7 +328,6 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
     [existingGroups]
   );
 
-  // Populate form on edit / reset on add
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setName(initialData.name);
@@ -417,8 +416,8 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
           overflowY: "auto",
           maxHeight: "calc(100vh)",
           padding: "1.5rem",
-          scrollbarWidth: "none", // Firefox
-          msOverflowStyle: "none", // IE/Edge
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
         className="hide-scrollbar"
       >
@@ -517,7 +516,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                           backgroundColor: "#644634",
                           borderColor: "#800000",
                           color: "#fff",
-                          padding: "15px 20px", // Bigger button
+                          padding: "15px 20px",
                           fontSize: "1rem",
                           fontWeight: "500",
                         }}
@@ -703,6 +702,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
 // Main Suppliers Component
 // ----------------------------------------------------------------------
 const Suppliers = () => {
+  const history = useHistory(); // For navigation
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [filtered, setFiltered] = useState(initialSuppliers);
   const [search, setSearch] = useState("");
@@ -715,7 +715,6 @@ const Suppliers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemPerPage = 10;
 
-  // Delete confirmation modal state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteSupplierId, setDeleteSupplierId] = useState(null);
 
@@ -784,6 +783,10 @@ const Suppliers = () => {
   };
 
   const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
+
+  const handleNameClick = (supplier) => {
+    history.push(`/Suppliers/${supplier.id}`, { supplier });
+  };
 
   return (
     <>
@@ -896,88 +899,105 @@ const Suppliers = () => {
             </div>
 
             {/* Suppliers Table */}
-<div style={{ overflowX: "auto" }}>
-  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
-    <thead>
-      <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
-        <th className="px-3 py-2 text-center">S.No</th>
-        <th className="px-4 py-2 text-start">Supplier ID</th>
-        <th className="px-4 py-2 text-start">Supplier Name</th>
-        <th className="px-4 py-2 text-start">Group</th>
-        <th className="px-4 py-2 text-start">Supplier Type</th>
-        <th className="px-4 py-2 text-center">Status</th>
-        <th className="px-4 py-2 text-center">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {currentSuppliers.length > 0 ? (
-        currentSuppliers.map((supplier, idx) => (
-          <tr
-            key={supplier.id}
-            style={{
-              borderTop: "1px solid #e0e0e0",
-              borderBottom: "1px solid #e0e0e0",
-            }}
-          >
-            <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
-            <td className="px-4 py-2 text-start">#{supplier.id}</td>
-            <td className="px-4 py-2 text-start fw-semibold">{supplier.name}</td>
-            <td className="px-4 py-2 text-start">
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "4px 10px",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  backgroundColor: "#e0f2fe",
-                  color: "#0369a1",
-                  borderRadius: "20px",
-                }}
-              >
-                {supplier.group}
-              </span>
-            </td>
-            <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
-            <td className="px-4 py-2 text-center">
-              <span
-                className={`badge bg-${statusColor(supplier.status)}`}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                }}
-              >
-                {supplier.status}
-              </span>
-            </td>
-            <td className="px-4 py-2 text-center">
-              <UncontrolledDropdown>
-                <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                  <Icon name="more-h" />
-                </DropdownToggle>
-                <DropdownMenu right>
-                  <DropdownItem onClick={() => handleEdit(supplier)}>
-                    <Icon name="edit" /> Edit
-                  </DropdownItem>
-                  <DropdownItem onClick={() => handleDeleteClick(supplier.id)}>
-                    <Icon name="trash" /> Delete
-                  </DropdownItem>
-                </DropdownMenu>
-              </UncontrolledDropdown>
-            </td>
-          </tr>
-        ))
-      ) : (
-        <tr>
-          <td colSpan="7" className="text-center py-4">
-            No suppliers found
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
+                    <th className="px-3 py-2 text-center">S.No</th>
+                    <th className="px-4 py-2 text-start">Supplier Name</th>
+                    <th className="px-4 py-2 text-center">Status</th>
+                    <th className="px-4 py-2 text-start">Group</th>
+                    <th className="px-4 py-2 text-start">Supplier ID</th>
+                    <th className="px-4 py-2 text-start">Supplier Type</th>
+                    <th className="px-4 py-2 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSuppliers.length > 0 ? (
+                    currentSuppliers.map((supplier, idx) => (
+                      <tr
+                        key={supplier.id}
+                        style={{
+                          borderTop: "1px solid #e0e0e0",
+                          borderBottom: "1px solid #e0e0e0",
+                        }}
+                      >
+                        <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
+                        <td className="px-4 py-2 text-start fw-semibold">
+                          <button
+                            onClick={() => handleNameClick(supplier)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#2563eb",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                              padding: 0,
+                              fontSize: "inherit",
+                            }}
+                          >
+                            {supplier.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <span
+                            className={`badge bg-${statusColor(supplier.status)}`}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "12px",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              color: "white",
+                            }}
+                          >
+                            {supplier.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-start">
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 10px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              backgroundColor: "#e0f2fe",
+                              color: "#0369a1",
+                              borderRadius: "20px",
+                            }}
+                          >
+                            {supplier.group}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-start">#{supplier.id}</td>
+                        <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
+                        <td className="px-4 py-2 text-center">
+                          <UncontrolledDropdown>
+                            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                              <Icon name="more-h" />
+                            </DropdownToggle>
+                            <DropdownMenu right>
+                              <DropdownItem onClick={() => handleEdit(supplier)}>
+                                <Icon name="edit" /> Edit
+                              </DropdownItem>
+                              <DropdownItem onClick={() => handleDeleteClick(supplier.id)}>
+                                <Icon name="trash" /> Delete
+                              </DropdownItem>
+                            </DropdownMenu>
+                          </UncontrolledDropdown>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        No suppliers found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
             {/* Pagination */}
             <div className="card-inner">
               {filtered.length > 0 ? (

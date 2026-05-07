@@ -338,35 +338,42 @@ const MaterialRequestPage = () => {
     return title.slice(0, maxLength) + "...";
   };
 
+  // *** UPDATED getStatusBadge with white text ***
   const getStatusBadge = (status) => {
-    let styles = {
-      backgroundColor: "#fffbeb",
-      color: "#92400e",
-      border: "1px solid #fcd34d",
-    };
-    if (status === "Ordered") {
-      styles = {
-        backgroundColor: "#ecfdf5",
-        color: "#065f46",
-        border: "1px solid #6ee7b7",
-      };
-    } else if (status === "Partially Ordered") {
-      styles = {
-        backgroundColor: "#eff6ff",
-        color: "#1e40af",
-        border: "1px solid #93c5fd",
-      };
+    let backgroundColor = "";
+    let borderColor = "";
+
+    switch (status) {
+      case "Pending":
+        backgroundColor = "#f59e0f"; // Amber
+        borderColor = "#d97706";
+        break;
+      case "Ordered":
+        backgroundColor = "#10b981"; // Emerald
+        borderColor = "#059669";
+        break;
+      case "Partially Ordered":
+        backgroundColor = "#3b82f6"; // Blue
+        borderColor = "#2563eb";
+        break;
+      default:
+        backgroundColor = "#6b7280"; // Gray
+        borderColor = "#4b5563";
     }
+
     return (
       <span
         style={{
-          ...styles,
-          padding: "3px 10px",
+          backgroundColor,
+          border: `1px solid ${borderColor}`,
+          color: "#ffffff", // White text
+          padding: "4px 12px",
           borderRadius: "20px",
           fontSize: "0.75rem",
           fontWeight: 500,
           whiteSpace: "nowrap",
           display: "inline-block",
+          lineHeight: "1.5",
         }}
       >
         {status}
@@ -703,7 +710,11 @@ const MaterialRequestPage = () => {
                                 {sliceTitle(req.title, 55)}
                               </button>
                             </td>
-                            <td style={{ padding: "14px 16px" }}>
+                            <td style={{  padding: "8px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              color: "white", }}>
                               {getStatusBadge(req.status)}
                             </td>
                             <td
