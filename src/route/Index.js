@@ -132,6 +132,7 @@ import Suppliers from "../pages/pre-built/user-manage/Suppliers";
 import BuyingItemsPage from "../pages/pre-built/user-manage/Buying-Items";
 import MaterialRequestPage from "../pages/pre-built/user-manage/Material-request";
 import PurchaseOrderPage from "../pages/pre-built/user-manage/Purchase-order";
+import MaterialRequestDetails from "../pages/pre-built/user-manage/Material-request-details";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -178,14 +179,23 @@ const Pages = () => {
           )}
         ></Route>
         <Route
-  exact
-  path={`${process.env.PUBLIC_URL}/orders/:id`}
-  render={(props) => (
-    <UserContextProvider>
-      <OrderDetails {...props} />
-    </UserContextProvider>
-  )}
-></Route>
+          exact
+          path={`${process.env.PUBLIC_URL}/orders/:id`}
+          render={(props) => (
+            <UserContextProvider>
+              <OrderDetails {...props} />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route
+          exact
+          path={`${process.env.PUBLIC_URL}/material-request-details/:id`}
+          render={(props) => (
+            <UserContextProvider>
+              <MaterialRequestDetails {...props} />
+            </UserContextProvider>
+          )}
+        ></Route>
         <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/products`}
