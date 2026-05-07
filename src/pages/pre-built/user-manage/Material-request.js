@@ -601,12 +601,14 @@ const MaterialRequestPage = () => {
                 <div
                   style={{
                     borderRadius: "8px",
+                    marginTop : "20px",
                     border: "1px solid #e5e7eb",
                     overflow: "hidden",
                   }}
                 >
                   <table
                     style={{
+                      
                       width: "100%",
                       borderCollapse: "collapse",
                       fontSize: "0.88rem",
@@ -867,7 +869,7 @@ const MaterialRequestPage = () => {
             </div>
           </div>
 
-          <h6 style={{ fontWeight: 600, marginBottom: "12px" }}>Add Materials</h6>
+          <h6 style={{ fontWeight: 600, marginBottom: "12px", marginTop: "10px" }}>Add Materials</h6>
           <div
             style={{
               borderRadius: "8px",
@@ -916,20 +918,14 @@ const MaterialRequestPage = () => {
 
           <div className="d-flex justify-content-between align-items-center">
             <div className="d-flex gap-2">
-              <Button color="light" onClick={addItemRow}>
+              <Button color="light" style={{padding:"12px"}} onClick={addItemRow}>
                 <Icon name="plus" /> Add Row
               </Button>
-              <Button color="light" outline>
-                <Icon name="plus" /> Add Multiple
-              </Button>
+              
+
             </div>
             <div className="d-flex gap-2 align-items-center">
-              <Button color="light" outline>
-                <Icon name="download" /> Download
-              </Button>
-              <Button color="light" outline>
-                <Icon name="upload" /> Upload
-              </Button>
+              
               <Button color="secondary" onClick={() => {
                 setAddModal(false);
                 setActiveAutocompleteIndex(null);

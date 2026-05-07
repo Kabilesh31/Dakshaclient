@@ -135,6 +135,7 @@ import PurchaseOrderPage from "../pages/pre-built/user-manage/Purchase-order";
 import MaterialRequestDetails from "../pages/pre-built/user-manage/Material-request-details";
 import SupplierDetails from "../pages/pre-built/user-manage/SupplierDetails";
 import BuyingDetails from "../pages/pre-built/user-manage/BuyingDetails";
+import PurchaseOrderDetails from "../pages/pre-built/user-manage/Purchase-order-details";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -195,6 +196,15 @@ const Pages = () => {
           render={(props) => (
             <UserContextProvider>
               <MaterialRequestDetails {...props} />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route
+          exact
+          path={`${process.env.PUBLIC_URL}/purchase-order-details/:id`}
+          render={(props) => (
+            <UserContextProvider>
+              <PurchaseOrderDetails {...props} />
             </UserContextProvider>
           )}
         ></Route>
