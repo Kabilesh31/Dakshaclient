@@ -129,10 +129,12 @@ import OrderDetails from "../pages/pre-built/user-manage/OrderDetails";
 import SiteDetail from "../pages/pre-built/user-manage/SiteDetail";
 import Quotation from "../pages/pre-built/user-manage/Quotation";
 import Suppliers from "../pages/pre-built/user-manage/Suppliers";
-import BuyingItemsPage from "../pages/pre-built/user-manage/Buying-Items";
+import Buying from "../pages/pre-built/user-manage/Buying";
 import MaterialRequestPage from "../pages/pre-built/user-manage/Material-request";
 import PurchaseOrderPage from "../pages/pre-built/user-manage/Purchase-order";
 import MaterialRequestDetails from "../pages/pre-built/user-manage/Material-request-details";
+import SupplierDetails from "../pages/pre-built/user-manage/SupplierDetails";
+import BuyingDetails from "../pages/pre-built/user-manage/BuyingDetails";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -340,17 +342,35 @@ const Pages = () => {
             </UserContextProvider>
           )}
         ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Suppliers/:id`}
+          render={() => (
+            <UserContextProvider>
+              <SupplierDetails />
+            </UserContextProvider>
+          )}
+        ></Route>
 
 
         <Route //Context Api added
           exact
-          path={`${process.env.PUBLIC_URL}/Buying-items`}
+          path={`${process.env.PUBLIC_URL}/Buying`}
           render={() => (
             <UserContextProvider>
-              <BuyingItemsPage/>
+              <Buying/>
             </UserContextProvider>
           )}
         ></Route>
+        <Route //Context Api added
+  exact
+  path={`${process.env.PUBLIC_URL}/Buying/:id`}
+  render={() => (
+    <UserContextProvider>
+      <BuyingDetails />
+    </UserContextProvider>
+  )}
+/>
          <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/Material-request`}

@@ -39,7 +39,7 @@ const menu = [
     {
       icon: "package",   // item icon
       text: "Items",
-      link: "/items",
+      link: "/Buying",
     },
     {
       icon: "clipboard",   // request icon
