@@ -19,15 +19,35 @@ import {
   FormGroup,
   Label,
   Input,
+  Nav,
+  NavItem,
+  NavLink,
+  TabContent,
+  TabPane,
 } from "reactstrap";
+import classnames from "classnames";
 
 /* ---------- DUMMY SUPPLIERS ---------- */
 const dummySuppliers = [
-  { id: "SUP-001", name: "ABC Traders" },
-  { id: "SUP-002", name: "XYZ Suppliers" },
-  { id: "SUP-003", name: "Steel Max Industries" },
-  { id: "SUP-004", name: "Cement Corp Ltd" },
-  { id: "SUP-005", name: "Hardware Hub" },
+  { id: "SUP-001", name: "ABC Traders", address: "123, MG Road, Chennai - 600001", contact: "9876543210" },
+  { id: "SUP-002", name: "XYZ Suppliers", address: "45, Anna Salai, Chennai - 600002", contact: "9876543211" },
+  { id: "SUP-003", name: "Steel Max Industries", address: "78, GST Road, Chennai - 600003", contact: "9876543212" },
+  { id: "SUP-004", name: "Cement Corp Ltd", address: "12, Mount Road, Chennai - 600004", contact: "9876543213" },
+  { id: "SUP-005", name: "Hardware Hub", address: "90, Poonamallee High Road, Chennai - 600005", contact: "9876543214" },
+];
+
+/* ---------- DUMMY MATERIAL REQUESTS (for selection) ---------- */
+const dummyMaterialRequestsList = [
+  { _id: "MREQ-00007", title: "Purchase Request for PRIMER 20 LTR", status: "Pending", items: [{ itemCode: "PRIMER-20L", itemName: "PRIMER 20 LTR", quantity: 10, uom: "LTR", warehouse: "Stores - SD", requiredBy: "2026-05-15" }] },
+  { _id: "MREQ-00008", title: "Purchase Request for GALVANIZED SHEET", status: "Ordered", items: [{ itemCode: "GS-8.6-045-GRAY", itemName: '8\'6" GALVANIZED SHEET', quantity: 35, uom: "NOS", warehouse: "Stores - SD", requiredBy: "2026-05-20" }] },
+  { _id: "MREQ-00009", title: "Purchase Request for TRANSPARENT SHEET", status: "Partially Ordered", items: [{ itemCode: "TS-6x3.6-1.5-CLEAR", itemName: 'TRANSPARENT SHEET 6\'x3\'6"', quantity: 24, uom: "SQM", warehouse: "Stores - SD", requiredBy: "2026-05-25" }] },
+];
+
+/* ---------- DUMMY PROJECTS ---------- */
+const dummyProjects = [
+  { id: "PROJ-001", name: "Sunrise Villa Project" },
+  { id: "PROJ-002", name: "Green Field Apartment" },
+  { id: "PROJ-003", name: "Lake View Residency" },
 ];
 
 /* ---------- DUMMY ITEM DATABASE ---------- */
@@ -99,89 +119,103 @@ const dummyPurchaseOrders = [
   },
 ];
 
-// Item Row Component for Add Modal
+// Item Row Component with native date input
 const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive }) => {
   return (
     <tr>
-      <td style={{ padding: "8px 12px", textAlign: "center", verticalAlign: "middle" }}>
+      <td style={{ padding: "8px 10px", textAlign: "center", verticalAlign: "middle", fontSize: "0.85rem" }}>
         {item.no || index + 1}
       </td>
-      <td style={{ padding: "8px 12px", position: "relative", verticalAlign: "middle" }}>
+      <td style={{ padding: "8px 10px", position: "relative", verticalAlign: "middle" }}>
         <input
           type="text"
           className="form-control form-control-sm"
           value={item.itemCode}
           onChange={(e) => handleItemCodeChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, index)}
-          onClick={() => {
+          onFocus={() => {
             if (item.itemCode && item.itemCode.trim().length > 0) {
               handleItemCodeChange(index, item.itemCode);
             }
           }}
-          placeholder="Search item code or name..."
+          placeholder="Search item code..."
           autoComplete="off"
-          style={{ fontSize: "0.85rem" }}
+          style={{ fontSize: "0.82rem" }}
           data-autocomplete-input="true"
         />
         {isActive && suggestions.length > 0 && (
           <div
             data-autocomplete-dropdown="true"
             style={{
-              position: "absolute",
-              top: "100%",
-              left: "12px",
-              right: "12px",
-              backgroundColor: "#fff",
-              border: "1px solid #d1d5db",
-              borderRadius: "0 0 8px 8px",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-              zIndex: 99999,
-              maxHeight: "220px",
-              overflowY: "auto",
-              marginTop: "-1px",
+              position: "absolute", top: "100%", left: "10px", right: "10px",
+              backgroundColor: "#fff", border: "1px solid #d1d5db",
+              borderRadius: "0 0 8px 8px", boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+              zIndex: 99999, maxHeight: "200px", overflowY: "auto", marginTop: "-1px",
             }}
           >
             {suggestions.map((suggestion, sIdx) => (
               <div
                 key={sIdx}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectSuggestion(index, suggestion);
-                }}
+                onMouseDown={(e) => { e.preventDefault(); selectSuggestion(index, suggestion); }}
                 style={{
-                  padding: "10px 14px",
-                  cursor: "pointer",
+                  padding: "10px 14px", cursor: "pointer",
                   backgroundColor: sIdx === activeSuggestionIndex ? "#eff6ff" : "#fff",
                   borderBottom: sIdx < suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
-                  transition: "background-color 0.1s ease",
                 }}
                 onMouseEnter={() => setActiveSuggestionIndex(sIdx)}
               >
-                <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>
-                  {suggestion.itemCode}
-                </div>
-                <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>
-                  {suggestion.itemName}
-                </div>
+                <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>{suggestion.itemCode}</div>
+                <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>{suggestion.itemName}</div>
               </div>
             ))}
           </div>
         )}
       </td>
-      <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input type="date" value={item.requiredBy} onChange={(e) => handleItemChange(index, "requiredBy", e.target.value)} bsSize="sm" />
+      <td style={{ padding: "8px 10px", verticalAlign: "middle" }}>
+        <input
+          type="date"
+          className="form-control form-control-sm"
+          value={item.requiredBy}
+          onChange={(e) => handleItemChange(index, "requiredBy", e.target.value)}
+          style={{ fontSize: "0.82rem", cursor: "pointer" }}
+          onClick={(e) => e.stopPropagation()}
+        />
       </td>
-      <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input type="number" value={item.quantity} onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)} placeholder="0" bsSize="sm" />
+      <td style={{ padding: "8px 10px", verticalAlign: "middle" }}>
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={item.quantity}
+          onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          style={{ fontSize: "0.82rem", width: "80px" }}
+          onClick={(e) => e.stopPropagation()}
+        />
       </td>
-      <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input type="number" value={item.rate || ""} onChange={(e) => handleItemChange(index, "rate", parseFloat(e.target.value) || 0)} placeholder="0.00" bsSize="sm" />
+      <td style={{ padding: "8px 10px", verticalAlign: "middle" }}>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          value={item.uom}
+          onChange={(e) => handleItemChange(index, "uom", e.target.value)}
+          placeholder="UOM"
+          style={{ fontSize: "0.82rem", width: "80px" }}
+          onClick={(e) => e.stopPropagation()}
+        />
       </td>
-      <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input type="text" value={item.warehouse} onChange={(e) => handleItemChange(index, "warehouse", e.target.value)} bsSize="sm" />
+      <td style={{ padding: "8px 10px", verticalAlign: "middle" }}>
+        <input
+          type="number"
+          className="form-control form-control-sm"
+          value={item.rate || ""}
+          onChange={(e) => handleItemChange(index, "rate", parseFloat(e.target.value) || 0)}
+          placeholder="0.00"
+          style={{ fontSize: "0.82rem", width: "100px" }}
+          onClick={(e) => e.stopPropagation()}
+        />
       </td>
-      <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input type="text" value={item.uom} onChange={(e) => handleItemChange(index, "uom", e.target.value)} placeholder="UOM" bsSize="sm" />
+      <td style={{ padding: "8px 10px", verticalAlign: "middle", textAlign: "right", fontWeight: 500, color: "#374151", fontSize: "0.85rem" }}>
+        {((item.quantity || 0) * (item.rate || 0)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </td>
     </tr>
   );
@@ -194,16 +228,31 @@ const PurchaseOrderPage = () => {
   const [loading, setLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
   const [addModal, setAddModal] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState("details");
+  const [showMaterialRequestModal, setShowMaterialRequestModal] = useState(false);
+  const [selectedMaterialRequest, setSelectedMaterialRequest] = useState(null);
+
   const [newOrder, setNewOrder] = useState({
     series: "PO-SER-2026",
     date: "",
     supplier: "",
+    costCenter: "",
+    project: "",
     modeOfPayment: "Check",
     termsOfPayment: "Net 30 Days",
     requiredBy: "",
+    supplierAddress: "",
+    supplierContact: "",
+    shippingAddress: "",
+    shippingContact: "",
+    companyBillingAddress: "",
+    placeOfSupply: "",
+    applyTaxWithholding: false,
+    isReverseCharge: false,
+    isSubcontracted: false,
+    termsAndConditions: "",
     items: [
-      { no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, rate: 0, warehouse: "Stores - SD", uom: "" },
+      { no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, uom: "", rate: 0, warehouse: "Stores - SD" },
     ],
   });
 
@@ -222,12 +271,22 @@ const PurchaseOrderPage = () => {
     }, 300);
   }, []);
 
+  // Fix scroll when modal opens
+  useEffect(() => {
+    if (addModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [addModal]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (activeAutocompleteIndex !== null) {
-        const isOutsideDropdown = !event.target.closest('[data-autocomplete-dropdown]');
-        const isOutsideInput = !event.target.closest('[data-autocomplete-input]');
-        if (isOutsideDropdown && isOutsideInput) {
+        if (!event.target.closest('[data-autocomplete-dropdown]') && !event.target.closest('[data-autocomplete-input]')) {
           setActiveAutocompleteIndex(null);
           setSuggestions([]);
           setActiveSuggestionIndex(-1);
@@ -243,44 +302,26 @@ const PurchaseOrderPage = () => {
       setFiltered(purchaseOrders);
     } else {
       const keyword = search.toLowerCase();
-      setFiltered(
-        purchaseOrders.filter(
-          (po) =>
-            po.supplierName?.toLowerCase().includes(keyword) ||
-            po._id?.toLowerCase().includes(keyword) ||
-            po.status?.toLowerCase().includes(keyword)
-        )
-      );
+      setFiltered(purchaseOrders.filter(po =>
+        po.supplierName?.toLowerCase().includes(keyword) ||
+        po._id?.toLowerCase().includes(keyword) ||
+        po.status?.toLowerCase().includes(keyword)
+      ));
     }
   }, [search, purchaseOrders]);
 
-  const getStatusBadge = (status) => {
-    return (
-      <span
-        style={{
-          backgroundColor: "#eff6ff",
-          color: "#1e40af",
-          border: "1px solid #93c5fd",
-          padding: "4px 12px",
-          borderRadius: "20px",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          whiteSpace: "nowrap",
-          display: "inline-block",
-        }}
-      >
-        {status}
-      </span>
-    );
-  };
+  const getStatusBadge = (status) => (
+    <span style={{ backgroundColor: "#eff6ff", color: "#1e40af", border: "1px solid #93c5fd", padding: "4px 12px", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 500, whiteSpace: "nowrap", display: "inline-block" }}>
+      {status}
+    </span>
+  );
 
   const handleItemCodeChange = (index, value) => {
     handleItemChange(index, "itemCode", value);
     if (value && value.trim().length > 0) {
-      const filtered = dummyItemDatabase.filter(
-        (item) =>
-          item.itemCode?.toLowerCase().includes(value.toLowerCase()) ||
-          item.itemName?.toLowerCase().includes(value.toLowerCase())
+      const filtered = dummyItemDatabase.filter(item =>
+        item.itemCode?.toLowerCase().includes(value.toLowerCase()) ||
+        item.itemName?.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered);
       setActiveAutocompleteIndex(index);
@@ -288,115 +329,91 @@ const PurchaseOrderPage = () => {
     } else {
       setSuggestions([]);
       setActiveAutocompleteIndex(null);
-      setActiveSuggestionIndex(-1);
     }
   };
 
   const selectSuggestion = (index, item) => {
     const updatedItems = [...newOrder.items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      itemCode: item.itemCode,
-      itemName: item.itemName,
-      uom: item.uom,
-      warehouse: item.warehouse || updatedItems[index].warehouse,
-    };
+    updatedItems[index] = { ...updatedItems[index], itemCode: item.itemCode, itemName: item.itemName, uom: item.uom, warehouse: item.warehouse || updatedItems[index].warehouse };
     setNewOrder((prev) => ({ ...prev, items: updatedItems }));
     setSuggestions([]);
     setActiveAutocompleteIndex(null);
-    setActiveSuggestionIndex(-1);
   };
 
   const handleKeyDown = (e, index) => {
     if (suggestions.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
-        selectSuggestion(index, suggestions[activeSuggestionIndex]);
-      }
-    } else if (e.key === "Escape") {
-      setSuggestions([]);
-      setActiveAutocompleteIndex(null);
-      setActiveSuggestionIndex(-1);
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveSuggestionIndex(prev => prev < suggestions.length - 1 ? prev + 1 : 0); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveSuggestionIndex(prev => prev > 0 ? prev - 1 : suggestions.length - 1); }
+    else if (e.key === "Enter") { e.preventDefault(); if (activeSuggestionIndex >= 0) selectSuggestion(index, suggestions[activeSuggestionIndex]); }
+    else if (e.key === "Escape") { setSuggestions([]); setActiveAutocompleteIndex(null); }
   };
 
   const addItemRow = () => {
-    setNewOrder((prev) => ({
+    setNewOrder(prev => ({
       ...prev,
-      items: [
-        ...prev.items,
-        { no: prev.items.length + 1, itemCode: "", itemName: "", requiredBy: prev.requiredBy || "", quantity: 0, rate: 0, warehouse: "Stores - SD", uom: "" },
-      ],
+      items: [...prev.items, { no: prev.items.length + 1, itemCode: "", itemName: "", requiredBy: prev.requiredBy || "", quantity: 0, uom: "", rate: 0, warehouse: "Stores - SD" }],
     }));
   };
 
   const handleItemChange = (index, field, value) => {
     const updatedItems = [...newOrder.items];
     updatedItems[index][field] = value;
-    if (field === "quantity" || field === "rate") {
-      updatedItems[index].amount = (updatedItems[index].quantity || 0) * (updatedItems[index].rate || 0);
-    }
     setNewOrder((prev) => ({ ...prev, items: updatedItems }));
   };
 
-  const calculateGrandTotal = () => {
-    return newOrder.items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.rate || 0)), 0);
+  const selectMaterialRequest = (mr) => {
+    setSelectedMaterialRequest(mr);
+    const mrItems = mr.items.map((item, idx) => ({
+      no: newOrder.items.filter(i => i.itemCode).length + idx + 1,
+      itemCode: item.itemCode || "",
+      itemName: item.itemName || "",
+      requiredBy: item.requiredBy || newOrder.requiredBy || "",
+      quantity: item.quantity || 0,
+      uom: item.uom || "",
+      rate: 0,
+      warehouse: item.warehouse || "Stores - SD",
+    }));
+    setNewOrder(prev => ({ ...prev, items: [...prev.items.filter(i => i.itemCode.trim()), ...mrItems] }));
+    setShowMaterialRequestModal(false);
   };
+
+  const calculateTotalQuantity = () => newOrder.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const calculateGrandTotal = () => newOrder.items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.rate || 0)), 0);
 
   const handleAddOrder = () => {
     const newId = `PO-${String(purchaseOrders.length + 1).padStart(5, "0")}`;
-    const supplierObj = dummySuppliers.find((s) => s.id === newOrder.supplier || s.name === newOrder.supplier);
+    const supplierObj = dummySuppliers.find(s => s.id === newOrder.supplier);
     const orderToAdd = {
-      _id: newId,
-      supplierName: supplierObj?.name || newOrder.supplier,
-      supplierId: supplierObj?.id || "",
-      status: "To Receive and Bill",
-      date: newOrder.date,
-      requiredBy: newOrder.requiredBy,
-      grandTotal: calculateGrandTotal(),
-      series: newOrder.series,
-      modeOfPayment: newOrder.modeOfPayment,
-      termsOfPayment: newOrder.termsOfPayment,
-      items: newOrder.items.map((item, idx) => ({
-        ...item,
-        no: idx + 1,
-        amount: (item.quantity || 0) * (item.rate || 0),
-      })),
+      _id: newId, supplierName: supplierObj?.name || "", supplierId: supplierObj?.id || "",
+      status: "To Receive and Bill", date: newOrder.date, requiredBy: newOrder.requiredBy,
+      grandTotal: calculateGrandTotal(), series: newOrder.series,
+      modeOfPayment: newOrder.modeOfPayment, termsOfPayment: newOrder.termsOfPayment,
+      items: newOrder.items.map((item, idx) => ({ ...item, no: idx + 1, amount: (item.quantity || 0) * (item.rate || 0) })),
     };
-    const updated = [orderToAdd, ...purchaseOrders];
-    setPurchaseOrders(updated);
-    setFiltered(updated);
+    setPurchaseOrders([orderToAdd, ...purchaseOrders]);
+    setFiltered([orderToAdd, ...purchaseOrders]);
     setAddModal(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setNewOrder({
-      series: "PO-SER-2026",
-      date: "",
-      supplier: "",
-      modeOfPayment: "Check",
-      termsOfPayment: "Net 30 Days",
-      requiredBy: "",
-      items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, rate: 0, warehouse: "Stores - SD", uom: "" }],
+      series: "PO-SER-2026", date: "", supplier: "", costCenter: "", project: "",
+      modeOfPayment: "Check", termsOfPayment: "Net 30 Days", requiredBy: "",
+      supplierAddress: "", supplierContact: "", shippingAddress: "", shippingContact: "",
+      companyBillingAddress: "", placeOfSupply: "",
+      applyTaxWithholding: false, isReverseCharge: false, isSubcontracted: false,
+      termsAndConditions: "",
+      items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, uom: "", rate: 0, warehouse: "Stores - SD" }],
     });
+    setActiveTab("details");
+    setSelectedMaterialRequest(null);
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-  };
+  const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+  const formatCurrency = (amount) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(amount);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(amount);
-  };
-
-  const goToDetails = (order) => {
-    history.push(`/purchase-order-details/${order._id}`, { orderData: order });
-  };
+  const goToDetails = (order) => history.push(`/purchase-order-details/${order._id}`, { orderData: order });
 
   return (
     <>
@@ -404,57 +421,38 @@ const PurchaseOrderPage = () => {
       <Content>
         <BlockHead size="sm">
           <BlockBetween>
-            <BlockHeadContent>
-              <BlockTitle tag="h3">Purchase Order</BlockTitle>
-            </BlockHeadContent>
-            <Button color="primary" onClick={() => setAddModal(true)}>
-              <Icon name="plus" /> Add Purchase Order
-            </Button>
+            <BlockHeadContent><BlockTitle tag="h3">Purchase Order</BlockTitle></BlockHeadContent>
+            <Button color="primary" onClick={() => { resetForm(); setAddModal(true); }}><Icon name="plus" /> Add Purchase Order</Button>
           </BlockBetween>
         </BlockHead>
 
         <Block>
           {loading ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div
-                style={{
-                  width: "40px", height: "40px", border: "3px solid #e5e7eb",
-                  borderTopColor: "#3b82f6", borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
-                }}
-              />
+              <div style={{ width: "40px", height: "40px", border: "3px solid #e5e7eb", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
               <p style={{ color: "#6b7280" }}>Loading purchase orders...</p>
             </div>
           ) : (
             <DataTable className="card-stretch w-100">
-              {/* Search */}
               <div className="card-inner position-relative card-tools-toggle">
                 <div className="card-title-group">
                   <div className="card-tools mr-n1">
                     <ul className="btn-toolbar gx-1">
-                      <li>
-                        <a href="#search" onClick={(ev) => { ev.preventDefault(); setOnSearch(true); }} className="btn btn-icon search-toggle">
-                          <Icon name="search" />
-                        </a>
-                      </li>
+                      <li><a href="#search" onClick={(ev) => { ev.preventDefault(); setOnSearch(true); }} className="btn btn-icon search-toggle"><Icon name="search" /></a></li>
                     </ul>
                   </div>
                 </div>
                 <div className={`card-search search-wrap ${onSearch ? "active" : ""}`}>
                   <div className="card-body">
                     <div className="search-content">
-                      <Button className="search-back btn-icon" onClick={() => { setSearch(""); setOnSearch(false); }}>
-                        <Icon name="arrow-left" />
-                      </Button>
+                      <Button className="search-back btn-icon" onClick={() => { setSearch(""); setOnSearch(false); }}><Icon name="arrow-left" /></Button>
                       <input type="text" className="form-control border-transparent" placeholder="Search by supplier, ID or status" value={search} onChange={(e) => setSearch(e.target.value)} />
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Table */}
               <div style={{ padding: "0 20px 20px" }}>
-                <div style={{ borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden" }}>
+                <div style={{ borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden", marginTop: "20px" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
                     <thead>
                       <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
@@ -466,31 +464,18 @@ const PurchaseOrderPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.length > 0 ? (
-                        filtered.map((order, idx) => (
-                          <tr key={order._id} style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                            <td style={{ padding: "14px 16px" }}>
-                              <button
-                                onClick={() => goToDetails(order)}
-                                style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontWeight: 500, textAlign: "left", padding: 0, fontSize: "0.88rem" }}
-                              >
-                                {order.supplierName}
-                              </button>
-                            </td>
-                            <td style={{ padding: "14px 16px" }}>{getStatusBadge(order.status)}</td>
-                            <td style={{ padding: "14px 16px", color: "#374151" }}>{formatDate(order.date)}</td>
-                            <td style={{ padding: "14px 16px", textAlign: "right", fontWeight: 600, color: "#059669" }}>{formatCurrency(order.grandTotal)}</td>
-                            <td style={{ padding: "14px 16px" }}>
-                              <code style={{ backgroundColor: "#f9fafb", padding: "4px 10px", borderRadius: "4px", fontSize: "0.82rem", color: "#374151", border: "1px solid #e5e7eb", fontWeight: 600 }}>
-                                {order._id}
-                              </code>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>No purchase orders found</td>
+                      {filtered.length > 0 ? filtered.map((order, idx) => (
+                        <tr key={order._id} style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                          <td style={{ padding: "14px 16px" }}>
+                            <button onClick={() => goToDetails(order)} style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontWeight: 500, textAlign: "left", padding: 0, fontSize: "0.88rem" }}>{order.supplierName}</button>
+                          </td>
+                          <td style={{ padding: "14px 16px" }}>{getStatusBadge(order.status)}</td>
+                          <td style={{ padding: "14px 16px", color: "#374151" }}>{formatDate(order.date)}</td>
+                          <td style={{ padding: "14px 16px", textAlign: "right", fontWeight: 600, color: "#059669" }}>{formatCurrency(order.grandTotal)}</td>
+                          <td style={{ padding: "14px 16px" }}><code style={{ backgroundColor: "#f9fafb", padding: "4px 10px", borderRadius: "4px", fontSize: "0.82rem", color: "#374151", border: "1px solid #e5e7eb", fontWeight: 600 }}>{order._id}</code></td>
                         </tr>
+                      )) : (
+                        <tr><td colSpan={5} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>No purchase orders found</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -501,87 +486,240 @@ const PurchaseOrderPage = () => {
         </Block>
       </Content>
 
-      {/* Add Purchase Order Modal */}
-      <Modal isOpen={addModal} toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); setSuggestions([]); }} centered size="xl" backdrop="static">
-        <ModalHeader toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); setSuggestions([]); }}>
+      {/* Add Purchase Order Modal - Fixed scroll */}
+      <Modal 
+        isOpen={addModal} 
+        toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} 
+        centered 
+        size="xl" 
+        backdrop="static"
+        scrollable={true}
+        style={{ maxHeight: "90vh" }}
+      >
+        <ModalHeader toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}>
           Add Purchase Order
         </ModalHeader>
-        <ModalBody>
-          <div className="row g-3 mb-4">
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="series">Series</Label>
-                <Input type="text" id="series" value={newOrder.series} onChange={(e) => setNewOrder({ ...newOrder, series: e.target.value })} />
-              </FormGroup>
-            </div>
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="date">Date *</Label>
-                <Input type="date" id="date" value={newOrder.date} onChange={(e) => setNewOrder({ ...newOrder, date: e.target.value })} />
-              </FormGroup>
-            </div>
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="supplier">Supplier *</Label>
-                <Input type="select" id="supplier" value={newOrder.supplier} onChange={(e) => setNewOrder({ ...newOrder, supplier: e.target.value })}>
-                  <option value="">Select Supplier</option>
-                  {dummySuppliers.map((sup) => (
-                    <option key={sup.id} value={sup.id}>{sup.name}</option>
-                  ))}
-                </Input>
-              </FormGroup>
-            </div>
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="modeOfPayment">Mode of Payment *</Label>
-                <Input type="select" id="modeOfPayment" value={newOrder.modeOfPayment} onChange={(e) => setNewOrder({ ...newOrder, modeOfPayment: e.target.value })}>
-                  <option value="Check">Check</option>
-                  <option value="Cash">Cash</option>
-                  <option value="DD">DD</option>
-                </Input>
-              </FormGroup>
-            </div>
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="termsOfPayment">Terms of Payment</Label>
-                <Input type="text" id="termsOfPayment" value={newOrder.termsOfPayment} onChange={(e) => setNewOrder({ ...newOrder, termsOfPayment: e.target.value })} />
-              </FormGroup>
-            </div>
-            <div className="col-md-4">
-              <FormGroup>
-                <Label for="poRequiredBy">Required By *</Label>
-                <Input type="date" id="poRequiredBy" value={newOrder.requiredBy} onChange={(e) => {
-                  setNewOrder({ ...newOrder, requiredBy: e.target.value });
-                  // Update all items requiredBy
-                  const updatedItems = newOrder.items.map(item => ({ ...item, requiredBy: e.target.value }));
-                  setNewOrder(prev => ({ ...prev, requiredBy: e.target.value, items: updatedItems }));
-                }} />
-              </FormGroup>
-            </div>
-          </div>
+        <ModalBody style={{ overflowY: "auto", maxHeight: "70vh" }}>
+          {/* Tabs */}
+          <Nav tabs className="mb-4">
+            <NavItem>
+              <NavLink className={classnames({ active: activeTab === "details" })} onClick={() => setActiveTab("details")} style={{ cursor: "pointer" }}>Details</NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink className={classnames({ active: activeTab === "address" })} onClick={() => setActiveTab("address")} style={{ cursor: "pointer" }}>Address & Contact</NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink className={classnames({ active: activeTab === "terms" })} onClick={() => setActiveTab("terms")} style={{ cursor: "pointer" }}>Terms</NavLink>
+            </NavItem>
+          </Nav>
 
-          {/* Grand Total */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px", padding: "10px 20px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-            <span style={{ fontSize: "0.95rem", color: "#374151", fontWeight: 500 }}>Grand Total: </span>
-            <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "#059669", marginLeft: "12px" }}>{formatCurrency(calculateGrandTotal())}</span>
-          </div>
+          <TabContent activeTab={activeTab}>
+            {/* Details Tab */}
+            <TabPane tabId="details">
+              <div className="row g-3 mb-3">
+                <div className="col-md-3">
+                  <FormGroup><Label for="series">Series</Label><Input type="text" id="series" value={newOrder.series} onChange={(e) => setNewOrder({ ...newOrder, series: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="date">Date *</Label><input type="date" className="form-control form-control-sm" id="date" value={newOrder.date} onChange={(e) => setNewOrder({ ...newOrder, date: e.target.value })} onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="supplier">Supplier *</Label>
+                    <Input type="select" id="supplier" value={newOrder.supplier} onChange={(e) => {
+                      const sup = dummySuppliers.find(s => s.id === e.target.value);
+                      setNewOrder({ ...newOrder, supplier: e.target.value, supplierAddress: sup?.address || "", supplierContact: sup?.contact || "" });
+                    }} bsSize="sm" onClick={(e) => e.stopPropagation()}>
+                      <option value="">Select Supplier</option>
+                      {dummySuppliers.map(sup => <option key={sup.id} value={sup.id}>{sup.name}</option>)}
+                    </Input>
+                  </FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="modeOfPayment">Mode of Payment *</Label>
+                    <Input type="select" id="modeOfPayment" value={newOrder.modeOfPayment} onChange={(e) => setNewOrder({ ...newOrder, modeOfPayment: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()}>
+                      <option value="Check">Check</option><option value="Cash">Cash</option><option value="DD">DD</option>
+                    </Input>
+                  </FormGroup>
+                </div>
+              </div>
 
-          <div className="d-flex justify-content-between">
-            <div className="d-flex gap-2">
-              <Button color="light" onClick={addItemRow}><Icon name="plus" /> Add Row</Button>
-            </div>
-            <div className="d-flex gap-2">
-              <Button color="secondary" onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); setSuggestions([]); }}>Cancel</Button>
-              <Button color="primary" onClick={handleAddOrder}>Submit Order</Button>
-            </div>
+              <div className="row g-3 mb-3">
+                <div className="col-md-3">
+                  <FormGroup><Label for="termsOfPayment">Terms of Payment</Label><Input type="text" id="termsOfPayment" value={newOrder.termsOfPayment} onChange={(e) => setNewOrder({ ...newOrder, termsOfPayment: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="poRequiredBy">Required By *</Label>
+                    <input type="date" className="form-control form-control-sm" id="poRequiredBy" value={newOrder.requiredBy} onChange={(e) => {
+                      const updatedItems = newOrder.items.map(item => ({ ...item, requiredBy: e.target.value }));
+                      setNewOrder({ ...newOrder, requiredBy: e.target.value, items: updatedItems });
+                    }} onClick={(e) => e.stopPropagation()} />
+                  </FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="costCenter">Cost Center</Label><Input type="text" id="costCenter" value={newOrder.costCenter} onChange={(e) => setNewOrder({ ...newOrder, costCenter: e.target.value })} placeholder="Cost Center" bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label for="project">Project</Label>
+                    <Input type="select" id="project" value={newOrder.project} onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()}>
+                      <option value="">Select Project</option>
+                      {dummyProjects.map(proj => <option key={proj.id} value={proj.id}>{proj.name}</option>)}
+                    </Input>
+                  </FormGroup>
+                </div>
+              </div>
+
+              <div className="d-flex gap-4 mb-3 flex-wrap">
+                <FormGroup check inline>
+                  <Label check style={{ fontSize: "0.85rem" }}>
+                    <Input type="checkbox" checked={newOrder.applyTaxWithholding} onChange={(e) => setNewOrder({ ...newOrder, applyTaxWithholding: e.target.checked })} onClick={(e) => e.stopPropagation()} /> Apply Tax Withholding Amount
+                  </Label>
+                </FormGroup>
+                <FormGroup check inline>
+                  <Label check style={{ fontSize: "0.85rem" }}>
+                    <Input type="checkbox" checked={newOrder.isReverseCharge} onChange={(e) => setNewOrder({ ...newOrder, isReverseCharge: e.target.checked })} onClick={(e) => e.stopPropagation()} /> Is Reverse Charge
+                  </Label>
+                </FormGroup>
+                <FormGroup check inline>
+                  <Label check style={{ fontSize: "0.85rem" }}>
+                    <Input type="checkbox" checked={newOrder.isSubcontracted} onChange={(e) => setNewOrder({ ...newOrder, isSubcontracted: e.target.checked })} onClick={(e) => e.stopPropagation()} /> Is Subcontracted
+                  </Label>
+                </FormGroup>
+              </div>
+
+              <div className="mb-3">
+                <Button color="info" outline size="sm" onClick={(e) => { e.stopPropagation(); setShowMaterialRequestModal(true); }}>
+                  <Icon name="file-text" /> Select Material Request
+                </Button>
+                {selectedMaterialRequest && (
+                  <span className="ms-3" style={{ fontSize: "0.85rem", color: "#2563eb", fontWeight: 500 }}>
+                    Selected: {selectedMaterialRequest._id} - {selectedMaterialRequest.title}
+                  </span>
+                )}
+              </div>
+
+              <h6 style={{ fontWeight: 600, marginBottom: "8px", fontSize: "0.9rem" }}>Items</h6>
+              <div style={{ borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "visible", marginBottom: "12px" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#f9fafb" }}>
+                      <th style={{ padding: "10px 10px", width: "50px" }}>No.</th>
+                      <th style={{ padding: "10px 10px", minWidth: "160px" }}>Item Code *</th>
+                      <th style={{ padding: "10px 10px", width: "130px" }}>Required By *</th>
+                      <th style={{ padding: "10px 10px", width: "90px" }}>Quantity *</th>
+                      <th style={{ padding: "10px 10px", width: "80px" }}>UOM *</th>
+                      <th style={{ padding: "10px 10px", width: "110px" }}>Rate (INR)</th>
+                      <th style={{ padding: "10px 10px", width: "120px", textAlign: "right" }}>Amount (INR)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {newOrder.items.map((item, index) => (
+                      <ItemRow key={index} item={item} index={index} handleItemChange={handleItemChange} handleItemCodeChange={handleItemCodeChange} handleKeyDown={handleKeyDown} selectSuggestion={selectSuggestion} suggestions={suggestions} activeSuggestionIndex={activeSuggestionIndex} setActiveSuggestionIndex={setActiveSuggestionIndex} isActive={activeAutocompleteIndex === index} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="d-flex gap-2 mb-3">
+                <Button color="light" size="sm" onClick={addItemRow}><Icon name="plus" /> Add Row</Button>
+                <Button color="light" size="sm" outline><Icon name="plus" /> Add Multiple</Button>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "30px", padding: "10px 20px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", marginBottom: "12px" }}>
+                <div><span style={{ fontSize: "0.85rem", color: "#6b7280" }}>Total Quantity: </span><span style={{ fontWeight: 600, color: "#111827" }}>{calculateTotalQuantity()}</span></div>
+                <div><span style={{ fontSize: "0.85rem", color: "#6b7280" }}>Total (INR): </span><span style={{ fontWeight: 700, color: "#059669", fontSize: "1rem" }}>{formatCurrency(calculateGrandTotal())}</span></div>
+              </div>
+
+              <h6 style={{ fontWeight: 600, marginBottom: "8px", fontSize: "0.9rem" }}>Taxes and Charges</h6>
+              <div className="row g-3 mb-3">
+                <div className="col-md-3">
+                  <FormGroup><Label style={{ fontSize: "0.82rem" }}>Tax Category</Label><Input type="text" bsSize="sm" placeholder="Tax Category" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label style={{ fontSize: "0.82rem" }}>Shipping Rule</Label><Input type="text" bsSize="sm" placeholder="Shipping Rule" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-3">
+                  <FormGroup><Label style={{ fontSize: "0.82rem" }}>Incoterm</Label><Input type="text" bsSize="sm" placeholder="Incoterm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+              </div>
+            </TabPane>
+
+            {/* Address & Contact Tab */}
+            <TabPane tabId="address">
+              <div className="row g-3">
+                <div className="col-12"><h6 style={{ fontWeight: 600, color: "#374151", marginBottom: "12px" }}>Supplier Address</h6></div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Supplier Address</Label><Input type="textarea" value={newOrder.supplierAddress} onChange={(e) => setNewOrder({ ...newOrder, supplierAddress: e.target.value })} rows={2} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Supplier Contact</Label><Input type="text" value={newOrder.supplierContact} onChange={(e) => setNewOrder({ ...newOrder, supplierContact: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-12"><h6 style={{ fontWeight: 600, color: "#374151", marginBottom: "12px", marginTop: "10px" }}>Shipping Address</h6></div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Shipping Address</Label><Input type="textarea" value={newOrder.shippingAddress} onChange={(e) => setNewOrder({ ...newOrder, shippingAddress: e.target.value })} rows={2} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Shipping Contact</Label><Input type="text" value={newOrder.shippingContact} onChange={(e) => setNewOrder({ ...newOrder, shippingContact: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-12"><h6 style={{ fontWeight: 600, color: "#374151", marginBottom: "12px", marginTop: "10px" }}>Company Billing Address</h6></div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Company Billing Address</Label><Input type="textarea" value={newOrder.companyBillingAddress} onChange={(e) => setNewOrder({ ...newOrder, companyBillingAddress: e.target.value })} rows={2} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+                <div className="col-md-6">
+                  <FormGroup><Label style={{ fontSize: "0.85rem" }}>Place of Supply</Label><Input type="text" value={newOrder.placeOfSupply} onChange={(e) => setNewOrder({ ...newOrder, placeOfSupply: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
+                </div>
+              </div>
+            </TabPane>
+
+            {/* Terms Tab */}
+            <TabPane tabId="terms">
+              <FormGroup>
+                <Label style={{ fontSize: "0.85rem", fontWeight: 600 }}>Terms and Conditions</Label>
+                <Input type="textarea" value={newOrder.termsAndConditions} onChange={(e) => setNewOrder({ ...newOrder, termsAndConditions: e.target.value })} rows={8} placeholder="Enter terms and conditions..." bsSize="sm" onClick={(e) => e.stopPropagation()} />
+              </FormGroup>
+            </TabPane>
+          </TabContent>
+
+          <div className="d-flex justify-content-end gap-2 mt-3 pt-3" style={{ borderTop: "1px solid #e5e7eb" }}>
+            <Button style={{padding:"15px"}} color="secondary" size="sm" onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}>Cancel</Button>
+            <Button style={{padding:"15px"}} color="primary" size="sm" onClick={handleAddOrder}>Submit Purchase Order</Button>
+          </div>
+        </ModalBody>
+      </Modal>
+
+      {/* Select Material Request Modal */}
+      <Modal isOpen={showMaterialRequestModal} toggle={() => setShowMaterialRequestModal(false)} centered size="lg" scrollable={true}>
+        <ModalHeader toggle={() => setShowMaterialRequestModal(false)}>Select Material Request</ModalHeader>
+        <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
+          <div style={{ borderRadius: "8px", border: "1px solid #e5e7eb", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f9fafb" }}>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600 }}>ID</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600 }}>Title</th>
+                  <th style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600, width: "100px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dummyMaterialRequestsList.map(mr => (
+                  <tr key={mr._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <td style={{ padding: "10px 14px" }}><code>{mr._id}</code></td>
+                    <td style={{ padding: "10px 14px", wordBreak: "break-word" }}>{mr.title}</td>
+                    <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                      <Button color="primary" size="sm" onClick={() => selectMaterialRequest(mr)}>Select</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </ModalBody>
       </Modal>
 
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-dialog { max-height: 90vh; }
+        .modal-content { max-height: 90vh; overflow: hidden; }
+        .modal-body { overflow-y: auto; }
       `}</style>
     </>
   );
