@@ -25,202 +25,9 @@ import {
   Col,
 } from "reactstrap";
 
-// ----------------------------------------------------------------------
-// Dummy data (with all required fields)
-// ----------------------------------------------------------------------
-const initialSuppliers = [
-  {
-    id: "1222",
-    name: "ABC Electricals",
-    status: "Enabled",
-    group: "Electrical",
-    gstNumber: "22AAAAA0000A1Z",
-    supplierType: "Wholesaler",
-    gstCategory: "Registered",
-    contact: {
-      firstName: "Rajesh",
-      lastName: "Kumar",
-      email: "rajesh@abcelectricals.com",
-      mobile: "9876543210",
-    },
-    address: {
-      billing: "123, Main Street, Andheri East",
-      shipping: "123, Main Street, Andheri East",
-      postalCode: "400069",
-      city: "Mumbai",
-    },
-  },
-  {
-    id: "2222",
-    name: "Hardware Hub",
-    status: "Enabled",
-    group: "Hardware",
-    gstNumber: "33BBBBB0000B1Z",
-    supplierType: "Retailer",
-    gstCategory: "Composition",
-    contact: {
-      firstName: "Priya",
-      lastName: "Sharma",
-      email: "priya@hardwarehub.com",
-      mobile: "9876543211",
-    },
-    address: {
-      billing: "45, Civil Lines",
-      shipping: "45, Civil Lines",
-      postalCode: "302001",
-      city: "Jaipur",
-    },
-  },
-  {
-    id: "3222",
-    name: "Distributor Depot",
-    status: "Disabled",
-    group: "Distributor",
-    gstNumber: "44CCCCC0000C1Z",
-    supplierType: "Distributor",
-    gstCategory: "Unregistered",
-    contact: {
-      firstName: "Amit",
-      lastName: "Verma",
-      email: "amit@distributordepot.com",
-      mobile: "9876543212",
-    },
-    address: {
-      billing: "789, Industrial Area",
-      shipping: "789, Industrial Area",
-      postalCode: "110001",
-      city: "Delhi",
-    },
-  },
-  {
-    id: "4222",
-    name: "Lighting World",
-    status: "Enabled",
-    group: "Electrical",
-    gstNumber: "55DDDDD0000D1Z",
-    supplierType: "Manufacturer",
-    gstCategory: "Registered",
-    contact: {
-      firstName: "Sunil",
-      lastName: "Gupta",
-      email: "sunil@lightingworld.com",
-      mobile: "9876543213",
-    },
-    address: {
-      billing: "12, Electronics City",
-      shipping: "12, Electronics City",
-      postalCode: "560100",
-      city: "Bengaluru",
-    },
-  },
-  {
-    id: "5222",
-    name: "Steel Suppliers Co.",
-    status: "Enabled",
-    group: "Hardware",
-    gstNumber: "66EEEEE0000E1Z",
-    supplierType: "Wholesaler",
-    gstCategory: "Registered",
-    contact: {
-      firstName: "Vikram",
-      lastName: "Singh",
-      email: "vikram@steelsuppliers.com",
-      mobile: "9876543214",
-    },
-    address: {
-      billing: "22, Lohia Nagar",
-      shipping: "22, Lohia Nagar",
-      postalCode: "208001",
-      city: "Kanpur",
-    },
-  },
-  {
-    id: "6222",
-    name: "Prime Distributors",
-    status: "Disabled",
-    group: "Distributor",
-    gstNumber: "77FFFFF0000F1Z",
-    supplierType: "Distributor",
-    gstCategory: "Casual",
-    contact: {
-      firstName: "Neha",
-      lastName: "Jain",
-      email: "neha@primedist.com",
-      mobile: "9876543215",
-    },
-    address: {
-      billing: "5, Rajpath",
-      shipping: "5, Rajpath",
-      postalCode: "380001",
-      city: "Ahmedabad",
-    },
-  },
-  {
-    id: "7222",
-    name: "Solar Electric",
-    status: "Enabled",
-    group: "Electrical",
-    gstNumber: "88GGGGG0000G1Z",
-    supplierType: "Service Provider",
-    gstCategory: "Registered",
-    contact: {
-      firstName: "Ankit",
-      lastName: "Mehta",
-      email: "ankit@solarelectric.com",
-      mobile: "9876543216",
-    },
-    address: {
-      billing: "101, Green Park",
-      shipping: "101, Green Park",
-      postalCode: "452001",
-      city: "Indore",
-    },
-  },
-  {
-    id: "8222",
-    name: "Pipe House",
-    status: "Enabled",
-    group: "Plumbing",
-    gstNumber: "99HHHHH0000H1Z",
-    supplierType: "Retailer",
-    gstCategory: "Composition",
-    contact: {
-      firstName: "Ramesh",
-      lastName: "Yadav",
-      email: "ramesh@pipehouse.com",
-      mobile: "9876543217",
-    },
-    address: {
-      billing: "34, Pipe Nagar",
-      shipping: "34, Pipe Nagar",
-      postalCode: "400012",
-      city: "Mumbai",
-    },
-  },
-  {
-    id: "9222",
-    name: "Paint World",
-    status: "Disabled",
-    group: "Hardware",
-    gstNumber: "10IIIII0000I1Z",
-    supplierType: "Wholesaler",
-    gstCategory: "Non-Resident",
-    contact: {
-      firstName: "Suresh",
-      lastName: "Patel",
-      email: "suresh@paintworld.com",
-      mobile: "9876543218",
-    },
-    address: {
-      billing: "78, Color Street",
-      shipping: "78, Color Street",
-      postalCode: "395003",
-      city: "Surat",
-    },
-  },
-];
+// API Base URL (adjust to your proxy)
+const API_BASE = "http://localhost:8000/api/suppliers";
 
-// Options for RSelect
 const supplierTypeOptions = [
   { value: "Manufacturer", label: "Manufacturer" },
   { value: "Wholesaler", label: "Wholesaler" },
@@ -242,9 +49,7 @@ const statusOptions = [
   { value: "Disabled", label: "Disabled" },
 ];
 
-// ----------------------------------------------------------------------
-// Confirmation Modal Component
-// ----------------------------------------------------------------------
+// Confirmation Modal
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
   return (
     <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
@@ -273,7 +78,9 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
             <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
           </div>
           <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
-          <p className="text-muted mb-4">{message || "Are you sure you want to delete this supplier? This action cannot be undone."}</p>
+          <p className="text-muted mb-4">
+            {message || "Are you sure you want to delete this supplier? This action cannot be undone."}
+          </p>
           <div className="d-flex gap-8 justify-content-center">
             <Button
               style={{
@@ -287,12 +94,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
             >
               Yes, Delete
             </Button>
-            <Button
-              color="secondary"
-              outline
-              onClick={toggle}
-              style={{ padding: "15px 24px" }}
-            >
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }}>
               Cancel
             </Button>
           </div>
@@ -302,9 +104,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
   );
 };
 
-// ----------------------------------------------------------------------
 // Supplier Form Modal
-// ----------------------------------------------------------------------
 const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existingGroups }) => {
   const [name, setName] = useState("");
   const [status, setStatus] = useState(null);
@@ -323,10 +123,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
   const [postalCode, setPostalCode] = useState("");
   const [city, setCity] = useState("");
 
-  const groupOptions = useMemo(
-    () => existingGroups.map((g) => ({ value: g, label: g })),
-    [existingGroups]
-  );
+  const groupOptions = useMemo(() => existingGroups.map((g) => ({ value: g, label: g })), [existingGroups]);
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
@@ -334,12 +131,8 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
       setStatus({ value: initialData.status, label: initialData.status });
       setGroup({ value: initialData.group, label: initialData.group });
       setGstNumber(initialData.gstNumber || "");
-      setSupplierType(
-        supplierTypeOptions.find((opt) => opt.value === initialData.supplierType) || null
-      );
-      setGstCategory(
-        gstCategoryOptions.find((opt) => opt.value === initialData.gstCategory) || null
-      );
+      setSupplierType(supplierTypeOptions.find((opt) => opt.value === initialData.supplierType) || null);
+      setGstCategory(gstCategoryOptions.find((opt) => opt.value === initialData.gstCategory) || null);
       setFirstName(initialData.contact?.firstName || "");
       setLastName(initialData.contact?.lastName || "");
       setEmail(initialData.contact?.email || "");
@@ -550,7 +343,6 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                 </FormGroup>
               </Col>
 
-              {/* Contact Details */}
               <div className="col-12">
                 <hr />
                 <h6 className="title mb-2">Primary Contact Details</h6>
@@ -605,7 +397,6 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                 </FormGroup>
               </Col>
 
-              {/* Address Details */}
               <div className="col-12">
                 <hr />
                 <h6 className="title mb-2">Address Details</h6>
@@ -698,13 +489,11 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
   );
 };
 
-// ----------------------------------------------------------------------
-// Main Suppliers Component
-// ----------------------------------------------------------------------
+// Main Suppliers Component (API integrated)
 const Suppliers = () => {
-  const history = useHistory(); // For navigation
-  const [suppliers, setSuppliers] = useState(initialSuppliers);
-  const [filtered, setFiltered] = useState(initialSuppliers);
+  const history = useHistory();
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -723,21 +512,92 @@ const Suppliers = () => {
     return Array.from(new Set(groups)).sort();
   }, [suppliers]);
 
-  useEffect(() => {
-    let data = [...suppliers];
-    if (search.trim()) {
-      const kw = search.toLowerCase();
-      data = data.filter((s) => s.name.toLowerCase().includes(kw) || s.id.includes(kw));
-    }
-    if (statusFilter !== "All") data = data.filter((s) => s.status === statusFilter);
-    if (groupFilter !== "All") data = data.filter((s) => s.group === groupFilter);
-    setFiltered(data);
-    setCurrentPage(1);
-  }, [search, statusFilter, groupFilter, suppliers]);
+  const fetchSuppliers = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (statusFilter !== "All") params.append("status", statusFilter);
+      if (groupFilter !== "All") params.append("group", groupFilter);
 
-  const indexOfLast = currentPage * itemPerPage;
-  const indexOfFirst = indexOfLast - itemPerPage;
-  const currentSuppliers = filtered.slice(indexOfFirst, indexOfLast);
+      const url = `${API_BASE}${params.toString() ? `?${params.toString()}` : ""}`;
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.success) {
+        setSuppliers(result.data);
+      } else {
+        console.error("Failed to fetch suppliers:", result.message);
+        alert("Error fetching suppliers");
+      }
+    } catch (error) {
+      console.error("API error:", error);
+      alert("Network error while fetching suppliers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+    setCurrentPage(1);
+  }, [search, statusFilter, groupFilter]);
+
+  const createSupplier = async (supplierData) => {
+    try {
+      const response = await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(supplierData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        fetchSuppliers();
+        alert("Supplier added successfully");
+      } else {
+        alert(result.message || "Failed to create supplier");
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      alert("Network error while creating supplier");
+    }
+  };
+
+  const updateSupplier = async (id, supplierData) => {
+    try {
+      const response = await fetch(`${API_BASE}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(supplierData),
+      });
+      const result = await response.json();
+      if (result.success) {
+        fetchSuppliers();
+        alert("Supplier updated successfully");
+      } else {
+        alert(result.message || "Failed to update supplier");
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      alert("Network error while updating supplier");
+    }
+  };
+
+  const deleteSupplier = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+      const result = await response.json();
+      if (result.success) {
+        fetchSuppliers();
+        alert("Supplier deleted successfully");
+      } else {
+        alert(result.message || "Failed to delete supplier");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Network error while deleting supplier");
+    }
+  };
 
   const handleAdd = () => {
     setModalMode("add");
@@ -747,7 +607,8 @@ const Suppliers = () => {
 
   const handleEdit = (supplier) => {
     setModalMode("edit");
-    setEditingSupplier(supplier);
+    const supplierWithId = { ...supplier, id: supplier._id };
+    setEditingSupplier(supplierWithId);
     setIsModalOpen(true);
   };
 
@@ -758,7 +619,7 @@ const Suppliers = () => {
 
   const handleConfirmDelete = () => {
     if (deleteSupplierId) {
-      setSuppliers((prev) => prev.filter((s) => s.id !== deleteSupplierId));
+      deleteSupplier(deleteSupplierId);
     }
     setShowDeleteConfirm(false);
     setDeleteSupplierId(null);
@@ -766,12 +627,11 @@ const Suppliers = () => {
 
   const handleSave = (supplierData) => {
     if (modalMode === "add") {
-      const newId = (Math.max(...suppliers.map((s) => parseInt(s.id, 10)), 0) + 1).toString();
-      setSuppliers((prev) => [...prev, { ...supplierData, id: newId }]);
+      const { id, ...dataToSend } = supplierData;
+      createSupplier(dataToSend);
     } else {
-      setSuppliers((prev) =>
-        prev.map((s) => (s.id === supplierData.id ? { ...s, ...supplierData } : s))
-      );
+      const { id, ...dataToSend } = supplierData;
+      updateSupplier(id, dataToSend);
     }
   };
 
@@ -785,8 +645,13 @@ const Suppliers = () => {
   const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
 
   const handleNameClick = (supplier) => {
-    history.push(`/Suppliers/${supplier.id}`, { supplier });
+    history.push(`/Suppliers/${supplier._id}`, { supplier });
   };
+
+  const indexOfLast = currentPage * itemPerPage;
+  const indexOfFirst = indexOfLast - itemPerPage;
+  const currentSuppliers = suppliers.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(suppliers.length / itemPerPage);
 
   return (
     <>
@@ -818,7 +683,6 @@ const Suppliers = () => {
 
         <Block>
           <DataTable className="card-stretch w-100">
-            {/* Search & Filter Bar */}
             <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
                 <div className="card-tools">
@@ -889,7 +753,7 @@ const Suppliers = () => {
                     <input
                       type="text"
                       className="form-control border-transparent"
-                      placeholder="Search by name or ID"
+                      placeholder="Search by name or supplier ID"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
@@ -898,7 +762,6 @@ const Suppliers = () => {
               </div>
             </div>
 
-            {/* Suppliers Table */}
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
                 <thead>
@@ -913,10 +776,16 @@ const Suppliers = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentSuppliers.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : currentSuppliers.length > 0 ? (
                     currentSuppliers.map((supplier, idx) => (
                       <tr
-                        key={supplier.id}
+                        key={supplier._id}
                         style={{
                           borderTop: "1px solid #e0e0e0",
                           borderBottom: "1px solid #e0e0e0",
@@ -968,7 +837,7 @@ const Suppliers = () => {
                             {supplier.group}
                           </span>
                         </td>
-                        <td className="px-4 py-2 text-start">#{supplier.id}</td>
+                        <td className="px-4 py-2 text-start">#{supplier.supplierId}</td>
                         <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
                         <td className="px-4 py-2 text-center">
                           <UncontrolledDropdown>
@@ -979,7 +848,7 @@ const Suppliers = () => {
                               <DropdownItem onClick={() => handleEdit(supplier)}>
                                 <Icon name="edit" /> Edit
                               </DropdownItem>
-                              <DropdownItem onClick={() => handleDeleteClick(supplier.id)}>
+                              <DropdownItem onClick={() => handleDeleteClick(supplier._id)}>
                                 <Icon name="trash" /> Delete
                               </DropdownItem>
                             </DropdownMenu>
@@ -998,9 +867,8 @@ const Suppliers = () => {
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="card-inner">
-              {filtered.length > 0 ? (
+              {suppliers.length > 0 ? (
                 <div className="d-flex justify-content-center align-items-center">
                   <button
                     className="btn btn-icon btn-sm btn-outline-light mx-1"
@@ -1009,13 +877,9 @@ const Suppliers = () => {
                   >
                     <em className="icon ni ni-chevron-left"></em>
                   </button>
-                  {[...Array(Math.ceil(filtered.length / itemPerPage))].map((_, index) => {
+                  {[...Array(totalPages)].map((_, index) => {
                     const page = index + 1;
-                    if (
-                      page === currentPage ||
-                      page === currentPage - 1 ||
-                      page === currentPage + 1
-                    ) {
+                    if (page === currentPage || page === currentPage - 1 || page === currentPage + 1) {
                       return (
                         <button
                           key={page}
@@ -1033,7 +897,7 @@ const Suppliers = () => {
                   })}
                   <button
                     className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={currentPage === Math.ceil(filtered.length / itemPerPage)}
+                    disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((p) => p + 1)}
                   >
                     <em className="icon ni ni-chevron-right"></em>
@@ -1049,7 +913,6 @@ const Suppliers = () => {
         </Block>
       </Content>
 
-      {/* Add/Edit Modal */}
       <SupplierFormModal
         isOpen={isModalOpen}
         mode={modalMode}
@@ -1059,7 +922,6 @@ const Suppliers = () => {
         existingGroups={availableGroups}
       />
 
-      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         toggle={() => setShowDeleteConfirm(false)}
