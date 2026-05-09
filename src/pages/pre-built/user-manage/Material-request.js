@@ -41,7 +41,7 @@ const dummyItemDatabase = [
   { itemCode: "PAINT-WHITE", itemName: "WHITE PAINT 10 LTR", uom: "LTR", warehouse: "Stores - SD" },
 ];
 
-/* ---------- DUMMY DATA ---------- */
+/* ---------- DUMMY DATA with dates in YYYY-MM-DD format (backend format) ---------- */
 const dummyMaterialRequests = [
   {
     _id: "MREQ-00007",
@@ -129,8 +129,33 @@ const dummyMaterialRequests = [
   },
 ];
 
+// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "-";
+  const [year, month, day] = dateStr.split("-");
+  return `${day}-${month}-${year}`;
+};
+
+// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for backend/input
+const convertToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  // Check if it's already in YYYY-MM-DD format
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateStr;
+  }
+  // Convert from DD-MM-YYYY to YYYY-MM-DD
+  const [day, month, year] = dateStr.split("-");
+  if (day && month && year) {
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
 // Autocomplete Item Row Component
 const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive, inputRef }) => {
+  // Display date in DD-MM-YYYY format for the input field
+  const displayDate = item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "";
+  
   return (
     <tr>
       <td style={{ padding: "8px 12px", textAlign: "center", verticalAlign: "middle" }}>
@@ -216,9 +241,14 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
         <Input
-          type="date"
-          value={item.requiredBy}
-          onChange={(e) => handleItemChange(index, "requiredBy", e.target.value)}
+          type="text"
+          placeholder="DD-MM-YYYY"
+          value={displayDate}
+          onChange={(e) => {
+            // Store in YYYY-MM-DD format in state
+            const yyyymmdd = convertToYYYYMMDD(e.target.value);
+            handleItemChange(index, "requiredBy", yyyymmdd);
+          }}
           bsSize="sm"
         />
       </td>
@@ -510,13 +540,11 @@ const MaterialRequestPage = () => {
     });
   };
 
-  const formatDate = (dateStr) => {
+  // Format date for display in table (DD-MM-YYYY)
+  const formatDateForDisplay = (dateStr) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
   };
 
   return (
@@ -608,7 +636,6 @@ const MaterialRequestPage = () => {
                 >
                   <table
                     style={{
-                      
                       width: "100%",
                       borderCollapse: "collapse",
                       fontSize: "0.88rem",
@@ -710,7 +737,7 @@ const MaterialRequestPage = () => {
                                 {sliceTitle(req.title, 55)}
                               </button>
                             </td>
-                            <td style={{  padding: "8px 12px",
+                            <td style={{ padding: "8px 12px",
                               borderRadius: "6px",
                               fontSize: "12px",
                               fontWeight: "500",
@@ -733,7 +760,7 @@ const MaterialRequestPage = () => {
                                 fontSize: "0.85rem",
                               }}
                             >
-                              {formatDate(req.requiredBy)}
+                              {formatDateForDisplay(req.requiredBy)}
                             </td>
                             <td style={{ padding: "14px 16px" }}>
                               <code
@@ -800,12 +827,14 @@ const MaterialRequestPage = () => {
               <FormGroup>
                 <Label for="transactionDate">Transaction Date *</Label>
                 <Input
-                  type="date"
+                  type="text"
                   id="transactionDate"
-                  value={newRequest.transactionDate}
-                  onChange={(e) =>
-                    setNewRequest({ ...newRequest, transactionDate: e.target.value })
-                  }
+                  placeholder="DD-MM-YYYY"
+                  value={newRequest.transactionDate ? formatDateToDDMMYYYY(newRequest.transactionDate) : ""}
+                  onChange={(e) => {
+                    const yyyymmdd = convertToYYYYMMDD(e.target.value);
+                    setNewRequest({ ...newRequest, transactionDate: yyyymmdd });
+                  }}
                 />
               </FormGroup>
             </div>
@@ -832,12 +861,14 @@ const MaterialRequestPage = () => {
               <FormGroup>
                 <Label for="requiredBy">Required By *</Label>
                 <Input
-                  type="date"
+                  type="text"
                   id="requiredBy"
-                  value={newRequest.requiredBy}
-                  onChange={(e) =>
-                    setNewRequest({ ...newRequest, requiredBy: e.target.value })
-                  }
+                  placeholder="DD-MM-YYYY"
+                  value={newRequest.requiredBy ? formatDateToDDMMYYYY(newRequest.requiredBy) : ""}
+                  onChange={(e) => {
+                    const yyyymmdd = convertToYYYYMMDD(e.target.value);
+                    setNewRequest({ ...newRequest, requiredBy: yyyymmdd });
+                  }}
                 />
               </FormGroup>
             </div>
@@ -893,7 +924,7 @@ const MaterialRequestPage = () => {
                   <th style={{ padding: "10px 12px", width: "120px" }}>Quantity *</th>
                   <th style={{ padding: "10px 12px", minWidth: "150px" }}>Warehouse</th>
                   <th style={{ padding: "10px 12px", width: "100px" }}>UOM *</th>
-                </tr>
+                 </tr>
               </thead>
               <tbody>
                 {newRequest.items.map((item, index) => (
@@ -921,11 +952,8 @@ const MaterialRequestPage = () => {
               <Button color="light" style={{padding:"12px"}} onClick={addItemRow}>
                 <Icon name="plus" /> Add Row
               </Button>
-              
-
             </div>
             <div className="d-flex gap-2 align-items-center">
-              
               <Button color="secondary" onClick={() => {
                 setAddModal(false);
                 setActiveAutocompleteIndex(null);

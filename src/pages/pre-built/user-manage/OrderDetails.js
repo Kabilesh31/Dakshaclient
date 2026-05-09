@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useHistory, useParams } from "react-router-dom";
 
+// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (year && month && day) {
+    return `${day}-${month}-${year}`;
+  }
+  return dateStr;
+};
+
 // Complete dummy order with all fields
 const DEFAULT_DUMMY_ORDER = {
   _id: "001",
@@ -53,6 +63,17 @@ const OrderDetails = () => {
     }
     setLoading(false);
   }, [id, state]);
+
+  // Format date as DD-MM-YYYY for display
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    // Convert from YYYY-MM-DD to DD-MM-YYYY
+    const [year, month, day] = dateString.split("-");
+    if (year && month && day) {
+      return `${day}-${month}-${year}`;
+    }
+    return dateString;
+  };
 
   if (loading) {
     return (
@@ -128,7 +149,6 @@ const OrderDetails = () => {
         {/* Info Grid */}
         <div style={styles.infoGrid}>
           <div style={styles.infoCard}>
-
             <div>
               <p style={styles.infoLabel}>Ordered By</p>
               <p style={styles.infoValue}>{order.orderedBy}</p>
@@ -136,7 +156,6 @@ const OrderDetails = () => {
           </div>
 
           <div style={styles.infoCard}>
-        
             <div>
               <p style={styles.infoLabel}>Location</p>
               <p style={styles.infoValue}>{order.location}</p>
@@ -144,23 +163,20 @@ const OrderDetails = () => {
           </div>
 
           <div style={styles.infoCard}>
-         
             <div>
               <p style={styles.infoLabel}>Start Date</p>
-              <p style={styles.infoValue}>{order.startDate}</p>
+              <p style={styles.infoValue}>{formatDate(order.startDate)}</p>
             </div>
           </div>
 
           <div style={styles.infoCard}>
-            {/* <div style={styles.infoIcon}>🎯</div> */}
             <div>
               <p style={styles.infoLabel}>Target Date</p>
-              <p style={styles.infoValue}>{order.targetDate}</p>
+              <p style={styles.infoValue}>{formatDate(order.targetDate)}</p>
             </div>
           </div>
 
           <div style={styles.infoCard}>
-            {/* <div style={styles.infoIcon}>👨‍💼</div> */}
             <div>
               <p style={styles.infoLabel}>Supervisor</p>
               <p style={styles.infoValue}>
@@ -222,7 +238,6 @@ const OrderDetails = () => {
         {/* Materials Table */}
         <div style={styles.tableSection}>
           <div style={styles.sectionHeader}>
-          
             <h3 style={styles.sectionTitle}>Materials Used</h3>
           </div>
           <div style={styles.tableWrapper}>
@@ -241,10 +256,10 @@ const OrderDetails = () => {
                   safeProducts.map((product, idx) => (
                     <tr key={idx} style={styles.tr}>
                       <td style={styles.td}>{idx + 1}</td>
-                      <td style={styles.td}>Cement</td>
+                      <td style={styles.td}>{product.productName || "Cement"}</td>
                       <td style={styles.td}>{product.qty}</td>
                       <td style={styles.td}>₹ {product.value}</td>
-                      <td style={styles.td}>₹ {(product.qty || 0) * (product.value || 0)}</td>
+                      <td style={styles.td}>₹ {(product.qty || 0) * (product.value || 0).toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
@@ -261,7 +276,6 @@ const OrderDetails = () => {
         {order.notes && (
           <div style={styles.notesSection}>
             <div style={styles.sectionHeader}>
-  
               <h3 style={styles.sectionTitle}>Notes</h3>
             </div>
             <p style={styles.notesText}>{order.notes}</p>
