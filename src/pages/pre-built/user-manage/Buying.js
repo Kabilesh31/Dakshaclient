@@ -129,12 +129,15 @@ const groupOptions = [
 ];
 
 const unitOptions = [
-  { value: "KG", label: "Kilogram (KG)" },
-  { value: "PCS", label: "Pieces (PCS)" },
-  { value: "MTR", label: "Meter (MTR)" },
-  { value: "SHEET", label: "Sheet" },
-  { value: "LTR", label: "Liter (LTR)" },
+  { value: "Bundle", label: "Bundle" },
   { value: "BOX", label: "Box" },
+  { value: "Case", label: "Case" },
+  { value: "GRM", label: "Gram" },
+  { value: "Kg", label: "Kg" },
+  { value: "LTR", label: "Liter (LTR)" },
+  { value: "MTR", label: "Meter (MTR)" },
+  { value: "Nos", label: "Nos" },
+
 ];
 
 const statusOptions = [
