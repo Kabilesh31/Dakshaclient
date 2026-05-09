@@ -20,6 +20,32 @@ import {
   PaginationComponent,
 } from "../../../components/Component";
 
+// Helper function: Format date as DD-MM-YYYY
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+  } catch {
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const [year, month, day] = dateStr.split("-");
+      return `${day}-${month}-${year}`;
+    }
+  }
+  return dateStr;
+};
+
+// Helper function: Format time only (already OK)
+const formatTimeOnly = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+};
+
 const StaffAttendance = () => {
   const [staffs, setStaffs] = useState([]);
   const [attendance, setAttendance] = useState({});
@@ -38,7 +64,6 @@ const StaffAttendance = () => {
   const [dailySiteMap, setDailySiteMap] = useState({});
   const [dailyOvertimeMap, setDailyOvertimeMap] = useState({});
   
-  // NEW: state for staff daily wage (dummy)
   const [staffDailyWage, setStaffDailyWage] = useState(0);
   const [monthlyTotalSalary, setMonthlyTotalSalary] = useState(0);
 
@@ -59,7 +84,6 @@ const StaffAttendance = () => {
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
 
-  // Helper to get daily wage based on staff type
   const getDailyWage = (staff) => {
     if (!staff) return 500;
     const type = staff.type?.toLowerCase();
@@ -67,10 +91,9 @@ const StaffAttendance = () => {
     if (type === "worker") return 500;
     if (type === "manager") return 1000;
     if (type === "engineer") return 700;
-    return 500; // default
+    return 500;
   };
 
-  // Calculate daily salary for a given day
   const getDailySalary = (day, staff) => {
     if (!staff) return 0;
     const date = new Date(year, month, day);
@@ -82,7 +105,6 @@ const StaffAttendance = () => {
     return getDailyWage(staff);
   };
 
-  // Recalculate total salary when attendance, month, year, or staff changes
   useEffect(() => {
     if (selectedStaff) {
       const total = daysInMonth.reduce((sum, day) => sum + getDailySalary(day, selectedStaff), 0);
@@ -110,7 +132,6 @@ const StaffAttendance = () => {
     setSelectedDay(null);
   }, [month, year]);
 
-  // ================= FETCH STAFF =================
   const fetchStaff = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -135,7 +156,6 @@ const StaffAttendance = () => {
     }
   };
 
-  // ================= FETCH ATTENDANCE + DUMMY FALLBACK =================
   const fetchAttendance = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -260,7 +280,6 @@ const StaffAttendance = () => {
     setMonthlyOvertime(totalOvertime);
   };
 
-  // Helper functions
   const sortFunc = (order) => {
     const sorted = [...staffs].sort((a, b) => order === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
     setStaffs(sorted);
@@ -273,11 +292,6 @@ const StaffAttendance = () => {
     const hours = Math.floor(diffMs / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
     return `${hours}h ${minutes}m`;
-  };
-
-  const formatTimeOnly = (date) => {
-    if (!date) return "-";
-    return new Date(date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
   };
 
   const getStaffStatusColor = (status) => {
@@ -314,13 +328,13 @@ const StaffAttendance = () => {
     return dailyOvertimeMap[dateStr] || 0;
   };
 
-   const exportToExcel = () => {
+  const exportToExcel = () => {
     if (!selectedStaff) return;
     const exportData = daysInMonth.map((day) => {
       const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
       const date = new Date(year, month, day);
       const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
-      const isSunday = date.toLocaleDateString('en-US', { weekday: 'long' }) === 'Sunday';
+      const isSunday = date.getDay() === 0;
       let status = "-";
       if (isSunday) status = "Sunday (Off)";
       else if (record?.status === "present") status = "Present";
@@ -330,8 +344,10 @@ const StaffAttendance = () => {
       const overtime = dailyOvertimeMap[dateStr] || 0;
       const sites = (dailySiteMap[dateStr] || []).join(", ");
       const dailySalary = getDailySalary(day, selectedStaff);
+      // Format date as DD-MM-YYYY for Excel
+      const formattedDate = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
       return {
-        Date: `${day} ${months[month]} ${year}`,
+        Date: formattedDate,
         Day: dayName,
         Status: status,
         "Check In": record?.checkIn ? formatTimeOnly(record.checkIn) : "-",
@@ -349,20 +365,17 @@ const StaffAttendance = () => {
     XLSX.writeFile(wb, `${selectedStaff.name}_${months[month]}_${year}_Attendance.xlsx`);
   };
 
-  // NEW: Export to PDF function
   const exportToPDF = () => {
     if (!selectedStaff) return;
 
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Title
     doc.setFontSize(18);
     doc.text(`Attendance Report - ${selectedStaff.name}`, pageWidth / 2, 15, { align: "center" });
     doc.setFontSize(12);
-  doc.text(`${months[month]} ${year} | Daily Wage: Rs. ${staffDailyWage}`, pageWidth / 2, 23, { align: "center" });
+    doc.text(`${months[month]} ${year} | Daily Wage: Rs. ${staffDailyWage}`, pageWidth / 2, 23, { align: "center" });
 
-    // Summary stats
     const totalDays = daysInMonth.length;
     const presentCount = calculateAttendanceSummary().present + calculateAttendanceSummary().working;
     const absentCount = daysInMonth.filter(day => {
@@ -376,17 +389,15 @@ const StaffAttendance = () => {
     const totalSalary = monthlyTotalSalary.toLocaleString();
 
     doc.setFontSize(10);
-    const summaryText =
-  "Total Days: " + totalDays +
-  " | Present: " + presentCount +
-  " | Absent: " + absentCount +
-  " | Sundays: " + sundayCount +
-  " | Total Overtime: " + totalOvertime + " hrs" +
-  " | Total Salary: Rs. " + totalSalary;
+    const summaryText = "Total Days: " + totalDays +
+      " | Present: " + presentCount +
+      " | Absent: " + absentCount +
+      " | Sundays: " + sundayCount +
+      " | Total Overtime: " + totalOvertime + " hrs" +
+      " | Total Salary: Rs. " + totalSalary;
 
-doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
+    doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
 
-    // Prepare table data
     const tableData = daysInMonth.map((day) => {
       const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day];
       const date = new Date(year, month, day);
@@ -401,8 +412,10 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
       const overtime = dailyOvertimeMap[dateStr] || 0;
       const sites = (dailySiteMap[dateStr] || []).join(", ");
       const dailySalary = getDailySalary(day, selectedStaff);
+      // Format date for PDF as DD-MM-YYYY
+      const formattedDate = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
       return [
-        `${day} ${months[month].substring(0,3)}`,
+        formattedDate,
         dayName,
         status,
         record?.checkIn ? formatTimeOnly(record.checkIn) : "-",
@@ -414,7 +427,6 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
       ];
     });
 
-    // Table headers
     const headers = [["Date", "Day", "Status", "Check In", "Check Out", "Work Hours", "Overtime", "Site(s)", "Salary"]];
 
     autoTable(doc, {
@@ -438,19 +450,18 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
       margin: { top: 35, left: 8, right: 8 },
     });
 
-    // Footer note
     const finalY = doc.lastAutoTable.finalY + 5;
     doc.setFontSize(8);
     doc.text("* Overtime = Work Hours - 8 (standard workday)", pageWidth / 2, finalY, { align: "center" });
 
-    // Save PDF
     doc.save(`${selectedStaff.name}_${months[month]}_${year}_Attendance.pdf`);
   };
+
   const filteredStaff = staffs.filter(emp => emp.name.toLowerCase().includes(searchText.toLowerCase()) || emp.mobile?.includes(searchText));
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
   const currentItems = filteredStaff.slice(indexOfFirstItem, indexOfLastItem);
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sunday
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
 
   return (
     <div style={{ padding: "20px" }}>
@@ -501,10 +512,7 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
                   <DataTableRow><span className="tb-lead" style={{ cursor: "pointer" }} onClick={() => { setSelectedStaff(emp); setSelectedDateDetails(null); setSelectedDay(null); }}>{emp.name}</span></DataTableRow>
                   <DataTableRow>{emp.mobile}</DataTableRow>
                   <DataTableRow>{capitalizeFirst(emp.type)}</DataTableRow>
-                  <DataTableRow><span
-                                className={`badge ${emp.staffStatus === "active" ? "bg-success" : "bg-danger"}`}
-                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
-                              >{capitalizeFirst(emp.staffStatus)}</span></DataTableRow>
+                  <DataTableRow><span className={`badge ${emp.staffStatus === "active" ? "bg-success" : "bg-danger"}`} style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}>{capitalizeFirst(emp.staffStatus)}</span></DataTableRow>
                 </DataTableItem>
               ))}
             </DataTableBody>
@@ -544,7 +552,6 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
                 <div style={{ flex: 1, background: "#fff3e0", padding: "12px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#ef6c00", marginBottom: "5px" }}>Absent</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#ef6c00" }}>{daysInMonth.filter(day => { const date = new Date(year, month, day); const isSunday = date.getDay() === 0; const record = attendance[year]?.[months[month]]?.[selectedStaff._id]?.[day]; return !isSunday && !record; }).length}</div></div>
                 <div style={{ flex: 1, background: "#f3e5f5", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#6a1b9a", marginBottom: "5px" }}>Sites Worked (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#6a1b9a" }}>{monthlySites.length}</div></div>
                 <div style={{ flex: 1, background: "#ffebee", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#c62828", marginBottom: "5px" }}>Total Overtime (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#c62828" }}>{monthlyOvertime.toFixed(2)} hrs</div></div>
-                {/* <div style={{ flex: 1, background: "#e0f7fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}><div style={{ fontSize: "14px", color: "#00838f", marginBottom: "5px" }}>Total Salary (Month)</div><div style={{ fontSize: "24px", fontWeight: "bold", color: "#00838f" }}>₹{monthlyTotalSalary.toLocaleString()}</div></div> */}
               </div>
               <div style={{ display: "flex", gap: "22px", alignItems: "center", justifyContent: "center", marginBottom: "20px", fontSize: "14px", fontWeight: 500, background: "#f8f9fa", padding: "5px 5px", borderRadius: "8px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><div style={{ width: "16px", height: "16px", backgroundColor: "#81c784", borderRadius: "4px" }}></div><span>Present</span></div>
@@ -622,7 +629,7 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
 
             {/* RIGHT: Day details */}
             <div style={{ flex: "1 1 0", minWidth: 0, background: "#fff", padding: "30px", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column" }}>
-              <h4 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: "600", color: "#333", borderBottom: "2px solid #f0f0f0", paddingBottom: "12px" }}>Day Details {selectedDay && `- ${selectedDay} ${months[month]} ${year}`}</h4>
+              <h4 style={{ margin: "0 0 20px 0", fontSize: "18px", fontWeight: "600", color: "#333", borderBottom: "2px solid #f0f0f0", paddingBottom: "12px" }}>Day Details {selectedDay && `- ${String(selectedDay).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`}</h4>
               <div style={{ flex: 1, display: "flex", alignItems: "flex-start" }}>
                 {selectedDay ? (() => {
                   const record = getSelectedDateRecord();
@@ -661,13 +668,13 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
               <div><h4 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>Monthly Attendance Report</h4><p style={{ margin: "5px 0 0", fontSize: "13px", color: "#666" }}>{months[month]} {year} • {selectedStaff.name} • Daily Wage: ₹{staffDailyWage}</p></div>
               <div style={{ display: "flex", gap: "12px" }}>
-  <button onClick={exportToExcel} style={{ padding: "8px 16px", background: "#644634", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}>
-    Export to Excel
-  </button>
-  <button onClick={exportToPDF} style={{ padding: "8px 16px", background: "#644634", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}>
-    Export to PDF
-  </button>
-</div>
+                <button onClick={exportToExcel} style={{ padding: "8px 16px", background: "#644634", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}>
+                  Export to Excel
+                </button>
+                <button onClick={exportToPDF} style={{ padding: "8px 16px", background: "#644634", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#fff", fontWeight: "500" }}>
+                  Export to PDF
+                </button>
+              </div>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
@@ -697,9 +704,11 @@ doc.text(summaryText, pageWidth / 2, 30, { align: "center" });
                     const sitesForDay = dailySiteMap[dateStr] || [];
                     const overtimeForDay = dailyOvertimeMap[dateStr] || 0;
                     const dailySalary = getDailySalary(day, selectedStaff);
+                    // Format date as DD-MM-YYYY for table
+                    const formattedDate = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
                     return (
                       <tr key={day} onClick={() => { setSelectedDay(day); if (record || isSunday) { if (isSunday && !record) setSelectedDateDetails({ status: "sunday", isSunday: true }); else setSelectedDateDetails(record); } else { setSelectedDateDetails({ status: "absent" }); } }} style={{ borderBottom: "1px solid #f0f0f0", cursor: "pointer", backgroundColor: selectedDay === day ? "#f0f7ff" : "transparent", transition: "background-color 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f5f5f5"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedDay === day ? "#f0f7ff" : "transparent"}>
-                        <td style={{ padding: "12px 15px", fontWeight: "500" }}>{day} {months[month]} {year}</td>
+                        <td style={{ padding: "12px 15px", fontWeight: "500" }}>{formattedDate}</td>
                         <td style={{ padding: "12px 15px", color: "#666" }}>{dayName}</td>
                         <td style={{ padding: "12px 15px" }}><span style={{ padding: "4px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "500", backgroundColor: statusBg, color: statusColor }}>{statusDisplay}</span></td>
                         <td style={{ padding: "12px 15px", color: "#444" }}>{record?.checkIn ? formatTimeOnly(record.checkIn) : "-"}</td>

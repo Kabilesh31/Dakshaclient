@@ -32,6 +32,27 @@ import {
   PaginationLink,
 } from "reactstrap";
 
+// Helper function: Format date as DD-MM-YYYY
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+  } catch {
+    // If date is already in YYYY-MM-DD format without time
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateStr.split("-");
+      return `${day}-${month}-${year}`;
+    }
+  }
+  return dateStr;
+};
+
 const Bills = () => {
   // ========== Dummy Data ==========
   const dummyBills = [
@@ -323,9 +344,27 @@ const Bills = () => {
     return paidStatus ? <Badge color="success">Paid</Badge> : <Badge color="danger">Unpaid</Badge>;
   };
 
+  // Format date as DD-MM-YYYY for display
   const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    if (!dateString) return "N/A";
+    
+    try {
+      // Handle ISO string with time
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+      }
+    } catch {
+      // If date is in YYYY-MM-DD format without time
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
+        const [year, month, day] = dateString.split("-");
+        return `${day}-${month}-${year}`;
+      }
+    }
+    return dateString;
   };
 
   return (
@@ -344,12 +383,11 @@ const Bills = () => {
             </BlockHeadContent>
             <BlockHeadContent>
               <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 6px"
-  }} className="btn-icon" onClick={openAddModal}>
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    color: "#fff",
+                    padding: "6px 6px"
+                  }} className="btn-icon" onClick={openAddModal}>
                 <Icon name="plus" /> 
               </Button>
             </BlockHeadContent>
@@ -424,23 +462,23 @@ const Bills = () => {
                         <td className="fw-bold">₹{bill.totalAmt.toLocaleString("en-IN")}</td>
                         <td>
                           <span
-  className={`badge ${
-    bill.orderStatus === "approved"
-      ? "bg-primary"
-      : bill.orderStatus === "pending"
-      ? "bg-warning"
-      : bill.orderStatus === "delivered"
-      ? "bg-success"
-      : "bg-danger"
-  }`}
-  style={{
-    padding: "5px 10px",
-    color: "white",
-    borderRadius: "14px",
-  }}
->
-  {bill.orderStatus.charAt(0).toUpperCase() + bill.orderStatus.slice(1)}
-</span>
+                            className={`badge ${
+                              bill.orderStatus === "approved"
+                                ? "bg-primary"
+                                : bill.orderStatus === "pending"
+                                ? "bg-warning"
+                                : bill.orderStatus === "delivered"
+                                ? "bg-success"
+                                : "bg-danger"
+                            }`}
+                            style={{
+                              padding: "5px 10px",
+                              color: "white",
+                              borderRadius: "14px",
+                            }}
+                          >
+                            {bill.orderStatus.charAt(0).toUpperCase() + bill.orderStatus.slice(1)}
+                          </span>
                         </td>
                         <td>
                           <span className={`badge ${bill.paidStatus ? "bg-success" : "bg-warning"}`} style={{ padding: bill.paidStatus ? "5px 18px" : "5px 10px", borderRadius: "14px", color: "white" }}>
@@ -513,8 +551,8 @@ const Bills = () => {
           </PreviewCard>
         </Block>
 
-        {/* View Details Modal (unchanged) */}
-        <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="lg" className="bill-modal"scrollable>
+        {/* View Details Modal */}
+        <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="lg" className="bill-modal" scrollable>
           <ModalHeader toggle={() => setViewModal(false)}>Bill Details</ModalHeader>
           <ModalBody>
             {selectedBill && (
@@ -575,13 +613,12 @@ const Bills = () => {
                 </div>
                 <div className="d-flex justify-content-end gap-2">
                   <Button color="secondary" className="p-2" onClick={() => setViewModal(false)}>Close</Button>
-                  <Button  style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }}className="p-2">Download PDF</Button>
+                  <Button style={{
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    color: "#fff",
+                    padding: "6px 20px"
+                  }} className="p-2">Download PDF</Button>
                 </div>
               </div>
             )}
@@ -589,7 +626,7 @@ const Bills = () => {
         </Modal>
 
         {/* Add/Edit Bill Modal */}
-        <Modal isOpen={formModal} toggle={() => setFormModal(false)} size="lg" className="bill-form-modal"scrollable>
+        <Modal isOpen={formModal} toggle={() => setFormModal(false)} size="lg" className="bill-form-modal" scrollable>
           <ModalHeader toggle={() => setFormModal(false)}>
             {isEditMode ? "Edit Bill" : "Create New Bill"}
           </ModalHeader>
@@ -722,14 +759,13 @@ const Bills = () => {
             </div>
 
             <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button color="secondary"className="p-2" onClick={() => setFormModal(false)}>Cancel</Button>
+              <Button color="secondary" className="p-2" onClick={() => setFormModal(false)}>Cancel</Button>
               <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }}className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
+                backgroundColor: "#644634",
+                borderColor: "#800000",
+                color: "#fff",
+                padding: "6px 20px"
+              }} className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
             </div>
           </ModalBody>
         </Modal>

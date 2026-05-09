@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
+// Buying.jsx
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
@@ -25,10 +26,14 @@ import {
   Col,
   Input,
   Label,
+  Spinner,
 } from "reactstrap";
 
+// API Base URL - Change this to your backend URL
+const API_BASE_URL = `${process.env.REACT_APP_BACKENDURL}/api`
+
 // ----------------------------------------------------------------------
-// Dummy data - EXPORTED for use in BuyingDetails
+// Dummy data - EXPORTED for backward compatibility with BuyingDetails
 // ----------------------------------------------------------------------
 export const initialItems = [
   {
@@ -121,6 +126,9 @@ export const initialItems = [
   },
 ];
 
+// ----------------------------------------------------------------------
+// Options for selects
+// ----------------------------------------------------------------------
 const groupOptions = [
   { value: "Hardware", label: "Hardware" },
   { value: "Steel", label: "Steel" },
@@ -137,7 +145,6 @@ const unitOptions = [
   { value: "LTR", label: "Liter (LTR)" },
   { value: "MTR", label: "Meter (MTR)" },
   { value: "Nos", label: "Nos" },
-
 ];
 
 const statusOptions = [
@@ -148,7 +155,7 @@ const statusOptions = [
 // ----------------------------------------------------------------------
 // Confirmation Modal Component
 // ----------------------------------------------------------------------
-const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
+const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
     <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
       <ModalBody
@@ -187,10 +194,11 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
                 marginRight: "10px",
               }}
               onClick={onConfirm}
+              disabled={loading}
             >
-              Yes, Delete
+              {loading ? <Spinner size="sm" /> : "Yes, Delete"}
             </Button>
-            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }}>
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }} disabled={loading}>
               Cancel
             </Button>
           </div>
@@ -203,7 +211,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
 // ----------------------------------------------------------------------
 // Item Form Modal
 // ----------------------------------------------------------------------
-const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
+const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) => {
   const [itemCode, setItemCode] = useState("");
   const [name, setName] = useState("");
   const [status, setStatus] = useState(null);
@@ -239,23 +247,30 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
 
   const handleClose = () => onClose();
 
-  const generateItemId = (name) => {
-    const prefix = name.trim().slice(0, 5).toUpperCase();
-    const randomNum = Math.floor(Math.random() * 900 + 100);
-    return `${prefix}${randomNum}`;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!itemCode.trim()) return alert("Please enter item code");
-    if (!name.trim()) return alert("Please enter item name");
-    if (!status) return alert("Please select status");
-    if (!group) return alert("Please select item group");
-    if (!unitMeasure) return alert("Please select default unit of measure");
+    if (!itemCode.trim()) {
+      alert("Please enter item code");
+      return;
+    }
+    if (!name.trim()) {
+      alert("Please enter item name");
+      return;
+    }
+    if (!status) {
+      alert("Please select status");
+      return;
+    }
+    if (!group) {
+      alert("Please select item group");
+      return;
+    }
+    if (!unitMeasure) {
+      alert("Please select default unit of measure");
+      return;
+    }
 
-    const newId = generateItemId(name);
-    onSave({
-      id: mode === "edit" ? initialData?.id : newId,
+    const itemData = {
       itemCode: itemCode.trim(),
       name: name.trim(),
       status: status.value,
@@ -264,8 +279,9 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
       unitMeasure: unitMeasure.value,
       maintainStock,
       isFixedAsset,
-    });
-    handleClose();
+    };
+
+    await onSave(itemData);
   };
 
   return (
@@ -303,6 +319,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     onChange={(e) => setItemCode(e.target.value)}
                     placeholder="Enter item code"
                     required
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -315,6 +332,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter item name"
                     required
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -326,6 +344,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     value={status}
                     onChange={(opt) => setStatus(opt)}
                     placeholder="Select Status"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -337,6 +356,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     value={group}
                     onChange={(opt) => setGroup(opt)}
                     placeholder="Select Group"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -348,6 +368,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     value={hsnSac}
                     onChange={(e) => setHsnSac(e.target.value)}
                     placeholder="Enter HSN/SAC code"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -359,6 +380,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                     value={unitMeasure}
                     onChange={(opt) => setUnitMeasure(opt)}
                     placeholder="Select Unit"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -369,6 +391,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                       type="checkbox"
                       checked={maintainStock}
                       onChange={(e) => setMaintainStock(e.target.checked)}
+                      disabled={loading}
                     />{" "}
                     Maintain Stock
                   </Label>
@@ -381,6 +404,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                       type="checkbox"
                       checked={isFixedAsset}
                       onChange={(e) => setIsFixedAsset(e.target.checked)}
+                      disabled={loading}
                     />{" "}
                     Is Fixed Asset
                   </Label>
@@ -399,8 +423,9 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
                       }}
                       size="md"
                       type="submit"
+                      disabled={loading}
                     >
-                      {mode === "add" ? "Add Item" : "Update Item"}
+                      {loading ? <Spinner size="sm" /> : (mode === "add" ? "Add Item" : "Update Item")}
                     </Button>
                   </li>
                   <li>
@@ -430,8 +455,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave }) => {
 // ----------------------------------------------------------------------
 const Buying = () => {
   const history = useHistory();
-  const [items, setItems] = useState(initialItems);
-  const [filtered, setFiltered] = useState(initialItems);
+  const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -440,33 +464,109 @@ const Buying = () => {
   const [modalMode, setModalMode] = useState("add");
   const [editingItem, setEditingItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [availableGroups, setAvailableGroups] = useState([]);
   const itemPerPage = 10;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
 
-  const availableGroups = useMemo(() => {
-    const groups = items.map((i) => i.group);
-    return Array.from(new Set(groups)).sort();
-  }, [items]);
+  // API Functions
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      let url = `${API_BASE_URL}/items?page=${currentPage}&limit=${itemPerPage}`;
+      if (search) url += `&search=${search}`;
+      if (statusFilter !== "All") url += `&status=${statusFilter}`;
+      if (groupFilter !== "All") url += `&group=${groupFilter}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.success) {
+        setItems(data.data);
+        setTotalPages(data.pagination.pages);
+        setTotalItems(data.pagination.total);
+        if (data.filters?.groups) {
+          setAvailableGroups(data.filters.groups);
+        }
+      } else {
+        alert(data.message || "Failed to fetch items");
+      }
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      alert("Error fetching items");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/items/groups`);
+      const data = await response.json();
+      if (data.success) {
+        setAvailableGroups(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
+  };
+
+  const createItem = async (itemData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData)
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error creating item:", error);
+      throw error;
+    }
+  };
+
+  const updateItem = async (id, itemData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/items/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData)
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error updating item:", error);
+      throw error;
+    }
+  };
+
+  const deleteItem = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/items/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
-    let data = [...items];
-    if (search.trim()) {
-      const kw = search.toLowerCase();
-      data = data.filter(
-        (i) => i.name.toLowerCase().includes(kw) || i.id.toLowerCase().includes(kw)
-      );
-    }
-    if (statusFilter !== "All") data = data.filter((i) => i.status === statusFilter);
-    if (groupFilter !== "All") data = data.filter((i) => i.group === groupFilter);
-    setFiltered(data);
-    setCurrentPage(1);
-  }, [search, statusFilter, groupFilter, items]);
+    fetchItems();
+  }, [currentPage, search, statusFilter, groupFilter]);
 
-  const indexOfLast = currentPage * itemPerPage;
-  const indexOfFirst = indexOfLast - itemPerPage;
-  const currentItems = filtered.slice(indexOfFirst, indexOfLast);
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
   const handleAdd = () => {
     setModalMode("add");
@@ -485,21 +585,55 @@ const Buying = () => {
     setShowDeleteConfirm(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteItemId) {
-      setItems((prev) => prev.filter((i) => i.id !== deleteItemId));
+  const handleConfirmDelete = async () => {
+    if (!deleteItemId) return;
+    
+    setDeleteLoading(true);
+    try {
+      const response = await deleteItem(deleteItemId);
+      if (response.success) {
+        alert("Item deleted successfully");
+        fetchItems();
+      } else {
+        alert(response.message || "Failed to delete item");
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Error deleting item");
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
+      setDeleteItemId(null);
     }
-    setShowDeleteConfirm(false);
-    setDeleteItemId(null);
   };
 
-  const handleSave = (itemData) => {
-    if (modalMode === "add") {
-      setItems((prev) => [itemData, ...prev]);
-    } else {
-      setItems((prev) =>
-        prev.map((i) => (i.id === itemData.id ? { ...i, ...itemData } : i))
-      );
+  const handleSave = async (itemData) => {
+    setFormLoading(true);
+    try {
+      let response;
+      if (modalMode === "add") {
+        response = await createItem(itemData);
+        if (response.success) {
+          alert("Item created successfully");
+        }
+      } else {
+        response = await updateItem(editingItem._id || editingItem.id, itemData);
+        if (response.success) {
+          alert("Item updated successfully");
+        }
+      }
+      
+      if (response.success) {
+        setIsModalOpen(false);
+        fetchItems();
+      } else {
+        alert(response.message || "Failed to save item");
+      }
+    } catch (error) {
+      console.error("Error saving item:", error);
+      alert("Error saving item");
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -508,24 +642,28 @@ const Buying = () => {
     setStatusFilter("All");
     setGroupFilter("All");
     setOnSearch(false);
+    setCurrentPage(1);
   };
 
   const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
 
   const handleNameClick = (item) => {
     sessionStorage.setItem("selectedItem", JSON.stringify(item));
-    history.push(`/Buying/${item.id}`, { item });
+    history.push(`/Buying/${item._id || item.id}`, { item });
   };
+
+  // Get current items for pagination
+  const indexOfFirst = (currentPage - 1) * itemPerPage;
 
   return (
     <>
-      <Head title="Buying Items" />
+      <Head title="Items" />
       <Content>
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              <BlockTitle tag="h3">Buying Items</BlockTitle>
-              <p className="text-muted">Manage your inventory items</p>
+              <BlockTitle tag="h3">Items</BlockTitle>
+              <p className="text-muted">Total Items: {totalItems}</p>
             </BlockHeadContent>
             <BlockHeadContent>
               <div className="toggle-wrap nk-block-tools-toggle">
@@ -552,33 +690,41 @@ const Buying = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
+                    {/* Status Filter */}
                     <div className="form-wrap">
                       <select
-                        className="form-select"
+                        className="form-control"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        style={{ width: "140px" }}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        style={{ minWidth: "120px" }}
                       >
                         <option value="All">All Status</option>
                         <option value="Enabled">Enabled</option>
                         <option value="Disabled">Disabled</option>
                       </select>
                     </div>
-                    <div className="form-wrap ms-2">
+                    
+                    {/* Group Filter */}
+                    <div className="form-wrap">
                       <select
-                        className="form-select"
+                        className="form-control"
                         value={groupFilter}
-                        onChange={(e) => setGroupFilter(e.target.value)}
-                        style={{ width: "150px" }}
+                        onChange={(e) => {
+                          setGroupFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        style={{ minWidth: "120px" }}
                       >
                         <option value="All">All Groups</option>
-                        {availableGroups.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
+                        {availableGroups.map(group => (
+                          <option key={group} value={group}>{group}</option>
                         ))}
                       </select>
                     </div>
+                    
                     {(search || statusFilter !== "All" || groupFilter !== "All") && (
                       <Button color="link" onClick={resetFilters} className="ms-2">
                         Clear Filters
@@ -618,160 +764,185 @@ const Buying = () => {
                     <input
                       type="text"
                       className="form-control border-transparent"
-                      placeholder="Search by name or ID"
+                      placeholder="Search by name, code or ID"
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setCurrentPage(1);
+                      }}
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Items Table */}
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
-                    <th className="px-3 py-2 text-center">S.No</th>
-                    <th className="px-4 py-2 text-start">Item Name</th>
-                    <th className="px-4 py-2 text-center">Status</th>
-                    <th className="px-4 py-2 text-start">Item Group</th>
-                    <th className="px-4 py-2 text-start">Item ID</th>
-                    <th className="px-4 py-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map((item, idx) => (
-                      <tr
-                        key={item.id}
-                        style={{
-                          borderTop: "1px solid #e0e0e0",
-                          borderBottom: "1px solid #e0e0e0",
-                        }}
-                      >
-                        <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
-                        <td className="px-4 py-2 text-start fw-semibold">
-                          <button
-                            onClick={() => handleNameClick(item)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "#2563eb",
-                              cursor: "pointer",
-                              fontWeight: 600,
-                              padding: 0,
-                              fontSize: "inherit",
-                            }}
-                          >
-                            {item.name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <span
-                            className={`badge bg-${statusColor(item.status)}`}
-                            style={{
-                              padding: "6px 12px",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: "500",
-                              color: "white",
-                            }}
-                          >
-                            {item.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-start">
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "4px 10px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              backgroundColor: "#e0f2fe",
-                              color: "#0369a1",
-                              borderRadius: "20px",
-                            }}
-                          >
-                            {item.group}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-start">#{item.id}</td>
-                        <td className="px-4 py-2 text-center">
-                          <UncontrolledDropdown>
-                            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                              <Icon name="more-h" />
-                            </DropdownToggle>
-                            <DropdownMenu right>
-                              <DropdownItem onClick={() => handleEdit(item)}>
-                                <Icon name="edit" /> Edit
-                              </DropdownItem>
-                              <DropdownItem onClick={() => handleDeleteClick(item.id)}>
-                                <Icon name="trash" /> Delete
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </UncontrolledDropdown>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center py-4">
-                        No items found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {/* Loading Spinner */}
+            {loading && (
+              <div className="text-center py-5">
+                <Spinner color="primary" />
+                <p className="mt-2">Loading items...</p>
+              </div>
+            )}
 
-            {/* Pagination */}
-            <div className="card-inner">
-              {filtered.length > 0 ? (
-                <div className="d-flex justify-content-center align-items-center">
-                  <button
-                    className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                  >
-                    <em className="icon ni ni-chevron-left"></em>
-                  </button>
-                  {[...Array(Math.ceil(filtered.length / itemPerPage))].map((_, index) => {
-                    const page = index + 1;
-                    if (
-                      page === currentPage ||
-                      page === currentPage - 1 ||
-                      page === currentPage + 1
-                    ) {
-                      return (
+            {/* Items Table */}
+            {!loading && (
+              <>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
+                        <th className="px-3 py-2 text-center">S.No</th>
+                        <th className="px-4 py-2 text-start">Item Name</th>
+                        <th className="px-4 py-2 text-center">Status</th>
+                        <th className="px-4 py-2 text-start">Item Group</th>
+                        <th className="px-4 py-2 text-start">Item Code</th>
+                        <th className="px-4 py-2 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.length > 0 ? (
+                        items.map((item, idx) => (
+                          <tr
+                            key={item._id || item.id}
+                            style={{
+                              borderTop: "1px solid #e0e0e0",
+                              borderBottom: "1px solid #e0e0e0",
+                            }}
+                          >
+                            <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
+                            <td className="px-4 py-2 text-start fw-semibold">
+                              <button
+                                onClick={() => handleNameClick(item)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#2563eb",
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  padding: 0,
+                                  fontSize: "inherit",
+                                }}
+                              >
+                                {item.name}
+                              </button>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <span
+                                className={`badge bg-${statusColor(item.status)}`}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: "12px",
+                                  fontSize: "12px",
+                                  fontWeight: "500",
+                                  color: "white",
+                                }}
+                              >
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-start">
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "4px 10px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  backgroundColor: "#e0f2fe",
+                                  color: "#0369a1",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                {item.group}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-start">
+                              <code>{item.itemCode}</code>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <UncontrolledDropdown>
+                                <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                  <Icon name="more-h" />
+                                </DropdownToggle>
+                                <DropdownMenu right>
+                                  <DropdownItem onClick={() => handleEdit(item)}>
+                                    <Icon name="edit" /> Edit
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => handleDeleteClick(item._id || item.id)}>
+                                    <Icon name="trash" /> Delete
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </UncontrolledDropdown>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="text-center py-4">
+                            No items found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalItems > 0 && totalPages > 1 && (
+                  <div className="card-inner">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="text-muted">
+                          Showing {indexOfFirst + 1} to {Math.min(indexOfFirst + itemPerPage, totalItems)} of {totalItems} items
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-center align-items-center">
                         <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`btn btn-sm mx-1 ${
-                            currentPage === page ? "btn-primary" : "btn-outline-light"
-                          }`}
-                          style={{ minWidth: "36px", borderRadius: "6px", fontWeight: 500 }}
+                          className="btn btn-icon btn-sm btn-outline-light mx-1"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage((p) => p - 1)}
                         >
-                          {page}
+                          <em className="icon ni ni-chevron-left"></em>
                         </button>
-                      );
-                    }
-                    return null;
-                  })}
-                  <button
-                    className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={currentPage === Math.ceil(filtered.length / itemPerPage)}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                  >
-                    <em className="icon ni ni-chevron-right"></em>
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <span className="text-silent">No data found</span>
-                </div>
-              )}
-            </div>
+                        {[...Array(totalPages)].map((_, index) => {
+                          const page = index + 1;
+                          if (
+                            page === currentPage ||
+                            page === currentPage - 1 ||
+                            page === currentPage + 1 ||
+                            page === 1 ||
+                            page === totalPages
+                          ) {
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`btn btn-sm mx-1 ${
+                                  currentPage === page ? "btn-primary" : "btn-outline-light"
+                                }`}
+                                style={{ minWidth: "36px", borderRadius: "6px", fontWeight: 500 }}
+                              >
+                                {page}
+                              </button>
+                            );
+                          }
+                          if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="mx-1">...</span>;
+                          }
+                          return null;
+                        })}
+                        <button
+                          className="btn btn-icon btn-sm btn-outline-light mx-1"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage((p) => p + 1)}
+                        >
+                          <em className="icon ni ni-chevron-right"></em>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </DataTable>
         </Block>
       </Content>
@@ -783,6 +954,7 @@ const Buying = () => {
         initialData={editingItem}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
+        loading={formLoading}
       />
 
       {/* Delete Confirmation Modal */}
@@ -792,6 +964,7 @@ const Buying = () => {
         onConfirm={handleConfirmDelete}
         title="Delete Item"
         message="Are you sure you want to delete this item? This action cannot be undone."
+        loading={deleteLoading}
       />
     </>
   );

@@ -29,8 +29,33 @@ import {
   CardFooter,
 } from "reactstrap";
 
+// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (year && month && day) {
+    return `${day}-${month}-${year}`;
+  }
+  return dateStr;
+};
+
+// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for storage
+const convertToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  // Check if it's already in YYYY-MM-DD format
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateStr;
+  }
+  // Convert from DD-MM-YYYY to YYYY-MM-DD
+  const [day, month, year] = dateStr.split("-");
+  if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
 const SiteManagement = () => {
-  // ========== Dummy Data with Images ==========
+  // ========== Dummy Data with Images (dates in YYYY-MM-DD format for storage) ==========
   const dummySites = [
     {
       id: 1,
@@ -137,7 +162,8 @@ const SiteManagement = () => {
   });
   const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
-const history = useHistory();
+  const history = useHistory();
+  
   // Load dummy data on mount
   useEffect(() => {
     setSites(dummySites);
@@ -163,10 +189,10 @@ const history = useHistory();
   // ========== Handlers ==========
   const toggleSearch = () => setOnSearch(!onSearch);
 
- // Replace the viewSiteDetails function
-const viewSiteDetails = (site) => {
-  history.push(`/SiteManagement/site/${site.id}`, { site });
-};
+  // Replace the viewSiteDetails function
+  const viewSiteDetails = (site) => {
+    history.push(`/SiteManagement/site/${site.id}`, { site });
+  };
 
   const validateForm = () => {
     const errors = {};
@@ -226,36 +252,73 @@ const viewSiteDetails = (site) => {
     });
   };
 
+  // Format date as DD-MM-YYYY for display
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    // Convert from YYYY-MM-DD to DD-MM-YYYY
+    const [year, month, day] = dateString.split("-");
+    if (year && month && day) {
+      return `${day}-${month}-${year}`;
+    }
+    return dateString;
   };
 
- const getStatusBadge = (status) => {
-  return (
-    <span
-      className="badge"
-      style={{
-        backgroundColor:
-          status === "Active"
-            ? "#06c96a"   // green
-            : status === "Completed"
-            ? "#dc3545"   // red
-            : "#6c757d",  // fallback (grey)
-        color: "#fff",
-        padding: "5px 12px",
-        borderRadius: "14px",
-        textTransform: "capitalize",
-        display: "inline-block",
-        minWidth: "90px",
-        textAlign: "center",
-      }}
-    >
-      {status}
-    </span>
-  );
-};
+  // Handle date input change in form (convert DD-MM-YYYY to YYYY-MM-DD for storage)
+  const handleDateChange = (e) => {
+    const inputValue = e.target.value;
+    // If user types in DD-MM-YYYY format
+    if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+      const yyyymmdd = convertToYYYYMMDD(inputValue);
+      setNewSite({ ...newSite, startDate: yyyymmdd });
+    } 
+    // If user uses native date picker (YYYY-MM-DD)
+    else if (inputValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      setNewSite({ ...newSite, startDate: inputValue });
+    }
+    else {
+      setNewSite({ ...newSite, startDate: inputValue });
+    }
+  };
+
+  // Get display value for date input (show DD-MM-YYYY)
+  const getDateDisplayValue = (dateStr) => {
+    if (!dateStr) return "";
+    return formatDateToDDMMYYYY(dateStr);
+  };
+
+  const getStatusBadge = (status) => {
+    let statusText = "";
+    let bgColor = "";
+    
+    if (status === "active") {
+      statusText = "Active";
+      bgColor = "#06c96a";
+    } else if (status === "inactive" || status === "Completed") {
+      statusText = "Completed";
+      bgColor = "#dc3545";
+    } else {
+      statusText = status || "Active";
+      bgColor = "#6c757d";
+    }
+    
+    return (
+      <span
+        className="badge"
+        style={{
+          backgroundColor: bgColor,
+          color: "#fff",
+          padding: "5px 12px",
+          borderRadius: "14px",
+          textTransform: "capitalize",
+          display: "inline-block",
+          minWidth: "90px",
+          textAlign: "center",
+        }}
+      >
+        {statusText}
+      </span>
+    );
+  };
 
   return (
     <React.Fragment>
@@ -273,11 +336,13 @@ const viewSiteDetails = (site) => {
             </BlockHeadContent>
             <BlockHeadContent>
               <Button 
-  style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    color: "#fff"
-  }} className="btn-icon" onClick={() => setAddModal(true)}>
+                style={{
+                  backgroundColor: "#644634",
+                  borderColor: "#800000",
+                  color: "#fff"
+                }} 
+                className="btn-icon" 
+                onClick={() => setAddModal(true)}>
                 <Icon name="plus" />
               </Button>
             </BlockHeadContent>
@@ -401,13 +466,17 @@ const viewSiteDetails = (site) => {
                         </CardText>
                       </CardBody>
                       <CardFooter className="bg-transparent border-top-0 pb-3 pt-0 px-3">
-                        <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }} outline size="sm" block onClick={() => viewSiteDetails(site)}>
+                        <Button 
+                          style={{
+                            backgroundColor: "#644634",
+                            borderColor: "#800000",
+                            color: "#fff",
+                            padding: "6px 20px"
+                          }} 
+                          outline 
+                          size="sm" 
+                          block 
+                          onClick={() => viewSiteDetails(site)}>
                           View Details
                         </Button>
                       </CardFooter>
@@ -533,14 +602,16 @@ const viewSiteDetails = (site) => {
               {formErrors.location && <div className="invalid-feedback d-block">{formErrors.location}</div>}
             </FormGroup>
             <FormGroup>
-              <label>Start Date *</label>
+              <label>Start Date * (DD-MM-YYYY)</label>
               <Input
-                type="date"
-                value={newSite.startDate}
-                onChange={(e) => setNewSite({ ...newSite, startDate: e.target.value })}
+                type="text"
+                placeholder="DD-MM-YYYY"
+                value={getDateDisplayValue(newSite.startDate)}
+                onChange={handleDateChange}
                 invalid={!!formErrors.startDate}
               />
               {formErrors.startDate && <div className="invalid-feedback d-block">{formErrors.startDate}</div>}
+              <small className="text-muted">Enter date in DD-MM-YYYY format (e.g., 15-01-2024)</small>
             </FormGroup>
             <FormGroup>
               <label>Project Value (₹)</label>
@@ -581,13 +652,15 @@ const viewSiteDetails = (site) => {
                   onChange={(e) => setStaffInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddStaff()}
                 />
-                <Button color="secondary" style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    marginTop: "0.3rem",
-    color: "#fff",
-    padding: "12px 20px"
-  }}  onClick={handleAddStaff}>
+                <Button color="secondary" 
+                  style={{
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    marginTop: "0.3rem",
+                    color: "#fff",
+                    padding: "12px 20px"
+                  }} 
+                  onClick={handleAddStaff}>
                   Add
                 </Button>
               </div>
@@ -615,13 +688,15 @@ const viewSiteDetails = (site) => {
                 Cancel
               </Button>
               <Button 
-  style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    marginTop: "-1rem",
-    color: "#fff",
-    padding: "6px 20px"
-  }} className="p-3"  onClick={handleAddSite}>
+                style={{
+                  backgroundColor: "#644634",
+                  borderColor: "#800000",
+                  marginTop: "-1rem",
+                  color: "#fff",
+                  padding: "6px 20px"
+                }} 
+                className="p-3" 
+                onClick={handleAddSite}>
                 Add Site
               </Button>
             </div>

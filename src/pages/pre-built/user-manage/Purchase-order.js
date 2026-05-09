@@ -119,8 +119,76 @@ const dummyPurchaseOrders = [
   },
 ];
 
-// Item Row Component with native date input
+// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  return `${day}-${month}-${year}`;
+};
+
+// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for backend
+const convertToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+  const [day, month, year] = dateStr.split("-");
+  if (day && month && year) {
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
+// Custom Date Input Component for DD-MM-YYYY format
+const CustomDateInput = ({ value, onChange, className, id, placeholder, onClick }) => {
+  const [displayValue, setDisplayValue] = useState(value ? formatDateToDDMMYYYY(value) : "");
+  
+  const handleChange = (e) => {
+    const inputValue = e.target.value;
+    setDisplayValue(inputValue);
+    // Only convert and pass if it matches DD-MM-YYYY pattern
+    if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+      const yyyymmdd = convertToYYYYMMDD(inputValue);
+      onChange({ target: { value: yyyymmdd } });
+    } else if (inputValue === "") {
+      onChange({ target: { value: "" } });
+    }
+  };
+  
+  React.useEffect(() => {
+    setDisplayValue(value ? formatDateToDDMMYYYY(value) : "");
+  }, [value]);
+  
+  return (
+    <input
+      type="text"
+      className={className}
+      id={id}
+      placeholder="DD-MM-YYYY"
+      value={displayValue}
+      onChange={handleChange}
+      onClick={onClick}
+    />
+  );
+};
+
+// Item Row Component with DD-MM-YYYY date input
 const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive }) => {
+  const [itemDisplayDate, setItemDisplayDate] = useState(item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "");
+  
+  React.useEffect(() => {
+    setItemDisplayDate(item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "");
+  }, [item.requiredBy]);
+  
+  const handleDateChange = (e) => {
+    const inputValue = e.target.value;
+    setItemDisplayDate(inputValue);
+    if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+      const yyyymmdd = convertToYYYYMMDD(inputValue);
+      handleItemChange(index, "requiredBy", yyyymmdd);
+    } else if (inputValue === "") {
+      handleItemChange(index, "requiredBy", "");
+    }
+  };
+  
   return (
     <tr>
       <td style={{ padding: "8px 10px", textAlign: "center", verticalAlign: "middle", fontSize: "0.85rem" }}>
@@ -173,10 +241,11 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
       </td>
       <td style={{ padding: "8px 10px", verticalAlign: "middle" }}>
         <input
-          type="date"
+          type="text"
           className="form-control form-control-sm"
-          value={item.requiredBy}
-          onChange={(e) => handleItemChange(index, "requiredBy", e.target.value)}
+          placeholder="DD-MM-YYYY"
+          value={itemDisplayDate}
+          onChange={handleDateChange}
           style={{ fontSize: "0.82rem", cursor: "pointer" }}
           onClick={(e) => e.stopPropagation()}
         />
@@ -410,7 +479,13 @@ const PurchaseOrderPage = () => {
     setSelectedMaterialRequest(null);
   };
 
-  const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+  // Format date for display (YYYY-MM-DD to DD-MM-YYYY)
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
+  
   const formatCurrency = (amount) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(amount);
 
   const goToDetails = (order) => history.push(`/purchase-order-details/${order._id}`, { orderData: order });
@@ -521,7 +596,25 @@ const PurchaseOrderPage = () => {
                   <FormGroup><Label for="series">Series</Label><Input type="text" id="series" value={newOrder.series} onChange={(e) => setNewOrder({ ...newOrder, series: e.target.value })} bsSize="sm" onClick={(e) => e.stopPropagation()} /></FormGroup>
                 </div>
                 <div className="col-md-3">
-                  <FormGroup><Label for="date">Date *</Label><input type="date" className="form-control form-control-sm" id="date" value={newOrder.date} onChange={(e) => setNewOrder({ ...newOrder, date: e.target.value })} onClick={(e) => e.stopPropagation()} /></FormGroup>
+                  <FormGroup><Label for="date">Date *</Label>
+                    <input 
+                      type="text" 
+                      className="form-control form-control-sm" 
+                      id="date" 
+                      placeholder="DD-MM-YYYY"
+                      value={newOrder.date ? formatDateToDDMMYYYY(newOrder.date) : ""} 
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                          const yyyymmdd = convertToYYYYMMDD(inputValue);
+                          setNewOrder({ ...newOrder, date: yyyymmdd });
+                        } else if (inputValue === "") {
+                          setNewOrder({ ...newOrder, date: "" });
+                        }
+                      }} 
+                      onClick={(e) => e.stopPropagation()} 
+                    />
+                  </FormGroup>
                 </div>
                 <div className="col-md-3">
                   <FormGroup><Label for="supplier">Supplier *</Label>
@@ -549,10 +642,25 @@ const PurchaseOrderPage = () => {
                 </div>
                 <div className="col-md-3">
                   <FormGroup><Label for="poRequiredBy">Required By *</Label>
-                    <input type="date" className="form-control form-control-sm" id="poRequiredBy" value={newOrder.requiredBy} onChange={(e) => {
-                      const updatedItems = newOrder.items.map(item => ({ ...item, requiredBy: e.target.value }));
-                      setNewOrder({ ...newOrder, requiredBy: e.target.value, items: updatedItems });
-                    }} onClick={(e) => e.stopPropagation()} />
+                    <input 
+                      type="text" 
+                      className="form-control form-control-sm" 
+                      id="poRequiredBy" 
+                      placeholder="DD-MM-YYYY"
+                      value={newOrder.requiredBy ? formatDateToDDMMYYYY(newOrder.requiredBy) : ""} 
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                          const yyyymmdd = convertToYYYYMMDD(inputValue);
+                          const updatedItems = newOrder.items.map(item => ({ ...item, requiredBy: yyyymmdd }));
+                          setNewOrder({ ...newOrder, requiredBy: yyyymmdd, items: updatedItems });
+                        } else if (inputValue === "") {
+                          const updatedItems = newOrder.items.map(item => ({ ...item, requiredBy: "" }));
+                          setNewOrder({ ...newOrder, requiredBy: "", items: updatedItems });
+                        }
+                      }} 
+                      onClick={(e) => e.stopPropagation()} 
+                    />
                   </FormGroup>
                 </div>
                 <div className="col-md-3">

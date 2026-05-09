@@ -24,7 +24,32 @@ import {
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 
-// Full dummy data (matching SiteManagement)
+// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (year && month && day) {
+    return `${day}-${month}-${year}`;
+  }
+  return dateStr;
+};
+
+// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for storage
+const convertToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  // Check if it's already in YYYY-MM-DD format
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return dateStr;
+  }
+  // Convert from DD-MM-YYYY to YYYY-MM-DD
+  const [day, month, year] = dateStr.split("-");
+  if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
+// Full dummy data (matching SiteManagement) - dates in YYYY-MM-DD format for storage
 const dummySites = [
   {
     id: 1,
@@ -245,7 +270,7 @@ const SiteDetail = () => {
   const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
-const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     let currentSite;
@@ -275,39 +300,61 @@ const [uploading, setUploading] = useState(false);
     }
   }, [id, location.state]);
 
+  // Format date as DD-MM-YYYY for display
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    // Convert from YYYY-MM-DD to DD-MM-YYYY
+    const [year, month, day] = dateString.split("-");
+    if (year && month && day) {
+      return `${day}-${month}-${year}`;
+    }
+    return dateString;
   };
 
-  const getStatusBadge = (status) => {
-  return (
-    <span
-      className="badge"
-      style={{
-        backgroundColor:
-          site.status === "Active"
-            ? "#06c96a"   // green
-            : site.status === "Completed"
-            ? "#dc3545"   // red
-            : "#6c757d",  // fallback (grey)
-        color: "#fff",
-        padding: "5px 12px",
-        borderRadius: "14px",
-        textTransform: "capitalize",
-        display: "inline-block",
-        minWidth: "90px",
-        textAlign: "center",
-      }}
-    >
-      {site.status}
-    </span>
-  );
-};
+  // Handle date change in edit modal
+  const handleDateChange = (e) => {
+    const inputValue = e.target.value;
+    // If user uses native date picker (YYYY-MM-DD)
+    if (inputValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      setEditedSite({ ...editedSite, startDate: inputValue });
+    } else {
+      setEditedSite({ ...editedSite, startDate: inputValue });
+    }
+  };
+
+  const getStatusBadge = () => {
+    let statusText = "";
+    let bgColor = "";
+    
+    if (site.status === "active") {
+      statusText = "Active";
+      bgColor = "#06c96a";
+    } else if (site.status === "inactive" || site.status === "Completed") {
+      statusText = "Completed";
+      bgColor = "#dc3545";
+    } else {
+      statusText = site.status || "Active";
+      bgColor = "#6c757d";
+    }
+    
+    return (
+      <span
+        className="badge"
+        style={{
+          backgroundColor: bgColor,
+          color: "#fff",
+          padding: "5px 12px",
+          borderRadius: "14px",
+          textTransform: "capitalize",
+          display: "inline-block",
+          minWidth: "90px",
+          textAlign: "center",
+        }}
+      >
+        {statusText}
+      </span>
+    );
+  };
 
   const handleAddPhoto = () => {
     if (newPhotoUrl.trim()) {
@@ -341,29 +388,30 @@ const [uploading, setUploading] = useState(false);
       setStaffInput("");
     }
   };
+
   const handleDocumentUpload = (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
-  setUploading(true);
-  // Simulate upload (replace with actual API call)
-  setTimeout(() => {
-    const newDocs = files.map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: (file.size / 1024).toFixed(1) + ' KB',
-      url: URL.createObjectURL(file), // temporary local preview URL
-      file: file,
-    }));
-    setUploadedDocuments([...uploadedDocuments, ...newDocs]);
-    setUploading(false);
-    e.target.value = ''; // reset input
-  }, 500);
-};
+    setUploading(true);
+    // Simulate upload (replace with actual API call)
+    setTimeout(() => {
+      const newDocs = files.map((file) => ({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: (file.size / 1024).toFixed(1) + ' KB',
+        url: URL.createObjectURL(file), // temporary local preview URL
+        file: file,
+      }));
+      setUploadedDocuments([...uploadedDocuments, ...newDocs]);
+      setUploading(false);
+      e.target.value = ''; // reset input
+    }, 500);
+  };
 
-const handleRemoveDocument = (docId) => {
-  setUploadedDocuments(uploadedDocuments.filter(doc => doc.id !== docId));
-};
+  const handleRemoveDocument = (docId) => {
+    setUploadedDocuments(uploadedDocuments.filter(doc => doc.id !== docId));
+  };
 
   const handleRemoveStaff = (staffToRemove) => {
     setEditedSite({
@@ -405,13 +453,12 @@ const handleRemoveDocument = (docId) => {
             </BlockHeadContent>
             <BlockHeadContent>
               <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }}  outline size="sm" onClick={() => setEditModal(true)}>
-                 Edit 
+                backgroundColor: "#644634",
+                borderColor: "#800000",
+                color: "#fff",
+                padding: "6px 20px"
+              }} outline size="sm" onClick={() => setEditModal(true)}>
+                Edit 
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -437,7 +484,7 @@ const handleRemoveDocument = (docId) => {
               <Col lg="6">
                 <div className="d-flex justify-content-between align-items-start">
                   <h4>{site.name}</h4>
-                  {/* <div>{getStatusBadge(site.status)}</div> */}
+                  {getStatusBadge()}
                 </div>
                 <p className="text-muted mt-2">
                   <Icon name="map-pin" /> {site.location}
@@ -524,12 +571,11 @@ const handleRemoveDocument = (docId) => {
               <div className="d-flex mb-2 justify-content-between align-items-center">
                 <h5>Project Gallery</h5>
                 <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    
-    color: "#fff",
-    padding: "6px 20px"
-  }} outline onClick={() => setPhotoModal(true)}>
+                  backgroundColor: "#644634",
+                  borderColor: "#800000",
+                  color: "#fff",
+                  padding: "6px 20px"
+                }} outline onClick={() => setPhotoModal(true)}>
                   <Icon name="plus" /> Add Photo
                 </Button>
               </div>
@@ -572,54 +618,52 @@ const handleRemoveDocument = (docId) => {
                 ))}
               </Row>
             </div>
+            
             {/* Document Upload Section - Added at the very end */}
-<div className="mt-5">
-  <h5>Project Documents</h5>
-  <div className="mt-3">
-    <label className="form-label">
-  <Icon name="file" /> Upload documents (plans, reports, contracts)
-</label>
-    <input
-      type="file"
-      className="form-control"
-      multiple
-      accept=".pdf,.doc,.docx,.txt,.jpg,.png"
-      onChange={handleDocumentUpload}
-      disabled={uploading}
-    />
-    {uploading && <small className="text-muted">Uploading...</small>}
-  </div>
+            <div className="mt-5">
+              <h5>Project Documents</h5>
+              <div className="mt-3">
+                <label className="form-label">
+                  <Icon name="file" /> Upload documents (plans, reports, contracts)
+                </label>
+                <input
+                  type="file"
+                  className="form-control"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.jpg,.png"
+                  onChange={handleDocumentUpload}
+                  disabled={uploading}
+                />
+                {uploading && <small className="text-muted">Uploading...</small>}
+              </div>
 
-  {uploadedDocuments.length > 0 && (
-    <div className="mt-3">
-      <strong>Uploaded Documents</strong>
-      
-      <ul className="list-group mt-2">
-       
-        {uploadedDocuments.map((doc) => (
-          <li key={doc.id} className="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-               <Icon name="file" /> {doc.name} <small className="text-muted">({doc.size})</small>
+              {uploadedDocuments.length > 0 && (
+                <div className="mt-3">
+                  <strong>Uploaded Documents</strong>
+                  <ul className="list-group mt-2">
+                    {uploadedDocuments.map((doc) => (
+                      <li key={doc.id} className="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                          <Icon name="file" /> {doc.name} <small className="text-muted">({doc.size})</small>
+                        </div>
+                        <Button
+                          style={{
+                            backgroundColor: "#644634",
+                            borderColor: "#800000",
+                            color: "#fff",
+                            padding: "6px 20px"
+                          }}
+                          size="sm"
+                          onClick={() => handleRemoveDocument(doc.id)}
+                        >
+                          <Icon name="trash" /> Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-            <Button
-              style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    
-    color: "#fff",
-    padding: "6px 20px"
-  }}
-              size="sm"
-              onClick={() => handleRemoveDocument(doc.id)}
-            >
-              <Icon name="trash" /> Remove
-            </Button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )}
-</div>
 
             {/* Close button */}
             <div className="d-flex justify-content-end gap-3 mt-5">
@@ -674,14 +718,15 @@ const handleRemoveDocument = (docId) => {
               {formErrors.location && <div className="invalid-feedback d-block">{formErrors.location}</div>}
             </FormGroup>
             <FormGroup>
-              <label>Start Date *</label>
+              <label>Start Date * (YYYY-MM-DD)</label>
               <Input
                 type="date"
                 value={editedSite.startDate || ""}
-                onChange={(e) => setEditedSite({ ...editedSite, startDate: e.target.value })}
+                onChange={handleDateChange}
                 invalid={!!formErrors.startDate}
               />
               {formErrors.startDate && <div className="invalid-feedback d-block">{formErrors.startDate}</div>}
+              <small className="text-muted">Date will be displayed as DD-MM-YYYY on the page</small>
             </FormGroup>
             <FormGroup>
               <label>Project Value (₹)</label>
@@ -739,14 +784,14 @@ const handleRemoveDocument = (docId) => {
               </div>
             </FormGroup>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" className="p-3 " style={{ marginTop: "-1rem" }} onClick={() => setEditModal(false)}>Cancel</Button>
+              <Button color="secondary" className="p-3" style={{ marginTop: "-1rem" }} onClick={() => setEditModal(false)}>Cancel</Button>
               <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    marginTop: "-1rem",
-    color: "#fff",
-    padding: "6px 20px"
-  }} className="p-3 " onClick={handleEditSite}>Save Changes</Button>
+                backgroundColor: "#644634",
+                borderColor: "#800000",
+                marginTop: "-1rem",
+                color: "#fff",
+                padding: "6px 20px"
+              }} className="p-3" onClick={handleEditSite}>Save Changes</Button>
             </div>
           </ModalBody>
         </Modal>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useHistory } from "react-router-dom";
 import {
   Block,
@@ -19,9 +19,7 @@ import {
   Modal,
   ModalHeader,
   ModalBody,
-  FormGroup,
   Label,
-  Input,
 } from "reactstrap";
 
 /* ---------- DUMMY ITEM DATABASE ---------- */
@@ -42,6 +40,253 @@ const dummyItemDatabase = [
   { itemCode: "PAINT-WHITE", itemName: "WHITE PAINT 10 LTR", uom: "LTR", warehouse: "Stores - SD" },
 ];
 
+/* ---------- Helper: Convert YYYY-MM-DD to DD-MM-YYYY ---------- */
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  return `${day}-${month}-${year}`;
+};
+
+/* ---------- Helper: Convert DD-MM-YYYY to YYYY-MM-DD ---------- */
+const convertToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+  const [day, month, year] = dateStr.split("-");
+  if (day && month && year) {
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
+/* ---------- AMOUNT TO WORDS ---------- */
+function amountToWords(amount) {
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  function convert(n) {
+    if (n === 0) return "";
+    if (n < 20) return ones[n] + " ";
+    if (n < 100) return tens[Math.floor(n / 10)] + " " + ones[n % 10] + " ";
+    if (n < 1000) return ones[Math.floor(n / 100)] + " Hundred " + convert(n % 100);
+    if (n < 100000) return convert(Math.floor(n / 1000)) + "Thousand " + convert(n % 1000);
+    if (n < 10000000) return convert(Math.floor(n / 100000)) + "Lakh " + convert(n % 100000);
+    return convert(Math.floor(n / 10000000)) + "Crore " + convert(n % 10000000);
+  }
+
+  const num = Math.floor(amount);
+  const paise = Math.round((amount - num) * 100);
+  let result = "INR " + (convert(num).trim() || "Zero");
+  if (paise > 0) result += " and " + convert(paise).trim() + " Paise";
+  result += " Only";
+  return result;
+}
+
+/* ---------- PRINT STYLES ---------- */
+const printStyles = `
+  @media print {
+    body * { visibility: hidden !important; }
+    #po-print-area, #po-print-area * { visibility: visible !important; }
+    #po-print-area {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      z-index: 99999 !important;
+      background: white !important;
+    }
+    @page {
+      size: A4;
+      margin: 10mm 12mm;
+    }
+  }
+`;
+
+/* ---------- PRINT DOCUMENT COMPONENT ---------- */
+const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) => {
+  const items = orderData?.items || [];
+  const subtotal = items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.rate || 0)), 0);
+  const sgst = subtotal * 0.09;
+  const cgst = subtotal * 0.09;
+  const grandTotal = orderData?.grandTotal || (subtotal + sgst + cgst);
+
+  return (
+    <div id="po-print-area" style={{
+      fontFamily: "'Times New Roman', Times, serif",
+      fontSize: "11px",
+      color: "#000",
+      backgroundColor: "#fff",
+      padding: "0",
+      width: "100%",
+      maxWidth: "794px",
+      margin: "0 auto",
+    }}>
+      {/* Centered supplier name at top */}
+      <div style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", borderBottom: "1px solid #ccc", paddingBottom: "4px", marginBottom: "6px", letterSpacing: "1px" }}>
+        {orderData?.supplierName?.toUpperCase() || "SRI VIGNESWARA HARDWARES"}
+      </div>
+
+      {/* Header: Company Info Left + PO Title Right */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+        {/* Left: Company Info */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: "700", fontSize: "14px", marginBottom: "2px" }}>SREE DAKSHA INDUSTRIES</div>
+          <div style={{ fontSize: "10px", lineHeight: "1.5", color: "#333" }}>
+            <div>Fabrication Factory,</div>
+            <div>Karamunur Road, Vadavalli,</div>
+            <div>Coimbatore, Tamilnadu - 641046. India.</div>
+            <div>Email : dakshafabrication@gmail.com</div>
+            <div>Tel : +91422 2975815</div>
+            <div>GST : 33AEJPA2097N1ZD</div>
+          </div>
+        </div>
+
+        {/* Right: PO Box */}
+        <div style={{ textAlign: "right", minWidth: "160px" }}>
+          <div style={{
+            border: "2px solid #000",
+            padding: "6px 14px",
+            display: "inline-block",
+            marginBottom: "4px",
+          }}>
+            <div style={{ fontWeight: "700", fontSize: "13px", letterSpacing: "0.5px" }}>PURCHASE ORDER</div>
+            <div style={{ fontSize: "11px", fontWeight: "600", color: "#333" }}>{id || orderData?._id || "PO-00677"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ borderTop: "1.5px solid #000", marginBottom: "8px" }} />
+
+      {/* Supplier / Date / Payment Row */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "11px" }}>
+        <div style={{ flex: 1 }}>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+            <tbody>
+              <tr>
+                <td style={{ color: "#555", paddingBottom: "4px", width: "120px", verticalAlign: "top" }}>Supplier Name:</td>
+                <td style={{ fontWeight: "700", paddingBottom: "4px", verticalAlign: "top" }}>{orderData?.supplierName || "SRI VIGNESWARA HARDWARES"}</td>
+                <td style={{ color: "#555", paddingBottom: "4px", width: "120px", verticalAlign: "top", paddingLeft: "20px" }}>Date:</td>
+                <td style={{ fontWeight: "600", paddingBottom: "4px", verticalAlign: "top" }}>{formatDateForPrint(orderData?.date)}</td>
+              </tr>
+              <tr>
+                <td style={{ color: "#555" }}></td>
+                <td></td>
+                <td style={{ color: "#555", paddingLeft: "20px", verticalAlign: "top" }}>Mode Of Payment:</td>
+                <td style={{ fontWeight: "600", verticalAlign: "top" }}>{orderData?.modeOfPayment || "Cheque"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Warehouse */}
+      <div style={{ fontSize: "11px", marginBottom: "8px" }}>
+        <span style={{ color: "#555" }}>Warehouse Name</span>
+        <div style={{ fontWeight: "600" }}>{orderData?.warehouse || "CALIES C - SD"}</div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ borderTop: "1px solid #000", marginBottom: "0" }} />
+
+      {/* Items Table */}
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", marginBottom: "0" }}>
+        <thead>
+          <tr style={{ backgroundColor: "#f0f0f0" }}>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "center", width: "35px" }}>Sr</th>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "left" }}>Description</th>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "center", width: "50px" }}>UOM</th>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "center", width: "70px" }}>Quantity</th>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "right", width: "80px" }}>Rate</th>
+            <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "right", width: "90px" }}>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.length > 0 ? items.map((item, idx) => (
+            <tr key={idx}>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px", textAlign: "center" }}>{item.no || idx + 1}</td>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px" }}>
+                {item.itemName || dummyItemDatabase.find(d => d.itemCode === item.itemCode)?.itemName || item.itemCode || "-"}
+              </td>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px", textAlign: "center" }}>{item.uom || "Kg"}</td>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px", textAlign: "center" }}>{item.quantity || 0}</td>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px", textAlign: "right" }}>₹ {(item.rate || 0).toFixed(2)}</td>
+              <td style={{ border: "1px solid #ccc", padding: "5px 8px", textAlign: "right" }}>₹ {((item.quantity || 0) * (item.rate || 0)).toFixed(2)}</td>
+            </tr>
+          )) : (
+            <tr>
+              <td colSpan={6} style={{ border: "1px solid #ccc", padding: "10px", textAlign: "center", color: "#999" }}>No items</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* Totals Section */}
+      <div style={{ display: "flex", justifyContent: "space-between", borderLeft: "1px solid #ccc", borderRight: "1px solid #ccc", borderBottom: "1px solid #ccc", marginBottom: "16px" }}>
+        {/* Left: Amount in words */}
+        <div style={{ flex: 1, padding: "8px 10px", borderRight: "1px solid #ccc", fontSize: "10.5px" }}>
+          <div style={{ color: "#555", marginBottom: "2px" }}>In Words (Company Currency):</div>
+          <div style={{ fontWeight: "600", lineHeight: "1.5" }}>{amountToWords(grandTotal)}</div>
+        </div>
+
+        {/* Right: Totals */}
+        <div style={{ minWidth: "230px", fontSize: "11px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #e0e0e0" }}>
+            <span>Total</span>
+            <span style={{ fontWeight: "600" }}>₹ {subtotal.toFixed(2)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #e0e0e0" }}>
+            <span>Input Tax SGST @ 9.0</span>
+            <span>₹ {sgst.toFixed(2)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #e0e0e0" }}>
+            <span>Input Tax CGST @ 9.0</span>
+            <span>₹ {cgst.toFixed(2)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", fontWeight: "700", backgroundColor: "#f9f9f9" }}>
+            <span>Grand Total:</span>
+            <span>₹ {grandTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Terms and Conditions */}
+      <div style={{ marginBottom: "28px", fontSize: "10px" }}>
+        <div style={{ fontWeight: "700", fontSize: "11px", marginBottom: "5px", textDecoration: "underline" }}>TERMS AND CONDITIONS:</div>
+        <ol style={{ margin: 0, paddingLeft: "16px", lineHeight: "1.8", color: "#444" }}>
+          <li>Goods/Services must be supplied exactly as per specification only. If supplied otherwise acceptance subject to our sole discretionary powers.</li>
+          <li>Supply of spurious goods or substandard goods/deficiency in services will not be accepted. If found later, amount will be deducted from bill amount.</li>
+          <li>Part shipment will be allowed subject to the confirmation by the company. Payment strictly in accordance with the terms of payment / Cr.period.</li>
+          <li>For delay in payment supplied is not entitled for any interest. Payment will be made after the agreed period subject to the condition No.1 &amp; No.2</li>
+          <li>For supply delay, the supplier is solely responsible and has to compensate the company as prescribed by the company. Bill should accompany with a copy of PO.</li>
+        </ol>
+      </div>
+
+      {/* Signature Section */}
+      <div style={{ textAlign: "right", fontSize: "11px", marginBottom: "40px", paddingRight: "20px" }}>
+        For Sree Daksha Industries
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", borderTop: "1px solid #ccc", paddingTop: "8px" }}>
+        <div style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ marginBottom: "30px" }}></div>
+          <div>Prepared By</div>
+        </div>
+        <div style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ marginBottom: "30px" }}></div>
+          <div>Purchase Manager</div>
+        </div>
+        <div style={{ textAlign: "center", flex: 1 }}>
+          <div style={{ marginBottom: "30px" }}></div>
+          <div>Managing Director/Director Authority</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ========== MAIN COMPONENT ========== */
 const PurchaseOrderDetails = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -73,6 +318,11 @@ const PurchaseOrderDetails = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeAutocompleteIndex]);
 
+  /* ---- Print Handler ---- */
+  const handlePrint = () => {
+    window.print();
+  };
+
   // Start editing
   const startEditing = () => {
     setEditedItems(JSON.parse(JSON.stringify(orderData.items || [])));
@@ -97,7 +347,6 @@ const PurchaseOrderDetails = () => {
   // Handle item code change with autocomplete
   const handleItemCodeChange = (index, value) => {
     handleItemEdit(index, "itemCode", value);
-    
     if (value && value.trim().length > 0) {
       const filtered = dummyItemDatabase.filter(
         (item) =>
@@ -163,7 +412,6 @@ const PurchaseOrderDetails = () => {
   const removeEditRow = (index) => {
     if (editedItems.length <= 1) return;
     const updated = editedItems.filter((_, i) => i !== index);
-    // Re-number items
     setEditedItems(updated.map((item, i) => ({ ...item, no: i + 1 })));
   };
 
@@ -175,44 +423,62 @@ const PurchaseOrderDetails = () => {
       amount: (item.quantity || 0) * (item.rate || 0),
     }));
     const newGrandTotal = updatedItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-    setOrderData({
-      ...orderData,
-      items: updatedItems,
-      grandTotal: newGrandTotal,
-    });
+    setOrderData({ ...orderData, items: updatedItems, grandTotal: newGrandTotal });
     setIsEditing(false);
     setEditedItems([]);
     setActiveAutocompleteIndex(null);
     setSuggestions([]);
   };
 
+  // Helper function to format date for editing input display (DD-MM-YYYY format)
+  const getDisplayDateForEdit = (dateStr) => {
+    if (!dateStr) return "";
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}-${month}-${year}`;
+    }
+    return dateStr;
+  };
+
+  // Handle date change in edit mode (from text input to YYYY-MM-DD state)
+  const handleDateEditChange = (index, inputValue) => {
+    if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
+      const yyyymmdd = convertToYYYYMMDD(inputValue);
+      handleItemEdit(index, "requiredBy", yyyymmdd);
+    } else if (inputValue === "") {
+      handleItemEdit(index, "requiredBy", "");
+    }
+  };
+
   // CSV Download function
   const downloadCSV = () => {
     if (!orderData || !orderData.items || orderData.items.length === 0) return;
-
+    
+    // Helper to format date for CSV (DD-MM-YYYY)
+    const formatForCSV = (dateStr) => {
+      if (!dateStr) return "";
+      const [year, month, day] = dateStr.split("-");
+      return `${day}-${month}-${year}`;
+    };
+    
     let csvContent = "";
     const headers = ["S.No", "Item Code", "Item Name", "Required By", "Quantity", "UOM", "Rate (INR)", "Amount (INR)"];
     csvContent += headers.join(",") + "\n";
-
     csvContent += `\n"Purchase Order:","${orderData._id || id}"\n`;
     csvContent += `"Supplier:","${orderData.supplierName || ""}"\n`;
     csvContent += `"Status:","${orderData.status || ""}"\n`;
-    csvContent += `"Date:","${orderData.date || ""}"\n`;
-    csvContent += `"Required By:","${orderData.requiredBy || ""}"\n`;
+    csvContent += `"Date:","${formatForCSV(orderData.date) || ""}"\n`;
+    csvContent += `"Required By:","${formatForCSV(orderData.requiredBy) || ""}"\n`;
     csvContent += `"Mode of Payment:","${orderData.modeOfPayment || ""}"\n`;
     csvContent += `"Terms of Payment:","${orderData.termsOfPayment || ""}"\n`;
-    csvContent += `"Apply Tax Withholding:","${orderData.applyTaxWithholding ? 'Yes' : 'No'}"\n`;
-    csvContent += `"Is Reverse Charge:","${orderData.isReverseCharge ? 'Yes' : 'No'}"\n`;
-    csvContent += `"Is Subcontracted:","${orderData.isSubcontracted ? 'Yes' : 'No'}"\n`;
     csvContent += `"Grand Total:","${orderData.grandTotal || 0}"\n\n`;
-
     csvContent += headers.join(",") + "\n";
     orderData.items.forEach((item, index) => {
       const row = [
         item.no || index + 1,
         `"${(item.itemCode || "").replace(/"/g, '""')}"`,
         `"${(item.itemName || "").replace(/"/g, '""')}"`,
-        item.requiredBy || "",
+        formatForCSV(item.requiredBy) || "",
         item.quantity || 0,
         `"${(item.uom || "").replace(/"/g, '""')}"`,
         item.rate || 0,
@@ -220,11 +486,6 @@ const PurchaseOrderDetails = () => {
       ];
       csvContent += row.join(",") + "\n";
     });
-
-    const totalQty = orderData.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    csvContent += `\n"Total Quantity:","${totalQty}"\n`;
-    csvContent += `"Grand Total:","${orderData.grandTotal || 0}"\n`;
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -260,22 +521,30 @@ const PurchaseOrderDetails = () => {
 
   const getStatusStyles = (status) => {
     switch (status) {
-      case "To Receive and Bill":
-        return { bg: "#eff6ff", color: "#1e40af", border: "1px solid #93c5fd", dot: "#3b82f6" };
-      case "Completed":
-        return { bg: "#ecfdf5", color: "#065f46", border: "1px solid #6ee7b7", dot: "#10b981" };
-      case "Cancelled":
-        return { bg: "#fef2f2", color: "#991b1b", border: "1px solid #fca5a5", dot: "#ef4444" };
-      default:
-        return { bg: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d", dot: "#f59e0b" };
+      case "To Receive and Bill": return { bg: "#eff6ff", color: "#1e40af", border: "1px solid #93c5fd", dot: "#3b82f6" };
+      case "Completed": return { bg: "#ecfdf5", color: "#065f46", border: "1px solid #6ee7b7", dot: "#10b981" };
+      case "Cancelled": return { bg: "#fef2f2", color: "#991b1b", border: "1px solid #fca5a5", dot: "#ef4444" };
+      default: return { bg: "#fffbeb", color: "#92400e", border: "1px solid #fcd34d", dot: "#f59e0b" };
     }
   };
 
   const statusStyle = getStatusStyles(orderData.status);
 
+  // Format date as DD-MM-YYYY for display
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const [year, month, day] = dateStr.split("-");
+    if (year && month && day) {
+      return `${day}-${month}-${year}`;
+    }
+    return dateStr;
+  };
+
+  // Format date for print (also DD-MM-YYYY)
+  const formatDateForPrint = (dateStr) => {
+    if (!dateStr) return "-";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
   };
 
   const formatCurrency = (amount) => {
@@ -285,7 +554,7 @@ const PurchaseOrderDetails = () => {
   const displayItems = isEditing ? editedItems : (orderData.items || []);
   const totalItems = displayItems.length;
   const totalQuantity = displayItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const grandTotal = isEditing 
+  const grandTotal = isEditing
     ? editedItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.rate || 0)), 0)
     : orderData.grandTotal;
 
@@ -299,16 +568,10 @@ const PurchaseOrderDetails = () => {
   };
 
   const checkboxStyle = {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "10px 16px",
-    backgroundColor: "#f9fafb",
-    borderRadius: "6px",
-    border: "1px solid #e5e7eb",
-    fontSize: "0.85rem",
-    fontWeight: 500,
-    color: "#374151",
+    display: "flex", alignItems: "center", gap: "12px",
+    padding: "10px 16px", backgroundColor: "#f9fafb",
+    borderRadius: "6px", border: "1px solid #e5e7eb",
+    fontSize: "0.85rem", fontWeight: 500, color: "#374151",
   };
 
   const getItemDisplayName = (item) => {
@@ -317,37 +580,54 @@ const PurchaseOrderDetails = () => {
     return found ? found.itemName : "-";
   };
 
+  // State for edit mode date display values
+  const [dateDisplayValues, setDateDisplayValues] = useState({});
+
+  // Initialize date display values when entering edit mode
+  useEffect(() => {
+    if (isEditing && editedItems.length > 0) {
+      const initialValues = {};
+      editedItems.forEach((item, idx) => {
+        initialValues[idx] = item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "";
+      });
+      setDateDisplayValues(initialValues);
+    }
+  }, [isEditing, editedItems]);
+
   return (
     <>
       <Head title={`Purchase Order ${id}`} />
+
+      {/* Inject print styles */}
+      <style>{printStyles}</style>
+
+      {/* Hidden Print Area */}
+      <PrintDocument
+        orderData={orderData}
+        id={id}
+        formatDateForPrint={formatDateForPrint}
+        formatCurrency={formatCurrency}
+      />
+
+      {/* ====== SCREEN VIEW (hidden during print) ====== */}
       <Content>
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              <div className="d-flex align-items-center gap-3">
-                <BlockTitle tag="h3" style={{ marginBottom: 0 }}>
-                  Purchase Order
-                </BlockTitle>
-                <span
-                  style={{
-                    backgroundColor: statusStyle.bg,
-                    color: statusStyle.color,
-                    border: statusStyle.border,
-                    padding: "4px 14px",
-                    borderRadius: "20px",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    marginLeft: "10px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
+              <div style={{ marginTop: "100px" }} className="d-flex align-items-center gap-3 ">
+                <BlockTitle tag="h3" style={{ marginBottom: 0 }}>Purchase Order</BlockTitle>
+                <span style={{
+                  backgroundColor: statusStyle.bg, color: statusStyle.color,
+                  border: statusStyle.border, padding: "4px 14px", borderRadius: "20px",
+                  fontSize: "0.78rem", fontWeight: 600, marginLeft: "10px",
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                }}>
                   <span style={{ width: "7px", height: "7px", borderRadius: "50%", backgroundColor: statusStyle.dot, display: "inline-block" }} />
                   {orderData.status}
                 </span>
               </div>
             </BlockHeadContent>
+
             <div className="d-flex align-items-center gap-2">
               <Button color="light" outline onClick={() => history.push("/purchase-order")}>
                 <Icon name="arrow-left" /> Back
@@ -367,14 +647,21 @@ const PurchaseOrderDetails = () => {
                     <Icon name="edit" /> Edit Items
                   </Button>
                   <UncontrolledDropdown>
-                    <DropdownToggle style={{padding:"20px"}} tag="button"  className="btn p-3 btn-primary d-flex align-items-center gap-1" style={{ borderRadius: "4px", padding: "6px 14px", fontSize: "0.85rem" }}>
+                    <DropdownToggle
+                      tag="button"
+                      className="btn btn-primary d-flex align-items-center gap-1"
+                      style={{ borderRadius: "4px", padding: "15px 14px", fontSize: "0.85rem" }}
+                    >
                       <Icon name="download" />
-                      <span >Download</span>
+                      <span>Download</span>
                       <Icon name="chevron-down" style={{ fontSize: "12px", marginLeft: "2px" }} />
                     </DropdownToggle>
                     <DropdownMenu right>
                       <DropdownItem onClick={downloadCSV}>
                         <Icon name="file" className="me-2" /> Download as CSV
+                      </DropdownItem>
+                      <DropdownItem onClick={handlePrint}>
+                        <Icon name="printer" className="me-2" /> Print / Save as PDF
                       </DropdownItem>
                     </DropdownMenu>
                   </UncontrolledDropdown>
@@ -395,78 +682,47 @@ const PurchaseOrderDetails = () => {
                 Purchase Order -{" "}
                 <button
                   onClick={() => setSupplierModal(true)}
-                  style={{
-                    background: "none", border: "none", color: "#2563eb", cursor: "pointer",
-                    fontWeight: 600, textDecoration: "underline", padding: 0, fontSize: "inherit",
-                  }}
+                  style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontWeight: 600, textDecoration: "underline", padding: 0, fontSize: "inherit" }}
                 >
                   {orderData.supplierName}
                 </button>
               </h5>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "0.87rem", marginBottom: "20px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="calendar" style={{ fontSize: "14px", color: "#6b7280" }} />
-                  <span style={{ color: "#6b7280" }}>Date:</span>
-                  <span style={{ color: "#111827", fontWeight: 500 }}>{formatDate(orderData.date)}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="calendar-check" style={{ fontSize: "14px", color: "#6b7280" }} />
-                  <span style={{ color: "#6b7280" }}>Required By:</span>
-                  <span style={{ color: "#111827", fontWeight: 500 }}>{formatDate(orderData.requiredBy)}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="credit-card" style={{ fontSize: "14px", color: "#6b7280" }} />
-                  <span style={{ color: "#6b7280" }}>Payment:</span>
-                  <span style={{ color: "#111827", fontWeight: 500 }}>{orderData.modeOfPayment || "-"}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="file-text" style={{ fontSize: "14px", color: "#6b7280" }} />
-                  <span style={{ color: "#6b7280" }}>Terms:</span>
-                  <span style={{ color: "#111827", fontWeight: 500 }}>{orderData.termsOfPayment || "-"}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <Icon name="layers" style={{ fontSize: "14px", color: "#6b7280" }} />
-                  <span style={{ color: "#6b7280" }}>Series:</span>
-                  <span style={{ color: "#111827", fontWeight: 500 }}>{orderData.series || "-"}</span>
-                </div>
+                {[
+                  { icon: "calendar", label: "Date", value: formatDate(orderData.date) },
+                  { icon: "calendar-check", label: "Required By", value: formatDate(orderData.requiredBy) },
+                  { icon: "credit-card", label: "Payment", value: orderData.modeOfPayment || "-" },
+                  { icon: "file-text", label: "Terms", value: orderData.termsOfPayment || "-" },
+                  { icon: "layers", label: "Series", value: orderData.series || "-" },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Icon name={icon} style={{ fontSize: "14px", color: "#6b7280" }} />
+                    <span style={{ color: "#6b7280" }}>{label}:</span>
+                    <span style={{ color: "#111827", fontWeight: 500 }}>{value}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Checkboxes Display */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
-                <div style={checkboxStyle}>
-                  <span style={{
-                    width: "18px", height: "18px", borderRadius: "4px", border: "2px solid #d1d5db",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    backgroundColor: orderData.applyTaxWithholding ? "#3b82f6" : "#fff",
-                    borderColor: orderData.applyTaxWithholding ? "#3b82f6" : "#d1d5db",
-                  }}>
-                    {orderData.applyTaxWithholding && <Icon name="check-thick" style={{ fontSize: "10px", color: "#fff" }} />}
-                  </span>
-                  <span>Apply Tax Withholding Amount (TDS)</span>
-                </div>
-                <div style={checkboxStyle}>
-                  <span style={{
-                    width: "18px", height: "18px", borderRadius: "4px", border: "2px solid #d1d5db",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    backgroundColor: orderData.isReverseCharge ? "#3b82f6" : "#fff",
-                    borderColor: orderData.isReverseCharge ? "#3b82f6" : "#d1d5db",
-                  }}>
-                    {orderData.isReverseCharge && <Icon name="check-thick" style={{ fontSize: "10px", color: "#fff" }} />}
-                  </span>
-                  <span>Is Reverse Charge</span>
-                </div>
-                <div style={checkboxStyle}>
-                  <span style={{
-                    width: "18px", height: "18px", borderRadius: "4px", border: "2px solid #d1d5db",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    backgroundColor: orderData.isSubcontracted ? "#3b82f6" : "#fff",
-                    borderColor: orderData.isSubcontracted ? "#3b82f6" : "#d1d5db",
-                  }}>
-                    {orderData.isSubcontracted && <Icon name="check-thick" style={{ fontSize: "10px", color: "#fff" }} />}
-                  </span>
-                  <span>Is Subcontracted</span>
-                </div>
+                {[
+                  { key: "applyTaxWithholding", label: "Apply Tax Withholding Amount (TDS)" },
+                  { key: "isReverseCharge", label: "Is Reverse Charge" },
+                  { key: "isSubcontracted", label: "Is Subcontracted" },
+                ].map(({ key, label }) => (
+                  <div key={key} style={checkboxStyle}>
+                    <span style={{
+                      width: "18px", height: "18px", borderRadius: "4px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      backgroundColor: orderData[key] ? "#3b82f6" : "#fff",
+                      border: `2px solid ${orderData[key] ? "#3b82f6" : "#d1d5db"}`,
+                    }}>
+                      {orderData[key] && <Icon name="check-thick" style={{ fontSize: "10px", color: "#fff" }} />}
+                    </span>
+                    <span>{label}</span>
+                  </div>
+                ))}
               </div>
 
               <div style={{ padding: "16px 20px", backgroundColor: "#ecfdf5", borderRadius: "8px", border: "1px solid #6ee7b7", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -502,158 +758,123 @@ const PurchaseOrderDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayItems.length > 0 ? (
-                    displayItems.map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: idx < displayItems.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                        <td style={{ padding: "10px 16px", textAlign: "center", color: "#6b7280", fontWeight: 500, verticalAlign: "middle" }}>
-                          {item.no || idx + 1}
-                        </td>
-                        <td style={{ padding: "10px 16px", position: "relative", verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <>
-                              <input
-                                type="text"
-                                className="form-control form-control-sm"
-                                value={item.itemCode || ""}
-                                onChange={(e) => handleItemCodeChange(idx, e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, idx)}
-                                onFocus={() => {
-                                  if (item.itemCode && item.itemCode.trim().length > 0) {
-                                    handleItemCodeChange(idx, item.itemCode);
-                                  }
-                                }}
-                                placeholder="Search item code..."
-                                autoComplete="off"
-                                style={{ fontSize: "0.82rem" }}
-                                data-autocomplete-input="true"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              {activeAutocompleteIndex === idx && suggestions.length > 0 && (
-                                <div
-                                  data-autocomplete-dropdown="true"
-                                  style={{
-                                    position: "absolute", top: "100%", left: "16px", right: "16px",
-                                    backgroundColor: "#fff", border: "1px solid #d1d5db",
-                                    borderRadius: "0 0 8px 8px", boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-                                    zIndex: 99999, maxHeight: "200px", overflowY: "auto", marginTop: "-1px",
-                                  }}
-                                >
-                                  {suggestions.map((suggestion, sIdx) => (
-                                    <div
-                                      key={sIdx}
-                                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(idx, suggestion); }}
-                                      style={{
-                                        padding: "10px 14px", cursor: "pointer",
-                                        backgroundColor: sIdx === activeSuggestionIndex ? "#eff6ff" : "#fff",
-                                        borderBottom: sIdx < suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
-                                      }}
-                                      onMouseEnter={() => setActiveSuggestionIndex(sIdx)}
-                                    >
-                                      <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>{suggestion.itemCode}</div>
-                                      <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>{suggestion.itemName}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <code style={{ backgroundColor: "#f9fafb", padding: "3px 8px", borderRadius: "4px", fontSize: "0.82rem", color: "#374151", border: "1px solid #e5e7eb" }}>
-                              {item.itemCode || "-"}
-                            </code>
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", wordBreak: "break-word", color: "#111827", fontWeight: 500, verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <input type="text" className="form-control form-control-sm" value={item.itemName || ""} onChange={(e) => handleItemEdit(idx, "itemName", e.target.value)} style={{ fontSize: "0.82rem" }} onClick={(e) => e.stopPropagation()} />
-                          ) : (
-                            getItemDisplayName(item)
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", color: "#374151", verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <div style={{ position: "relative" }}>
-                              <input
-                                type="text"
-                                className="form-control form-control-sm date-input-hidden"
-                                value={item.requiredBy ? formatDate(item.requiredBy) : ""}
-                                readOnly
-                                placeholder="Select date"
-                                style={{ fontSize: "0.82rem", cursor: "pointer", backgroundColor: "#fff" }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Trigger the hidden date input
-                                  const hiddenInput = e.currentTarget.nextSibling;
-                                  if (hiddenInput) {
-                                    hiddenInput.showPicker ? hiddenInput.showPicker() : hiddenInput.click();
-                                  }
-                                }}
-                              />
-                              <input
-                                type="date"
-                                className="form-control form-control-sm"
-                                value={item.requiredBy || ""}
-                                onChange={(e) => handleItemEdit(idx, "requiredBy", e.target.value)}
+                  {displayItems.length > 0 ? displayItems.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: idx < displayItems.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                      <td style={{ padding: "10px 16px", textAlign: "center", color: "#6b7280", fontWeight: 500, verticalAlign: "middle" }}>
+                        {item.no || idx + 1}
+                      </td>
+                      <td style={{ padding: "10px 16px", position: "relative", verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              value={item.itemCode || ""}
+                              onChange={(e) => handleItemCodeChange(idx, e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(e, idx)}
+                              onFocus={() => { if (item.itemCode?.trim().length > 0) handleItemCodeChange(idx, item.itemCode); }}
+                              placeholder="Search item code..."
+                              autoComplete="off"
+                              style={{ fontSize: "0.82rem" }}
+                              data-autocomplete-input="true"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            {activeAutocompleteIndex === idx && suggestions.length > 0 && (
+                              <div
+                                data-autocomplete-dropdown="true"
                                 style={{
-                                  position: "absolute",
-                                  top: 0,
-                                  left: 0,
-                                  width: "100%",
-                                  height: "100%",
-                                  opacity: 0,
-                                  cursor: "pointer",
-                                  zIndex: 1,
+                                  position: "absolute", top: "100%", left: "16px", right: "16px",
+                                  backgroundColor: "#fff", border: "1px solid #d1d5db",
+                                  borderRadius: "0 0 8px 8px", boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+                                  zIndex: 99999, maxHeight: "200px", overflowY: "auto", marginTop: "-1px",
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                          ) : (
-                            formatDate(item.requiredBy)
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", textAlign: "center", color: "#111827", fontWeight: 600, verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <input type="number" className="form-control form-control-sm" value={item.quantity || ""} onChange={(e) => handleItemEdit(idx, "quantity", parseFloat(e.target.value) || 0)} style={{ fontSize: "0.82rem", width: "80px", textAlign: "center" }} onClick={(e) => e.stopPropagation()} />
-                          ) : (
-                            item.quantity
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <input type="text" className="form-control form-control-sm" value={item.uom || ""} onChange={(e) => handleItemEdit(idx, "uom", e.target.value)} style={{ fontSize: "0.82rem", width: "70px" }} onClick={(e) => e.stopPropagation()} />
-                          ) : (
-                            <span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "3px 10px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 500 }}>
-                              {item.uom || "-"}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", color: "#374151", fontFamily: "monospace", verticalAlign: "middle" }}>
-                          {isEditing ? (
-                            <input type="number" className="form-control form-control-sm" value={item.rate || ""} onChange={(e) => handleItemEdit(idx, "rate", parseFloat(e.target.value) || 0)} style={{ fontSize: "0.82rem", width: "90px", textAlign: "right" }} onClick={(e) => e.stopPropagation()} />
-                          ) : (
-                            formatCurrency(item.rate)
-                          )}
-                        </td>
-                        <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "#059669", fontFamily: "monospace", verticalAlign: "middle" }}>
-                          {formatCurrency((item.quantity || 0) * (item.rate || 0))}
-                        </td>
-                        {isEditing && (
-                          <td style={{ padding: "10px 4px", textAlign: "center", verticalAlign: "middle" }}>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); removeEditRow(idx); }}
-                              style={{
-                                background: "none", border: "none", color: "#ef4444", cursor: "pointer",
-                                padding: "4px 6px", borderRadius: "4px",
-                              }}
-                              title="Remove row"
-                              disabled={editedItems.length <= 1}
-                            >
-                              <Icon name="trash" style={{ fontSize: "16px", opacity: editedItems.length <= 1 ? 0.3 : 1 }} />
-                            </button>
-                          </td>
+                              >
+                                {suggestions.map((suggestion, sIdx) => (
+                                  <div
+                                    key={sIdx}
+                                    onMouseDown={(e) => { e.preventDefault(); selectSuggestion(idx, suggestion); }}
+                                    style={{
+                                      padding: "10px 14px", cursor: "pointer",
+                                      backgroundColor: sIdx === activeSuggestionIndex ? "#eff6ff" : "#fff",
+                                      borderBottom: sIdx < suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
+                                    }}
+                                    onMouseEnter={() => setActiveSuggestionIndex(sIdx)}
+                                  >
+                                    <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>{suggestion.itemCode}</div>
+                                    <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>{suggestion.itemName}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <code style={{ backgroundColor: "#f9fafb", padding: "3px 8px", borderRadius: "4px", fontSize: "0.82rem", color: "#374151", border: "1px solid #e5e7eb" }}>
+                            {item.itemCode || "-"}
+                          </code>
                         )}
-                      </tr>
-                    ))
-                  ) : (
+                      </td>
+                      <td style={{ padding: "10px 16px", wordBreak: "break-word", color: "#111827", fontWeight: 500, verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <input type="text" className="form-control form-control-sm" value={item.itemName || ""} onChange={(e) => handleItemEdit(idx, "itemName", e.target.value)} style={{ fontSize: "0.82rem" }} onClick={(e) => e.stopPropagation()} />
+                        ) : (
+                          getItemDisplayName(item)
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 16px", color: "#374151", verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="DD-MM-YYYY"
+                            value={item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : ""}
+                            onChange={(e) => handleDateEditChange(idx, e.target.value)}
+                            style={{ fontSize: "0.82rem" }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          formatDate(item.requiredBy)
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 16px", textAlign: "center", color: "#111827", fontWeight: 600, verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <input type="number" className="form-control form-control-sm" value={item.quantity || ""} onChange={(e) => handleItemEdit(idx, "quantity", parseFloat(e.target.value) || 0)} style={{ fontSize: "0.82rem", width: "80px", textAlign: "center" }} onClick={(e) => e.stopPropagation()} />
+                        ) : (
+                          item.quantity
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 16px", verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <input type="text" className="form-control form-control-sm" value={item.uom || ""} onChange={(e) => handleItemEdit(idx, "uom", e.target.value)} style={{ fontSize: "0.82rem", width: "70px" }} onClick={(e) => e.stopPropagation()} />
+                        ) : (
+                          <span style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "3px 10px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 500 }}>
+                            {item.uom || "-"}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 16px", textAlign: "right", color: "#374151", fontFamily: "monospace", verticalAlign: "middle" }}>
+                        {isEditing ? (
+                          <input type="number" className="form-control form-control-sm" value={item.rate || ""} onChange={(e) => handleItemEdit(idx, "rate", parseFloat(e.target.value) || 0)} style={{ fontSize: "0.82rem", width: "90px", textAlign: "right" }} onClick={(e) => e.stopPropagation()} />
+                        ) : (
+                          formatCurrency(item.rate)
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "#059669", fontFamily: "monospace", verticalAlign: "middle" }}>
+                        {formatCurrency((item.quantity || 0) * (item.rate || 0))}
+                      </td>
+                      {isEditing && (
+                        <td style={{ padding: "10px 4px", textAlign: "center", verticalAlign: "middle" }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); removeEditRow(idx); }}
+                            style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px 6px", borderRadius: "4px" }}
+                            title="Remove row"
+                            disabled={editedItems.length <= 1}
+                          >
+                            <Icon name="trash" style={{ fontSize: "16px", opacity: editedItems.length <= 1 ? 0.3 : 1 }} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  )) : (
                     <tr>
                       <td colSpan={isEditing ? 9 : 8} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
                         <div style={{ marginBottom: "8px" }}><Icon name="inbox" style={{ fontSize: "28px", color: "#d1d5db" }} /></div>
@@ -735,11 +956,10 @@ const PurchaseOrderDetails = () => {
       </Modal>
 
       <style>{`
-        .date-input-hidden::-webkit-calendar-picker-indicator {
-          display: none;
-        }
-        .date-input-hidden {
-          -webkit-appearance: none;
+        .date-input-hidden::-webkit-calendar-picker-indicator { display: none; }
+        .date-input-hidden { -webkit-appearance: none; }
+        @media screen {
+          #po-print-area { display: none; }
         }
       `}</style>
     </>
