@@ -144,7 +144,6 @@ const CustomDateInput = ({ value, onChange, className, id, placeholder, onClick 
   const handleChange = (e) => {
     const inputValue = e.target.value;
     setDisplayValue(inputValue);
-    // Only convert and pass if it matches DD-MM-YYYY pattern
     if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
       const yyyymmdd = convertToYYYYMMDD(inputValue);
       onChange({ target: { value: yyyymmdd } });
@@ -340,7 +339,6 @@ const PurchaseOrderPage = () => {
     }, 300);
   }, []);
 
-  // Fix scroll when modal opens
   useEffect(() => {
     if (addModal) {
       document.body.style.overflow = "hidden";
@@ -379,11 +377,50 @@ const PurchaseOrderPage = () => {
     }
   }, [search, purchaseOrders]);
 
-  const getStatusBadge = (status) => (
-    <span style={{ backgroundColor: "#eff6ff", color: "#1e40af", border: "1px solid #93c5fd", padding: "4px 12px", borderRadius: "20px", fontSize: "0.75rem", fontWeight: 500, whiteSpace: "nowrap", display: "inline-block" }}>
-      {status}
-    </span>
-  );
+  // Updated status badge to match MaterialRequestPage style
+  const getStatusBadge = (status) => {
+    let backgroundColor = "";
+    let borderColor = "";
+    switch (status) {
+      case "To Receive and Bill":
+        backgroundColor = "#10b981";
+        borderColor = "#059669";
+        break;
+      case "Pending":
+        backgroundColor = "#f59e0f";
+        borderColor = "#d97706";
+        break;
+      case "Ordered":
+        backgroundColor = "#3b82f6";
+        borderColor = "#2563eb";
+        break;
+      case "Partially Ordered":
+        backgroundColor = "#8b5cf6";
+        borderColor = "#7c3aed";
+        break;
+      default:
+        backgroundColor = "#6b7280";
+        borderColor = "#4b5563";
+    }
+    return (
+      <span
+        style={{
+          backgroundColor,
+          border: `1px solid ${borderColor}`,
+          color: "#ffffff",
+          padding: "4px 12px",
+          borderRadius: "20px",
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+          display: "inline-block",
+          lineHeight: "1.5",
+        }}
+      >
+        {status}
+      </span>
+    );
+  };
 
   const handleItemCodeChange = (index, value) => {
     handleItemChange(index, "itemCode", value);
@@ -479,7 +516,6 @@ const PurchaseOrderPage = () => {
     setSelectedMaterialRequest(null);
   };
 
-  // Format date for display (YYYY-MM-DD to DD-MM-YYYY)
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const [year, month, day] = dateStr.split("-");
@@ -561,7 +597,7 @@ const PurchaseOrderPage = () => {
         </Block>
       </Content>
 
-      {/* Add Purchase Order Modal - Fixed scroll */}
+      {/* Add Purchase Order Modal */}
       <Modal 
         isOpen={addModal} 
         toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} 
@@ -575,7 +611,6 @@ const PurchaseOrderPage = () => {
           Add Purchase Order
         </ModalHeader>
         <ModalBody style={{ overflowY: "auto", maxHeight: "70vh" }}>
-          {/* Tabs */}
           <Nav tabs className="mb-4">
             <NavItem>
               <NavLink className={classnames({ active: activeTab === "details" })} onClick={() => setActiveTab("details")} style={{ cursor: "pointer" }}>Details</NavLink>
@@ -589,7 +624,6 @@ const PurchaseOrderPage = () => {
           </Nav>
 
           <TabContent activeTab={activeTab}>
-            {/* Details Tab */}
             <TabPane tabId="details">
               <div className="row g-3 mb-3">
                 <div className="col-md-3">
@@ -751,7 +785,6 @@ const PurchaseOrderPage = () => {
               </div>
             </TabPane>
 
-            {/* Address & Contact Tab */}
             <TabPane tabId="address">
               <div className="row g-3">
                 <div className="col-12"><h6 style={{ fontWeight: 600, color: "#374151", marginBottom: "12px" }}>Supplier Address</h6></div>
@@ -778,7 +811,6 @@ const PurchaseOrderPage = () => {
               </div>
             </TabPane>
 
-            {/* Terms Tab */}
             <TabPane tabId="terms">
               <FormGroup>
                 <Label style={{ fontSize: "0.85rem", fontWeight: 600 }}>Terms and Conditions</Label>
