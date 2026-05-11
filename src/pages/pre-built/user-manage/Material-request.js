@@ -3,6 +3,10 @@ import axios from "axios";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { useHistory } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "./staff.css";
 import {
   Block,
@@ -21,9 +25,18 @@ import {
   FormGroup,
   Label,
   Input,
+  UncontrolledDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
 } from "reactstrap";
 
-/* ---------- DUMMY ITEM DATABASE (for autocomplete) ---------- */
+// ----------------------------------------------------------------------
+// API Base URL (adjust to your backend)
+// ----------------------------------------------------------------------
+const API_BASE = "http://localhost:8000/api/material-requests";
+
+// Dummy item database for autocomplete
 const dummyItemDatabase = [
   { itemCode: 'CUT-4INCH', itemName: '4" CUTTING WHEEL', uom: "NOS", warehouse: "Stores - SD" },
   { itemCode: 'CUT-4INCH-HW', itemName: '4" CUTTING WHEEL, HARDWARES', uom: "NOS", warehouse: "Stores - SD" },
@@ -41,121 +54,70 @@ const dummyItemDatabase = [
   { itemCode: "PAINT-WHITE", itemName: "WHITE PAINT 10 LTR", uom: "LTR", warehouse: "Stores - SD" },
 ];
 
-/* ---------- DUMMY DATA with dates in YYYY-MM-DD format (backend format) ---------- */
-const dummyMaterialRequests = [
-  {
-    _id: "MREQ-00007",
-    title: "Purchase Request for PRIMER 20 LTR",
-    status: "Pending",
-    purpose: "Purchase",
-    requiredBy: "2026-05-15",
-    transactionDate: "2026-05-02",
-    priceList: "Standard Buying",
-    warehouse: "Stores - SD",
-    items: [
-      {
-        no: 1,
-        itemCode: "PRIMER-20L",
-        itemName: "PRIMER 20 LTR",
-        requiredBy: "2026-05-15",
-        quantity: 10,
-        warehouse: "Stores - SD",
-        uom: "LTR",
-      },
-      {
-        no: 2,
-        itemCode: "THINNER-5L",
-        itemName: "THINNER 5 LTR",
-        requiredBy: "2026-05-15",
-        quantity: 5,
-        warehouse: "Stores - SD",
-        uom: "LTR",
-      },
-    ],
-  },
-  {
-    _id: "MREQ-00008",
-    title:
-      "Purchase Request for 8'6\" GALVANIZED SHEET [0.45MM] GRAY COLOUR -35NOS, 17'6\" GALVANIZED SHEET [0.45MM]",
-    status: "Ordered",
-    purpose: "Purchase",
-    requiredBy: "2026-05-20",
-    transactionDate: "2026-05-03",
-    priceList: "Standard Buying",
-    warehouse: "Stores - SD",
-    items: [
-      {
-        no: 1,
-        itemCode: "GS-8.6-045-GRAY",
-        itemName: "8'6\" GALVANIZED SHEET [0.45MM] GRAY COLOUR",
-        requiredBy: "2026-05-20",
-        quantity: 35,
-        warehouse: "Stores - SD",
-        uom: "NOS",
-      },
-      {
-        no: 2,
-        itemCode: "GS-17.6-045",
-        itemName: "17'6\" GALVANIZED SHEET [0.45MM]",
-        requiredBy: "2026-05-20",
-        quantity: 20,
-        warehouse: "Stores - SD",
-        uom: "NOS",
-      },
-    ],
-  },
-  {
-    _id: "MREQ-00009",
-    title:
-      "Purchase Request for TRANSPARENT SHEET 6'x3'6\" [1.5MM]: 1.5MM COMPACT CLEAR NATLITE (1.08x1.830)6'=24NOS",
-    status: "Partially Ordered",
-    purpose: "Purchase",
-    requiredBy: "2026-05-25",
-    transactionDate: "2026-05-04",
-    priceList: "Standard Buying",
-    warehouse: "Stores - SD",
-    items: [
-      {
-        no: 1,
-        itemCode: "TS-6x3.6-1.5-CLEAR",
-        itemName:
-          "TRANSPARENT SHEET 6'x3'6\" [1.5MM]: 1.5MM COMPACT CLEAR NATLITE (1.08x1.830)6'=24NOS",
-        requiredBy: "2026-05-25",
-        quantity: 24,
-        warehouse: "Stores - SD",
-        uom: "SQM",
-      },
-    ],
-  },
-];
-
-// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
+// ----------------------------------------------------------------------
+// Date Helpers: YYYY-MM-DD <-> DD/MM/YYYY
+// ----------------------------------------------------------------------
 const formatDateToDDMMYYYY = (dateStr) => {
-  if (!dateStr) return "-";
-  const [year, month, day] = dateStr.split("-");
-  return `${day}-${month}-${year}`;
-};
-
-// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for backend/input
-const convertToYYYYMMDD = (dateStr) => {
   if (!dateStr) return "";
-  // Check if it's already in YYYY-MM-DD format
-  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return dateStr;
-  }
-  // Convert from DD-MM-YYYY to YYYY-MM-DD
-  const [day, month, year] = dateStr.split("-");
-  if (day && month && year) {
-    return `${year}-${month}-${day}`;
-  }
-  return "";
+  const [year, month, day] = dateStr.split("-");
+  return `${day}/${month}/${year}`;
 };
 
-// Autocomplete Item Row Component
+const formatDateToYYYYMMDD = (dateStr) => {
+  if (!dateStr) return "";
+  const [day, month, year] = dateStr.split("/");
+  return `${year}-${month}-${day}`;
+};
+
+// Convert YYYY-MM-DD to Date object for react-datepicker
+const toDateObject = (dateStr) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-");
+  return new Date(`${year}-${month}-${day}T00:00:00`);
+};
+
+// Convert Date object to YYYY-MM-DD string
+const toYYYYMMDD = (date) => {
+  if (!date || isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// ----------------------------------------------------------------------
+// Reusable DatePicker Component (calendar with dd/MM/yyyy)
+// ----------------------------------------------------------------------
+const CalendarDateInput = ({ value, onChange, placeholder = "dd/mm/yyyy", required = false, id, className }) => {
+  const selectedDate = value ? toDateObject(value) : null;
+
+  const handleDateChange = (date) => {
+    if (date) {
+      const yyyymmdd = toYYYYMMDD(date);
+      onChange(yyyymmdd);
+    } else {
+      onChange("");
+    }
+  };
+
+  return (
+    <DatePicker
+      selected={selectedDate}
+      onChange={handleDateChange}
+      dateFormat="dd/MM/yyyy"
+      placeholderText={placeholder}
+      className={`form-control ${className || ""}`}
+      id={id}
+      required={required}
+      autoComplete="off"
+    />
+  );
+};
+
+// ----------------------------------------------------------------------
+// Autocomplete Item Row Component (with calendar date picker)
+// ----------------------------------------------------------------------
 const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive, inputRef }) => {
-  // Display date in DD-MM-YYYY format for the input field
-  const displayDate = item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "";
-  
   return (
     <tr>
       <td style={{ padding: "8px 12px", textAlign: "center", verticalAlign: "middle" }}>
@@ -169,16 +131,10 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
           value={item.itemCode}
           onChange={(e) => handleItemCodeChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, index)}
-          onClick={() => {
-            if (item.itemCode && item.itemCode.trim().length > 0) {
-              handleItemCodeChange(index, item.itemCode);
-            }
-          }}
           placeholder="Search item code or name..."
           autoComplete="off"
           style={{ fontSize: "0.85rem" }}
         />
-        {/* Suggestions Dropdown */}
         {isActive && suggestions.length > 0 && (
           <div
             style={{
@@ -206,32 +162,15 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
                 style={{
                   padding: "10px 14px",
                   cursor: "pointer",
-                  backgroundColor:
-                    sIdx === activeSuggestionIndex ? "#eff6ff" : "#fff",
-                  borderBottom:
-                    sIdx < suggestions.length - 1
-                      ? "1px solid #f3f4f6"
-                      : "none",
-                  transition: "background-color 0.1s ease",
+                  backgroundColor: sIdx === activeSuggestionIndex ? "#eff6ff" : "#fff",
+                  borderBottom: sIdx < suggestions.length - 1 ? "1px solid #f3f4f6" : "none",
                 }}
                 onMouseEnter={() => setActiveSuggestionIndex(sIdx)}
               >
-                <div
-                  style={{
-                    fontWeight: 600,
-                    color: "#111827",
-                    fontSize: "0.85rem",
-                    marginBottom: "2px",
-                  }}
-                >
+                <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>
                   {suggestion.itemCode}
                 </div>
-                <div
-                  style={{
-                    color: "#6b7280",
-                    fontSize: "0.78rem",
-                  }}
-                >
+                <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>
                   {suggestion.itemName}
                 </div>
               </div>
@@ -240,25 +179,16 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
         )}
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input
-          type="text"
-          placeholder="DD-MM-YYYY"
-          value={displayDate}
-          onChange={(e) => {
-            // Store in YYYY-MM-DD format in state
-            const yyyymmdd = convertToYYYYMMDD(e.target.value);
-            handleItemChange(index, "requiredBy", yyyymmdd);
-          }}
-          bsSize="sm"
+        <CalendarDateInput
+          value={item.requiredBy}
+          onChange={(date) => handleItemChange(index, "requiredBy", date)}
         />
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
         <Input
           type="number"
           value={item.quantity}
-          onChange={(e) =>
-            handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)
-          }
+          onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)}
           placeholder="0.000"
           step="0.001"
           bsSize="sm"
@@ -285,13 +215,80 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
   );
 };
 
+// ----------------------------------------------------------------------
+// Delete Confirmation Modal (same as before)
+// ----------------------------------------------------------------------
+const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
+  return (
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+      <ModalBody
+        style={{
+          overflowY: "auto",
+          maxHeight: "calc(100vh)",
+          padding: "1.5rem",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hide-scrollbar"
+      >
+        <a
+          href="#cancel"
+          onClick={(ev) => {
+            ev.preventDefault();
+            toggle();
+          }}
+          className="close"
+        >
+          <Icon name="cross-sm" />
+        </a>
+        <div className="p-2 text-center">
+          <div className="mb-4">
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+          </div>
+          <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
+          <p className="text-muted mb-4">
+            {message || "Are you sure you want to delete this item? This action cannot be undone."}
+          </p>
+          <div className="d-flex gap-8 justify-content-center">
+            <Button
+              style={{
+                backgroundColor: "#644634",
+                borderColor: "#800000",
+                color: "#fff",
+                padding: "15px 24px",
+                marginRight: "10px",
+              }}
+              onClick={onConfirm}
+            >
+              Yes, Delete
+            </Button>
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </ModalBody>
+    </Modal>
+  );
+};
+
+// ----------------------------------------------------------------------
+// Main Component
+// ----------------------------------------------------------------------
 const MaterialRequestPage = () => {
+  const history = useHistory();
   const [materialRequests, setMaterialRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
+
+  // Modal states
   const [addModal, setAddModal] = useState(false);
+  const [modalMode, setModalMode] = useState("add");
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // Form state
   const [newRequest, setNewRequest] = useState({
     transactionDate: "",
     purpose: "Purchase",
@@ -317,34 +314,91 @@ const MaterialRequestPage = () => {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const itemInputRefs = useRef({});
 
-  const history = useHistory();
+  // Delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteRequestId, setDeleteRequestId] = useState(null);
 
-  useEffect(() => {
+  // Toast helpers
+  const showSuccess = (message) => toast.success(message);
+  const showError = (message) => toast.error(message);
+
+  // API Calls (unchanged)
+  const fetchMaterialRequests = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setMaterialRequests(dummyMaterialRequests);
-      setFiltered(dummyMaterialRequests);
-      setLoading(false);
-    }, 300);
-  }, []);
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (activeAutocompleteIndex !== null) {
-        // Check if click is outside any suggestion dropdown or input
-        const isOutsideDropdown = !event.target.closest('[data-autocomplete-dropdown]');
-        const isOutsideInput = !event.target.closest('[data-autocomplete-input]');
-        if (isOutsideDropdown && isOutsideInput) {
-          setActiveAutocompleteIndex(null);
-          setSuggestions([]);
-          setActiveSuggestionIndex(-1);
-        }
+    try {
+      const response = await axios.get(API_BASE);
+      if (response.data.success) {
+        setMaterialRequests(response.data.data);
+        setFiltered(response.data.data);
+      } else {
+        console.error("Failed to fetch:", response.data.message);
+        showError(response.data.message || "Failed to fetch material requests");
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [activeAutocompleteIndex]);
+    } catch (error) {
+      console.error("API error:", error);
+      showError("Error fetching material requests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createMaterialRequest = async (requestData) => {
+    try {
+      const response = await axios.post(API_BASE, requestData);
+      if (response.data.success) {
+        await fetchMaterialRequests();
+        showSuccess("Material request created successfully");
+        return true;
+      } else {
+        showError(response.data.message || "Creation failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      showError("Network error while creating");
+      return false;
+    }
+  };
+
+  const updateMaterialRequest = async (id, requestData) => {
+    try {
+      const response = await axios.put(`${API_BASE}/${id}`, requestData);
+      if (response.data.success) {
+        await fetchMaterialRequests();
+        showSuccess("Material request updated successfully");
+        return true;
+      } else {
+        showError(response.data.message || "Update failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+      showError("Network error while updating");
+      return false;
+    }
+  };
+
+  const deleteMaterialRequest = async (id) => {
+    try {
+      const response = await axios.delete(`${API_BASE}/${id}`);
+      if (response.data.success) {
+        await fetchMaterialRequests();
+        showSuccess("Material request deleted successfully");
+        return true;
+      } else {
+        showError(response.data.message || "Delete failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      showError("Network error while deleting");
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterialRequests();
+  }, []);
 
   useEffect(() => {
     if (search.trim() === "") {
@@ -368,35 +422,32 @@ const MaterialRequestPage = () => {
     return title.slice(0, maxLength) + "...";
   };
 
-  // *** UPDATED getStatusBadge with white text ***
   const getStatusBadge = (status) => {
     let backgroundColor = "";
     let borderColor = "";
-
     switch (status) {
       case "Pending":
-        backgroundColor = "#f59e0f"; // Amber
+        backgroundColor = "#f59e0f";
         borderColor = "#d97706";
         break;
       case "Ordered":
-        backgroundColor = "#10b981"; // Emerald
+        backgroundColor = "#10b981";
         borderColor = "#059669";
         break;
       case "Partially Ordered":
-        backgroundColor = "#3b82f6"; // Blue
+        backgroundColor = "#3b82f6";
         borderColor = "#2563eb";
         break;
       default:
-        backgroundColor = "#6b7280"; // Gray
+        backgroundColor = "#6b7280";
         borderColor = "#4b5563";
     }
-
     return (
       <span
         style={{
           backgroundColor,
           border: `1px solid ${borderColor}`,
-          color: "#ffffff", // White text
+          color: "#ffffff",
           padding: "4px 12px",
           borderRadius: "20px",
           fontSize: "0.75rem",
@@ -412,15 +463,114 @@ const MaterialRequestPage = () => {
   };
 
   const goToDetails = (request) => {
-    history.push(`/material-request-details/${request._id}`, {
-      requestData: request,
-    });
+    history.push(`/material-request-details/${request._id}`, { requestData: request });
   };
 
-  // Handle item code input change with autocomplete
+  const resetForm = () => {
+    setNewRequest({
+      transactionDate: "",
+      purpose: "Purchase",
+      requiredBy: "",
+      priceList: "Standard Buying",
+      warehouse: "Stores - SD",
+      items: [
+        {
+          no: 1,
+          itemCode: "",
+          itemName: "",
+          requiredBy: "",
+          quantity: 0,
+          warehouse: "Stores - SD",
+          uom: "",
+        },
+      ],
+    });
+    setSuggestions([]);
+    setActiveAutocompleteIndex(null);
+    setActiveSuggestionIndex(-1);
+  };
+
+  const openAddModal = () => {
+    setModalMode("add");
+    setSelectedRequest(null);
+    resetForm();
+    setAddModal(true);
+  };
+
+  const openEditModal = (request) => {
+    setModalMode("edit");
+    setSelectedRequest(request);
+    setNewRequest({
+      transactionDate: request.transactionDate || "",
+      purpose: request.purpose || "Purchase",
+      requiredBy: request.requiredBy || "",
+      priceList: request.priceList || "Standard Buying",
+      warehouse: request.warehouse || "Stores - SD",
+      items: request.items.map((item, idx) => ({
+        no: idx + 1,
+        itemCode: item.itemCode || "",
+        itemName: item.itemName || "",
+        requiredBy: item.requiredBy || "",
+        quantity: item.quantity || 0,
+        warehouse: item.warehouse || "",
+        uom: item.uom || "",
+      })),
+    });
+    setAddModal(true);
+  };
+
+  const handleAddRequest = async () => {
+    if (!newRequest.transactionDate) return showError("Transaction Date is required");
+    if (!newRequest.requiredBy) return showError("Required By date is required");
+    if (!newRequest.purpose) return showError("Purpose is required");
+    if (newRequest.items.length === 0) return showError("At least one item is required");
+    for (let i = 0; i < newRequest.items.length; i++) {
+      const item = newRequest.items[i];
+      if (!item.itemCode) return showError(`Item ${i+1}: Item Code is required`);
+      if (!item.requiredBy) return showError(`Item ${i+1}: Required By date is required`);
+      if (!item.quantity || item.quantity <= 0) return showError(`Item ${i+1}: Quantity must be greater than 0`);
+      if (!item.uom) return showError(`Item ${i+1}: UOM is required`);
+    }
+
+    const dataToSend = {
+      transactionDate: newRequest.transactionDate,
+      purpose: newRequest.purpose,
+      requiredBy: newRequest.requiredBy,
+      priceList: newRequest.priceList,
+      warehouse: newRequest.warehouse,
+      items: newRequest.items.map(({ no, ...rest }) => rest),
+    };
+
+    let success = false;
+    if (modalMode === "add") {
+      success = await createMaterialRequest(dataToSend);
+    } else {
+      success = await updateMaterialRequest(selectedRequest._id, dataToSend);
+    }
+    if (success) {
+      setAddModal(false);
+      resetForm();
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    setDeleteRequestId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteRequestId) {
+      await deleteMaterialRequest(deleteRequestId);
+      setShowDeleteConfirm(false);
+      setDeleteRequestId(null);
+    }
+  };
+
   const handleItemCodeChange = (index, value) => {
-    handleItemChange(index, "itemCode", value);
-    
+    const updatedItems = [...newRequest.items];
+    updatedItems[index].itemCode = value;
+    setNewRequest((prev) => ({ ...prev, items: updatedItems }));
+
     if (value && value.trim().length > 0) {
       const filtered = dummyItemDatabase.filter(
         (item) =>
@@ -437,7 +587,6 @@ const MaterialRequestPage = () => {
     }
   };
 
-  // Select suggestion
   const selectSuggestion = (index, item) => {
     const updatedItems = [...newRequest.items];
     updatedItems[index] = {
@@ -453,20 +602,14 @@ const MaterialRequestPage = () => {
     setActiveSuggestionIndex(-1);
   };
 
-  // Keyboard navigation for suggestions
   const handleKeyDown = (e, index) => {
     if (suggestions.length === 0) return;
-
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveSuggestionIndex((prev) =>
-        prev < suggestions.length - 1 ? prev + 1 : 0
-      );
+      setActiveSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveSuggestionIndex((prev) =>
-        prev > 0 ? prev - 1 : suggestions.length - 1
-      );
+      setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
@@ -477,6 +620,12 @@ const MaterialRequestPage = () => {
       setActiveAutocompleteIndex(null);
       setActiveSuggestionIndex(-1);
     }
+  };
+
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...newRequest.items];
+    updatedItems[index][field] = value;
+    setNewRequest((prev) => ({ ...prev, items: updatedItems }));
   };
 
   const addItemRow = () => {
@@ -497,56 +646,9 @@ const MaterialRequestPage = () => {
     }));
   };
 
-  const handleItemChange = (index, field, value) => {
-    const updatedItems = [...newRequest.items];
-    updatedItems[index][field] = value;
-    setNewRequest((prev) => ({ ...prev, items: updatedItems }));
-  };
-
-  const handleAddRequest = () => {
-    const newId = `MREQ-${String(materialRequests.length + 1).padStart(5, "0")}`;
-    const requestToAdd = {
-      _id: newId,
-      title: `Purchase Request for ${newRequest.items[0]?.itemName || newRequest.items[0]?.itemCode || "Materials"}`,
-      status: "Pending",
-      purpose: newRequest.purpose,
-      requiredBy: newRequest.requiredBy,
-      transactionDate: newRequest.transactionDate,
-      priceList: newRequest.priceList,
-      warehouse: newRequest.warehouse,
-      items: newRequest.items.map((item, idx) => ({ ...item, no: idx + 1 })),
-    };
-    const updated = [requestToAdd, ...materialRequests];
-    setMaterialRequests(updated);
-    setFiltered(updated);
-    setAddModal(false);
-    setNewRequest({
-      transactionDate: "",
-      purpose: "Purchase",
-      requiredBy: "",
-      priceList: "Standard Buying",
-      warehouse: "Stores - SD",
-      items: [
-        {
-          no: 1,
-          itemCode: "",
-          itemName: "",
-          requiredBy: "",
-          quantity: 0,
-          warehouse: "Stores - SD",
-          uom: "",
-        },
-      ],
-    });
-  };
-
-  // Format date for display in table (DD-MM-YYYY)
-  const formatDateForDisplay = (dateStr) => {
-    if (!dateStr) return "-";
-    const [year, month, day] = dateStr.split("-");
-    return `${day}-${month}-${year}`;
-  };
-
+  // ----------------------------------------------------------------------
+  // Render
+  // ----------------------------------------------------------------------
   return (
     <>
       <Head title="Material Request" />
@@ -556,7 +658,7 @@ const MaterialRequestPage = () => {
             <BlockHeadContent>
               <BlockTitle tag="h3">Material Request</BlockTitle>
             </BlockHeadContent>
-            <Button color="primary" onClick={() => setAddModal(true)}>
+            <Button color="primary" onClick={openAddModal}>
               <Icon name="plus" /> Add Material Request
             </Button>
           </BlockBetween>
@@ -580,7 +682,6 @@ const MaterialRequestPage = () => {
             </div>
           ) : (
             <DataTable className="card-stretch w-100">
-              {/* Search Bar */}
               <div className="card-inner position-relative card-tools-toggle">
                 <div className="card-title-group">
                   <div className="card-tools mr-n1">
@@ -624,12 +725,11 @@ const MaterialRequestPage = () => {
                 </div>
               </div>
 
-              {/* Table */}
               <div style={{ padding: "0 20px 20px" }}>
                 <div
                   style={{
                     borderRadius: "8px",
-                    marginTop : "20px",
+                    marginTop: "20px",
                     border: "1px solid #e5e7eb",
                     overflow: "hidden",
                   }}
@@ -642,81 +742,31 @@ const MaterialRequestPage = () => {
                     }}
                   >
                     <thead>
-                      <tr
-                        style={{
-                          backgroundColor: "#f9fafb",
-                          borderBottom: "2px solid #e5e7eb",
-                        }}
-                      >
-                        <th
-                          style={{
-                            padding: "14px 16px",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "#374151",
-                            width: "35%",
-                          }}
-                        >
+                      <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "30%" }}>
                           Title
                         </th>
-                        <th
-                          style={{
-                            padding: "14px 16px",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "#374151",
-                            width: "18%",
-                          }}
-                        >
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           Status
                         </th>
-                        <th
-                          style={{
-                            padding: "14px 16px",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "#374151",
-                            width: "15%",
-                          }}
-                        >
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           Purpose
                         </th>
-                        <th
-                          style={{
-                            padding: "14px 16px",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "#374151",
-                            width: "15%",
-                          }}
-                        >
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           Required By
                         </th>
-                        <th
-                          style={{
-                            padding: "14px 16px",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "#374151",
-                            width: "17%",
-                          }}
-                        >
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "15%" }}>
                           ID
+                        </th>
+                        <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "10%" }}>
+                          Actions
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {filtered.length > 0 ? (
                         filtered.map((req, idx) => (
-                          <tr
-                            key={req._id}
-                            style={{
-                              borderBottom:
-                                idx < filtered.length - 1
-                                  ? "1px solid #f3f4f6"
-                                  : "none",
-                            }}
-                          >
+                          <tr key={req._id} style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}>
                             <td style={{ padding: "14px 16px" }}>
                               <button
                                 onClick={() => goToDetails(req)}
@@ -737,58 +787,48 @@ const MaterialRequestPage = () => {
                                 {sliceTitle(req.title, 55)}
                               </button>
                             </td>
-                            <td style={{ padding: "8px 12px",
-                              borderRadius: "6px",
-                              fontSize: "12px",
-                              fontWeight: "500",
-                              color: "white", }}>
+                            <td style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "white" }}>
                               {getStatusBadge(req.status)}
                             </td>
-                            <td
-                              style={{
-                                padding: "14px 16px",
-                                color: "#374151",
-                                fontWeight: 500,
-                              }}
-                            >
+                            <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>
                               {req.purpose}
                             </td>
-                            <td
-                              style={{
-                                padding: "14px 16px",
-                                color: "#374151",
-                                fontSize: "0.85rem",
-                              }}
-                            >
-                              {formatDateForDisplay(req.requiredBy)}
+                            <td style={{ padding: "14px 16px", color: "#374151", fontSize: "0.85rem" }}>
+                              {formatDateToDDMMYYYY(req.requiredBy)}
                             </td>
                             <td style={{ padding: "14px 16px" }}>
-                              <code
-                                style={{
-                                  backgroundColor: "#f9fafb",
-                                  padding: "4px 10px",
-                                  borderRadius: "4px",
-                                  fontSize: "0.82rem",
-                                  color: "#374151",
-                                  border: "1px solid #e5e7eb",
-                                  fontWeight: 600,
-                                }}
-                              >
+                              <code style={{
+                                backgroundColor: "#f9fafb",
+                                padding: "4px 10px",
+                                borderRadius: "4px",
+                                fontSize: "0.82rem",
+                                color: "#374151",
+                                border: "1px solid #e5e7eb",
+                                fontWeight: 600,
+                              }}>
                                 {req._id}
                               </code>
+                            </td>
+                            <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                              <UncontrolledDropdown>
+                                <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                  <Icon name="more-h" />
+                                </DropdownToggle>
+                                <DropdownMenu right>
+                                  <DropdownItem onClick={() => openEditModal(req)}>
+                                    <Icon name="edit" /> Edit
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => handleDeleteClick(req._id)}>
+                                    <Icon name="trash" /> Delete
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </UncontrolledDropdown>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={5}
-                            style={{
-                              textAlign: "center",
-                              padding: "48px 16px",
-                              color: "#9ca3af",
-                            }}
-                          >
+                          <td colSpan={6} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
                             No material requests found
                           </td>
                         </tr>
@@ -802,39 +842,34 @@ const MaterialRequestPage = () => {
         </Block>
       </Content>
 
-      {/* Add Material Request Modal */}
+      {/* Add/Edit Modal */}
       <Modal
         isOpen={addModal}
         toggle={() => {
           setAddModal(false);
-          setActiveAutocompleteIndex(null);
-          setSuggestions([]);
+          resetForm();
         }}
         centered
         size="xl"
         backdrop="static"
       >
-        <ModalHeader toggle={() => {
-          setAddModal(false);
-          setActiveAutocompleteIndex(null);
-          setSuggestions([]);
-        }}>
-          New Material Request
+        <ModalHeader
+          toggle={() => {
+            setAddModal(false);
+            resetForm();
+          }}
+        >
+          {modalMode === "add" ? "New Material Request" : "Edit Material Request"}
         </ModalHeader>
         <ModalBody>
           <div className="row g-3 mb-4">
             <div className="col-md-4">
               <FormGroup>
                 <Label for="transactionDate">Transaction Date *</Label>
-                <Input
-                  type="text"
+                <CalendarDateInput
                   id="transactionDate"
-                  placeholder="DD-MM-YYYY"
-                  value={newRequest.transactionDate ? formatDateToDDMMYYYY(newRequest.transactionDate) : ""}
-                  onChange={(e) => {
-                    const yyyymmdd = convertToYYYYMMDD(e.target.value);
-                    setNewRequest({ ...newRequest, transactionDate: yyyymmdd });
-                  }}
+                  value={newRequest.transactionDate}
+                  onChange={(date) => setNewRequest({ ...newRequest, transactionDate: date })}
                 />
               </FormGroup>
             </div>
@@ -845,9 +880,7 @@ const MaterialRequestPage = () => {
                   type="select"
                   id="purpose"
                   value={newRequest.purpose}
-                  onChange={(e) =>
-                    setNewRequest({ ...newRequest, purpose: e.target.value })
-                  }
+                  onChange={(e) => setNewRequest({ ...newRequest, purpose: e.target.value })}
                 >
                   <option>Purchase</option>
                   <option>Material Transfer</option>
@@ -860,15 +893,10 @@ const MaterialRequestPage = () => {
             <div className="col-md-4">
               <FormGroup>
                 <Label for="requiredBy">Required By *</Label>
-                <Input
-                  type="text"
+                <CalendarDateInput
                   id="requiredBy"
-                  placeholder="DD-MM-YYYY"
-                  value={newRequest.requiredBy ? formatDateToDDMMYYYY(newRequest.requiredBy) : ""}
-                  onChange={(e) => {
-                    const yyyymmdd = convertToYYYYMMDD(e.target.value);
-                    setNewRequest({ ...newRequest, requiredBy: yyyymmdd });
-                  }}
+                  value={newRequest.requiredBy}
+                  onChange={(date) => setNewRequest({ ...newRequest, requiredBy: date })}
                 />
               </FormGroup>
             </div>
@@ -879,9 +907,7 @@ const MaterialRequestPage = () => {
                   type="text"
                   id="priceList"
                   value={newRequest.priceList}
-                  onChange={(e) =>
-                    setNewRequest({ ...newRequest, priceList: e.target.value })
-                  }
+                  onChange={(e) => setNewRequest({ ...newRequest, priceList: e.target.value })}
                 />
               </FormGroup>
             </div>
@@ -892,9 +918,7 @@ const MaterialRequestPage = () => {
                   type="text"
                   id="warehouse"
                   value={newRequest.warehouse}
-                  onChange={(e) =>
-                    setNewRequest({ ...newRequest, warehouse: e.target.value })
-                  }
+                  onChange={(e) => setNewRequest({ ...newRequest, warehouse: e.target.value })}
                 />
               </FormGroup>
             </div>
@@ -909,13 +933,7 @@ const MaterialRequestPage = () => {
               marginBottom: "16px",
             }}
           >
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "0.85rem",
-              }}
-            >
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f9fafb" }}>
                   <th style={{ padding: "10px 12px", width: "50px" }}>No.</th>
@@ -924,7 +942,7 @@ const MaterialRequestPage = () => {
                   <th style={{ padding: "10px 12px", width: "120px" }}>Quantity *</th>
                   <th style={{ padding: "10px 12px", minWidth: "150px" }}>Warehouse</th>
                   <th style={{ padding: "10px 12px", width: "100px" }}>UOM *</th>
-                 </tr>
+                </tr>
               </thead>
               <tbody>
                 {newRequest.items.map((item, index) => (
@@ -949,36 +967,57 @@ const MaterialRequestPage = () => {
 
           <div className="d-flex justify-content-between align-items-center">
             <div className="d-flex gap-2">
-              <Button color="light" style={{padding:"12px"}} onClick={addItemRow}>
+              <Button color="light" style={{ padding: "12px" }} onClick={addItemRow}>
                 <Icon name="plus" /> Add Row
               </Button>
             </div>
             <div className="d-flex gap-2 align-items-center">
-              <Button color="secondary" onClick={() => {
-                setAddModal(false);
-                setActiveAutocompleteIndex(null);
-                setSuggestions([]);
-              }}>
+              <Button
+                color="secondary"
+                onClick={() => {
+                  setAddModal(false);
+                  resetForm();
+                }}
+              >
                 Cancel
               </Button>
               <Button color="primary" onClick={handleAddRequest}>
-                Submit Request
+                {modalMode === "add" ? "Submit Request" : "Update Request"}
               </Button>
             </div>
           </div>
         </ModalBody>
       </Modal>
 
-      {/* Spinner animation style */}
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        toggle={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Material Request"
+        message="Are you sure you want to delete this material request? This action cannot be undone."
+      />
+
+      {/* Toast Container - position top center */}
+   <ToastContainer
+  position="top-right"
+  autoClose={3000}
+  hideProgressBar={false}
+  newestOnTop
+  closeOnClick
+  rtl={false}
+  pauseOnFocusLoss
+  draggable
+  pauseOnHover
+  theme="light"
+/>
+
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        
-        /* Fix date input overlapping */
-        .form-control[type="date"] {
-          position: relative;
-          z-index: 1;
+        .Toastify__toast-container {
+          z-index: 999999;
         }
       `}</style>
     </>

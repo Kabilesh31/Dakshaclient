@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import menu from "./MenuData";
 import Icon from "../../components/icon/Icon";
 import classNames from "classnames";
@@ -13,120 +14,159 @@ const MenuHeading = ({ heading }) => {
 };
 
 const MenuItem = ({ icon, link, text, sub, newTab, sidebarToggle, mobileView, badge, ...props }) => {
-  let currentUrl;
+  const location = useLocation();
   const toggleActionSidebar = (e) => {
     if (!sub && !newTab && mobileView) {
       sidebarToggle(e);
     }
   };
 
-  if (window.location.pathname !== undefined) {
-    currentUrl = window.location.pathname;
-  } else {
-    currentUrl = null;
+  // ---------- Active check: exact match OR prefix (for child routes) ----------
+const isActive = () => {
+  const currentPath = location.pathname.toLowerCase();
+  const menuPath = (process.env.PUBLIC_URL + link).toLowerCase();
+
+  // Suppliers active on details page
+  if (
+    menuPath.includes("/suppliers") &&
+    currentPath.startsWith(
+      `${process.env.PUBLIC_URL.toLowerCase()}/suppliers`
+    )
+  ) {
+    return true;
   }
 
+  // Material Request active on details page
+  if (
+    menuPath.includes("/material-request") &&
+    (
+      currentPath.startsWith(
+        `${process.env.PUBLIC_URL.toLowerCase()}/material-request`
+      ) ||
+      currentPath.startsWith(
+        `${process.env.PUBLIC_URL.toLowerCase()}/material-request-details`
+      )
+    )
+  ) {
+    return true;
+  }
+
+  // Purchase Order active on details page
+  if (
+    menuPath.includes("/purchase-order") &&
+    (
+      currentPath.startsWith(
+        `${process.env.PUBLIC_URL.toLowerCase()}/purchase-order`
+      ) ||
+      currentPath.startsWith(
+        `${process.env.PUBLIC_URL.toLowerCase()}/purchase-order-details`
+      )
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    currentPath === menuPath ||
+    currentPath.startsWith(menuPath + "/")
+  );
+};
   const menuHeight = (el) => {
-    var totalHeight = [];
-    for (var i = 0; i < el.length; i++) {
-      var margin =
+    let totalHeight = [];
+    for (let i = 0; i < el.length; i++) {
+      const margin =
         parseInt(window.getComputedStyle(el[i]).marginTop.slice(0, -2)) +
         parseInt(window.getComputedStyle(el[i]).marginBottom.slice(0, -2));
-      var padding =
+      const padding =
         parseInt(window.getComputedStyle(el[i]).paddingTop.slice(0, -2)) +
         parseInt(window.getComputedStyle(el[i]).paddingBottom.slice(0, -2));
-      var height = el[i].clientHeight + margin + padding;
+      const height = el[i].clientHeight + margin + padding;
       totalHeight.push(height);
     }
-    totalHeight = totalHeight.reduce((sum, value) => (sum += value));
+    totalHeight = totalHeight.reduce((sum, value) => (sum += value), 0);
     return totalHeight;
   };
 
   const makeParentActive = (el, childHeight) => {
-    let element = el.parentElement.parentElement.parentElement;
-    let wrap = el.parentElement.parentElement;
-    if (element.classList[0] === "nk-menu-item") {
+    let element = el.parentElement?.parentElement?.parentElement;
+    let wrap = el.parentElement?.parentElement;
+    if (element && element.classList && element.classList[0] === "nk-menu-item") {
       element.classList.add("active");
       const subMenuHeight = menuHeight(el.parentNode.children);
-      wrap.style.height = subMenuHeight + childHeight - 50 + "px";
-      makeParentActive(element);
+      if (wrap) wrap.style.height = subMenuHeight + childHeight - 50 + "px";
+      makeParentActive(element, childHeight);
     }
   };
 
+  // Re-run parent activation whenever the route changes
   useEffect(() => {
-    var element = document.getElementsByClassName("nk-menu-item active current-page");
-    var arrayElement = [...element];
-
-    arrayElement.forEach((dom) => {
-      if (dom.parentElement.parentElement.parentElement.classList[0] === "nk-menu-item") {
-        dom.parentElement.parentElement.parentElement.classList.add("active");
+    const activeItems = document.querySelectorAll(".nk-menu-item.active.current-page");
+    activeItems.forEach((dom) => {
+      let parent = dom.parentElement?.parentElement?.parentElement;
+      if (parent && parent.classList && parent.classList[0] === "nk-menu-item") {
+        parent.classList.add("active");
         const subMenuHeight = menuHeight(dom.parentNode.children);
-        dom.parentElement.parentElement.style.height = subMenuHeight + "px";
-        makeParentActive(dom.parentElement.parentElement.parentElement, subMenuHeight);
+        if (dom.parentElement?.parentElement) {
+          dom.parentElement.parentElement.style.height = subMenuHeight + "px";
+        }
+        makeParentActive(parent, subMenuHeight);
       }
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const menuToggle = (e) => {
     e.preventDefault();
-    var self = e.target.closest(".nk-menu-toggle");
-    var parent = self.parentElement;
-    var subMenu = self.nextSibling;
-    var subMenuItem = subMenu.childNodes;
-    var parentSiblings = parent.parentElement.childNodes;
-    var parentMenu = parent.closest(".nk-menu-wrap");
-    //For Sub Menu Height
-    var subMenuHeight = menuHeight(subMenuItem);
-    // Get parent elements
+    const self = e.target.closest(".nk-menu-toggle");
+    if (!self) return;
+    const parent = self.parentElement;
+    const subMenu = self.nextSibling;
+    const subMenuItem = subMenu?.childNodes;
+    const parentSiblings = parent.parentElement?.childNodes;
+    const parentMenu = parent.closest(".nk-menu-wrap");
+    if (!subMenuItem) return;
+    const subMenuHeight = menuHeight(subMenuItem);
+
     const getParents = (el, parentSelector) => {
       parentSelector = document.querySelector(".nk-menu");
-      if (parentSelector === undefined) {
-        parentSelector = document;
+      if (!parentSelector) parentSelector = document;
+      const parents = [];
+      let p = el.parentNode;
+      while (p && p !== parentSelector) {
+        parents.push(p);
+        p = p.parentNode;
       }
-      var parents = [];
-      var p = el.parentNode;
-      while (p !== parentSelector) {
-        var o = p;
-        parents.push(o);
-        p = o.parentNode;
-      }
-      parents.push(parentSelector);
+      if (parentSelector !== document) parents.push(parentSelector);
       return parents;
     };
-    var parentMenus = getParents(self);
+    const parentMenus = getParents(self);
+
     if (!parent.classList.contains("active")) {
-      // For Parent Siblings
-      for (var j = 0; j < parentSiblings.length; j++) {
+      // Close siblings
+      for (let j = 0; j < parentSiblings.length; j++) {
         parentSiblings[j].classList.remove("active");
-        if (typeof parentSiblings[j].childNodes[1] !== "undefined") {
+        if (parentSiblings[j].childNodes[1]) {
           parentSiblings[j].childNodes[1].style.height = 0;
         }
       }
-      if (parentMenu !== null) {
+      if (parentMenu) {
         if (!parentMenu.classList.contains("sub-opened")) {
           parentMenu.classList.add("sub-opened");
-
-          for (var l = 0; l < parentMenus.length; l++) {
-            if (typeof parentMenus !== "undefined") {
-              if (parentMenus[l].classList.contains("nk-menu-wrap")) {
-                parentMenus[l].style.height = subMenuHeight + parentMenus[l].clientHeight + "px";
-              }
+          for (let l = 0; l < parentMenus.length; l++) {
+            if (parentMenus[l]?.classList?.contains("nk-menu-wrap")) {
+              parentMenus[l].style.height = subMenuHeight + parentMenus[l].clientHeight + "px";
             }
           }
         }
       }
-      // For Current Element
       parent.classList.add("active");
       subMenu.style.height = subMenuHeight + "px";
     } else {
       parent.classList.remove("active");
-      if (parentMenu !== null) {
+      if (parentMenu) {
         parentMenu.classList.remove("sub-opened");
-        for (var k = 0; k < parentMenus.length; k++) {
-          if (typeof parentMenus !== "undefined") {
-            if (parentMenus[k].classList.contains("nk-menu-wrap")) {
-              parentMenus[k].style.height = parentMenus[k].clientHeight - subMenuHeight + "px";
-            }
+        for (let k = 0; k < parentMenus.length; k++) {
+          if (parentMenus[k]?.classList?.contains("nk-menu-wrap")) {
+            parentMenus[k].style.height = parentMenus[k].clientHeight - subMenuHeight + "px";
           }
         }
       }
@@ -137,8 +177,9 @@ const MenuItem = ({ icon, link, text, sub, newTab, sidebarToggle, mobileView, ba
   const menuItemClass = classNames({
     "nk-menu-item": true,
     "has-sub": sub,
-    "active current-page": currentUrl === process.env.PUBLIC_URL + link,
+    "active current-page": isActive(), // Now uses prefix matching
   });
+
   return (
     <li className={menuItemClass} onClick={(e) => toggleActionSidebar(e)}>
       {newTab ? (
@@ -148,11 +189,11 @@ const MenuItem = ({ icon, link, text, sub, newTab, sidebarToggle, mobileView, ba
           rel="noopener noreferrer"
           className="nk-menu-link"
         >
-          {icon ? (
+          {icon && (
             <span className="nk-menu-icon">
               <Icon name={icon} />
             </span>
-          ) : null}
+          )}
           <span className="nk-menu-text">{text}</span>
         </Link>
       ) : (
@@ -161,36 +202,36 @@ const MenuItem = ({ icon, link, text, sub, newTab, sidebarToggle, mobileView, ba
           className={`nk-menu-link${sub ? " nk-menu-toggle" : ""}`}
           onClick={sub ? menuToggle : null}
         >
-          {icon ? (
+          {icon && (
             <span className="nk-menu-icon">
               <Icon name={icon} />
             </span>
-          ) : null}
+          )}
           <span style={{ fontFamily: "'Nunito Sans', sans-serif", fontWeight: 600 }} className="nk-menu-text">
             {text}
           </span>
           {badge && <span className="nk-menu-badge">{badge}</span>}
         </NavLink>
       )}
-      {sub ? (
+      {sub && (
         <div className="nk-menu-wrap">
           <MenuSub sub={sub} sidebarToggle={sidebarToggle} mobileView={mobileView} />
         </div>
-      ) : null}
+      )}
     </li>
   );
 };
 
-const MenuSub = ({ icon, link, text, sub, sidebarToggle, mobileView, ...props }) => {
+const MenuSub = ({ sub, sidebarToggle, mobileView, ...props }) => {
   return (
     <ul className="nk-menu-sub" style={props.style}>
       {sub.map((item) => (
         <MenuItem
+          key={item.text}
           link={item.link}
           icon={item.icon}
           text={item.text}
           sub={item.subMenu}
-          key={item.text}
           newTab={item.newTab}
           badge={item.badge}
           sidebarToggle={sidebarToggle}
@@ -218,7 +259,7 @@ const Menu = ({ sidebarToggle, mobileView }) => {
             sidebarToggle={sidebarToggle}
             mobileView={mobileView}
           />
-        ),
+        )
       )}
     </ul>
   );
