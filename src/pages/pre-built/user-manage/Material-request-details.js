@@ -1,7 +1,7 @@
 // MaterialRequestDetails.js
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useLocation, useHistory } from "react-router-dom";
-import { Block, BlockBetween, BlockHead, BlockHeadContent, Icon } from "../../../components/Component";
+import { Block, Icon } from "../../../components/Component";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
@@ -10,7 +10,7 @@ import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
 /* ─────────────────────────────────────────────
-   BUILD PRINT HTML (unchanged)
+   BUILD PRINT HTML
 ───────────────────────────────────────────── */
 function buildPrintHTML(requestData, id) {
   const fmtDate = (d) => {
@@ -46,7 +46,7 @@ function buildPrintHTML(requestData, id) {
         </tr>`,
           )
           .join("")
-      : `<tr><td colspan="6" style="border:1px solid #ccc;padding:12px;text-align:center;color:#999;">No items</td></tr>`;
+      : `<tr><td colspan="6" style="border:1px solid #ccc;padding:12px;text-align:center;color:#999;">No items<\/td><\/tr>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -130,47 +130,47 @@ function buildPrintHTML(requestData, id) {
   <table class="meta-tbl">
     <tbody>
       <tr>
-        <td class="lbl" style="width:90px;">Purpose:</td>
-        <td class="val" style="width:160px;">${requestData?.purpose || "Purchase"}</td>
-        <td class="lbl-r" style="width:140px;">Transaction Date:</td>
-        <td class="val-r">${fmtDate(requestData?.transactionDate)}</td>
-      </tr>
+        <td class="lbl" style="width:90px;">Purpose:<\/td>
+        <td class="val" style="width:160px;">${requestData?.purpose || "Purchase"}<\/td>
+        <td class="lbl-r" style="width:140px;">Transaction Date:<\/td>
+        <td class="val-r">${fmtDate(requestData?.transactionDate)}<\/td>
+      <\/tr>
       <tr>
-        <td class="lbl"></td><td class="val"></td>
-        <td class="lbl-r">Required By:</td>
-        <td class="val-r">${fmtDate(requestData?.requiredBy)}</td>
-      </tr>
+        <td class="lbl"><\/td><td class="val"><\/td>
+        <td class="lbl-r">Required By:<\/td>
+        <td class="val-r">${fmtDate(requestData?.requiredBy)}<\/td>
+      <\/tr>
       <tr>
-        <td class="lbl"></td><td class="val"></td>
-        <td class="lbl-r" style="vertical-align:top;">Set Target Warehouse:</td>
-        <td class="val-r">${requestData?.warehouse || "CALIES C - SD"}</td>
-      <tr>
-    </tbody>
-  </table>
-  <div class="divider-l"></div>
+        <td class="lbl"><\/td><td class="val"><\/td>
+        <td class="lbl-r" style="vertical-align:top;">Set Target Warehouse:<\/td>
+        <td class="val-r">${requestData?.warehouse || "CALIES C - SD"}<\/td>
+      <\/tr>
+    <\/tbody>
+  <\/table>
+  <div class="divider-l"><\/div>
   <table class="it-tbl">
     <thead>
       <tr>
-        <th style="text-align:center;width:35px;">Sr</th>
-        <th style="text-align:left;">Description</th>
-        <th style="text-align:center;width:45px;"></th>
-        <th style="text-align:center;width:75px;">Quantity</th>
-        <th style="text-align:center;width:110px;">Target Warehouse</th>
-        <th style="text-align:center;width:50px;">UOM</th>
-      </tr>
-    </thead>
-    <tbody>${itemRows}</tbody>
-  </table>
-  <div class="page-footer" style="margin-top:8px;">Page 1 of 1</div>
-  <div class="sig-for">For Sree Daksha Industries</div>
+        <th style="text-align:center;width:35px;">Sr<\/th>
+        <th style="text-align:left;">Description<\/th>
+        <th style="text-align:center;width:45px;"><\/th>
+        <th style="text-align:center;width:75px;">Quantity<\/th>
+        <th style="text-align:center;width:110px;">Target Warehouse<\/th>
+        <th style="text-align:center;width:50px;">UOM<\/th>
+      <\/tr>
+    <\/thead>
+    <tbody>${itemRows}<\/tbody>
+  <\/table>
+  <div class="page-footer" style="margin-top:8px;">Page 1 of 1<\/div>
+  <div class="sig-for">For Sree Daksha Industries<\/div>
   <div class="sig-row">
-    <div class="sig-col"><div class="sig-sp"></div><div>Prepared By</div></div>
-    <div class="sig-col"><div class="sig-sp"></div><div>Purchase Manager</div></div>
-    <div class="sig-col"><div class="sig-sp"></div><div>Managing Director/Director Authority</div></div>
-  </div>
-</div>
-</body>
-</html>`;
+    <div class="sig-col"><div class="sig-sp"><\/div><div>Prepared By<\/div><\/div>
+    <div class="sig-col"><div class="sig-sp"><\/div><div>Purchase Manager<\/div><\/div>
+    <div class="sig-col"><div class="sig-sp"><\/div><div>Managing Director/Director Authority<\/div><\/div>
+  <\/div>
+<\/div>
+<\/body>
+<\/html>`;
 }
 
 /* ─────────────────────────────────────────────
@@ -490,7 +490,6 @@ const MaterialRequestDetails = () => {
   // Fetch full request (including attachments) on mount
   useEffect(() => {
     if (!id) return;
-    // If we have initialData but it might lack attachments, we still fetch to get attachments
     const fetchRequest = async () => {
       try {
         setLoading(true);
@@ -511,7 +510,6 @@ const MaterialRequestDetails = () => {
     fetchRequest();
   }, [id]);
 
-  // Show error or loading states
   if (loading) {
     return (
       <>
@@ -567,7 +565,6 @@ const MaterialRequestDetails = () => {
   const handleFileUpload = async (file, type) => {
     if (!file) return;
 
-    // Validate file type
     if (type === "pdf" && file.type !== "application/pdf") {
       alert("Please select a valid PDF file.");
       return;
@@ -593,7 +590,6 @@ const MaterialRequestDetails = () => {
       });
       const result = await response.json();
       if (result.success) {
-        // Update local state with new attachment
         setRequestData((prev) => ({
           ...prev,
           attachments: [...(prev.attachments || []), result.data],
@@ -609,12 +605,13 @@ const MaterialRequestDetails = () => {
     }
   };
 
-  /* ── Delete attachment ── */
+  /* ── Delete attachment (with URL encoding fix) ── */
   const handleDeleteAttachment = async (publicId) => {
     if (!window.confirm("Are you sure you want to delete this attachment?")) return;
     setDeletingId(publicId);
     try {
-      const response = await fetch(`${API_BASE_URL}/material-requests/${id}/attachment/${publicId}`, {
+      const encodedPublicId = encodeURIComponent(publicId);
+      const response = await fetch(`${API_BASE_URL}/material-requests/${id}/attachment/${encodedPublicId}`, {
         method: "DELETE",
       });
       const result = await response.json();
@@ -634,7 +631,6 @@ const MaterialRequestDetails = () => {
     }
   };
 
-  /* ── Print (unchanged) ── */
   const handlePrint = () => {
     const html = buildPrintHTML(requestData, id);
     const win = window.open("", "_blank", "width=920,height=720,scrollbars=yes,resizable=yes");
@@ -651,7 +647,6 @@ const MaterialRequestDetails = () => {
     };
   };
 
-  /* ── CSV Download (unchanged) ── */
   const downloadCSV = () => {
     if (!requestData?.items?.length) return;
     let csv = ["S.No,Item Code,Item Name,Required By,Quantity,Warehouse,UOM"].join(",") + "\n";
@@ -890,7 +885,7 @@ const MaterialRequestDetails = () => {
             )}
           </div>
 
-          {/* ── ATTACHMENTS SECTION with backend integration ── */}
+          {/* ATTACHMENTS SECTION */}
           <div style={S.attachmentArea}>
             <div style={S.attachmentHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -913,12 +908,10 @@ const MaterialRequestDetails = () => {
                 <DropdownToggle tag="button" style={S.btnOutline} disabled={uploading}>
                   {uploading ? (
                     <>
-                      {" "}
                       <Icon name="spinner" style={{ animation: "spin 1s linear infinite" }} /> Uploading...
                     </>
                   ) : (
                     <>
-                      {" "}
                       <Icon name="plus" /> Add file <Icon name="chevron-down" style={{ fontSize: 11 }} />
                     </>
                   )}
