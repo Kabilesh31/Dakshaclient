@@ -667,7 +667,13 @@ const SiteDetail = () => {
 
             {/* Close button */}
             <div className="d-flex justify-content-end gap-3 mt-5">
-              <Button color="secondary" className="p-2" onClick={() => history.push("/SiteManagement")}>
+              <Button color="secondary" style={{
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    marginTop: "0.3rem",
+                    color: "#fff",
+                    padding: "12px 20px"
+                  }}  onClick={() => history.push("/SiteManagement")}>
                 Close
               </Button>
             </div>
@@ -692,11 +698,11 @@ const SiteDetail = () => {
         </Modal>
 
         {/* Edit Site Modal */}
-        <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} size="lg">
+        <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} size="xl">
           <ModalHeader toggle={() => { setEditModal(false); setFormErrors({}); }}>
             Edit Project Details
           </ModalHeader>
-          <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
+          <ModalBody style={{ maxHeight: "80vh", overflowY: "auto" }}>
             <FormGroup>
               <label>Site Name *</label>
               <Input
@@ -763,9 +769,15 @@ const SiteDetail = () => {
                   onChange={(e) => setStaffInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddStaff()}
                 />
-                <Button color="secondary" onClick={handleAddStaff}>Add</Button>
+                <Button color="secondary" style={{
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    marginTop: "0.3rem",
+                    color: "#fff",
+                    padding: "12px 20px"
+                  }}  onClick={handleAddStaff}>Add</Button>
               </div>
-              <div className="mt-2">
+              <div className="mt-4">
                 {editedSite.staffAssigned?.map((staff, idx) => (
                   <Badge
                     key={idx}

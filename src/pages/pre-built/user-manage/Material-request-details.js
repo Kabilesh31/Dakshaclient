@@ -1,7 +1,7 @@
 // MaterialRequestDetails.js
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useLocation, useHistory } from "react-router-dom";
-import { Block, Icon } from "../../../components/Component";
+import { Block, Icon, Button } from "../../../components/Component";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
@@ -215,7 +215,7 @@ const S = {
     borderRadius: 8,
     cursor: "pointer",
     border: "0.5px solid #534AB7",
-    background: "#534AB7",
+    background: "#644634",
     color: "#EEEDFE",
   },
   btnInfo: {
@@ -244,15 +244,7 @@ const S = {
     background: "#fff",
     color: "#4b5563",
   },
-  metricsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-    gap: 10,
-    marginBottom: 20,
-  },
-  metric: { background: "#f9fafb", borderRadius: 8, padding: "12px 14px" },
-  metricLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 5 },
-  metricVal: { fontSize: 15, fontWeight: 500, color: "#111827" },
+  // NEW: white card container used for metrics, details, items
   card: { background: "#fff", border: "0.5px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginBottom: 14 },
   cardHeader: {
     display: "flex",
@@ -262,6 +254,16 @@ const S = {
     borderBottom: "0.5px solid #e5e7eb",
   },
   cardTitle: { fontSize: 14, fontWeight: 500, color: "#111827" },
+  // Metrics grid (now inside a white card)
+  metricsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+    gap: 10,
+    padding: "20px", // consistent padding inside card
+  },
+  metric: { background: "transparent", padding: 0 }, // transparent background (card provides white)
+  metricLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 5 },
+  metricVal: { fontSize: 15, fontWeight: 500, color: "#111827" },
   metaGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
@@ -308,21 +310,6 @@ const S = {
     fontSize: 13,
     color: "#6b7280",
   },
-  attachmentItem: {
-  background: "#fff",
-  border: "0.5px solid #e5e7eb",
-  borderRadius: 10,
-  padding: "10px 12px",
-  display: "flex",
-  alignItems: "center",
-  gap: 12,
-  transition: "all 0.15s ease",
-},
-
-attachmentItemHover: {
-  borderColor: "#c7d2fe",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-},
   attachmentArea: { marginTop: 20 },
   attachmentHeader: {
     display: "flex",
@@ -407,28 +394,50 @@ const formatDate = (d) => {
   }
 };
 
+// UPDATED StatusBadge to match theme
 const StatusBadge = ({ status }) => {
-  const map = {
-    Ordered: { bg: "#EAF3DE", color: "#27500A", border: "0.5px solid #C0DD97", dot: "#639922" },
-    "Partially Ordered": { bg: "#E6F1FB", color: "#0C447C", border: "0.5px solid #85B7EB", dot: "#378ADD" },
+  const getStyles = () => {
+    switch (status) {
+      case "Ordered":
+        return {
+          background: "#EAF3DE",
+          color: "#27500A",
+          border: "0.5px solid #C0DD97",
+          iconColor: "#639922",
+        };
+      case "Partially Ordered":
+        return {
+          background: "#E6F1FB",
+          color: "#0C447C",
+          border: "0.5px solid #85B7EB",
+          iconColor: "#378ADD",
+        };
+      default:
+        return {
+          background: "#FAEEDA",
+          color: "#633806",
+          border: "0.5px solid #FAC775",
+          iconColor: "#BA7517",
+        };
+    }
   };
-  const s = map[status] || { bg: "#FAEEDA", color: "#633806", border: "0.5px solid #FAC775", dot: "#BA7517" };
+  const { background, color, border, iconColor } = getStyles();
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 5,
+        gap: 6,
         fontSize: 12,
         fontWeight: 500,
         padding: "4px 12px",
         borderRadius: 99,
-        background: s.bg,
-        color: s.color,
-        border: s.border,
+        background,
+        color,
+        border,
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: iconColor, display: "inline-block" }} />
       {status}
     </span>
   );
@@ -729,15 +738,16 @@ const MaterialRequestDetails = () => {
             </div>
 
             <div style={S.actions}>
-              <button style={S.btnBase} onClick={() => history.push("/material-request")}>
-                ← Back
-              </button>
+              <Button color="dark" size="sm" className="mt-1" onClick={() => history.push("/material-request")}>
+                <Icon name="arrow-left" /> Back
+              </Button>
               <button style={S.btnInfo} onClick={handlePrint}>
                 <Icon name="printer" />
               </button>
               <UncontrolledDropdown>
-                <DropdownToggle tag="button" style={{ ...S.btnPrimary, border: "0.5px solid #534AB7" }}>
-                  <Icon name="download" /><Icon name="chevron-down" style={{ fontSize: 11 }} />
+                <DropdownToggle tag="button" style={S.btnPrimary}>
+                  <Icon name="download" />
+                  <Icon name="chevron-down" style={{ fontSize: 11 }} />
                 </DropdownToggle>
                 <DropdownMenu right>
                   <DropdownItem onClick={downloadCSV}>
@@ -751,33 +761,35 @@ const MaterialRequestDetails = () => {
             </div>
           </div>
 
-          {/* Summary metrics */}
-          <div style={S.metricsGrid}>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Purpose</div>
-              <div style={S.metricVal}>
-                <PillPurple>{requestData.purpose || "—"}</PillPurple>
+          {/* Summary metrics - now inside a white card container */}
+          <div style={S.card}>
+            <div style={S.metricsGrid}>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Purpose</div>
+                <div style={S.metricVal}>
+                  <PillPurple>{requestData.purpose || "—"}</PillPurple>
+                </div>
               </div>
-            </div>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Transaction date</div>
-              <div style={S.metricVal}>{formatDate(requestData.transactionDate)}</div>
-            </div>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Required by</div>
-              <div style={S.metricVal}>{formatDate(requestData.requiredBy)}</div>
-            </div>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Warehouse</div>
-              <div style={{ ...S.metricVal, fontSize: 13 }}>{requestData.warehouse || "—"}</div>
-            </div>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Total items</div>
-              <div style={S.metricVal}>{totalItems}</div>
-            </div>
-            <div style={S.metric}>
-              <div style={S.metricLbl}>Total quantity</div>
-              <div style={S.metricVal}>{totalQuantity}</div>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Transaction date</div>
+                <div style={S.metricVal}>{formatDate(requestData.transactionDate)}</div>
+              </div>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Required by</div>
+                <div style={S.metricVal}>{formatDate(requestData.requiredBy)}</div>
+              </div>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Warehouse</div>
+                <div style={{ ...S.metricVal, fontSize: 13 }}>{requestData.warehouse || "—"}</div>
+              </div>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Total items</div>
+                <div style={S.metricVal}>{totalItems}</div>
+              </div>
+              <div style={S.metric}>
+                <div style={S.metricLbl}>Total quantity</div>
+                <div style={S.metricVal}>{totalQuantity}</div>
+              </div>
             </div>
           </div>
 
@@ -920,7 +932,12 @@ const MaterialRequestDetails = () => {
               </div>
 
               <UncontrolledDropdown>
-                <DropdownToggle tag="button" style={S.btnOutline} disabled={uploading}>
+                {/* FIX: changed button style to primary and adjusted disabled state */}
+                <DropdownToggle
+                  tag="button"
+                  style={uploading ? { ...S.btnPrimary, opacity: 0.6, cursor: "not-allowed" } : S.btnPrimary}
+                  disabled={uploading}
+                >
                   {uploading ? (
                     <>
                       <Icon name="spinner" style={{ animation: "spin 1s linear infinite" }} /> Uploading...
@@ -971,131 +988,127 @@ const MaterialRequestDetails = () => {
               </div>
             ) : (
               <div style={S.attachmentGrid}>
-  {attachments.map((att) => (
-    <div
-      key={att.publicId}
-      style={{
-        ...S.attachmentItem,
-        cursor: "pointer",
-      }}
-    >
-      {/* Preview Click Area */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          flex: 1,
-          minWidth: 0,
-        }}
-        onClick={() => {
-          if (att.fileType?.startsWith("image/")) {
-            // Open image preview
-            window.open(att.fileUrl, "_blank");
-          } else {
-            // Download PDF
-            const link = document.createElement("a");
-            link.href = att.fileUrl;
-            link.download = att.fileName || "document.pdf";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        }}
-      >
-        <div style={S.attachmentPreview}>
-          {att.fileType?.startsWith("image/") ? (
-            <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
-          ) : (
-            <Icon name="file-pdf" style={{ fontSize: 28, color: "#ef4444" }} />
-          )}
-        </div>
+                {attachments.map((att) => (
+                  <div
+                    key={att.publicId}
+                    style={{
+                      ...S.attachmentItem,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {/* Preview Click Area */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                      onClick={() => {
+                        if (att.fileType?.startsWith("image/")) {
+                          // Open image preview
+                          window.open(att.fileUrl, "_blank");
+                        } else {
+                          // Download PDF
+                          const link = document.createElement("a");
+                          link.href = att.fileUrl;
+                          link.download = att.fileName || "document.pdf";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                    >
+                      <div style={S.attachmentPreview}>
+                        {att.fileType?.startsWith("image/") ? (
+                          <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
+                        ) : (
+                          <Icon name="file-pdf" style={{ fontSize: 28, color: "#ef4444" }} />
+                        )}
+                      </div>
 
-        <div style={S.attachmentInfo}>
-          <div style={S.attachmentName} title={att.fileName}>
-            {att.fileName}
-          </div>
+                      <div style={S.attachmentInfo}>
+                        <div style={S.attachmentName} title={att.fileName}>
+                          {att.fileName}
+                        </div>
 
-          <div style={S.attachmentMeta}>
-            {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
-            {att.fileSize ? formatFileSize(att.fileSize) : "—"}
-          </div>
-        </div>
-      </div>
+                        <div style={S.attachmentMeta}>
+                          {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
+                          {att.fileSize ? formatFileSize(att.fileSize) : "—"}
+                        </div>
+                      </div>
+                    </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {/* View */}
-        <button
-          type="button"
-          style={S.removeBtn}
-          title="View file"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(att.fileUrl, "_blank");
-          }}
-        >
-          <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
-        </button>
+                    {/* Action Buttons */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {/* View */}
+                      <button
+                        type="button"
+                        style={S.removeBtn}
+                        title="View file"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(att.fileUrl, "_blank");
+                        }}
+                      >
+                        <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
+                      </button>
 
-        {/* Download */}
-        <button
-          type="button"
-          style={S.removeBtn}
-          title="Download file"
-          onClick={async (e) => {
-            e.stopPropagation();
+                      {/* Download */}
+                      <button
+                        type="button"
+                        style={S.removeBtn}
+                        title="Download file"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const response = await fetch(att.fileUrl);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = att.fileName || "download";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (err) {
+                            console.error("Download failed:", err);
+                            alert("Unable to download file");
+                          }
+                        }}
+                      >
+                        <Icon name="downloadload" style={{ fontSize: 14, color: "#16a34a" }} />
+                      </button>
 
-            try {
-              const response = await fetch(att.fileUrl);
-              const blob = await response.blob();
-
-              const url = window.URL.createObjectURL(blob);
-
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = att.fileName || "download";
-              document.body.appendChild(link);
-              link.click();
-
-              document.body.removeChild(link);
-              window.URL.revokeObjectURL(url);
-            } catch (err) {
-              console.error("Download failed:", err);
-              alert("Unable to download file");
-            }
-          }}
-        >
-          <Icon name="downloadload" style={{ fontSize: 14, color: "#16a34a" }} />
-        </button>
-
-        {/* Delete */}
-        <button
-          type="button"
-          style={S.removeBtn}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDeleteAttachment(att.publicId);
-          }}
-          disabled={deletingId === att.publicId}
-          title="Remove file"
-        >
-          {deletingId === att.publicId ? (
-            <Icon
-              name="spinner"
-              style={{
-                animation: "spin 1s linear infinite",
-                fontSize: 12,
-              }}
-            />
-          ) : (
-            <Icon name="trash" style={{ fontSize: 14, color: "#ef4444" }} />
-          )}
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        style={S.removeBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAttachment(att.publicId);
+                        }}
+                        disabled={deletingId === att.publicId}
+                        title="Remove file"
+                      >
+                        {deletingId === att.publicId ? (
+                          <Icon
+                            name="spinner"
+                            style={{
+                              animation: "spin 1s linear infinite",
+                              fontSize: 12,
+                            }}
+                          />
+                        ) : (
+                          <Icon name="trash" style={{ fontSize: 14, color: "#ef4444" }} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

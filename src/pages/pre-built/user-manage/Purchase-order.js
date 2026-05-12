@@ -1,4 +1,4 @@
-// PurchaseOrderPage.js - Only table and filters updated, modal unchanged
+// PurchaseOrderPage.js - Status badge aligned with MaterialRequestDetails theme
 
 import React, { useEffect, useState, useRef } from "react";
 import Content from "../../../layout/content/Content";
@@ -40,31 +40,83 @@ const DUMMY_PROJECTS = [
   { id: "PROJ-005", name: "Commercial Complex" },
 ];
 
-// Status colors matching Material Request page style
-const STATUS_MAP = {
-  "To Receive and Bill": { bg: "#EAF3DE", color: "#27500A", dot: "#639922" },
-  "Pending": { bg: "#FAEEDA", color: "#633806", dot: "#BA7517" },
-  "Ordered": { bg: "#E6F1FB", color: "#0C447C", dot: "#185FA5" },
-  "Partially Ordered": { bg: "#EEEDFE", color: "#3C3489", dot: "#534AB7" },
-  "Completed": { bg: "#D1FAE5", color: "#065F46", dot: "#10B981" },
-  "Cancelled": { bg: "#FEE2E2", color: "#991B1B", dot: "#EF4444" },
-};
-
+// ----------------------------------------------------------------------
+// Status Badge - EXACT MATCH to MaterialRequestDetails.js theme
+// ----------------------------------------------------------------------
 const StatusBadge = ({ status }) => {
-  const s = STATUS_MAP[status] || { bg: "#f3f4f6", color: "#6b7280", dot: "#9ca3af" };
+  const getStyles = () => {
+    switch (status) {
+      case "Ordered":
+        return {
+          background: "#EAF3DE",
+          color: "#27500A",
+          border: "0.5px solid #C0DD97",
+          dotColor: "#639922",
+        };
+      case "Partially Ordered":
+        return {
+          background: "#E6F1FB",
+          color: "#0C447C",
+          border: "0.5px solid #85B7EB",
+          dotColor: "#378ADD",
+        };
+      case "Completed":
+        return {
+          background: "#D1FAE5",
+          color: "#065F46",
+          border: "0.5px solid #A7F3D0",
+          dotColor: "#10B981",
+        };
+      case "Cancelled":
+        return {
+          background: "#FEE2E2",
+          color: "#991B1B",
+          border: "0.5px solid #FECACA",
+          dotColor: "#EF4444",
+        };
+      case "To Receive and Bill":
+        // Map to Ordered style (green)
+        return {
+          background: "green",
+          color: "White",
+          border: "0.5px solid #C0DD97",
+          dotColor: "#639922",
+        };
+      case "Pending":
+      default:
+        return {
+          background: "#FAEEDA",
+          color: "#633806",
+          border: "0.5px solid #FAC775",
+          dotColor: "#BA7517",
+        };
+    }
+  };
+  const { background, color, border, dotColor } = getStyles();
   return (
-    <span style={{ 
-      display: "inline-flex", 
-      alignItems: "center", 
-      gap: 5, 
-      fontSize: 12, 
-      fontWeight: 500, 
-      padding: "4px 12px", 
-      borderRadius: 20, 
-      background: s.bg, 
-      color: s.color 
-    }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        fontWeight: 500,
+        padding: "4px 12px",
+        borderRadius: 99,
+        background,
+        color,
+        border,
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: dotColor,
+          display: "inline-block",
+        }}
+      />
       {status}
     </span>
   );
@@ -283,7 +335,7 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
 // Delete Confirmation Modal
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
-    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="lg">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -1037,17 +1089,40 @@ const PurchaseOrderPage = () => {
         </Block>
       </Content>
 
-      {/* Add Purchase Order Modal */}
+      {/* Add Purchase Order Modal - Themed UI */}
       <Modal isOpen={addModal} toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} centered size="xl" backdrop="static" scrollable>
-        <ModalHeader toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} style={{ borderBottom: "0.5px solid #e5e7eb", paddingBottom: 14 }}>
-          <div style={{ fontSize: 16, fontWeight: 500, color: "#111827" }}>Add purchase order</div>
-          <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Fill in the details to create a new order</div>
+        <ModalHeader 
+          toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} 
+          style={{ borderBottom: "0.5px solid #e5e7eb", padding: "16px 20px" }}
+        >
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 500, color: "#111827" }}>Add purchase order</div>
+            <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>Fill in the details to create a new order</div>
+          </div>
         </ModalHeader>
         <ModalBody style={{ padding: 0 }}>
 
           <div style={{ display: "flex", borderBottom: "0.5px solid #e5e7eb", padding: "0 20px", background: "#f9fafb", flexWrap: "wrap" }}>
             {tabs.map(({ key, label, icon }) => (
-              <button key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "11px 14px", fontSize: 12, fontWeight: 500, color: activeTab === key ? "#111827" : "#6b7280", cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === key ? "2px solid #534AB7" : "2px solid transparent", marginBottom: -1 }} onClick={() => setActiveTab(key)}>
+              <button
+                key={key}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "11px 14px",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: activeTab === key ? "#111827" : "#6b7280",
+                  cursor: "pointer",
+                  background: "none",
+                  border: "none",
+                  borderBottom: activeTab === key ? "2px solid #644634" : "2px solid transparent",
+                  marginBottom: -1,
+                  transition: "all 0.15s ease"
+                }}
+                onClick={() => setActiveTab(key)}
+              >
                 <Icon name={icon} style={{ fontSize: 14 }} /> {label}
               </button>
             ))}
@@ -1131,7 +1206,22 @@ const PurchaseOrderPage = () => {
                   {selectedMR && (
                     <span style={{ fontSize: 11, color: "#185FA5" }}>{selectedMR._id}</span>
                   )}
-                  <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #B5D4F4", background: "#E6F1FB", color: "#0C447C" }} onClick={() => setShowMRModal(true)}>
+                  <button 
+                    style={{ 
+                      display: "inline-flex", 
+                      alignItems: "center", 
+                      gap: 5, 
+                      fontSize: 12, 
+                      fontWeight: 500, 
+                      padding: "5px 10px", 
+                      borderRadius: 6, 
+                      cursor: "pointer", 
+                      border: "0.5px solid #644634", 
+                      background: "#644634", 
+                      color: "#fff" 
+                    }} 
+                    onClick={() => setShowMRModal(true)}
+                  >
                     <Icon name="file-text" style={{ fontSize: 13 }} /> Select material request
                   </button>
                 </div>
@@ -1179,7 +1269,7 @@ const PurchaseOrderPage = () => {
                 </table>
               </div>
 
-              <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" }} onClick={addItemRow}>
+              <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #644634", background: "#644634", color: "#fff" }} onClick={addItemRow}>
                 <Icon name="plus" style={{ fontSize: 13 }} /> Add row
               </button>
 
@@ -1234,8 +1324,36 @@ const PurchaseOrderPage = () => {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "0.5px solid #e5e7eb", background: "#f9fafb", flexWrap: "wrap", gap: 10 }}>
             <div style={{ fontSize: 12, color: "#9ca3af" }}>Fields marked <span style={{ color: "#E24B4A" }}>*</span> are required</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" }} onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}>Cancel</button>
-              <Button color="primary" onClick={handleAddOrder}>
+              <button 
+                style={{ 
+                  display: "inline-flex", 
+                  alignItems: "center", 
+                  gap: 6, 
+                  fontSize: 13, 
+                  fontWeight: 500, 
+                  padding: "7px 14px", 
+                  borderRadius: 8, 
+                  cursor: "pointer", 
+                  border: "0.5px solid #d1d5db", 
+                  background: "#fff", 
+                  color: "#6b7280" 
+                }} 
+                onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}
+              >
+                Cancel
+              </button>
+              <Button 
+                style={{ 
+                  backgroundColor: "#644634", 
+                  borderColor: "#644634", 
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 14px"
+                }}
+                onClick={handleAddOrder}
+              >
                 <Icon name="check" /> Submit order
               </Button>
             </div>
@@ -1243,7 +1361,7 @@ const PurchaseOrderPage = () => {
         </ModalBody>
       </Modal>
 
-      {/* Material Request Selection Modal */}
+      {/* Material Request Selection Modal - Themed */}
       <Modal isOpen={showMRModal} toggle={() => setShowMRModal(false)} centered size="lg" scrollable>
         <ModalHeader toggle={() => setShowMRModal(false)}>Select material request</ModalHeader>
         <ModalBody>
@@ -1264,7 +1382,24 @@ const PurchaseOrderPage = () => {
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle", wordBreak: "break-word", whiteSpace: "normal" }}>{mr.title}</td>
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}><StatusBadge status={mr.status} /></td>
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}>
-                      <button style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #534AB7", background: "#534AB7", color: "#EEEDFE" }} onClick={() => selectMR(mr)}>Select</button>
+                      <button 
+                        style={{ 
+                          display: "inline-flex", 
+                          alignItems: "center", 
+                          gap: 6, 
+                          fontSize: 13, 
+                          fontWeight: 500, 
+                          padding: "7px 14px", 
+                          borderRadius: 8, 
+                          cursor: "pointer", 
+                          border: "0.5px solid #644634", 
+                          background: "#644634", 
+                          color: "#fff" 
+                        }} 
+                        onClick={() => selectMR(mr)}
+                      >
+                        Select
+                      </button>
                     </td>
                   </tr>
                 ))}

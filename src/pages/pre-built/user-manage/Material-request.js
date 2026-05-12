@@ -221,7 +221,7 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
 // ----------------------------------------------------------------------
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
-    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="lg">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -923,15 +923,16 @@ const MaterialRequestPage = () => {
 
       {/* Add/Edit Modal */}
       <Modal
-        isOpen={addModal}
-        toggle={() => {
-          setAddModal(false);
-          resetForm();
-        }}
-        centered
-        size="xl"
-        backdrop="static"
-      >
+  isOpen={addModal}
+  toggle={() => {
+    setAddModal(false);
+    resetForm();
+  }}
+  centered
+  size="xl"
+  backdrop="static"
+  className="material-request-modal"
+>
         <ModalHeader
           toggle={() => {
             setAddModal(false);
@@ -1003,7 +1004,7 @@ const MaterialRequestPage = () => {
             </div>
           </div>
 
-          <h6 style={{ fontWeight: 600, marginBottom: "12px", marginTop: "10px" }}>Add Materials</h6>
+          <h6 style={{ fontWeight: 600, marginBottom: "12px", marginTop: "30px" }}>Add Materials</h6>
           <div
             style={{
               borderRadius: "8px",
@@ -1045,12 +1046,12 @@ const MaterialRequestPage = () => {
           </div>
 
           <div className="d-flex justify-content-between align-items-center">
-            <div className="d-flex gap-2">
-              <Button color="light" style={{ padding: "12px" }} onClick={addItemRow}>
+            <div className="d-flex mb-5 gap-2">
+              <Button color="primary" style={{ padding: "12px" }} onClick={addItemRow}>
                 <Icon name="plus" /> Add Row
               </Button>
             </div>
-            <div className="d-flex gap-2 align-items-center">
+            <div className="d-flex gap-2 mt-5 align-items-center">
               <Button
                 color="secondary"
                 onClick={() => {
@@ -1096,6 +1097,22 @@ const MaterialRequestPage = () => {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
+          .material-request-modal .modal-dialog {
+  max-width: 95%;
+  height: 75vh;
+  margin: 1rem auto;
+}
+
+.material-request-modal .modal-content {
+  height: 75vh;
+  border-radius: 12px;
+}
+
+.material-request-modal .modal-body {
+  overflow-y: auto;
+  max-height: calc(75vh - 120px);
+  padding: 20px;
+}
       `}</style>
     </>
   );

@@ -576,9 +576,9 @@ const SiteManagement = () => {
         </Modal>
 
         {/* Add New Site Modal - Scrollable with visible scrollbar */}
-        <Modal isOpen={addModal} toggle={() => { setAddModal(false); resetNewSiteForm(); }} size="lg">
+        <Modal isOpen={addModal} toggle={() => { setAddModal(false); resetNewSiteForm(); }} size="xl">
           <ModalHeader toggle={() => { setAddModal(false); resetNewSiteForm(); }}>Add New Site</ModalHeader>
-          <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
+          <ModalBody style={{ maxHeight: "85vh", overflowY: "auto" }}>
             <FormGroup>
               <label>Site Name *</label>
               <Input
