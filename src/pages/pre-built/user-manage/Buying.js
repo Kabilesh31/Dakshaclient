@@ -33,100 +33,6 @@ import {
 const API_BASE_URL = `${process.env.REACT_APP_BACKENDURL}/api`
 
 // ----------------------------------------------------------------------
-// Dummy data - EXPORTED for backward compatibility with BuyingDetails
-// ----------------------------------------------------------------------
-export const initialItems = [
-  {
-    id: "STL001",
-    itemCode: "STL-ROD-12",
-    name: "Steel Rod 12mm",
-    status: "Enabled",
-    group: "Steel",
-    hsnSac: "72072090",
-    unitMeasure: "KG",
-    maintainStock: true,
-    isFixedAsset: false,
-  },
-  {
-    id: "HRD002",
-    itemCode: "HRD-HAMMER",
-    name: "Ball Peen Hammer",
-    status: "Enabled",
-    group: "Hardware",
-    hsnSac: "82052000",
-    unitMeasure: "PCS",
-    maintainStock: true,
-    isFixedAsset: false,
-  },
-  {
-    id: "WDN003",
-    itemCode: "WDN-PLY-18",
-    name: "Plywood 18mm",
-    status: "Disabled",
-    group: "Wooden",
-    hsnSac: "44121000",
-    unitMeasure: "SHEET",
-    maintainStock: false,
-    isFixedAsset: false,
-  },
-  {
-    id: "MTL004",
-    itemCode: "MTL-AL-2",
-    name: "Aluminium Sheet 2mm",
-    status: "Enabled",
-    group: "Metal",
-    hsnSac: "76061190",
-    unitMeasure: "KG",
-    maintainStock: true,
-    isFixedAsset: false,
-  },
-  {
-    id: "STL005",
-    itemCode: "STL-ANGLE-50",
-    name: "Angle Iron 50x50",
-    status: "Enabled",
-    group: "Steel",
-    hsnSac: "72162100",
-    unitMeasure: "MTR",
-    maintainStock: true,
-    isFixedAsset: false,
-  },
-  {
-    id: "HRD006",
-    itemCode: "HRD-WRENCH",
-    name: "Adjustable Wrench",
-    status: "Disabled",
-    group: "Hardware",
-    hsnSac: "82041110",
-    unitMeasure: "PCS",
-    maintainStock: false,
-    isFixedAsset: true,
-  },
-  {
-    id: "WDN007",
-    itemCode: "WDN-LAM",
-    name: "Laminate Sheet",
-    status: "Enabled",
-    group: "Wooden",
-    hsnSac: "39203090",
-    unitMeasure: "SHEET",
-    maintainStock: true,
-    isFixedAsset: false,
-  },
-  {
-    id: "MTL008",
-    itemCode: "MTL-CU-5",
-    name: "Copper Sheet 5mm",
-    status: "Enabled",
-    group: "Metal",
-    hsnSac: "74091900",
-    unitMeasure: "KG",
-    maintainStock: false,
-    isFixedAsset: true,
-  },
-];
-
-// ----------------------------------------------------------------------
 // Options for selects
 // ----------------------------------------------------------------------
 const groupOptions = [
@@ -223,13 +129,13 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
-      setItemCode(initialData.itemCode || "");
-      setName(initialData.name || "");
-      setStatus({ value: initialData.status, label: initialData.status });
-      setGroup({ value: initialData.group, label: initialData.group });
-      setHsnSac(initialData.hsnSac || "");
+      setItemCode(initialData.itemCode || initialData.item_code || "");
+      setName(initialData.name || initialData.item_name || "");
+      setStatus({ value: initialData.status || (initialData.disabled === 0 ? "Enabled" : "Disabled"), label: initialData.status || (initialData.disabled === 0 ? "Enabled" : "Disabled") });
+      setGroup({ value: initialData.item_group || initialData.group, label: initialData.item_group || initialData.group });
+      setHsnSac(initialData.hsnSac || initialData.hsn_sac || "");
       setUnitMeasure(
-        unitOptions.find((opt) => opt.value === initialData.unitMeasure) || null
+        unitOptions.find((opt) => opt.value === (initialData.stock_uom || initialData.unitMeasure)) || null
       );
       setMaintainStock(initialData.maintainStock || false);
       setIsFixedAsset(initialData.isFixedAsset || false);
@@ -274,9 +180,9 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
       itemCode: itemCode.trim(),
       name: name.trim(),
       status: status.value,
-      group: group.value,
+      item_group: group.value,
       hsnSac: hsnSac.trim(),
-      unitMeasure: unitMeasure.value,
+      stock_uom: unitMeasure.value,
       maintainStock,
       isFixedAsset,
     };
@@ -482,16 +388,24 @@ const Buying = () => {
       let url = `${API_BASE_URL}/items?page=${currentPage}&limit=${itemPerPage}`;
       if (search) url += `&search=${search}`;
       if (statusFilter !== "All") url += `&status=${statusFilter}`;
-      if (groupFilter !== "All") url += `&group=${groupFilter}`;
+      if (groupFilter !== "All") url += `&item_group=${groupFilter}`;
       
       const response = await fetch(url);
       const data = await response.json();
       
       if (data.success) {
         setItems(data.data);
-        setTotalPages(data.pagination.pages);
-        setTotalItems(data.pagination.total);
-        if (data.filters?.groups) {
+        setTotalPages(data.pagination?.pages || 1);
+        setTotalItems(data.pagination?.total || 0);
+        
+        if (data.data && data.data.length > 0) {
+          const uniqueGroups = [...new Set(data.data.map(item => item.item_group).filter(Boolean))];
+          if (uniqueGroups.length > 0) {
+            setAvailableGroups(uniqueGroups);
+          }
+        }
+        
+        if (data.filters?.groups && data.filters.groups.length > 0) {
           setAvailableGroups(data.filters.groups);
         }
       } else {
@@ -509,11 +423,27 @@ const Buying = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/items/groups`);
       const data = await response.json();
+      
       if (data.success) {
-        setAvailableGroups(data.data);
+        let groups = [];
+        if (Array.isArray(data.data)) {
+          groups = data.data;
+        } else if (Array.isArray(data.groups)) {
+          groups = data.groups;
+        } else if (Array.isArray(data)) {
+          groups = data;
+        }
+        
+        if (groups.length > 0) {
+          setAvailableGroups(groups);
+        }
       }
     } catch (error) {
       console.error("Error fetching groups:", error);
+      if (items.length > 0) {
+        const uniqueGroups = [...new Set(items.map(item => item.item_group).filter(Boolean))];
+        setAvailableGroups(uniqueGroups);
+      }
     }
   };
 
@@ -566,7 +496,7 @@ const Buying = () => {
 
   useEffect(() => {
     fetchGroups();
-  }, []);
+  }, [items]);
 
   const handleAdd = () => {
     setModalMode("add");
@@ -593,7 +523,7 @@ const Buying = () => {
       const response = await deleteItem(deleteItemId);
       if (response.success) {
         alert("Item deleted successfully");
-        fetchItems();
+        await fetchItems();
       } else {
         alert(response.message || "Failed to delete item");
       }
@@ -625,7 +555,7 @@ const Buying = () => {
       
       if (response.success) {
         setIsModalOpen(false);
-        fetchItems();
+        await fetchItems();
       } else {
         alert(response.message || "Failed to save item");
       }
@@ -645,14 +575,26 @@ const Buying = () => {
     setCurrentPage(1);
   };
 
-  const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
+  const statusColor = (status) => {
+    if (status === "Enabled") return "success";
+    if (status === "Disabled") return "danger";
+    if (status === 0) return "success";
+    if (status === 1) return "danger";
+    return "secondary";
+  };
+
+  const getStatus = (item) => {
+    if (item.status) return item.status;
+    if (item.disabled === 0) return "Enabled";
+    if (item.disabled === 1) return "Disabled";
+    return "Enabled";
+  };
 
   const handleNameClick = (item) => {
     sessionStorage.setItem("selectedItem", JSON.stringify(item));
     history.push(`/Buying/${item._id || item.id}`, { item });
   };
 
-  // Get current items for pagination
   const indexOfFirst = (currentPage - 1) * itemPerPage;
 
   return (
@@ -685,12 +627,10 @@ const Buying = () => {
 
         <Block>
           <DataTable className="card-stretch w-100">
-            {/* Search & Filter Bar */}
             <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    {/* Status Filter */}
                     <div className="form-wrap">
                       <select
                         className="form-control"
@@ -707,7 +647,6 @@ const Buying = () => {
                       </select>
                     </div>
                     
-                    {/* Group Filter */}
                     <div className="form-wrap">
                       <select
                         className="form-control"
@@ -716,12 +655,16 @@ const Buying = () => {
                           setGroupFilter(e.target.value);
                           setCurrentPage(1);
                         }}
-                        style={{ minWidth: "120px" }}
+                        style={{ minWidth: "120px",  height : "40px" }}
                       >
                         <option value="All">All Groups</option>
-                        {availableGroups.map(group => (
-                          <option key={group} value={group}>{group}</option>
-                        ))}
+                        {availableGroups && availableGroups.length > 0 ? (
+                          availableGroups.map(group => (
+                            <option key={group} value={group}>{group}</option>
+                          ))
+                        ) : (
+                          <option disabled>No groups available</option>
+                        )}
                       </select>
                     </div>
                     
@@ -776,7 +719,6 @@ const Buying = () => {
               </div>
             </div>
 
-            {/* Loading Spinner */}
             {loading && (
               <div className="text-center py-5">
                 <Spinner color="primary" />
@@ -784,7 +726,6 @@ const Buying = () => {
               </div>
             )}
 
-            {/* Items Table */}
             {!loading && (
               <>
                 <div style={{ overflowX: "auto" }}>
@@ -797,7 +738,7 @@ const Buying = () => {
                         <th className="px-4 py-2 text-start">Item Group</th>
                         <th className="px-4 py-2 text-start">Item Code</th>
                         <th className="px-4 py-2 text-center">Actions</th>
-                      </tr>
+                       </tr>
                     </thead>
                     <tbody>
                       {items.length > 0 ? (
@@ -823,12 +764,12 @@ const Buying = () => {
                                   fontSize: "inherit",
                                 }}
                               >
-                                {item.name}
+                                {item.name || item.item_name}
                               </button>
                             </td>
                             <td className="px-4 py-2 text-center">
                               <span
-                                className={`badge bg-${statusColor(item.status)}`}
+                                className={`badge bg-${statusColor(getStatus(item))}`}
                                 style={{
                                   padding: "6px 12px",
                                   borderRadius: "12px",
@@ -837,7 +778,7 @@ const Buying = () => {
                                   color: "white",
                                 }}
                               >
-                                {item.status}
+                                {getStatus(item)}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-start">
@@ -852,11 +793,11 @@ const Buying = () => {
                                   borderRadius: "20px",
                                 }}
                               >
-                                {item.group}
+                                {item.item_group}
                               </span>
                             </td>
                             <td className="px-4 py-2 text-start">
-                              <code>{item.itemCode}</code>
+                              <code>{item.itemCode || item.item_code}</code>
                             </td>
                             <td className="px-4 py-2 text-center">
                               <UncontrolledDropdown>
@@ -886,7 +827,6 @@ const Buying = () => {
                   </table>
                 </div>
 
-                {/* Pagination */}
                 {totalItems > 0 && totalPages > 1 && (
                   <div className="card-inner">
                     <div className="d-flex justify-content-between align-items-center">
@@ -947,7 +887,6 @@ const Buying = () => {
         </Block>
       </Content>
 
-      {/* Add/Edit Modal */}
       <ItemFormModal
         isOpen={isModalOpen}
         mode={modalMode}
@@ -957,7 +896,6 @@ const Buying = () => {
         loading={formLoading}
       />
 
-      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         toggle={() => setShowDeleteConfirm(false)}

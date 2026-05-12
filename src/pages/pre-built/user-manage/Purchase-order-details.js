@@ -644,7 +644,7 @@ const PurchaseOrderDetails = () => {
               ) : (
                 <>
                   <Button color="warning" outline size="sm" onClick={startEditing}>
-                    <Icon name="edit" /> Edit Items
+                    <Icon name="edit" />
                   </Button>
                   <UncontrolledDropdown>
                     <DropdownToggle
@@ -653,8 +653,8 @@ const PurchaseOrderDetails = () => {
                       style={{ borderRadius: "4px", padding: "15px 14px", fontSize: "0.85rem" }}
                     >
                       <Icon name="download" />
-                      <span>Download</span>
-                      <Icon name="chevron-down" style={{ fontSize: "12px", marginLeft: "2px" }} />
+                      
+                      
                     </DropdownToggle>
                     <DropdownMenu right>
                       <DropdownItem onClick={downloadCSV}>
