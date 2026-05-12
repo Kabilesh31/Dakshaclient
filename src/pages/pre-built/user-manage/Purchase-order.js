@@ -1,6 +1,6 @@
-// PurchaseOrderPage.js - Fixed Version with proper date input
+// PurchaseOrderPage.js - Only table and filters updated, modal unchanged
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { useHistory } from "react-router-dom";
@@ -9,11 +9,24 @@ import {
   BlockBetween,
   BlockHead,
   BlockHeadContent,
+  BlockTitle,
   Icon,
+  Button,
+  DataTable,
 } from "../../../components/Component";
-import { Button, Modal, ModalBody, ModalHeader } from "reactstrap";
+import {
+  Modal,
+  ModalBody,
+  ModalHeader,
+  UncontrolledDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  Spinner,
+} from "reactstrap";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // API base URL
 const API_BASE_URL = `${process.env.REACT_APP_BACKENDURL}/api`
@@ -27,52 +40,7 @@ const DUMMY_PROJECTS = [
   { id: "PROJ-005", name: "Commercial Complex" },
 ];
 
-/* ─────────────────────────────────────────────
-   ============================================
-   SECTION 1: STYLES
-   ============================================
-───────────────────────────────────────────── */
-const S = {
-  page: { padding: "8px 0 32px" },
-  topbar: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 },
-  pageTitle: { fontSize: 22, fontWeight: 500, color: "#111827" },
-  pageSub: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
-  btnBase: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" },
-  btnPrimary: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #534AB7", background: "#534AB7", color: "#EEEDFE" },
-  btnSm: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" },
-  btnInfo: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #B5D4F4", background: "#E6F1FB", color: "#0C447C" },
-  searchWrap: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 },
-  searchInput: { border: "0.5px solid #e5e7eb", borderRadius: 8, padding: "7px 12px", fontSize: 13, background: "#fff", color: "#111827", width: 280, outline: "none" },
-  card: { background: "#fff", border: "0.5px solid #e5e7eb", borderRadius: 12, overflow: "auto" },
-  th: { padding: "11px 14px", textAlign: "left", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" },
-  thR: { padding: "11px 14px", textAlign: "right", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" },
-  td: { padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" },
-  tdMuted: { padding: "13px 14px", color: "#6b7280", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" },
-  tdR: { padding: "13px 14px", textAlign: "right", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" },
-
-  modalTabNav: { display: "flex", borderBottom: "0.5px solid #e5e7eb", padding: "0 20px", background: "#f9fafb", flexWrap: "wrap" },
-  modalTab: (active) => ({
-    display: "inline-flex", alignItems: "center", gap: 5, padding: "11px 14px",
-    fontSize: 12, fontWeight: 500,
-    color: active ? "#111827" : "#6b7280",
-    cursor: "pointer", background: "none", border: "none",
-    borderBottom: active ? "2px solid #534AB7" : "2px solid transparent",
-    marginBottom: -1,
-  }),
-  tabBody: { padding: 20, maxHeight: "60vh", overflowY: "auto" },
-  formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" },
-  formGroup: { display: "flex", flexDirection: "column", gap: 4 },
-  formLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#9ca3af" },
-  formControl: { border: "0.5px solid #e5e7eb", borderRadius: 6, padding: "7px 10px", fontSize: 13, background: "#fff", color: "#111827", width: "100%", outline: "none" },
-  sectionLabel: { fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 4 },
-  itemsTbl: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
-  itemsTh: { background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" },
-  itemsTd: { padding: "8px 10px", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" },
-  itemsInput: { border: "0.5px solid #e5e7eb", borderRadius: 4, padding: "5px 7px", fontSize: 12, background: "#fff", color: "#111827", width: "100%", outline: "none" },
-  totalBar: { display: "flex", alignItems: "center", gap: 20, padding: "10px 14px", background: "#f9fafb", borderRadius: 8, marginTop: 12, border: "0.5px solid #e5e7eb", flexWrap: "wrap" },
-  modalFooter: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "0.5px solid #e5e7eb", background: "#f9fafb", flexWrap: "wrap", gap: 10 },
-};
-
+// Status colors matching Material Request page style
 const STATUS_MAP = {
   "To Receive and Bill": { bg: "#EAF3DE", color: "#27500A", dot: "#639922" },
   "Pending": { bg: "#FAEEDA", color: "#633806", dot: "#BA7517" },
@@ -85,15 +53,34 @@ const STATUS_MAP = {
 const StatusBadge = ({ status }) => {
   const s = STATUS_MAP[status] || { bg: "#f3f4f6", color: "#6b7280", dot: "#9ca3af" };
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 99, background: s.bg, color: s.color }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+    <span style={{ 
+      display: "inline-flex", 
+      alignItems: "center", 
+      gap: 5, 
+      fontSize: 12, 
+      fontWeight: 500, 
+      padding: "4px 12px", 
+      borderRadius: 20, 
+      background: s.bg, 
+      color: s.color 
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
       {status}
     </span>
   );
 };
 
 const CodePill = ({ children }) => (
-  <code style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 4, padding: "2px 7px", fontFamily: "monospace", fontSize: 11, color: "#6b7280" }}>{children}</code>
+  <code style={{ 
+    background: "#f9fafb", 
+    border: "1px solid #e5e7eb", 
+    borderRadius: 4, 
+    padding: "4px 10px", 
+    fontFamily: "monospace", 
+    fontSize: 12, 
+    color: "#374151",
+    fontWeight: 500
+  }}>{children}</code>
 );
 
 // Helper functions
@@ -106,10 +93,15 @@ const fmtDisplay = (d) => {
   return d;
 };
 
+// Date validation function
+const isValidDateFormat = (dateStr) => {
+  if (!dateStr) return false;
+  return /^\d{2}-\d{2}-\d{4}$/.test(dateStr);
+};
+
 const toYMD = (d) => {
   if (!d) return "";
   if (d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
-  // Check if it's in DD-MM-YYYY format
   const parts = d.split("-");
   if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
     return `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -117,17 +109,7 @@ const toYMD = (d) => {
   return d;
 };
 
-// Date validation function
-const isValidDateFormat = (dateStr) => {
-  if (!dateStr) return false;
-  return /^\d{2}-\d{2}-\d{4}$/.test(dateStr);
-};
-
-/* ─────────────────────────────────────────────
-   ============================================
-   DATE INPUT COMPONENT (Fixed)
-   ============================================
-───────────────────────────────────────────── */
+// Date Input Component
 const DateInput = ({ value, onChange, placeholder = "DD-MM-YYYY", required = false }) => {
   const [displayValue, setDisplayValue] = useState(value ? fmtDisplay(value) : "");
   const [isValid, setIsValid] = useState(true);
@@ -144,7 +126,6 @@ const DateInput = ({ value, onChange, placeholder = "DD-MM-YYYY", required = fal
     const inputValue = e.target.value;
     setDisplayValue(inputValue);
     
-    // Only validate and convert when we have a complete date
     if (inputValue.length === 10 && isValidDateFormat(inputValue)) {
       const ymd = toYMD(inputValue);
       setIsValid(true);
@@ -154,12 +135,10 @@ const DateInput = ({ value, onChange, placeholder = "DD-MM-YYYY", required = fal
       onChange("");
     } else {
       setIsValid(false);
-      // Don't update parent until date is complete
     }
   };
 
   const handleBlur = () => {
-    // On blur, if we have a partial date, validate what we have
     if (displayValue && displayValue.length > 0 && displayValue.length < 10) {
       setIsValid(false);
     } else if (displayValue && displayValue.length === 10 && !isValidDateFormat(displayValue)) {
@@ -173,9 +152,16 @@ const DateInput = ({ value, onChange, placeholder = "DD-MM-YYYY", required = fal
     <div>
       <input
         style={{
-          ...S.formControl,
-          borderColor: isValid ? undefined : "#E24B4A",
-          backgroundColor: isValid ? undefined : "#FFF5F5"
+          border: "1px solid #e5e7eb",
+          borderRadius: 6,
+          padding: "7px 10px",
+          fontSize: 13,
+          background: "#fff",
+          color: "#111827",
+          width: "100%",
+          outline: "none",
+          borderColor: isValid ? "#e5e7eb" : "#E24B4A",
+          backgroundColor: isValid ? "#fff" : "#FFF5F5"
         }}
         type="text"
         placeholder={placeholder}
@@ -192,17 +178,8 @@ const DateInput = ({ value, onChange, placeholder = "DD-MM-YYYY", required = fal
   );
 };
 
-/* ─────────────────────────────────────────────
-   ============================================
-   ITEM ROW COMPONENT
-   ============================================
-───────────────────────────────────────────── */
-const ItemRow = ({
-  item, index,
-  handleItemChange, handleItemCodeChange, handleKeyDown,
-  selectSuggestion, suggestions, activeSuggestionIndex,
-  setActiveSuggestionIndex, isActive,
-}) => {
+// Item Row Component
+const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive }) => {
   const [displayDate, setDisplayDate] = useState(fmtDisplay(item.requiredBy));
 
   useEffect(() => { 
@@ -220,10 +197,10 @@ const ItemRow = ({
 
   return (
     <tr key={index}>
-      <td style={{ ...S.itemsTd, textAlign: "center", color: "#9ca3af", width: 36 }}>{item.no || index + 1}</td>
-      <td style={{ ...S.itemsTd, position: "relative" }}>
+      <td style={{ padding: "8px 12px", textAlign: "center", color: "#9ca3af", width: 36 }}>{item.no || index + 1}</td>
+      <td style={{ padding: "8px 12px", position: "relative" }}>
         <input
-          style={S.itemsInput}
+          style={{ border: "1px solid #e5e7eb", borderRadius: 4, padding: "5px 7px", fontSize: 12, width: "100%" }}
           type="text"
           value={item.itemCode || ""}
           onChange={(e) => handleItemCodeChange(index, e.target.value)}
@@ -262,58 +239,117 @@ const ItemRow = ({
           </div>
         )}
       </td>
-      <td style={{ ...S.itemsTd, width: 110 }}>
+      <td style={{ padding: "8px 12px", width: 110 }}>
         <DateInput 
           value={item.requiredBy} 
           onChange={handleDateChange}
           placeholder="DD-MM-YYYY"
         />
       </td>
-      <td style={{ ...S.itemsTd, width: 70 }}>
+      <td style={{ padding: "8px 12px", width: 70 }}>
         <input 
-          style={{ ...S.itemsInput, width: 60 }} 
+          style={{ border: "1px solid #e5e7eb", borderRadius: 4, padding: "5px 7px", fontSize: 12, width: 60 }} 
           type="number" 
           value={item.quantity || 0} 
           placeholder="0"
           onChange={(e) => handleItemChange(index, "quantity", parseFloat(e.target.value) || 0)} 
         />
       </td>
-      <td style={{ ...S.itemsTd, width: 60 }}>
+      <td style={{ padding: "8px 12px", width: 60 }}>
         <input 
-          style={{ ...S.itemsInput, width: 50 }} 
+          style={{ border: "1px solid #e5e7eb", borderRadius: 4, padding: "5px 7px", fontSize: 12, width: 50 }} 
           type="text" 
           value={item.uom || ""} 
           placeholder="UOM"
           onChange={(e) => handleItemChange(index, "uom", e.target.value)} 
         />
       </td>
-      <td style={{ ...S.itemsTd, width: 90 }}>
+      <td style={{ padding: "8px 12px", width: 90 }}>
         <input 
-          style={{ ...S.itemsInput, width: 80 }} 
+          style={{ border: "1px solid #e5e7eb", borderRadius: 4, padding: "5px 7px", fontSize: 12, width: 80 }} 
           type="number" 
           value={item.rate || ""} 
           placeholder="0.00"
           onChange={(e) => handleItemChange(index, "rate", parseFloat(e.target.value) || 0)} 
         />
       </td>
-      <td style={{ ...S.itemsTd, textAlign: "right", fontWeight: 500, color: "#111827", width: 90 }}>
+      <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 500, color: "#111827", width: 90 }}>
         ₹{amount}
       </td>
     </tr>
   );
 };
 
+// Delete Confirmation Modal
+const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
+  return (
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+      <ModalBody
+        style={{
+          overflowY: "auto",
+          maxHeight: "calc(100vh)",
+          padding: "1.5rem",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hide-scrollbar"
+      >
+        <a
+          href="#cancel"
+          onClick={(ev) => {
+            ev.preventDefault();
+            toggle();
+          }}
+          className="close"
+        >
+          <Icon name="cross-sm" />
+        </a>
+        <div className="p-2 text-center">
+          <div className="mb-4">
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+          </div>
+          <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
+          <p className="text-muted mb-4">
+            {message || "Are you sure you want to delete this purchase order? This action cannot be undone."}
+          </p>
+          <div className="d-flex gap-8 justify-content-center">
+            <Button
+              style={{
+                backgroundColor: "#644634",
+                borderColor: "#800000",
+                color: "#fff",
+                padding: "15px 24px",
+                marginRight: "10px",
+              }}
+              onClick={onConfirm}
+              disabled={loading}
+            >
+              {loading ? <Spinner size="sm" /> : "Yes, Delete"}
+            </Button>
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }} disabled={loading}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </ModalBody>
+    </Modal>
+  );
+};
+
 /* ─────────────────────────────────────────────
-   ============================================
    MAIN COMPONENT - PurchaseOrderPage
-   ============================================
 ───────────────────────────────────────────── */
 const PurchaseOrderPage = () => {
+  const history = useHistory();
+  
   // Main Page State
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [onSearch, setOnSearch] = useState(false);
   
   // Modal State
   const [addModal, setAddModal] = useState(false);
@@ -358,8 +394,18 @@ const PurchaseOrderPage = () => {
   const [activeAutocompleteIndex, setActiveAutocompleteIndex] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  
+  // Delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteOrderId, setDeleteOrderId] = useState(null);
 
-  const history = useHistory();
+  // Get unique statuses for filter
+  const uniqueStatuses = useRef(new Set());
+
+  // Toast helpers
+  const showSuccess = (message) => toast.success(message);
+  const showError = (message) => toast.error(message);
+  const showWarning = (message) => toast.warning(message);
 
   // API Calls
   const fetchPurchaseOrders = async () => {
@@ -368,11 +414,17 @@ const PurchaseOrderPage = () => {
       const response = await axios.get(`${API_BASE_URL}/purchase-orders`);
       if (response.data.success) {
         setPurchaseOrders(response.data.data);
-        setFiltered(response.data.data);
+        
+        // Extract unique statuses
+        response.data.data.forEach(order => {
+          if (order.status) uniqueStatuses.current.add(order.status);
+        });
+      } else {
+        showError(response.data.message || "Failed to fetch purchase orders");
       }
     } catch (error) {
       console.error("Error fetching purchase orders:", error);
-      toast.error("Failed to load purchase orders");
+      showError("Failed to load purchase orders");
     } finally {
       setLoading(false);
     }
@@ -386,7 +438,6 @@ const PurchaseOrderPage = () => {
       }
     } catch (error) {
       console.error("Error fetching suppliers:", error);
-      toast.error("Failed to load suppliers");
     }
   };
 
@@ -397,12 +448,10 @@ const PurchaseOrderPage = () => {
       if (response.data.success && response.data.data.length > 0) {
         setProjects(response.data.data);
       } else {
-        // Use dummy data if no projects from API
         setProjects(DUMMY_PROJECTS);
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
-      // Use dummy data on error
       setProjects(DUMMY_PROJECTS);
     } finally {
       setProjectsLoading(false);
@@ -417,7 +466,6 @@ const PurchaseOrderPage = () => {
       }
     } catch (error) {
       console.error("Error fetching material requests:", error);
-      toast.error("Failed to load material requests");
     }
   };
 
@@ -436,9 +484,58 @@ const PurchaseOrderPage = () => {
     return [];
   };
 
-  // ─────────────────────────────────────────────────
-  // EFFECTS
-  // ─────────────────────────────────────────────────
+  const fetchMaterialRequestDetails = async (mrId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/purchase-orders/material-requests/${mrId}`);
+      if (response.data.success) {
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error fetching material request details:", error);
+      showError("Failed to load material request details");
+    }
+    return null;
+  };
+
+  const createPurchaseOrder = async (orderData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/purchase-orders`, orderData);
+      if (response.data.success) {
+        await fetchPurchaseOrders();
+        showSuccess("Purchase order created successfully!");
+        return true;
+      } else {
+        showError(response.data.message || "Creation failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      showError(error.response?.data?.message || "Network error while creating");
+      return false;
+    }
+  };
+
+  const deletePurchaseOrder = async (id) => {
+    setDeleteLoading(true);
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/purchase-orders/${id}`);
+      if (response.data.success) {
+        await fetchPurchaseOrders();
+        showSuccess("Purchase order deleted successfully");
+        return true;
+      } else {
+        showError(response.data.message || "Delete failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      showError("Network error while deleting");
+      return false;
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPurchaseOrders();
     fetchSuppliers();
@@ -469,22 +566,36 @@ const PurchaseOrderPage = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [activeAutocompleteIndex]);
 
+  // Apply filters
   useEffect(() => {
-    if (search.trim() === "") { 
-      setFiltered(purchaseOrders); 
-      return; 
+    let result = [...purchaseOrders];
+    
+    // Apply search filter
+    if (search.trim() !== "") {
+      const keyword = search.toLowerCase();
+      result = result.filter(
+        (order) =>
+          order.supplierName?.toLowerCase().includes(keyword) ||
+          order._id?.toLowerCase().includes(keyword) ||
+          order.status?.toLowerCase().includes(keyword)
+      );
     }
-    const kw = search.toLowerCase();
-    setFiltered(purchaseOrders.filter(po =>
-      po.supplierName?.toLowerCase().includes(kw) ||
-      po._id?.toLowerCase().includes(kw) ||
-      po.status?.toLowerCase().includes(kw)
-    ));
-  }, [search, purchaseOrders]);
+    
+    // Apply status filter
+    if (statusFilter !== "All") {
+      result = result.filter((order) => order.status === statusFilter);
+    }
+    
+    setFiltered(result);
+  }, [search, statusFilter, purchaseOrders]);
 
-  // ─────────────────────────────────────────────────
-  // HANDLERS
-  // ─────────────────────────────────────────────────
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("All");
+    setOnSearch(false);
+  };
+
+  // Form handlers
   const handleItemChange = (index, field, value) => {
     const items = [...newOrder.items];
     items[index][field] = value;
@@ -555,29 +666,6 @@ const PurchaseOrderPage = () => {
     }));
   };
 
-  const removeItemRow = (index) => {
-    if (newOrder.items.length <= 1) {
-      toast.warning("At least one item is required");
-      return;
-    }
-    const items = newOrder.items.filter((_, i) => i !== index);
-    const renumberedItems = items.map((item, idx) => ({ ...item, no: idx + 1 }));
-    setNewOrder((p) => ({ ...p, items: renumberedItems }));
-  };
-
-  const fetchMaterialRequestDetails = async (mrId) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/purchase-orders/material-requests/${mrId}`);
-      if (response.data.success) {
-        return response.data.data;
-      }
-    } catch (error) {
-      console.error("Error fetching material request details:", error);
-      toast.error("Failed to load material request details");
-    }
-    return null;
-  };
-
   const selectMR = async (mr) => {
     setSelectedMR(mr);
     const mrDetails = await fetchMaterialRequestDetails(mr._id);
@@ -597,9 +685,9 @@ const PurchaseOrderPage = () => {
         ...p, 
         items: [...p.items.filter((i) => i.itemCode.trim()), ...mrItems] 
       }));
-      toast.success(`Added ${mrItems.length} items from ${mr.title}`);
+      showSuccess(`Added ${mrItems.length} items from ${mr.title}`);
     } else {
-      toast.warning("No items found in this material request");
+      showWarning("No items found in this material request");
     }
     setShowMRModal(false);
   };
@@ -638,26 +726,24 @@ const PurchaseOrderPage = () => {
   };
 
   const handleAddOrder = async () => {
-    // Validation
     if (!newOrder.supplierId) {
-      toast.error("Please select a supplier");
+      showError("Please select a supplier");
       return;
     }
     if (!newOrder.date) {
-      toast.error("Please enter order date");
+      showError("Please enter order date");
       return;
     }
     if (!newOrder.requiredBy) {
-      toast.error("Please enter required by date");
+      showError("Please enter required by date");
       return;
     }
     const validItems = newOrder.items.filter(i => i.itemCode && i.itemCode.trim());
     if (validItems.length === 0) {
-      toast.error("Please add at least one item");
+      showError("Please add at least one item");
       return;
     }
 
-    // Prepare data for API
     const orderData = {
       ...newOrder,
       items: newOrder.items.filter(i => i.itemCode && i.itemCode.trim()).map((item, idx) => ({
@@ -667,39 +753,13 @@ const PurchaseOrderPage = () => {
       })),
     };
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/purchase-orders`, orderData);
-      if (response.data.success) {
-        toast.success("Purchase order created successfully!");
-        setAddModal(false);
-        resetForm();
-        fetchPurchaseOrders();
-      }
-    } catch (error) {
-      console.error("Error creating purchase order:", error);
-      toast.error(error.response?.data?.message || "Failed to create purchase order");
+    const success = await createPurchaseOrder(orderData);
+    if (success) {
+      setAddModal(false);
+      resetForm();
     }
   };
 
-  const goToDetails = (order) => history.push(`/purchase-order-details/${order._id}`, { orderData: order });
-
-  // ─────────────────────────────────────────────────
-  // UTILITIES
-  // ─────────────────────────────────────────────────
-  const totalQty = newOrder.items.reduce((s, i) => s + (i.quantity || 0), 0);
-  const calculateGrandTotal = () => newOrder.items.reduce((s, i) => s + ((i.quantity || 0) * (i.rate || 0)), 0);
-  const fmtCurrency = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(n);
-  
-  const fc = { ...S.formControl };
-  const fl = S.formLabel;
-
-  const tabs = [
-    { key: "details", label: "Details", icon: "file-description" },
-    { key: "address", label: "Address & contact", icon: "map-pin" },
-    { key: "terms", label: "Terms", icon: "file-text" },
-  ];
-
-  // Handle supplier selection
   const handleSupplierChange = (supplierId) => {
     const selectedSupplier = suppliers.find(s => s.id === supplierId);
     setNewOrder({
@@ -711,7 +771,6 @@ const PurchaseOrderPage = () => {
     });
   };
 
-  // Handle date changes with proper conversion
   const handleDateChange = (field, value) => {
     if (value === "" || (value && value.match(/^\d{4}-\d{2}-\d{2}$/))) {
       setNewOrder({ ...newOrder, [field]: value });
@@ -728,87 +787,254 @@ const PurchaseOrderPage = () => {
     }
   };
 
+  const handleDeleteClick = (id) => {
+    setDeleteOrderId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteOrderId) {
+      await deletePurchaseOrder(deleteOrderId);
+      setShowDeleteConfirm(false);
+      setDeleteOrderId(null);
+    }
+  };
+
+  const goToDetails = (order) => {
+    history.push(`/purchase-order-details/${order._id}`, { orderData: order });
+  };
+
+  const calculateGrandTotal = () => 
+    newOrder.items.reduce((s, i) => s + ((i.quantity || 0) * (i.rate || 0)), 0);
+  
+  const fmtCurrency = (n) => 
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 0 }).format(n);
+
+  const totalQty = newOrder.items.reduce((s, i) => s + (i.quantity || 0), 0);
+  const fc = { border: "1px solid #e5e7eb", borderRadius: 6, padding: "7px 10px", fontSize: 13, background: "#fff", color: "#111827", width: "100%", outline: "none" };
+  const fl = { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#9ca3af", marginBottom: 4 };
+
+  const tabs = [
+    { key: "details", label: "Details", icon: "file-description" },
+    { key: "address", label: "Address & contact", icon: "map-pin" },
+    { key: "terms", label: "Terms", icon: "file-text" },
+  ];
+
   return (
     <>
       <Head title="Purchase Order" />
       <Content>
-        <div style={S.page}>
+        <BlockHead size="sm">
+          <BlockBetween>
+            <BlockHeadContent>
+              <BlockTitle tag="h3">Purchase Orders</BlockTitle>
+              <p className="text-muted">Total Orders: {filtered.length}</p>
+            </BlockHeadContent>
+            <BlockHeadContent>
+              <div className="toggle-wrap nk-block-tools-toggle">
+                <Button
+                  className="btn-icon"
+                  style={{
+                    backgroundColor: "#644634",
+                    borderColor: "#800000",
+                    color: "#fff",
+                  }}
+                  onClick={() => { resetForm(); setAddModal(true); }}
+                >
+                  <Icon name="plus" />
+                </Button>
+              </div>
+            </BlockHeadContent>
+          </BlockBetween>
+        </BlockHead>
 
-          <div style={S.topbar}>
-            <div>
-              <div style={S.pageTitle}>Purchase orders</div>
-              <div style={S.pageSub}>{filtered.length} order{filtered.length !== 1 ? "s" : ""}</div>
+        <Block>
+          <DataTable className="card-stretch w-100">
+            {/* Search & Filter Bar */}
+            <div className="card-inner position-relative card-tools-toggle">
+              <div className="card-title-group">
+                <div className="card-tools">
+                  <div className="form-inline flex-nowrap gx-3">
+                    {/* Status Filter */}
+                    <div className="form-wrap">
+                      <select
+                        className="form-control"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        style={{ minWidth: "150px" }}
+                      >
+                        <option value="All">All Status</option>
+                        {Array.from(uniqueStatuses.current).sort().map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* {(search || statusFilter !== "All") && (
+                      <Button color="link" onClick={resetFilters} className="ms-2">
+                        Clear Filters
+                      </Button>
+                    )} */}
+                  </div>
+                </div>
+                <div className="card-tools mr-n1">
+                  <ul className="btn-toolbar gx-1">
+                    <li>
+                      <a
+                        href="#search"
+                        onClick={(ev) => {
+                          ev.preventDefault();
+                          setOnSearch(!onSearch);
+                        }}
+                        className="btn btn-icon search-toggle"
+                      >
+                        <Icon name="search" />
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className={`card-search search-wrap ${onSearch ? "active" : ""}`}>
+                <div className="card-body">
+                  <div className="search-content">
+                    <Button
+                      className="search-back btn-icon"
+                      onClick={() => {
+                        setSearch("");
+                        setOnSearch(false);
+                      }}
+                    >
+                      <Icon name="arrow-left" />
+                    </Button>
+                    <input
+                      type="text"
+                      className="form-control border-transparent"
+                      placeholder="Search by supplier, ID or status"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <Button color="primary" onClick={() => { resetForm(); setAddModal(true); }}>
-              <Icon name="plus" /> Add purchase order
-            </Button>
-          </div>
 
-          <div style={S.searchWrap}>
-            <Icon name="search" style={{ fontSize: 15, color: "#9ca3af" }} />
-            <input
-              style={S.searchInput}
-              type="text"
-              placeholder="Search by supplier, ID or status…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+            {/* Loading Spinner */}
+            {loading && (
+              <div className="text-center py-5">
+                <Spinner color="primary" />
+                <p className="mt-2">Loading purchase orders...</p>
+              </div>
+            )}
 
-          {loading ? (
-            <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ width: 36, height: 36, border: "2px solid #e5e7eb", borderTopColor: "#534AB7", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 14px" }} />
-              <p style={{ color: "#9ca3af", fontSize: 13 }}>Loading orders…</p>
-            </div>
-          ) : (
-            <div style={S.card}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
-                <colgroup>
-                  <col style={{ width: "22%" }} />
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "13%" }} />
-                  <col style={{ width: "16%" }} />
-                  <col style={{ width: "18%" }} />
-                  <col style={{ width: "11%" }} />
-                </colgroup>
-                <thead>
-                  <tr style={{ background: "#f9fafb", borderBottom: "0.5px solid #e5e7eb" }}>
-                    <th style={S.th}>Supplier</th>
-                    <th style={S.th}>Status</th>
-                    <th style={S.th}>Date</th>
-                    <th style={S.thR}>Grand total</th>
-                    <th style={S.th}>Order ID</th>
-                    <th style={S.th}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? filtered.map((order, idx) => {
-                    const isLast = idx === filtered.length - 1;
-                    const border = isLast ? "none" : "0.5px solid #f3f4f6";
-                    return (
-                      <tr key={order._id}>
-                        <td style={{ ...S.td, borderBottom: border, fontWeight: 500 }}>
-                          <button onClick={() => goToDetails(order)} style={{ background: "none", border: "none", color: "#185FA5", cursor: "pointer", fontWeight: 500, fontSize: 13, padding: 0 }}>
-                            {order.supplierName}
-                          </button>
-                        </td>
-                        <td style={{ ...S.td, borderBottom: border }}><StatusBadge status={order.status} /></td>
-                        <td style={{ ...S.tdMuted, borderBottom: border }}>{fmtDisplay(order.date) || "—"}</td>
-                        <td style={{ ...S.tdR, borderBottom: border, color: "#27500A", fontWeight: 500 }}>{fmtCurrency(order.grandTotal)}</td>
-                        <td style={{ ...S.td, borderBottom: border }}><CodePill>{order._id}</CodePill></td>
-                        <td style={{ ...S.td, borderBottom: border }}>
-                          <button style={{ ...S.btnSm, fontSize: 11 }} onClick={() => goToDetails(order)}>View</button>
-                        </td>
-                      </tr>
-                    );
-                  }) : (
-                    <tr><td colSpan={6} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>No purchase orders found</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+            {/* Purchase Orders Table */}
+            {!loading && (
+              <>
+                <div style={{ overflowX: "auto", padding: "0 20px 20px" }}>
+                  <div
+                    style={{
+                      borderRadius: "8px",
+                      marginTop: "20px",
+                      border: "1px solid #e5e7eb",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: "0.88rem",
+                      }}
+                    >
+                      <thead>
+                        <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "25%" }}>
+                            Supplier Name
+                          </th>
+                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "15%" }}>
+                            Status
+                          </th>
+                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
+                            Date
+                          </th>
+                          <th style={{ padding: "14px 16px", textAlign: "right", fontWeight: 600, color: "#374151", width: "15%" }}>
+                            Grand Total
+                          </th>
+                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "18%" }}>
+                            Order ID
+                          </th>
+                          <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "10%" }}>
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length > 0 ? (
+                          filtered.map((order, idx) => (
+                            <tr
+                              key={order._id}
+                              style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}
+                            >
+                              <td style={{ padding: "14px 16px" }}>
+                                <button
+                                  onClick={() => goToDetails(order)}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#2563eb",
+                                    cursor: "pointer",
+                                    fontWeight: 500,
+                                    textAlign: "left",
+                                    padding: 0,
+                                    fontSize: "0.88rem",
+                                  }}
+                                >
+                                  {order.supplierName}
+                                </button>
+                              </td>
+                              <td style={{ padding: "10px 14px" }}>
+                                <StatusBadge status={order.status} />
+                              </td>
+                              <td style={{ padding: "14px 16px", color: "#6b7280" }}>
+                                {fmtDisplay(order.date) || "—"}
+                              </td>
+                              <td style={{ padding: "14px 16px", textAlign: "right", color: "#27500A", fontWeight: 600 }}>
+                                {fmtCurrency(order.grandTotal)}
+                              </td>
+                              <td style={{ padding: "14px 16px" }}>
+                                <CodePill>{order._id}</CodePill>
+                              </td>
+                              <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                                <UncontrolledDropdown>
+                                  <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                    <Icon name="more-h" />
+                                  </DropdownToggle>
+                                  <DropdownMenu right>
+                                    <DropdownItem onClick={() => goToDetails(order)}>
+                                      <Icon name="eye" /> View
+                                    </DropdownItem>
+                                    <DropdownItem onClick={() => handleDeleteClick(order._id)}>
+                                      <Icon name="trash" /> Delete
+                                    </DropdownItem>
+                                  </DropdownMenu>
+                                </UncontrolledDropdown>
+                               </td>
+                             </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="6" style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
+                              No purchase orders found
+                             </td>
+                           </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+          </DataTable>
+        </Block>
       </Content>
 
       {/* Add Purchase Order Modal */}
@@ -819,9 +1045,9 @@ const PurchaseOrderPage = () => {
         </ModalHeader>
         <ModalBody style={{ padding: 0 }}>
 
-          <div style={S.modalTabNav}>
+          <div style={{ display: "flex", borderBottom: "0.5px solid #e5e7eb", padding: "0 20px", background: "#f9fafb", flexWrap: "wrap" }}>
             {tabs.map(({ key, label, icon }) => (
-              <button key={key} style={S.modalTab(activeTab === key)} onClick={() => setActiveTab(key)}>
+              <button key={key} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "11px 14px", fontSize: 12, fontWeight: 500, color: activeTab === key ? "#111827" : "#6b7280", cursor: "pointer", background: "none", border: "none", borderBottom: activeTab === key ? "2px solid #534AB7" : "2px solid transparent", marginBottom: -1 }} onClick={() => setActiveTab(key)}>
                 <Icon name={icon} style={{ fontSize: 14 }} /> {label}
               </button>
             ))}
@@ -829,13 +1055,13 @@ const PurchaseOrderPage = () => {
 
           {/* Tab: Details */}
           {activeTab === "details" && (
-            <div style={S.tabBody}>
-              <div style={S.formGrid}>
-                <div style={S.formGroup}>
+            <div style={{ padding: 20, maxHeight: "60vh", overflowY: "auto" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Series</label>
                   <input style={fc} type="text" value={newOrder.series} onChange={(e) => setNewOrder({ ...newOrder, series: e.target.value })} />
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Date <span style={{ color: "#E24B4A" }}>*</span></label>
                   <DateInput 
                     value={newOrder.date} 
@@ -843,14 +1069,14 @@ const PurchaseOrderPage = () => {
                     placeholder="DD-MM-YYYY"
                   />
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Supplier <span style={{ color: "#E24B4A" }}>*</span></label>
                   <select style={fc} value={newOrder.supplierId} onChange={(e) => handleSupplierChange(e.target.value)}>
                     <option value="">Select supplier</option>
                     {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Mode of payment <span style={{ color: "#E24B4A" }}>*</span></label>
                   <select style={fc} value={newOrder.modeOfPayment} onChange={(e) => setNewOrder({ ...newOrder, modeOfPayment: e.target.value })}>
                     <option>Check</option>
@@ -860,11 +1086,11 @@ const PurchaseOrderPage = () => {
                     <option>Credit Card</option>
                   </select>
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Terms of payment</label>
                   <input style={fc} type="text" value={newOrder.termsOfPayment} onChange={(e) => setNewOrder({ ...newOrder, termsOfPayment: e.target.value })} />
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Required by <span style={{ color: "#E24B4A" }}>*</span></label>
                   <DateInput 
                     value={newOrder.requiredBy} 
@@ -872,11 +1098,11 @@ const PurchaseOrderPage = () => {
                     placeholder="DD-MM-YYYY"
                   />
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Cost center</label>
                   <input style={fc} type="text" placeholder="Cost center" value={newOrder.costCenter} onChange={(e) => setNewOrder({ ...newOrder, costCenter: e.target.value })} />
                 </div>
-                <div style={S.formGroup}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Project</label>
                   <select style={fc} value={newOrder.project} onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })}>
                     <option value="">Select project</option>
@@ -900,19 +1126,19 @@ const PurchaseOrderPage = () => {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
-                <div style={S.sectionLabel}>Items</div>
+                <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 4 }}>Items</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {selectedMR && (
                     <span style={{ fontSize: 11, color: "#185FA5" }}>{selectedMR._id}</span>
                   )}
-                  <button style={S.btnInfo} onClick={() => setShowMRModal(true)}>
+                  <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #B5D4F4", background: "#E6F1FB", color: "#0C447C" }} onClick={() => setShowMRModal(true)}>
                     <Icon name="file-text" style={{ fontSize: 13 }} /> Select material request
                   </button>
                 </div>
               </div>
 
               <div style={{ border: "0.5px solid #e5e7eb", borderRadius: 8, overflow: "auto", marginBottom: 10 }}>
-                <table style={S.itemsTbl}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <colgroup>
                     <col style={{ width: 36 }} />
                     <col style={{ minWidth: 200 }} />
@@ -921,18 +1147,16 @@ const PurchaseOrderPage = () => {
                     <col style={{ width: 60 }} />
                     <col style={{ width: 90 }} />
                     <col style={{ width: 90 }} />
-                    <col style={{ width: 40 }} />
                   </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ ...S.itemsTh, textAlign: "center" }}>No</th>
-                      <th style={S.itemsTh}>Item code</th>
-                      <th style={S.itemsTh}>Required by</th>
-                      <th style={S.itemsTh}>Qty</th>
-                      <th style={S.itemsTh}>UOM</th>
-                      <th style={S.itemsTh}>Rate (₹)</th>
-                      <th style={{ ...S.itemsTh, textAlign: "right" }}>Amount</th>
-                      <th style={{ ...S.itemsTh, textAlign: "center" }}></th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb", textAlign: "center" }}>No</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Item code</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Required by</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Qty</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>UOM</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Rate (₹)</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "right", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Amount</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -955,62 +1179,62 @@ const PurchaseOrderPage = () => {
                 </table>
               </div>
 
-              <button style={S.btnSm} onClick={addItemRow}>
+              <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" }} onClick={addItemRow}>
                 <Icon name="plus" style={{ fontSize: 13 }} /> Add row
               </button>
 
-              <div style={S.totalBar}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 14px", background: "#f9fafb", borderRadius: 8, marginTop: 12, border: "0.5px solid #e5e7eb", flexWrap: "wrap" }}>
                 <div style={{ fontSize: 12, color: "#6b7280" }}>Total qty: <strong style={{ color: "#111827", fontWeight: 500 }}>{totalQty}</strong></div>
                 <div style={{ height: 14, width: 1, background: "#e5e7eb" }} />
                 <div style={{ fontSize: 12, color: "#6b7280" }}>Grand total: <strong style={{ color: "#27500A", fontSize: 14, fontWeight: 500 }}>{fmtCurrency(calculateGrandTotal())}</strong></div>
               </div>
 
-              <div style={{ ...S.sectionLabel, marginTop: 16 }}>Taxes &amp; charges</div>
-              <div style={{ ...S.formGrid, marginTop: 10 }}>
-                <div style={S.formGroup}><label style={fl}>Tax category</label><input style={fc} type="text" placeholder="Tax category" value={newOrder.taxCategory || ""} onChange={(e) => setNewOrder({ ...newOrder, taxCategory: e.target.value })} /></div>
-                <div style={S.formGroup}><label style={fl}>Shipping rule</label><input style={fc} type="text" placeholder="Shipping rule" value={newOrder.shippingRule || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingRule: e.target.value })} /></div>
-                <div style={S.formGroup}><label style={fl}>Incoterm</label><input style={fc} type="text" placeholder="Incoterm" value={newOrder.incoterm || ""} onChange={(e) => setNewOrder({ ...newOrder, incoterm: e.target.value })} /></div>
+              <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 16 }}>Taxes &amp; charges</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px", marginTop: 10 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Tax category</label><input style={fc} type="text" placeholder="Tax category" value={newOrder.taxCategory || ""} onChange={(e) => setNewOrder({ ...newOrder, taxCategory: e.target.value })} /></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Shipping rule</label><input style={fc} type="text" placeholder="Shipping rule" value={newOrder.shippingRule || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingRule: e.target.value })} /></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Incoterm</label><input style={fc} type="text" placeholder="Incoterm" value={newOrder.incoterm || ""} onChange={(e) => setNewOrder({ ...newOrder, incoterm: e.target.value })} /></div>
               </div>
             </div>
           )}
 
           {/* Tab: Address & Contact */}
           {activeTab === "address" && (
-            <div style={S.tabBody}>
-              <div style={S.sectionLabel}>Supplier address</div>
-              <div style={S.formGrid}>
-                <div style={S.formGroup}><label style={fl}>Supplier address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.supplierAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, supplierAddress: e.target.value })} /></div>
-                <div style={S.formGroup}><label style={fl}>Supplier contact</label><input style={fc} type="text" value={newOrder.supplierContact || ""} onChange={(e) => setNewOrder({ ...newOrder, supplierContact: e.target.value })} /></div>
+            <div style={{ padding: 20, maxHeight: "60vh", overflowY: "auto" }}>
+              <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 4 }}>Supplier address</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Supplier address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.supplierAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, supplierAddress: e.target.value })} /></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Supplier contact</label><input style={fc} type="text" value={newOrder.supplierContact || ""} onChange={(e) => setNewOrder({ ...newOrder, supplierContact: e.target.value })} /></div>
               </div>
 
-              <div style={{ ...S.sectionLabel, marginTop: 16 }}>Shipping address</div>
-              <div style={S.formGrid}>
-                <div style={S.formGroup}><label style={fl}>Shipping address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.shippingAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingAddress: e.target.value })} /></div>
-                <div style={S.formGroup}><label style={fl}>Shipping contact</label><input style={fc} type="text" value={newOrder.shippingContact || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingContact: e.target.value })} /></div>
+              <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 16 }}>Shipping address</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Shipping address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.shippingAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingAddress: e.target.value })} /></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Shipping contact</label><input style={fc} type="text" value={newOrder.shippingContact || ""} onChange={(e) => setNewOrder({ ...newOrder, shippingContact: e.target.value })} /></div>
               </div>
 
-              <div style={{ ...S.sectionLabel, marginTop: 16 }}>Company billing</div>
-              <div style={S.formGrid}>
-                <div style={S.formGroup}><label style={fl}>Company billing address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.companyBillingAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, companyBillingAddress: e.target.value })} /></div>
-                <div style={S.formGroup}><label style={fl}>Place of supply</label><input style={fc} type="text" value={newOrder.placeOfSupply || ""} onChange={(e) => setNewOrder({ ...newOrder, placeOfSupply: e.target.value })} /></div>
+              <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10, marginTop: 16 }}>Company billing</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Company billing address</label><textarea style={{ ...fc, resize: "vertical" }} rows={3} value={newOrder.companyBillingAddress || ""} onChange={(e) => setNewOrder({ ...newOrder, companyBillingAddress: e.target.value })} /></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}><label style={fl}>Place of supply</label><input style={fc} type="text" value={newOrder.placeOfSupply || ""} onChange={(e) => setNewOrder({ ...newOrder, placeOfSupply: e.target.value })} /></div>
               </div>
             </div>
           )}
 
           {/* Tab: Terms */}
           {activeTab === "terms" && (
-            <div style={S.tabBody}>
-              <div style={S.formGroup}>
+            <div style={{ padding: 20, maxHeight: "60vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <label style={fl}>Terms and conditions</label>
                 <textarea style={{ ...fc, resize: "vertical" }} rows={10} placeholder="Enter terms and conditions…" value={newOrder.termsAndConditions || ""} onChange={(e) => setNewOrder({ ...newOrder, termsAndConditions: e.target.value })} />
               </div>
             </div>
           )}
 
-          <div style={S.modalFooter}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "0.5px solid #e5e7eb", background: "#f9fafb", flexWrap: "wrap", gap: 10 }}>
             <div style={{ fontSize: 12, color: "#9ca3af" }}>Fields marked <span style={{ color: "#E24B4A" }}>*</span> are required</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button style={S.btnBase} onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}>Cancel</button>
+              <button style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" }} onClick={() => { setAddModal(false); setActiveAutocompleteIndex(null); }}>Cancel</button>
               <Button color="primary" onClick={handleAddOrder}>
                 <Icon name="check" /> Submit order
               </Button>
@@ -1027,20 +1251,20 @@ const PurchaseOrderPage = () => {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "0.5px solid #e5e7eb" }}>
-                  <th style={S.th}>ID</th>
-                  <th style={S.th}>Title</th>
-                  <th style={S.th}>Status</th>
-                  <th style={{ ...S.th, width: 90 }}></th>
+                  <th style={{ padding: "11px 14px", textAlign: "left", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" }}>ID</th>
+                  <th style={{ padding: "11px 14px", textAlign: "left", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" }}>Title</th>
+                  <th style={{ padding: "11px 14px", textAlign: "left", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280" }}>Status</th>
+                  <th style={{ padding: "11px 14px", textAlign: "left", fontWeight: 500, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "#6b7280", width: 90 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {materialRequests.map((mr, idx) => (
                   <tr key={mr._id} style={{ borderBottom: idx < materialRequests.length - 1 ? "0.5px solid #f3f4f6" : "none" }}>
-                    <td style={S.td}><CodePill>{mr._id}</CodePill></td>
-                    <td style={{ ...S.td, wordBreak: "break-word", whiteSpace: "normal" }}>{mr.title}</td>
-                    <td style={S.td}><StatusBadge status={mr.status} /></td>
-                    <td style={S.td}>
-                      <button style={S.btnPrimary} onClick={() => selectMR(mr)}>Select</button>
+                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}><code style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 4, padding: "2px 7px", fontFamily: "monospace", fontSize: 11, color: "#6b7280" }}>{mr._id}</code></td>
+                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle", wordBreak: "break-word", whiteSpace: "normal" }}>{mr.title}</td>
+                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}><StatusBadge status={mr.status} /></td>
+                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}>
+                      <button style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #534AB7", background: "#534AB7", color: "#EEEDFE" }} onClick={() => selectMR(mr)}>Select</button>
                     </td>
                   </tr>
                 ))}
@@ -1053,14 +1277,33 @@ const PurchaseOrderPage = () => {
         </ModalBody>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        toggle={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Purchase Order"
+        message="Are you sure you want to delete this purchase order? This action cannot be undone."
+        loading={deleteLoading}
+      />
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+
       <style>{`
-        @keyframes spin { 
-          to { transform: rotate(360deg); } 
-        }
-        @media (max-width: 768px) {
-          .table-responsive {
-            overflow-x: auto;
-          }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </>

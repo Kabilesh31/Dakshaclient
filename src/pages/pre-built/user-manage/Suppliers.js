@@ -23,10 +23,13 @@ import {
   Form,
   FormGroup,
   Col,
+  Input,
+  Label,
+  Spinner,
 } from "reactstrap";
 
 // API Base URL (adjust to your proxy)
-const API_BASE = "http://localhost:8000/api/suppliers";
+const API_BASE = `${process.env.REACT_APP_BACKENDURL}/api/suppliers`;
 
 const supplierTypeOptions = [
   { value: "Manufacturer", label: "Manufacturer" },
@@ -50,7 +53,7 @@ const statusOptions = [
 ];
 
 // Confirmation Modal
-const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
+const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
     <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
       <ModalBody
@@ -91,10 +94,11 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
                 marginRight: "10px",
               }}
               onClick={onConfirm}
+              disabled={loading}
             >
-              Yes, Delete
+              {loading ? <Spinner size="sm" /> : "Yes, Delete"}
             </Button>
-            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }}>
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }} disabled={loading}>
               Cancel
             </Button>
           </div>
@@ -105,7 +109,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
 };
 
 // Supplier Form Modal
-const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existingGroups }) => {
+const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existingGroups, loading }) => {
   const [name, setName] = useState("");
   const [status, setStatus] = useState(null);
   const [group, setGroup] = useState(null);
@@ -127,9 +131,9 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
 
   useEffect(() => {
     if (mode === "edit" && initialData) {
-      setName(initialData.name);
-      setStatus({ value: initialData.status, label: initialData.status });
-      setGroup({ value: initialData.group, label: initialData.group });
+      setName(initialData.name || "");
+      setStatus(statusOptions.find(opt => opt.value === initialData.status) || null);
+      setGroup(groupOptions.find(opt => opt.value === initialData.group) || null);
       setGstNumber(initialData.gstNumber || "");
       setSupplierType(supplierTypeOptions.find((opt) => opt.value === initialData.supplierType) || null);
       setGstCategory(gstCategoryOptions.find((opt) => opt.value === initialData.gstCategory) || null);
@@ -179,7 +183,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return alert("Please enter a valid email");
 
     onSave({
-      id: mode === "edit" ? initialData?.id : undefined,
+      id: mode === "edit" ? initialData?._id || initialData?.id : undefined,
       name: name.trim(),
       status: status.value,
       group: finalGroup,
@@ -199,7 +203,6 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
         city: city.trim(),
       },
     });
-    handleClose();
   };
 
   return (
@@ -230,68 +233,68 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
             <Form className="row gy-4" onSubmit={handleSubmit}>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Supplier Name *</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">Supplier Name *</Label>
+                  <Input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter supplier name"
                     required
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Status *</label>
+                  <Label className="form-label">Status *</Label>
                   <RSelect
                     options={statusOptions}
                     value={status}
                     onChange={(opt) => setStatus(opt)}
                     placeholder="Select Status"
-                    className="supplier-select"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">GST Number</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">GST Number</Label>
+                  <Input
                     type="text"
                     value={gstNumber}
                     onChange={(e) => setGstNumber(e.target.value)}
                     placeholder="Enter GST number"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Supplier Type *</label>
+                  <Label className="form-label">Supplier Type *</Label>
                   <RSelect
                     options={supplierTypeOptions}
                     value={supplierType}
                     onChange={(opt) => setSupplierType(opt)}
                     placeholder="Select Supplier Type"
-                    className="supplier-select"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">GST Category *</label>
+                  <Label className="form-label">GST Category *</Label>
                   <RSelect
                     options={gstCategoryOptions}
                     value={gstCategory}
                     onChange={(opt) => setGstCategory(opt)}
                     placeholder="Select GST Category"
-                    className="supplier-select"
+                    isDisabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Group *</label>
+                  <Label className="form-label">Group *</Label>
                   {!useNewGroup ? (
                     <div className="d-flex gap-2">
                       <div className="flex-grow-1">
@@ -300,7 +303,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                           value={group}
                           onChange={(opt) => setGroup(opt)}
                           placeholder="Select Group"
-                          className="supplier-select"
+                          isDisabled={loading}
                         />
                       </div>
                       <Button
@@ -309,23 +312,22 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                           backgroundColor: "#644634",
                           borderColor: "#800000",
                           color: "#fff",
-                          padding: "15px 20px",
-                          fontSize: "1rem",
-                          fontWeight: "500",
+                          padding: "6px 20px",
                         }}
                         onClick={() => setUseNewGroup(true)}
+                        disabled={loading}
                       >
                         + New
                       </Button>
                     </div>
                   ) : (
                     <div className="d-flex gap-2">
-                      <input
+                      <Input
                         type="text"
-                        className="form-control"
                         value={newGroup}
                         onChange={(e) => setNewGroup(e.target.value)}
                         placeholder="Enter new group"
+                        disabled={loading}
                         autoFocus
                       />
                       <Button
@@ -335,6 +337,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                           setUseNewGroup(false);
                           setNewGroup("");
                         }}
+                        disabled={loading}
                       >
                         Cancel
                       </Button>
@@ -349,50 +352,50 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
               </div>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">First Name</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">First Name</Label>
+                  <Input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Enter first name"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Last Name</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">Last Name</Label>
+                  <Input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Enter last name"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Email ID</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">Email ID</Label>
+                  <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter email"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Mobile Number</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">Mobile Number</Label>
+                  <Input
                     type="tel"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     placeholder="Enter mobile number"
                     maxLength={10}
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -403,49 +406,51 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
               </div>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Billing Address</label>
-                  <textarea
-                    className="form-control"
+                  <Label className="form-label">Billing Address</Label>
+                  <Input
+                    type="textarea"
                     rows="2"
                     value={billingAddress}
                     onChange={(e) => setBillingAddress(e.target.value)}
                     placeholder="Enter billing address"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Shipping Address</label>
-                  <textarea
-                    className="form-control"
+                  <Label className="form-label">Shipping Address</Label>
+                  <Input
+                    type="textarea"
                     rows="2"
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
                     placeholder="Enter shipping address"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Postal Code</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">Postal Code</Label>
+                  <Input
                     type="text"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                     placeholder="Enter postal code"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">City</label>
-                  <input
-                    className="form-control"
+                  <Label className="form-label">City</Label>
+                  <Input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Enter city"
+                    disabled={loading}
                   />
                 </FormGroup>
               </Col>
@@ -463,8 +468,9 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                       }}
                       size="md"
                       type="submit"
+                      disabled={loading}
                     >
-                      {mode === "add" ? "Add Supplier" : "Update Supplier"}
+                      {loading ? <Spinner size="sm" /> : (mode === "add" ? "Add Supplier" : "Update Supplier")}
                     </Button>
                   </li>
                   <li>
@@ -494,6 +500,8 @@ const Suppliers = () => {
   const history = useHistory();
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All");
@@ -509,7 +517,7 @@ const Suppliers = () => {
 
   const availableGroups = useMemo(() => {
     const groups = suppliers.map((s) => s.group);
-    return Array.from(new Set(groups)).sort();
+    return [...new Set(groups)].sort();
   }, [suppliers]);
 
   const fetchSuppliers = async () => {
@@ -540,10 +548,10 @@ const Suppliers = () => {
 
   useEffect(() => {
     fetchSuppliers();
-    setCurrentPage(1);
   }, [search, statusFilter, groupFilter]);
 
   const createSupplier = async (supplierData) => {
+    setFormLoading(true);
     try {
       const response = await fetch(API_BASE, {
         method: "POST",
@@ -552,18 +560,22 @@ const Suppliers = () => {
       });
       const result = await response.json();
       if (result.success) {
-        fetchSuppliers();
+        await fetchSuppliers();
         alert("Supplier added successfully");
+        setIsModalOpen(false);
       } else {
         alert(result.message || "Failed to create supplier");
       }
     } catch (error) {
       console.error("Create error:", error);
       alert("Network error while creating supplier");
+    } finally {
+      setFormLoading(false);
     }
   };
 
   const updateSupplier = async (id, supplierData) => {
+    setFormLoading(true);
     try {
       const response = await fetch(`${API_BASE}/${id}`, {
         method: "PUT",
@@ -572,23 +584,27 @@ const Suppliers = () => {
       });
       const result = await response.json();
       if (result.success) {
-        fetchSuppliers();
+        await fetchSuppliers();
         alert("Supplier updated successfully");
+        setIsModalOpen(false);
       } else {
         alert(result.message || "Failed to update supplier");
       }
     } catch (error) {
       console.error("Update error:", error);
       alert("Network error while updating supplier");
+    } finally {
+      setFormLoading(false);
     }
   };
 
   const deleteSupplier = async (id) => {
+    setDeleteLoading(true);
     try {
       const response = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
       const result = await response.json();
       if (result.success) {
-        fetchSuppliers();
+        await fetchSuppliers();
         alert("Supplier deleted successfully");
       } else {
         alert(result.message || "Failed to delete supplier");
@@ -596,6 +612,8 @@ const Suppliers = () => {
     } catch (error) {
       console.error("Delete error:", error);
       alert("Network error while deleting supplier");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -607,8 +625,7 @@ const Suppliers = () => {
 
   const handleEdit = (supplier) => {
     setModalMode("edit");
-    const supplierWithId = { ...supplier, id: supplier._id };
-    setEditingSupplier(supplierWithId);
+    setEditingSupplier(supplier);
     setIsModalOpen(true);
   };
 
@@ -617,9 +634,9 @@ const Suppliers = () => {
     setShowDeleteConfirm(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteSupplierId) {
-      deleteSupplier(deleteSupplierId);
+      await deleteSupplier(deleteSupplierId);
     }
     setShowDeleteConfirm(false);
     setDeleteSupplierId(null);
@@ -640,6 +657,7 @@ const Suppliers = () => {
     setStatusFilter("All");
     setGroupFilter("All");
     setOnSearch(false);
+    setCurrentPage(1);
   };
 
   const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
@@ -653,6 +671,11 @@ const Suppliers = () => {
   const currentSuppliers = suppliers.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(suppliers.length / itemPerPage);
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, groupFilter]);
+
   return (
     <>
       <Head title="Suppliers" />
@@ -661,7 +684,7 @@ const Suppliers = () => {
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3">Suppliers</BlockTitle>
-              <p className="text-muted">Manage your supplier information</p>
+              <p className="text-muted">Total Suppliers: {suppliers.length}</p>
             </BlockHeadContent>
             <BlockHeadContent>
               <div className="toggle-wrap nk-block-tools-toggle">
@@ -683,37 +706,52 @@ const Suppliers = () => {
 
         <Block>
           <DataTable className="card-stretch w-100">
+            {/* Search & Filter Bar */}
             <div className="card-inner position-relative card-tools-toggle">
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
+                    {/* Status Filter */}
                     <div className="form-wrap">
                       <select
-                        className="form-select"
+                        className="form-control"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        style={{ width: "140px" }}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        style={{ minWidth: "120px",  height : "40px" }}
                       >
                         <option value="All">All Status</option>
                         <option value="Enabled">Enabled</option>
                         <option value="Disabled">Disabled</option>
                       </select>
                     </div>
-                    <div className="form-wrap ms-2">
+                    
+                    {/* Group Filter */}
+                    <div className="form-wrap">
                       <select
-                        className="form-select"
+                        className="form-control"
                         value={groupFilter}
-                        onChange={(e) => setGroupFilter(e.target.value)}
-                        style={{ width: "150px" }}
+                        onChange={(e) => {
+                          setGroupFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        style={{ minWidth: "150px", height : "40px"}}
                       >
                         <option value="All">All Groups</option>
-                        {availableGroups.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
+                        {availableGroups.length > 0 ? (
+                          availableGroups.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))
+                        ) : (
+                          <option disabled>No groups available</option>
+                        )}
                       </select>
                     </div>
+                    
                     {(search || statusFilter !== "All" || groupFilter !== "All") && (
                       <Button color="link" onClick={resetFilters} className="ms-2">
                         Clear Filters
@@ -762,153 +800,175 @@ const Suppliers = () => {
               </div>
             </div>
 
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
-                    <th className="px-3 py-2 text-center">S.No</th>
-                    <th className="px-4 py-2 text-start">Supplier Name</th>
-                    <th className="px-4 py-2 text-center">Status</th>
-                    <th className="px-4 py-2 text-start">Group</th>
-                    <th className="px-4 py-2 text-start">Supplier ID</th>
-                    <th className="px-4 py-2 text-start">Supplier Type</th>
-                    <th className="px-4 py-2 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        Loading...
-                      </td>
-                    </tr>
-                  ) : currentSuppliers.length > 0 ? (
-                    currentSuppliers.map((supplier, idx) => (
-                      <tr
-                        key={supplier._id}
-                        style={{
-                          borderTop: "1px solid #e0e0e0",
-                          borderBottom: "1px solid #e0e0e0",
-                        }}
-                      >
-                        <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
-                        <td className="px-4 py-2 text-start fw-semibold">
-                          <button
-                            onClick={() => handleNameClick(supplier)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "#2563eb",
-                              cursor: "pointer",
-                              fontWeight: 600,
-                              padding: 0,
-                              fontSize: "inherit",
-                            }}
-                          >
-                            {supplier.name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <span
-                            className={`badge bg-${statusColor(supplier.status)}`}
-                            style={{
-                              padding: "6px 12px",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: "500",
-                              color: "white",
-                            }}
-                          >
-                            {supplier.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-start">
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "4px 10px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              backgroundColor: "#e0f2fe",
-                              color: "#0369a1",
-                              borderRadius: "20px",
-                            }}
-                          >
-                            {supplier.group}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-start">#{supplier.supplierId}</td>
-                        <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
-                        <td className="px-4 py-2 text-center">
-                          <UncontrolledDropdown>
-                            <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                              <Icon name="more-h" />
-                            </DropdownToggle>
-                            <DropdownMenu right>
-                              <DropdownItem onClick={() => handleEdit(supplier)}>
-                                <Icon name="edit" /> Edit
-                              </DropdownItem>
-                              <DropdownItem onClick={() => handleDeleteClick(supplier._id)}>
-                                <Icon name="trash" /> Delete
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </UncontrolledDropdown>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        No suppliers found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {/* Loading Spinner */}
+            {loading && (
+              <div className="text-center py-5">
+                <Spinner color="primary" />
+                <p className="mt-2">Loading suppliers...</p>
+              </div>
+            )}
 
-            <div className="card-inner">
-              {suppliers.length > 0 ? (
-                <div className="d-flex justify-content-center align-items-center">
-                  <button
-                    className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                  >
-                    <em className="icon ni ni-chevron-left"></em>
-                  </button>
-                  {[...Array(totalPages)].map((_, index) => {
-                    const page = index + 1;
-                    if (page === currentPage || page === currentPage - 1 || page === currentPage + 1) {
-                      return (
+            {/* Suppliers Table */}
+            {!loading && (
+              <>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "800px" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #e0e0e0", textAlign: "left" }}>
+                        <th className="px-3 py-2 text-center">S.No</th>
+                        <th className="px-4 py-2 text-start">Supplier Name</th>
+                        <th className="px-4 py-2 text-center">Status</th>
+                        <th className="px-4 py-2 text-start">Group</th>
+                        <th className="px-4 py-2 text-start">Supplier ID</th>
+                        <th className="px-4 py-2 text-start">Supplier Type</th>
+                        <th className="px-4 py-2 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      {currentSuppliers.length > 0 ? (
+                        currentSuppliers.map((supplier, idx) => (
+                          <tr
+                            key={supplier._id}
+                            style={{
+                              borderTop: "1px solid #e0e0e0",
+                              borderBottom: "1px solid #e0e0e0",
+                            }}
+                          >
+                            <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
+                            <td className="px-4 py-2 text-start fw-semibold">
+                              <button
+                                onClick={() => handleNameClick(supplier)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#2563eb",
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  padding: 0,
+                                  fontSize: "inherit",
+                                }}
+                              >
+                                {supplier.name}
+                              </button>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <span
+                                className={`badge bg-${statusColor(supplier.status)}`}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: "12px",
+                                  fontSize: "12px",
+                                  fontWeight: "500",
+                                  color: "white",
+                                }}
+                              >
+                                {supplier.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-start">
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "4px 10px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  backgroundColor: "#e0f2fe",
+                                  color: "#0369a1",
+                                  borderRadius: "20px",
+                                }}
+                              >
+                                {supplier.group}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-start">
+                              <code>{supplier.supplierId}</code>
+                            </td>
+                            <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
+                            <td className="px-4 py-2 text-center">
+                              <UncontrolledDropdown>
+                                <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                  <Icon name="more-h" />
+                                </DropdownToggle>
+                                <DropdownMenu right>
+                                  <DropdownItem onClick={() => handleEdit(supplier)}>
+                                    <Icon name="edit" /> Edit
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => handleDeleteClick(supplier._id)}>
+                                    <Icon name="trash" /> Delete
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </UncontrolledDropdown>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="7" className="text-center py-4">
+                            No suppliers found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {suppliers.length > 0 && totalPages > 1 && (
+                  <div className="card-inner">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="text-muted">
+                          Showing {indexOfFirst + 1} to {Math.min(indexOfLast, suppliers.length)} of {suppliers.length} suppliers
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-center align-items-center">
                         <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`btn btn-sm mx-1 ${
-                            currentPage === page ? "btn-primary" : "btn-outline-light"
-                          }`}
-                          style={{ minWidth: "36px", borderRadius: "6px", fontWeight: 500 }}
+                          className="btn btn-icon btn-sm btn-outline-light mx-1"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage((p) => p - 1)}
                         >
-                          {page}
+                          <em className="icon ni ni-chevron-left"></em>
                         </button>
-                      );
-                    }
-                    return null;
-                  })}
-                  <button
-                    className="btn btn-icon btn-sm btn-outline-light mx-1"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                  >
-                    <em className="icon ni ni-chevron-right"></em>
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <span className="text-silent">No data found</span>
-                </div>
-              )}
-            </div>
+                        {[...Array(totalPages)].map((_, index) => {
+                          const page = index + 1;
+                          if (
+                            page === currentPage ||
+                            page === currentPage - 1 ||
+                            page === currentPage + 1 ||
+                            page === 1 ||
+                            page === totalPages
+                          ) {
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`btn btn-sm mx-1 ${
+                                  currentPage === page ? "btn-primary" : "btn-outline-light"
+                                }`}
+                                style={{ minWidth: "36px", borderRadius: "6px", fontWeight: 500 }}
+                              >
+                                {page}
+                              </button>
+                            );
+                          }
+                          if (page === currentPage - 2 || page === currentPage + 2) {
+                            return <span key={page} className="mx-1">...</span>;
+                          }
+                          return null;
+                        })}
+                        <button
+                          className="btn btn-icon btn-sm btn-outline-light mx-1"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage((p) => p + 1)}
+                        >
+                          <em className="icon ni ni-chevron-right"></em>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </DataTable>
         </Block>
       </Content>
@@ -920,6 +980,7 @@ const Suppliers = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         existingGroups={availableGroups}
+        loading={formLoading}
       />
 
       <ConfirmationModal
@@ -928,6 +989,7 @@ const Suppliers = () => {
         onConfirm={handleConfirmDelete}
         title="Delete Supplier"
         message="Are you sure you want to delete this supplier? This action cannot be undone."
+        loading={deleteLoading}
       />
     </>
   );

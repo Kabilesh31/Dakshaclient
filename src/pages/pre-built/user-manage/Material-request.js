@@ -29,6 +29,7 @@ import {
   DropdownToggle,
   DropdownMenu,
   DropdownItem,
+  Spinner,
 } from "reactstrap";
 
 // ----------------------------------------------------------------------
@@ -218,7 +219,7 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
 // ----------------------------------------------------------------------
 // Delete Confirmation Modal (same as before)
 // ----------------------------------------------------------------------
-const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
+const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
     <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
       <ModalBody
@@ -259,10 +260,11 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message }) => {
                 marginRight: "10px",
               }}
               onClick={onConfirm}
+              disabled={loading}
             >
-              Yes, Delete
+              {loading ? <Spinner size="sm" /> : "Yes, Delete"}
             </Button>
-            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }}>
+            <Button color="secondary" outline onClick={toggle} style={{ padding: "15px 24px" }} disabled={loading}>
               Cancel
             </Button>
           </div>
@@ -280,7 +282,10 @@ const MaterialRequestPage = () => {
   const [materialRequests, setMaterialRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [purposeFilter, setPurposeFilter] = useState("All");
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
 
   // Modal states
@@ -318,18 +323,27 @@ const MaterialRequestPage = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteRequestId, setDeleteRequestId] = useState(null);
 
+  // Get unique purposes and statuses for filters
+  const uniquePurposes = useRef(new Set());
+  const uniqueStatuses = useRef(new Set());
+
   // Toast helpers
   const showSuccess = (message) => toast.success(message);
   const showError = (message) => toast.error(message);
 
-  // API Calls (unchanged)
+  // API Calls
   const fetchMaterialRequests = async () => {
     setLoading(true);
     try {
       const response = await axios.get(API_BASE);
       if (response.data.success) {
         setMaterialRequests(response.data.data);
-        setFiltered(response.data.data);
+        
+        // Extract unique purposes and statuses
+        response.data.data.forEach(req => {
+          if (req.purpose) uniquePurposes.current.add(req.purpose);
+          if (req.status) uniqueStatuses.current.add(req.status);
+        });
       } else {
         console.error("Failed to fetch:", response.data.message);
         showError(response.data.message || "Failed to fetch material requests");
@@ -379,6 +393,7 @@ const MaterialRequestPage = () => {
   };
 
   const deleteMaterialRequest = async (id) => {
+    setDeleteLoading(true);
     try {
       const response = await axios.delete(`${API_BASE}/${id}`);
       if (response.data.success) {
@@ -393,6 +408,8 @@ const MaterialRequestPage = () => {
       console.error("Delete error:", error);
       showError("Network error while deleting");
       return false;
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -400,21 +417,34 @@ const MaterialRequestPage = () => {
     fetchMaterialRequests();
   }, []);
 
+  // Apply filters
   useEffect(() => {
-    if (search.trim() === "") {
-      setFiltered(materialRequests);
-    } else {
+    let result = [...materialRequests];
+    
+    // Apply search filter
+    if (search.trim() !== "") {
       const keyword = search.toLowerCase();
-      setFiltered(
-        materialRequests.filter(
-          (req) =>
-            req.title?.toLowerCase().includes(keyword) ||
-            req._id?.toLowerCase().includes(keyword) ||
-            req.purpose?.toLowerCase().includes(keyword)
-        )
+      result = result.filter(
+        (req) =>
+          req.title?.toLowerCase().includes(keyword) ||
+          req._id?.toLowerCase().includes(keyword) ||
+          req.purpose?.toLowerCase().includes(keyword) ||
+          req.status?.toLowerCase().includes(keyword)
       );
     }
-  }, [search, materialRequests]);
+    
+    // Apply status filter
+    if (statusFilter !== "All") {
+      result = result.filter((req) => req.status === statusFilter);
+    }
+    
+    // Apply purpose filter
+    if (purposeFilter !== "All") {
+      result = result.filter((req) => req.purpose === purposeFilter);
+    }
+    
+    setFiltered(result);
+  }, [search, statusFilter, purposeFilter, materialRequests]);
 
   const sliceTitle = (title, maxLength = 55) => {
     if (!title) return "";
@@ -488,6 +518,13 @@ const MaterialRequestPage = () => {
     setSuggestions([]);
     setActiveAutocompleteIndex(null);
     setActiveSuggestionIndex(-1);
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("All");
+    setPurposeFilter("All");
+    setOnSearch(false);
   };
 
   const openAddModal = () => {
@@ -657,9 +694,10 @@ const MaterialRequestPage = () => {
           <BlockBetween>
             <BlockHeadContent>
               <BlockTitle tag="h3">Material Request</BlockTitle>
+              <p className="text-muted">Total Requests: {filtered.length}</p>
             </BlockHeadContent>
-            <Button color="primary" onClick={openAddModal}>
-              <Icon name="plus" /> Add Material Request
+            <Button className="btn-icon" color="primary" onClick={openAddModal}>
+              <Icon name="plus" />
             </Button>
           </BlockBetween>
         </BlockHead>
@@ -682,8 +720,48 @@ const MaterialRequestPage = () => {
             </div>
           ) : (
             <DataTable className="card-stretch w-100">
+              {/* Search & Filter Bar */}
               <div className="card-inner position-relative card-tools-toggle">
                 <div className="card-title-group">
+                  <div className="card-tools">
+                    <div className="form-inline flex-nowrap gx-3">
+                      {/* Status Filter */}
+                      <div className="form-wrap">
+                        <select
+                          className="form-control"
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          style={{ minWidth: "130px", height: "40px" }}
+                        >
+                          <option value="All">All Status</option>
+                          {Array.from(uniqueStatuses.current).sort().map(status => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* Purpose Filter */}
+                      <div className="form-wrap">
+                        <select
+                          className="form-control"
+                          value={purposeFilter}
+                          onChange={(e) => setPurposeFilter(e.target.value)}
+                          style={{ minWidth: "150px", height: "40px" }}
+                        >
+                          <option value="All">All Purposes</option>
+                          {Array.from(uniquePurposes.current).sort().map(purpose => (
+                            <option key={purpose} value={purpose}>{purpose}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* {(search || statusFilter !== "All" || purposeFilter !== "All") && (
+                        <Button color="link" onClick={resetFilters} className="ms-2">
+                          Clear Filters
+                        </Button>
+                      )} */}
+                    </div>
+                  </div>
                   <div className="card-tools mr-n1">
                     <ul className="btn-toolbar gx-1">
                       <li>
@@ -716,7 +794,7 @@ const MaterialRequestPage = () => {
                       <input
                         type="text"
                         className="form-control border-transparent"
-                        placeholder="Search by title, ID or purpose"
+                        placeholder="Search by title, ID, purpose or status"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                       />
@@ -725,6 +803,7 @@ const MaterialRequestPage = () => {
                 </div>
               </div>
 
+              {/* Table */}
               <div style={{ padding: "0 20px 20px" }}>
                 <div
                   style={{
@@ -787,7 +866,7 @@ const MaterialRequestPage = () => {
                                 {sliceTitle(req.title, 55)}
                               </button>
                             </td>
-                            <td style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "white" }}>
+                            <td style={{ padding: "8px 12px" }}>
                               {getStatusBadge(req.status)}
                             </td>
                             <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>
@@ -996,28 +1075,26 @@ const MaterialRequestPage = () => {
         onConfirm={handleConfirmDelete}
         title="Delete Material Request"
         message="Are you sure you want to delete this material request? This action cannot be undone."
+        loading={deleteLoading}
       />
 
-      {/* Toast Container - position top center */}
-   <ToastContainer
-  position="top-right"
-  autoClose={3000}
-  hideProgressBar={false}
-  newestOnTop
-  closeOnClick
-  rtl={false}
-  pauseOnFocusLoss
-  draggable
-  pauseOnHover
-  theme="light"
-/>
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
-        }
-        .Toastify__toast-container {
-          z-index: 999999;
         }
       `}</style>
     </>

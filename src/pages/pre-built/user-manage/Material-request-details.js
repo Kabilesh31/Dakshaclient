@@ -308,6 +308,21 @@ const S = {
     fontSize: 13,
     color: "#6b7280",
   },
+  attachmentItem: {
+  background: "#fff",
+  border: "0.5px solid #e5e7eb",
+  borderRadius: 10,
+  padding: "10px 12px",
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  transition: "all 0.15s ease",
+},
+
+attachmentItemHover: {
+  borderColor: "#c7d2fe",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+},
   attachmentArea: { marginTop: 20 },
   attachmentHeader: {
     display: "flex",
@@ -718,11 +733,11 @@ const MaterialRequestDetails = () => {
                 ← Back
               </button>
               <button style={S.btnInfo} onClick={handlePrint}>
-                <Icon name="printer" /> Print
+                <Icon name="printer" />
               </button>
               <UncontrolledDropdown>
                 <DropdownToggle tag="button" style={{ ...S.btnPrimary, border: "0.5px solid #534AB7" }}>
-                  <Icon name="download" /> Download <Icon name="chevron-down" style={{ fontSize: 11 }} />
+                  <Icon name="download" /><Icon name="chevron-down" style={{ fontSize: 11 }} />
                 </DropdownToggle>
                 <DropdownMenu right>
                   <DropdownItem onClick={downloadCSV}>
@@ -956,39 +971,131 @@ const MaterialRequestDetails = () => {
               </div>
             ) : (
               <div style={S.attachmentGrid}>
-                {attachments.map((att) => (
-                  <div key={att.publicId} style={S.attachmentItem}>
-                    <div style={S.attachmentPreview}>
-                      {att.fileType?.startsWith("image/") ? (
-                        <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
-                      ) : (
-                        <Icon name="file-pdf" style={{ fontSize: 28, color: "#ef4444" }} />
-                      )}
-                    </div>
-                    <div style={S.attachmentInfo}>
-                      <div style={S.attachmentName} title={att.fileName}>
-                        {att.fileName}
-                      </div>
-                      <div style={S.attachmentMeta}>
-                        {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
-                        {att.fileSize ? formatFileSize(att.fileSize) : "—"}
-                      </div>
-                    </div>
-                    <button
-                      style={S.removeBtn}
-                      onClick={() => handleDeleteAttachment(att.publicId)}
-                      disabled={deletingId === att.publicId}
-                      title="Remove file"
-                    >
-                      {deletingId === att.publicId ? (
-                        <Icon name="spinner" style={{ animation: "spin 1s linear infinite", fontSize: 12 }} />
-                      ) : (
-                        <Icon name="trash" style={{ fontSize: 14 }} />
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
+  {attachments.map((att) => (
+    <div
+      key={att.publicId}
+      style={{
+        ...S.attachmentItem,
+        cursor: "pointer",
+      }}
+    >
+      {/* Preview Click Area */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          flex: 1,
+          minWidth: 0,
+        }}
+        onClick={() => {
+          if (att.fileType?.startsWith("image/")) {
+            // Open image preview
+            window.open(att.fileUrl, "_blank");
+          } else {
+            // Download PDF
+            const link = document.createElement("a");
+            link.href = att.fileUrl;
+            link.download = att.fileName || "document.pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }}
+      >
+        <div style={S.attachmentPreview}>
+          {att.fileType?.startsWith("image/") ? (
+            <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
+          ) : (
+            <Icon name="file-pdf" style={{ fontSize: 28, color: "#ef4444" }} />
+          )}
+        </div>
+
+        <div style={S.attachmentInfo}>
+          <div style={S.attachmentName} title={att.fileName}>
+            {att.fileName}
+          </div>
+
+          <div style={S.attachmentMeta}>
+            {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
+            {att.fileSize ? formatFileSize(att.fileSize) : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {/* View */}
+        <button
+          type="button"
+          style={S.removeBtn}
+          title="View file"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(att.fileUrl, "_blank");
+          }}
+        >
+          <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
+        </button>
+
+        {/* Download */}
+        <button
+          type="button"
+          style={S.removeBtn}
+          title="Download file"
+          onClick={async (e) => {
+            e.stopPropagation();
+
+            try {
+              const response = await fetch(att.fileUrl);
+              const blob = await response.blob();
+
+              const url = window.URL.createObjectURL(blob);
+
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = att.fileName || "download";
+              document.body.appendChild(link);
+              link.click();
+
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            } catch (err) {
+              console.error("Download failed:", err);
+              alert("Unable to download file");
+            }
+          }}
+        >
+          <Icon name="downloadload" style={{ fontSize: 14, color: "#16a34a" }} />
+        </button>
+
+        {/* Delete */}
+        <button
+          type="button"
+          style={S.removeBtn}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteAttachment(att.publicId);
+          }}
+          disabled={deletingId === att.publicId}
+          title="Remove file"
+        >
+          {deletingId === att.publicId ? (
+            <Icon
+              name="spinner"
+              style={{
+                animation: "spin 1s linear infinite",
+                fontSize: 12,
+              }}
+            />
+          ) : (
+            <Icon name="trash" style={{ fontSize: 14, color: "#ef4444" }} />
+          )}
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
             )}
           </div>
         </div>
