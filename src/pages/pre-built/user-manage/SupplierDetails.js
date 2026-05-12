@@ -1,31 +1,144 @@
+// SupplierDetails.js
 import React, { useState } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
-import {
-  Block,
-  BlockBetween,
-  BlockHead,
-  BlockHeadContent,
-  BlockTitle,
-  Icon,
-  Button,
-} from "../../../components/Component";
+import { Icon } from "../../../components/Component";
 
+/* ─────────────────────────────────────────────
+   STYLES
+───────────────────────────────────────────── */
+const S = {
+  page: { padding: "8px 0 32px" },
+
+  /* topbar */
+  topbar: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 },
+  breadcrumb: { display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280", marginBottom: 5 },
+  bcSep: { color: "#9ca3af", fontSize: 11 },
+  pageTitle: { fontSize: 22, fontWeight: 500, color: "#111827" },
+  pageSub: { fontSize: 12, color: "#9ca3af", marginTop: 3 },
+  actions: { display: "flex", alignItems: "center", gap: 8 },
+  btnBase: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #d1d5db", background: "#fff", color: "#6b7280" },
+  btnEdit: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, padding: "7px 14px", borderRadius: 8, cursor: "pointer", border: "0.5px solid #534AB7", background: "#534AB7", color: "#EEEDFE" },
+
+  /* metrics */
+  metricsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 20 },
+  metric: { background: "#f9fafb", borderRadius: 8, padding: "12px 14px" },
+  metricLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 5 },
+  metricVal: { fontSize: 15, fontWeight: 500, color: "#111827" },
+
+  /* card */
+  card: { background: "#fff", border: "0.5px solid #e5e7eb", borderRadius: 12, overflow: "hidden" },
+  tabNav: { display: "flex", borderBottom: "0.5px solid #e5e7eb", padding: "0 20px" },
+  tab: (active) => ({
+    display: "flex", alignItems: "center", gap: 6,
+    padding: "13px 16px", fontSize: 13, fontWeight: 500,
+    color: active ? "#111827" : "#6b7280",
+    cursor: "pointer", background: "none", border: "none",
+    borderBottom: active ? "2px solid #534AB7" : "2px solid transparent",
+    marginBottom: -1,
+  }),
+  tabBody: { padding: "20px" },
+
+  /* fields */
+  fieldGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "18px 28px" },
+  fLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 4 },
+  fVal: { fontSize: 13, fontWeight: 500, color: "#111827" },
+  fValMuted: { fontSize: 13, color: "#6b7280" },
+
+  /* address */
+  addrGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
+  addrBox: { background: "#f9fafb", borderRadius: 8, padding: "14px 16px" },
+  addrBoxLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 8 },
+  addrBoxVal: { fontSize: 13, color: "#111827", lineHeight: 1.6 },
+
+  /* contacts */
+  contactGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 },
+  contactCard: { background: "#f9fafb", borderRadius: 8, padding: "14px 16px" },
+  contactCardLbl: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#9ca3af", marginBottom: 10 },
+  contactRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 10 },
+  contactName: { fontSize: 13, fontWeight: 500, color: "#111827" },
+  contactDetailRow: { display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6b7280", marginTop: 6 },
+
+  divider: { height: 1, background: "#f3f4f6", margin: "18px 0" },
+  commentsBox: { background: "#f9fafb", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#6b7280", lineHeight: 1.6, marginTop: 8 },
+};
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+const PILLS = {
+  blue:   { background: "#E6F1FB", color: "#0C447C" },
+  purple: { background: "#EEEDFE", color: "#3C3489" },
+  green:  { background: "#EAF3DE", color: "#27500A" },
+  red:    { background: "#FCEBEB", color: "#791F1F" },
+  amber:  { background: "#FAEEDA", color: "#633806" },
+  neutral:{ background: "#f3f4f6", color: "#6b7280", border: "0.5px solid #e5e7eb" },
+};
+
+const Pill = ({ variant = "neutral", style = {}, children }) => (
+  <span style={{
+    display: "inline-flex", alignItems: "center",
+    fontSize: 12, fontWeight: 500,
+    padding: "3px 10px", borderRadius: 99,
+    ...PILLS[variant], ...style,
+  }}>
+    {children}
+  </span>
+);
+
+const StatusDot = ({ enabled }) => (
+  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 500, color: "#111827" }}>
+    <span style={{ width: 6, height: 6, borderRadius: "50%", background: enabled ? "#639922" : "#E24B4A", display: "inline-block" }} />
+    {enabled ? "Enabled" : "Disabled"}
+  </span>
+);
+
+const Avatar = ({ initials, color = "purple" }) => {
+  const colors = {
+    purple: { background: "#EEEDFE", color: "#3C3489" },
+    amber:  { background: "#FAEEDA", color: "#633806" },
+  };
+  const s = colors[color] || colors.purple;
+  return (
+    <div style={{
+      width: 36, height: 36, borderRadius: "50%",
+      background: s.background, color: s.color,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 13, fontWeight: 500, flexShrink: 0,
+    }}>
+      {initials}
+    </div>
+  );
+};
+
+const getInitials = (first = "", last = "") =>
+  `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || "—";
+
+/* ─────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────── */
 const SupplierDetails = () => {
   const location = useLocation();
   const history = useHistory();
   const supplier = location.state?.supplier;
-  const [activeTab, setActiveTab] = useState("details"); // "details" or "address"
+  const [activeTab, setActiveTab] = useState("details");
 
+  /* ── No data guard ── */
   if (!supplier) {
     return (
       <Content>
-        <div className="text-center py-5">
-          <h4>Supplier not found</h4>
-          <Button color="primary" onClick={() => history.push("/Suppliers")}>
-            Go Back to Suppliers
-          </Button>
+        <div style={{ textAlign: "center", padding: "60px 20px" }}>
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#FAEEDA", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <Icon name="alert-circle" style={{ fontSize: 32, color: "#BA7517" }} />
+          </div>
+          <h4 style={{ marginBottom: 8, fontWeight: 500, color: "#111827" }}>Supplier not found</h4>
+          <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 24 }}>
+            The supplier data could not be loaded. Please go back and try again.
+          </p>
+          <button style={S.btnBase} onClick={() => history.push("/Suppliers")}>
+            ← Back to suppliers
+          </button>
         </div>
       </Content>
     );
@@ -54,187 +167,215 @@ const SupplierDetails = () => {
     comments = "Regular supplier, net 30 days payment terms.",
   } = supplier;
 
-  const handleEditDetails = () => {
-    history.push("/Suppliers");
-  };
+  const isEnabled = status === "Enabled";
+
+  const tabs = [
+    { key: "details", label: "Details", icon: "file-description" },
+    { key: "address", label: "Address & contact", icon: "map-pin" },
+  ];
 
   return (
     <>
       <Head title={`Supplier: ${name}`} />
       <Content>
-        <BlockHead size="sm">
-          <BlockBetween>
-            <BlockHeadContent>
-              <BlockTitle tag="h3">{name}</BlockTitle>
-              <p className="text-muted">Supplier ID: #{id}</p>
-            </BlockHeadContent>
-            <BlockHeadContent>
-              <Button
-                color="secondary"
-                onClick={() => history.push("/Suppliers")}
-                className="me-2"
-              >
-                <Icon name="arrow-left" /> Back
-              </Button>
-            </BlockHeadContent>
-          </BlockBetween>
-        </BlockHead>
+        <div style={S.page}>
 
-        <Block>
-          <div className="card">
-            <div className="card-inner">
-              {/* Tab Headers - side by side */}
-              <div className="d-flex gap-4 border-bottom pb-2 mb-4">
-                <h5
-                  className={`mb-0 mr-4 ${activeTab === "details" ? "text-primary fw-bold" : "text-muted"}`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setActiveTab("details")}
-                >
-                  Details
-                </h5>
-                <h5
-                  className={`mb-0 ${activeTab === "address" ? "text-primary fw-bold" : "text-muted"}`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setActiveTab("address")}
-                >
-                  Address & Contact
-                </h5>
+          {/* ── Top bar ── */}
+          <div style={S.topbar}>
+            <div>
+              <div style={S.breadcrumb}>
+                <span>Buying</span>
+                <span style={S.bcSep}>›</span>
+                <span>Suppliers</span>
+                <span style={S.bcSep}>›</span>
+                <span style={{ color: "#111827" }}>{name}</span>
               </div>
-
-              {/* Tab Content - only one active at a time */}
-              {activeTab === "details" && (
-                <div>
-                  <div className="d-flex justify-content-end mb-3">
-                    <Button
-                      size="sm"
-                      style={{
-                        backgroundColor: "#644634",
-                        borderColor: "#800000",
-                        color: "#fff",
-                      }}
-                      onClick={handleEditDetails}
-                    >
-                      <Icon name="edit" /> Edit
-                    </Button>
-                  </div>
-                  <div className="row g-4">
-                    <div className="col-md-6">
-                      <div className="text-muted small">Supplier Name</div>
-                      <div className="fw-semibold">{name}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Supplier Group</div>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 10px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          backgroundColor: "#e0f2fe",
-                          color: "#0369a1",
-                          borderRadius: "20px",
-                        }}
-                      >
-                        {group}
-                      </span>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Country</div>
-                      <div>{country}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Supplier Type</div>
-                      <div>{supplierType}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Billing Currency</div>
-                      <div>{billingCurrency}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Default Bank Account</div>
-                      <div>{defaultBankAccount}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Price List</div>
-                      <div>{priceList}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">Status</div>
-                      <span
-                        className={`badge bg-${status === "Enabled" ? "success" : "danger"}`}
-                        style={{ color: "white", padding: "6px 12px", borderRadius: "12px" }}
-                      >
-                        {status}
-                      </span>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">GST Number</div>
-                      <div>{gstNumber || "—"}</div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small">GST Category</div>
-                      <div>{gstCategory}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "address" && (
-                <div>
-                  <div className="row g-4">
-                    <div className="col-md-6">
-                      <div className="text-muted small fw-bold mb-1">Billing Address</div>
-                      <div className="border rounded p-3 bg-light">
-                        {address?.billing || "—"}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small fw-bold mb-1">Shipping Address</div>
-                      <div className="border rounded p-3 bg-light">
-                        {address?.shipping || "—"}
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small fw-bold mb-1">Primary Contact</div>
-                      <div className="border rounded p-3 bg-light">
-                        <div>
-                          <strong>Name:</strong>{" "}
-                          {`${contact?.firstName || ""} ${contact?.lastName || ""}`.trim() || "—"}
-                        </div>
-                        <div>
-                          <strong>Email:</strong> {contact?.email || "—"}
-                        </div>
-                        <div>
-                          <strong>Mobile:</strong> {contact?.mobile || "—"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="text-muted small fw-bold mb-1">Secondary Contact</div>
-                      <div className="border rounded p-3 bg-light">
-                        <div>
-                          <strong>Name:</strong>{" "}
-                          {`${secondaryContact?.firstName || ""} ${secondaryContact?.lastName || ""}`.trim() ||
-                            "—"}
-                        </div>
-                        <div>
-                          <strong>Email:</strong> {secondaryContact?.email || "—"}
-                        </div>
-                        <div>
-                          <strong>Mobile:</strong> {secondaryContact?.mobile || "—"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-12">
-                      <div className="text-muted small fw-bold mb-1">Comments</div>
-                      <div className="border rounded p-3 bg-light">{comments || "—"}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div style={S.pageTitle}>{name}</div>
+              <div style={S.pageSub}>Supplier ID: #{id}</div>
+            </div>
+            <div style={S.actions}>
+              <button style={S.btnBase} onClick={() => history.push("/Suppliers")}>
+                ← Back
+              </button>
+             
             </div>
           </div>
-        </Block>
+
+          {/* ── Summary metrics ── */}
+          <div style={S.metricsGrid}>
+            <div style={S.metric}>
+              <div style={S.metricLbl}>Status</div>
+              <div style={S.metricVal}><StatusDot enabled={isEnabled} /></div>
+            </div>
+            <div style={S.metric}>
+              <div style={S.metricLbl}>Supplier group</div>
+              <div style={S.metricVal}><Pill variant="purple">{group || "—"}</Pill></div>
+            </div>
+            <div style={S.metric}>
+              <div style={S.metricLbl}>Supplier type</div>
+              <div style={{ ...S.metricVal, fontSize: 13 }}>{supplierType || "—"}</div>
+            </div>
+            <div style={S.metric}>
+              <div style={S.metricLbl}>Currency</div>
+              <div style={S.metricVal}>{billingCurrency || "—"}</div>
+            </div>
+            <div style={S.metric}>
+              <div style={S.metricLbl}>Price list</div>
+              <div style={{ ...S.metricVal, fontSize: 13 }}>{priceList || "—"}</div>
+            </div>
+          </div>
+
+          {/* ── Card ── */}
+          <div style={S.card}>
+
+            {/* Tab nav */}
+            <div style={S.tabNav}>
+              {tabs.map(({ key, label, icon }) => (
+                <button key={key} style={S.tab(activeTab === key)} onClick={() => setActiveTab(key)}>
+                  <Icon name={icon} style={{ fontSize: 15 }} />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Tab: Details ── */}
+            {activeTab === "details" && (
+              <div style={S.tabBody}>
+                <div style={S.fieldGrid}>
+                  <div>
+                    <div style={S.fLbl}>Supplier name</div>
+                    <div style={S.fVal}>{name}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Supplier group</div>
+                    <div style={S.fVal}><Pill variant="purple">{group || "—"}</Pill></div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Country</div>
+                    <div style={S.fVal}>{country}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Supplier type</div>
+                    <div style={S.fVal}>{supplierType || "—"}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Billing currency</div>
+                    <div style={S.fVal}>{billingCurrency}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Default bank account</div>
+                    <div style={{ ...S.fVal, fontSize: 12 }}>{defaultBankAccount}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Price list</div>
+                    <div style={S.fVal}>{priceList}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>Status</div>
+                    <div style={S.fVal}>
+                      <Pill variant={isEnabled ? "green" : "red"}>{status}</Pill>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>GST number</div>
+                    <div style={S.fValMuted}>{gstNumber || "—"}</div>
+                  </div>
+                  <div>
+                    <div style={S.fLbl}>GST category</div>
+                    <div style={S.fVal}><Pill variant="blue">{gstCategory || "—"}</Pill></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Tab: Address & Contact ── */}
+            {activeTab === "address" && (
+              <div style={S.tabBody}>
+
+                {/* Addresses */}
+                <div style={S.addrGrid}>
+                  <div style={S.addrBox}>
+                    <div style={S.addrBoxLbl}>
+                      <Icon name="building" style={{ fontSize: 13, verticalAlign: -1, marginRight: 4 }} />
+                      Billing address
+                    </div>
+                    <div style={S.addrBoxVal}>{address?.billing || "—"}</div>
+                  </div>
+                  <div style={S.addrBox}>
+                    <div style={S.addrBoxLbl}>
+                      <Icon name="truck-delivery" style={{ fontSize: 13, verticalAlign: -1, marginRight: 4 }} />
+                      Shipping address
+                    </div>
+                    <div style={S.addrBoxVal}>{address?.shipping || "—"}</div>
+                  </div>
+                </div>
+
+                {/* Contacts */}
+                <div style={S.contactGrid}>
+                  {/* Primary */}
+                  <div style={S.contactCard}>
+                    <div style={S.contactCardLbl}>Primary contact</div>
+                    <div style={S.contactRow}>
+                      <Avatar
+                        initials={getInitials(contact?.firstName, contact?.lastName)}
+                        color="purple"
+                      />
+                      <div>
+                        <div style={S.contactName}>
+                          {`${contact?.firstName || ""} ${contact?.lastName || ""}`.trim() || "—"}
+                        </div>
+                        <Pill variant="blue" style={{ fontSize: 11, padding: "1px 8px", marginTop: 3 }}>
+                          Primary
+                        </Pill>
+                      </div>
+                    </div>
+                    <div style={S.contactDetailRow}>
+                      <Icon name="mail" style={{ fontSize: 14 }} />
+                      {contact?.email || "—"}
+                    </div>
+                    <div style={S.contactDetailRow}>
+                      <Icon name="phone" style={{ fontSize: 14 }} />
+                      {contact?.mobile || "—"}
+                    </div>
+                  </div>
+
+                  {/* Secondary */}
+                  <div style={S.contactCard}>
+                    <div style={S.contactCardLbl}>Secondary contact</div>
+                    <div style={S.contactRow}>
+                      <Avatar
+                        initials={getInitials(secondaryContact?.firstName, secondaryContact?.lastName)}
+                        color="amber"
+                      />
+                      <div>
+                        <div style={S.contactName}>
+                          {`${secondaryContact?.firstName || ""} ${secondaryContact?.lastName || ""}`.trim() || "—"}
+                        </div>
+                        <Pill variant="amber" style={{ fontSize: 11, padding: "1px 8px", marginTop: 3 }}>
+                          Secondary
+                        </Pill>
+                      </div>
+                    </div>
+                    <div style={S.contactDetailRow}>
+                      <Icon name="mail" style={{ fontSize: 14 }} />
+                      {secondaryContact?.email || "—"}
+                    </div>
+                    <div style={S.contactDetailRow}>
+                      <Icon name="phone" style={{ fontSize: 14 }} />
+                      {secondaryContact?.mobile || "—"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comments */}
+                <div style={{ ...S.fLbl, marginTop: 18, marginBottom: 4 }}>Comments</div>
+                <div style={S.commentsBox}>{comments || "No comments added."}</div>
+
+              </div>
+            )}
+
+          </div>
+        </div>
       </Content>
     </>
   );
