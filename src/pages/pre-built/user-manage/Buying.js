@@ -63,7 +63,7 @@ const statusOptions = [
 // ----------------------------------------------------------------------
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
-    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="lg">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -191,7 +191,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered" size="lg">
+    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered" size="xl">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -324,6 +324,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
                       style={{
                         backgroundColor: "#644634",
                         borderColor: "#800000",
+                        marginLeft: "30px",
                         color: "#fff",
                         padding: "6px 20px",
                       }}

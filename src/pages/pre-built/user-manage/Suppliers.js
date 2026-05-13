@@ -55,7 +55,7 @@ const statusOptions = [
 // Confirmation Modal
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
-    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="sm">
+    <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="lg">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -312,7 +312,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                           backgroundColor: "#644634",
                           borderColor: "#800000",
                           color: "#fff",
-                          padding: "6px 20px",
+                          padding: "15px 20px",
                         }}
                         onClick={() => setUseNewGroup(true)}
                         disabled={loading}
@@ -881,7 +881,7 @@ const Suppliers = () => {
                               </span>
                             </td>
                             <td className="px-4 py-2 text-start">
-                              <code>{supplier.supplierId}</code>
+                              {supplier.supplierId}
                             </td>
                             <td className="px-4 py-2 text-start">{supplier.supplierType}</td>
                             <td className="px-4 py-2 text-center">

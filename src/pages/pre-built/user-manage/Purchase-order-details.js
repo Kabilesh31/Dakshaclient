@@ -629,9 +629,15 @@ const PurchaseOrderDetails = () => {
             </BlockHeadContent>
 
             <div className="d-flex align-items-center gap-2">
-              <Button color="light" outline onClick={() => history.push("/purchase-order")}>
-                <Icon name="arrow-left" /> Back
-              </Button>
+             
+               <Button
+                                        color="dark"
+                                        size="sm"
+                                        className=""
+                                        onClick={() => history.push("/purchase-order")}
+                                      >
+                                        <Icon name="arrow-left" /> Back
+                                      </Button>
               {isEditing ? (
                 <>
                   <Button color="secondary" size="sm" onClick={cancelEditing}>

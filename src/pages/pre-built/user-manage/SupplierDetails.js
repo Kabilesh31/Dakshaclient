@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useLocation, useHistory } from "react-router-dom";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
-import { Icon } from "../../../components/Component";
+import { Icon,Button } from "../../../components/Component";
 
 /* ─────────────────────────────────────────────
    STYLES
@@ -194,9 +194,15 @@ const SupplierDetails = () => {
               <div style={S.pageSub}>Supplier ID: #{id}</div>
             </div>
             <div style={S.actions}>
-              <button style={S.btnBase} onClick={() => history.push("/Suppliers")}>
-                ← Back
-              </button>
+              
+               <Button
+                color="dark"
+                size="sm"
+                className="mb-2"
+                onClick={() => history.push("/Suppliers")}
+              >
+                <Icon name="arrow-left" /> Back
+              </Button>
              
             </div>
           </div>

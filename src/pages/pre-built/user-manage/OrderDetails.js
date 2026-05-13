@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useHistory, useParams } from "react-router-dom";
-
+import {
+  Block,
+  BlockHead,
+  BlockHeadContent,
+  BlockTitle,
+  BlockDes,
+  Row,
+  Col,
+  Button,
+  Icon,
+  BlockBetween,
+} from "../../../components/Component";
 // Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
 const formatDateToDDMMYYYY = (dateStr) => {
   if (!dateStr) return "";
@@ -120,15 +131,24 @@ const OrderDetails = () => {
   };
 
   return (
-    <div style={styles.container}>
+
+    
+    <div className="mt-5" style={styles.container}>
+       
       <style>{styles.innerStyles}</style>
       
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerContent}>
-          <button onClick={() => history.goBack()} style={styles.backButton}>
-            ← Back
-          </button>
+          
+           <Button
+                          color="dark"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => history.goBack()}
+                        >
+                          <Icon name="arrow-left" /> Back
+                        </Button>
           <div style={styles.headerRight}>
             <span style={styles.orderId}>Order #{order._id}</span>
             <span className={getStatusClass(order.orderStatus)}>
