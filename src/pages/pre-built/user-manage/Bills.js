@@ -439,6 +439,7 @@ const Bills = () => {
               <Table className="table-hover">
                 <thead className="table-light">
                   <tr>
+                    <th >S.No.</th> {/* New S.No. column */}
                     <th>Bill No.</th>
                     <th>Customer</th>
                     <th>Date</th>
@@ -450,8 +451,9 @@ const Bills = () => {
                 </thead>
                 <tbody>
                   {currentBills.length > 0 ? (
-                    currentBills.map((bill) => (
+                    currentBills.map((bill, idx) => (
                       <tr key={bill._id}>
+                        <td >{indexOfFirstItem + idx + 1}</td> {/* Serial number */}
                         <td className="fw-bold">{bill.billNumber}</td>
                         <td>
                           {bill.customerName}
@@ -508,7 +510,7 @@ const Bills = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center py-4">
+                      <td colSpan="8" className="text-center py-4"> {/* Updated colspan to 8 */}
                         <Icon name="file-text" size={40} className="text-soft" />
                         <p className="mt-2">No bills found</p>
                       </td>
