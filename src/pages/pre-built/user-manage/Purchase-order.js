@@ -32,18 +32,7 @@ import "react-toastify/dist/ReactToastify.css";
 // API base URL
 const API_BASE_URL = `${process.env.REACT_APP_BACKENDURL}/api`
 
-// Dummy projects for when API is not available
-const DUMMY_PROJECTS = [
-  { id: "PROJ-001", name: "Sunrise Villa Project" },
-  { id: "PROJ-002", name: "Green Field Apartment" },
-  { id: "PROJ-003", name: "Lake View Residency" },
-  { id: "PROJ-004", name: "Industrial Park Phase 1" },
-  { id: "PROJ-005", name: "Commercial Complex" },
-];
-
-// ----------------------------------------------------------------------
-// Status Badge - EXACT MATCH to MaterialRequestDetails.js theme
-// ----------------------------------------------------------------------
+// Status Badge 
 const StatusBadge = ({ status }) => {
   const getStyles = () => {
     switch (status) {
@@ -135,7 +124,7 @@ const CodePill = ({ children }) => (
   }}>{children}</code>
 );
 
-// Helper functions
+
 const fmtDisplay = (d) => {
   if (!d) return "";
   if (typeof d === "string" && d.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -509,15 +498,14 @@ const PurchaseOrderPage = () => {
   const fetchProjects = async () => {
     setProjectsLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/purchase-orders/projects`);
+      const response = await axios.get(`${API_BASE_URL}/projects`);
       if (response.data.success && response.data.data.length > 0) {
         setProjects(response.data.data);
       } else {
-        setProjects(DUMMY_PROJECTS);
+        console.log("fetching err")
       }
     } catch (error) {
       console.error("Error fetching projects:", error);
-      setProjects(DUMMY_PROJECTS);
     } finally {
       setProjectsLoading(false);
     }

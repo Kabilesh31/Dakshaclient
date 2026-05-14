@@ -253,15 +253,9 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
         style={{ borderBottom: "none", padding: "24px 28px 0" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "36px", height: "36px", background: BRAND + "18",
-            borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Icon name="building" style={{ color: BRAND, fontSize: "18px" }} />
-          </div>
+          
           <div>
             <div style={{ fontWeight: 700, fontSize: "17px", color: "#1a1a2e" }}>Add New Project Site</div>
-            <div style={{ fontSize: "12px", color: "#aaa", marginTop: "1px" }}>Fill in the project information below</div>
           </div>
         </div>
       </ModalHeader>
