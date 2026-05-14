@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Head from "../../../layout/head/Head";
 import Content from "../../../layout/content/Content";
 import {
@@ -13,6 +13,7 @@ import {
   PreviewCard,
   Icon,
   BlockBetween,
+  RSelect,
 } from "../../../components/Component";
 import {
   Table,
@@ -44,7 +45,6 @@ const formatDateToDDMMYYYY = (dateStr) => {
       return `${day}-${month}-${year}`;
     }
   } catch {
-    // If date is already in YYYY-MM-DD format without time
     if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const [year, month, day] = dateStr.split("-");
       return `${day}-${month}-${year}`;
@@ -178,6 +178,71 @@ const Bills = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Options for RSelect dropdowns
+  const statusFilterOptions = [
+    { value: "all", label: "All Status" },
+    { value: "approved", label: "Approved" },
+    { value: "pending", label: "Pending" },
+    { value: "rejected", label: "Rejected" },
+    { value: "delivered", label: "Delivered" },
+  ];
+
+  const paymentMethodOptions = [
+    { value: "Cash", label: "Cash" },
+    { value: "UPI", label: "UPI" },
+    { value: "Card", label: "Card" },
+    { value: "Credit", label: "Credit" },
+  ];
+
+  const orderStatusOptions = [
+    { value: "pending", label: "Pending" },
+    { value: "approved", label: "Approved" },
+    { value: "rejected", label: "Rejected" },
+    { value: "delivered", label: "Delivered" },
+  ];
+
+  const paidStatusOptions = [
+    { value: false, label: "Unpaid" },
+    { value: true, label: "Paid" },
+  ];
+
+  // Selected values for RSelect
+  const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter) || statusFilterOptions[0];
+  const selectedPaymentMethod = paymentMethodOptions.find(opt => opt.value === formData.paymentMethod) || paymentMethodOptions[0];
+  const selectedOrderStatus = orderStatusOptions.find(opt => opt.value === formData.orderStatus) || orderStatusOptions[0];
+  const selectedPaidStatus = paidStatusOptions.find(opt => opt.value === formData.paidStatus) || paidStatusOptions[0];
+
+  // Custom styles for RSelect to match theme
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      borderColor: "#e5e7eb",
+      borderRadius: 6,
+      padding: "2px 0",
+      fontSize: 13,
+      boxShadow: "none",
+      "&:hover": { borderColor: "#d1d5db" },
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? "#644634" : state.isFocused ? "#f3f4f6" : "white",
+      color: state.isSelected ? "white" : "#111827",
+      fontSize: 13,
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#111827",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#9ca3af",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  };
+
   // Load dummy data on mount
   useEffect(() => {
     setBills(dummyBills);
@@ -299,13 +364,11 @@ const Bills = () => {
     }
 
     if (isEditMode) {
-      // Update existing bill
       const updatedBills = bills.map((bill) =>
         bill._id === formData._id ? { ...formData, totalAmt: recalcTotal(formData.items) } : bill
       );
       setBills(updatedBills);
     } else {
-      // Create new bill
       const newBill = {
         ...formData,
         _id: generateId(),
@@ -344,12 +407,9 @@ const Bills = () => {
     return paidStatus ? <Badge color="success">Paid</Badge> : <Badge color="danger">Unpaid</Badge>;
   };
 
-  // Format date as DD-MM-YYYY for display
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    
     try {
-      // Handle ISO string with time
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
         const day = String(date.getDate()).padStart(2, '0');
@@ -358,7 +418,6 @@ const Bills = () => {
         return `${day}-${month}-${year}`;
       }
     } catch {
-      // If date is in YYYY-MM-DD format without time
       if (dateString.match(/^\d{4}-\d{2}-\d{2}/)) {
         const [year, month, day] = dateString.split("-");
         return `${day}-${month}-${year}`;
@@ -382,13 +441,17 @@ const Bills = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
-                    color: "#fff",
-                    padding: "6px 6px"
-                  }} className="btn-icon" onClick={openAddModal}>
-                <Icon name="plus" /> 
+              <Button
+                style={{
+                  backgroundColor: "#644634",
+                  borderColor: "#800000",
+                  color: "#fff",
+                  padding: "6px 6px"
+                }}
+                className="btn-icon"
+                onClick={openAddModal}
+              >
+                <Icon name="plus" />
               </Button>
             </BlockHeadContent>
           </BlockBetween>
@@ -396,7 +459,7 @@ const Bills = () => {
 
         <Block>
           <PreviewCard className="card-bordered">
-            {/* Filters Row */}
+            {/* Filters Row with RSelect */}
             <div className="card-inner">
               <Row className="g-gs">
                 <Col md="6">
@@ -413,17 +476,15 @@ const Bills = () => {
                 <Col md="4">
                   <FormGroup>
                     <Label className="ml-1">Order Status</Label>
-                    <Input
-                      type="select"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="all">All Status</option>
-                      <option value="approved">Approved</option>
-                      <option value="pending">Pending</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="delivered">Delivered</option>
-                    </Input>
+                    <RSelect
+                      options={statusFilterOptions}
+                      value={selectedStatusFilter}
+                      onChange={(opt) => setStatusFilter(opt?.value || "all")}
+                      placeholder="Select Status"
+                      isClearable={false}
+                      styles={selectStyles}
+                      classNamePrefix="react-select"
+                    />
                   </FormGroup>
                 </Col>
                 <Col md="2" className="align-self-end">
@@ -439,7 +500,7 @@ const Bills = () => {
               <Table className="table-hover">
                 <thead className="table-light">
                   <tr>
-                    <th >S.No.</th> {/* New S.No. column */}
+                    <th>S.No.</th>
                     <th>Bill No.</th>
                     <th>Customer</th>
                     <th>Date</th>
@@ -453,7 +514,7 @@ const Bills = () => {
                   {currentBills.length > 0 ? (
                     currentBills.map((bill, idx) => (
                       <tr key={bill._id}>
-                        <td >{indexOfFirstItem + idx + 1}</td> {/* Serial number */}
+                        <td>{indexOfFirstItem + idx + 1}</td>
                         <td className="fw-bold">{bill.billNumber}</td>
                         <td>
                           {bill.customerName}
@@ -510,7 +571,7 @@ const Bills = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-center py-4"> {/* Updated colspan to 8 */}
+                      <td colSpan="8" className="text-center py-4">
                         <Icon name="file-text" size={40} className="text-soft" />
                         <p className="mt-2">No bills found</p>
                       </td>
@@ -553,7 +614,7 @@ const Bills = () => {
           </PreviewCard>
         </Block>
 
-        {/* View Details Modal */}
+        {/* View Details Modal (unchanged) */}
         <Modal isOpen={viewModal} toggle={() => setViewModal(false)} size="lg" className="bill-modal" scrollable>
           <ModalHeader toggle={() => setViewModal(false)}>Bill Details</ModalHeader>
           <ModalBody>
@@ -615,19 +676,14 @@ const Bills = () => {
                 </div>
                 <div className="d-flex justify-content-end gap-2">
                   <Button color="secondary" className="p-2" onClick={() => setViewModal(false)}>Close</Button>
-                  <Button style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
-                    color: "#fff",
-                    padding: "6px 20px"
-                  }} className="p-2">Download PDF</Button>
+                  <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} className="p-2">Download PDF</Button>
                 </div>
               </div>
             )}
           </ModalBody>
         </Modal>
 
-        {/* Add/Edit Bill Modal */}
+        {/* Add/Edit Bill Modal with RSelect dropdowns */}
         <Modal isOpen={formModal} toggle={() => setFormModal(false)} size="lg" className="bill-form-modal" scrollable>
           <ModalHeader toggle={() => setFormModal(false)}>
             {isEditMode ? "Edit Bill" : "Create New Bill"}
@@ -655,16 +711,15 @@ const Bills = () => {
               <Col md="6">
                 <FormGroup>
                   <Label>Payment Method</Label>
-                  <Input
-                    type="select"
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  >
-                    <option>Cash</option>
-                    <option>UPI</option>
-                    <option>Card</option>
-                    <option>Credit</option>
-                  </Input>
+                  <RSelect
+                    options={paymentMethodOptions}
+                    value={selectedPaymentMethod}
+                    onChange={(opt) => setFormData({ ...formData, paymentMethod: opt?.value || "Cash" })}
+                    placeholder="Select payment method"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
                 </FormGroup>
               </Col>
             </Row>
@@ -681,29 +736,29 @@ const Bills = () => {
               <Col md="6">
                 <FormGroup>
                   <Label>Order Status</Label>
-                  <Input
-                    type="select"
-                    value={formData.orderStatus}
-                    onChange={(e) => setFormData({ ...formData, orderStatus: e.target.value })}
-                  >
-                    <option>pending</option>
-                    <option>approved</option>
-                    <option>rejected</option>
-                    <option>delivered</option>
-                  </Input>
+                  <RSelect
+                    options={orderStatusOptions}
+                    value={selectedOrderStatus}
+                    onChange={(opt) => setFormData({ ...formData, orderStatus: opt?.value || "pending" })}
+                    placeholder="Select order status"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
                   <Label>Paid Status</Label>
-                  <Input
-                    type="select"
-                    value={formData.paidStatus}
-                    onChange={(e) => setFormData({ ...formData, paidStatus: e.target.value === "true" })}
-                  >
-                    <option value="false">Unpaid</option>
-                    <option value="true">Paid</option>
-                  </Input>
+                  <RSelect
+                    options={paidStatusOptions}
+                    value={selectedPaidStatus}
+                    onChange={(opt) => setFormData({ ...formData, paidStatus: opt?.value || false })}
+                    placeholder="Select paid status"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
                 </FormGroup>
               </Col>
             </Row>
@@ -752,7 +807,7 @@ const Bills = () => {
                 </Col>
               </Row>
             ))}
-            <Button color="secondary" size="sm" onClick={addItemRow} className="mb-3">
+            <Button color="primary" size="sm" onClick={addItemRow} className="mb-3">
               <Icon name="plus" /> Add Item
             </Button>
 
@@ -761,13 +816,19 @@ const Bills = () => {
             </div>
 
             <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button color="secondary" className="p-2" onClick={() => setFormModal(false)}>Cancel</Button>
-              <Button style={{
-                backgroundColor: "#644634",
-                borderColor: "#800000",
-                color: "#fff",
-                padding: "6px 20px"
-              }} className="p-2" onClick={handleFormSubmit}>Save Bill</Button>
+              <Button color="secondary" className="p-3 mb-5" onClick={() => setFormModal(false)}>Cancel</Button>
+              <Button
+                style={{
+                  backgroundColor: "#644634",
+                  borderColor: "#800000",
+                  color: "#fff",
+                  padding: "6px 20px"
+                }}
+                className="p-3 mb-5"
+                onClick={handleFormSubmit}
+              >
+                Save Bill
+              </Button>
             </div>
           </ModalBody>
         </Modal>

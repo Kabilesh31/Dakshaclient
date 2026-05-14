@@ -431,6 +431,30 @@ const PurchaseOrderPage = () => {
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   
+  // Options for RSelect dropdowns
+  const supplierOptions = useMemo(() => 
+    suppliers.map(s => ({ value: s.id, label: s.name, ...s })), 
+    [suppliers]
+  );
+  
+  const projectOptions = useMemo(() => 
+    projects.map(p => ({ value: p.id, label: p.name })), 
+    [projects]
+  );
+  
+  const modeOfPaymentOptions = [
+    { value: "Check", label: "Check" },
+    { value: "Cash", label: "Cash" },
+    { value: "DD", label: "DD" },
+    { value: "Bank Transfer", label: "Bank Transfer" },
+    { value: "Credit Card", label: "Credit Card" },
+  ];
+  
+  // Selected objects for RSelect
+  const selectedSupplier = supplierOptions.find(opt => opt.value === newOrder.supplierId) || null;
+  const selectedProject = projectOptions.find(opt => opt.value === newOrder.project) || null;
+  const selectedModeOfPayment = modeOfPaymentOptions.find(opt => opt.value === newOrder.modeOfPayment) || modeOfPaymentOptions[0];
+  
   // Autocomplete State
   const [activeAutocompleteIndex, setActiveAutocompleteIndex] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
@@ -813,7 +837,8 @@ const PurchaseOrderPage = () => {
     }
   };
 
-  const handleSupplierChange = (supplierId) => {
+  const handleSupplierChange = (selectedOption) => {
+    const supplierId = selectedOption?.value || "";
     const selectedSupplier = suppliers.find(s => s.id === supplierId);
     setNewOrder({
       ...newOrder,
@@ -822,6 +847,14 @@ const PurchaseOrderPage = () => {
       supplierAddress: selectedSupplier?.address || "",
       supplierContact: selectedSupplier?.contact || "",
     });
+  };
+
+  const handleProjectChange = (selectedOption) => {
+    setNewOrder({ ...newOrder, project: selectedOption?.value || "" });
+  };
+
+  const handleModeOfPaymentChange = (selectedOption) => {
+    setNewOrder({ ...newOrder, modeOfPayment: selectedOption?.value || "Check" });
   };
 
   const handleDateChange = (field, value) => {
@@ -872,6 +905,37 @@ const PurchaseOrderPage = () => {
     { key: "address", label: "Address & contact", icon: "map-pin" },
     { key: "terms", label: "Terms", icon: "file-text" },
   ];
+
+  // Custom styles for RSelect to match theme
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      borderColor: "#e5e7eb",
+      borderRadius: 6,
+      padding: "2px 0",
+      fontSize: 13,
+      boxShadow: "none",
+      "&:hover": { borderColor: "#d1d5db" },
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? "#644634" : state.isFocused ? "#f3f4f6" : "white",
+      color: state.isSelected ? "white" : "#111827",
+      fontSize: 13,
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "#111827",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#9ca3af",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  };
 
   return (
     <>
@@ -977,242 +1041,241 @@ const PurchaseOrderPage = () => {
             )}
 
             {/* Purchase Orders Table */}
-             {/* Purchase Orders Table */}
-{!loading && (
-  <div style={{ overflowX: "auto", padding: "0 20px 20px" }}>
-    <div
-      style={{
-        borderRadius: "12px",
-        marginTop: "20px",
-        border: "1px solid #e5e7eb",
-        overflow: "hidden",
-        background: "#fff",
-      }}
-    >
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: "0.88rem",
-          tableLayout: "fixed",
-        }}
-      >
-        <thead>
-          <tr
-            style={{
-              background: "#f9fafb",
-              borderBottom: "2px solid #e5e7eb",
-            }}
-          >
-            {[
-              { label: "S.No", width: "6%" },
-              { label: "Supplier Name", width: "26%" },
-              { label: "Status", width: "16%" },
-              { label: "Date", width: "14%" },
-              { label: "Grand Total", width: "16%" },
-              { label: "Order ID", width: "16%" },
-              { label: "Actions", width: "10%" },
-            ].map((head, i) => (
-              <th
-                key={i}
-                style={{
-                  padding: "14px 20px",
-                  textAlign: "center",
-                  fontWeight: 600,
-                  color: "#374151",
-                  width: head.width,
-                  whiteSpace: "nowrap",
-                  verticalAlign: "middle",
-                }}
-              >
-                {head.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {filtered.length > 0 ? (
-            filtered.map((order, idx) => (
-              <tr
-                key={order._id}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#fafafa")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#fff")
-                }
-                style={{
-                  borderBottom:
-                    idx < filtered.length - 1
-                      ? "1px solid #f3f4f6"
-                      : "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                {/* S.No */}
-                <td
+            {!loading && (
+              <div style={{ overflowX: "auto", padding: "0 20px 20px" }}>
+                <div
                   style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    color: "#6b7280",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {idx + 1}
-                </td>
-
-                {/* Supplier Name */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
+                    borderRadius: "12px",
+                    marginTop: "20px",
+                    border: "1px solid #e5e7eb",
                     overflow: "hidden",
+                    background: "#fff",
                   }}
                 >
-                  <button
-                    onClick={() => goToDetails(order)}
+                  <table
                     style={{
-                      background: "none",
-                      border: "none",
-                      color: "#2563eb",
-                      cursor: "pointer",
-                      fontWeight: 500,
-                      fontSize: "0.88rem",
                       width: "100%",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      display: "block",
-                      textAlign: "center",
+                      borderCollapse: "collapse",
+                      fontSize: "0.88rem",
+                      tableLayout: "fixed",
                     }}
                   >
-                    {order.supplierName || "—"}
-                  </button>
-                </td>
-
-                {/* Status */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <StatusBadge status={order.status} />
-                  </div>
-                </td>
-
-                {/* Date */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    color: "#6b7280",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {fmtDisplay(order.date) || "—"}
-                </td>
-
-                {/* Grand Total */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    color: "#27500A",
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {fmtCurrency(order.grandTotal || 0)}
-                </td>
-
-                {/* Order ID */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  <CodePill>{order._id}</CodePill>
-                </td>
-
-                {/* Actions */}
-                <td
-                  style={{
-                    padding: "14px 20px",
-                    textAlign: "center",
-                    verticalAlign: "middle",
-                  }}
-                >
-                  <UncontrolledDropdown>
-                    <DropdownToggle
-                      tag="a"
-                      className="btn btn-icon btn-trigger"
-                    >
-                      <Icon name="more-h" />
-                    </DropdownToggle>
-
-                    <DropdownMenu right>
-                      <DropdownItem
-                        onClick={() => goToDetails(order)}
+                    <thead>
+                      <tr
+                        style={{
+                          background: "#f9fafb",
+                          borderBottom: "2px solid #e5e7eb",
+                        }}
                       >
-                        <Icon name="eye" /> View
-                      </DropdownItem>
+                        {[
+                          { label: "S.No", width: "6%" },
+                          { label: "Supplier Name", width: "26%" },
+                          { label: "Status", width: "16%" },
+                          { label: "Date", width: "14%" },
+                          { label: "Grand Total", width: "16%" },
+                          { label: "Order ID", width: "16%" },
+                          { label: "Actions", width: "10%" },
+                        ].map((head, i) => (
+                          <th
+                            key={i}
+                            style={{
+                              padding: "14px 20px",
+                              textAlign: "center",
+                              fontWeight: 600,
+                              color: "#374151",
+                              width: head.width,
+                              whiteSpace: "nowrap",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            {head.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                      <DropdownItem
-                        onClick={() =>
-                          handleDeleteClick(order._id)
-                        }
-                      >
-                        <Icon name="trash" /> Delete
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </UncontrolledDropdown>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="7"
-                style={{
-                  textAlign: "center",
-                  padding: "48px 20px",
-                  color: "#9ca3af",
-                  fontSize: "14px",
-                }}
-              >
-                No purchase orders found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
+                    <tbody>
+                      {filtered.length > 0 ? (
+                        filtered.map((order, idx) => (
+                          <tr
+                            key={order._id}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "#fafafa")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "#fff")
+                            }
+                            style={{
+                              borderBottom:
+                                idx < filtered.length - 1
+                                  ? "1px solid #f3f4f6"
+                                  : "none",
+                              transition: "background 0.15s ease",
+                            }}
+                          >
+                            {/* S.No */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                color: "#6b7280",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {idx + 1}
+                            </td>
+
+                            {/* Supplier Name */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                overflow: "hidden",
+                              }}
+                            >
+                              <button
+                                onClick={() => goToDetails(order)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  color: "#2563eb",
+                                  cursor: "pointer",
+                                  fontWeight: 500,
+                                  fontSize: "0.88rem",
+                                  width: "100%",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  display: "block",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {order.supplierName || "—"}
+                              </button>
+                            </td>
+
+                            {/* Status */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <StatusBadge status={order.status} />
+                              </div>
+                            </td>
+
+                            {/* Date */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                color: "#6b7280",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {fmtDisplay(order.date) || "—"}
+                            </td>
+
+                            {/* Grand Total */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                color: "#27500A",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {fmtCurrency(order.grandTotal || 0)}
+                            </td>
+
+                            {/* Order ID */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              <CodePill>{order._id}</CodePill>
+                            </td>
+
+                            {/* Actions */}
+                            <td
+                              style={{
+                                padding: "14px 20px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              <UncontrolledDropdown>
+                                <DropdownToggle
+                                  tag="a"
+                                  className="btn btn-icon btn-trigger"
+                                >
+                                  <Icon name="more-h" />
+                                </DropdownToggle>
+
+                                <DropdownMenu right>
+                                  <DropdownItem
+                                    onClick={() => goToDetails(order)}
+                                  >
+                                    <Icon name="eye" /> View
+                                  </DropdownItem>
+
+                                  <DropdownItem
+                                    onClick={() =>
+                                      handleDeleteClick(order._id)
+                                    }
+                                  >
+                                    <Icon name="trash" /> Delete
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </UncontrolledDropdown>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="7"
+                            style={{
+                              textAlign: "center",
+                              padding: "48px 20px",
+                              color: "#9ca3af",
+                              fontSize: "14px",
+                            }}
+                          >
+                            No purchase orders found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </DataTable>
         </Block>
       </Content>
 
-      {/* Add Purchase Order Modal - Themed UI */}
+      {/* Add Purchase Order Modal - Themed UI with RSelect dropdowns */}
       <Modal isOpen={addModal} toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} centered size="xl" backdrop="static" scrollable>
         <ModalHeader 
           toggle={() => { setAddModal(false); setActiveAutocompleteIndex(null); }} 
@@ -1269,20 +1332,27 @@ const PurchaseOrderPage = () => {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Supplier <span style={{ color: "#E24B4A" }}>*</span></label>
-                  <select style={fc} value={newOrder.supplierId} onChange={(e) => handleSupplierChange(e.target.value)}>
-                    <option value="">Select supplier</option>
-                    {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                  <RSelect
+                    options={supplierOptions}
+                    value={selectedSupplier}
+                    onChange={handleSupplierChange}
+                    placeholder="Select supplier"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Mode of payment <span style={{ color: "#E24B4A" }}>*</span></label>
-                  <select style={fc} value={newOrder.modeOfPayment} onChange={(e) => setNewOrder({ ...newOrder, modeOfPayment: e.target.value })}>
-                    <option>Check</option>
-                    <option>Cash</option>
-                    <option>DD</option>
-                    <option>Bank Transfer</option>
-                    <option>Credit Card</option>
-                  </select>
+                  <RSelect
+                    options={modeOfPaymentOptions}
+                    value={selectedModeOfPayment}
+                    onChange={handleModeOfPaymentChange}
+                    placeholder="Select payment mode"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Terms of payment</label>
@@ -1302,11 +1372,16 @@ const PurchaseOrderPage = () => {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Project</label>
-                  <select style={fc} value={newOrder.project} onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })}>
-                    <option value="">Select project</option>
-                    {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  {projectsLoading && <span style={{ fontSize: 10, color: "#9ca3af" }}>Loading projects...</span>}
+                  <RSelect
+                    options={projectOptions}
+                    value={selectedProject}
+                    onChange={handleProjectChange}
+                    placeholder="Select project"
+                    isClearable
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                    isLoading={projectsLoading}
+                  />
                 </div>
               </div>
 
