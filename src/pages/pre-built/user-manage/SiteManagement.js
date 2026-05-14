@@ -1,7 +1,9 @@
+// SiteManagement.js
 import React, { useState, useEffect } from "react";
 import Head from "../../../layout/head/Head";
 import Content from "../../../layout/content/Content";
 import { useHistory } from "react-router-dom";
+import axios from "axios";
 import {
   Block,
   BlockHead,
@@ -20,688 +22,630 @@ import {
   Modal,
   ModalBody,
   ModalHeader,
-  Badge,
-  Card,
-  CardBody,
-  CardTitle,
-  CardText,
-  CardImg,
-  CardFooter,
+  Spinner,
+  Alert,
 } from "reactstrap";
 
-// Helper function: Convert YYYY-MM-DD to DD-MM-YYYY for display
-const formatDateToDDMMYYYY = (dateStr) => {
-  if (!dateStr) return "";
-  const [year, month, day] = dateStr.split("-");
-  if (year && month && day) {
-    return `${day}-${month}-${year}`;
-  }
-  return dateStr;
+const API_URL = `${process.env.REACT_APP_BACKENDURL}/api`;
+
+const BRAND = "#644634";
+const BRAND_DARK = "#4e3427";
+
+/* ── helpers ── */
+const formatDateToDDMMYYYY = (d) => {
+  if (!d) return "";
+  const [y, m, day] = d.split("-");
+  return y && m && day ? `${day}-${m}-${y}` : d;
+};
+const convertToYYYYMMDD = (d) => {
+  if (!d) return "";
+  if (d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
+  const [day, m, y] = d.split("-");
+  return day && m && y ? `${y}-${m}-${day}` : "";
+};
+const formatDate = (d) => {
+  if (!d) return "N/A";
+  const [y, m, day] = d.split("-");
+  return y && m && day ? `${day}-${m}-${y}` : d;
 };
 
-// Helper function: Convert DD-MM-YYYY to YYYY-MM-DD for storage
-const convertToYYYYMMDD = (dateStr) => {
-  if (!dateStr) return "";
-  // Check if it's already in YYYY-MM-DD format
-  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return dateStr;
-  }
-  // Convert from DD-MM-YYYY to YYYY-MM-DD
-  const [day, month, year] = dateStr.split("-");
-  if (day && month && year && day.length === 2 && month.length === 2 && year.length === 4) {
-    return `${year}-${month}-${day}`;
-  }
-  return "";
+const STATUS_CONFIG = {
+  active:    { text: "Active",    bg: "#06c96a", dot: "#04a355" },
+  inactive:  { text: "Completed", bg: "#dc3545", dot: "#b02a37" },
+  onhold:    { text: "On Hold",   bg: "#f59e0b", dot: "#d97706" },
+  cancelled: { text: "Cancelled", bg: "#6c757d", dot: "#565e64" },
 };
 
-const SiteManagement = () => {
-  // ========== Dummy Data with Images (dates in YYYY-MM-DD format for storage) ==========
-  const dummySites = [
-    {
-      id: 1,
-      name: "Downtown Office Complex",
-      location: "City Center, Mumbai",
-      startDate: "2024-01-15",
-      staffAssigned: ["John Doe", "Jane Smith", "Mike Johnson"],
-      status: "active",
-      image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=250&fit=crop",
-      description: "Modern office complex with 20 floors, includes parking and retail space.",
-      projectValue: "₹15 Crore",
-      completion: 65,
-    },
-    {
-      id: 2,
-      name: "Riverside Residential Tower",
-      location: "Riverbank, Delhi",
-      startDate: "2024-02-01",
-      staffAssigned: ["Sarah Williams", "David Brown", "Emily Davis"],
-      status: "active",
-      image: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&h=250&fit=crop",
-      description: "Luxury apartments with river view, 12 stories high.",
-      projectValue: "₹22 Crore",
-      completion: 40,
-    },
-    {
-      id: 3,
-      name: "Greenfield Industrial Park",
-      location: "North Industrial Area, Chennai",
-      startDate: "2023-11-10",
-      staffAssigned: ["Chris Wilson", "Jessica Taylor"],
-      status: "inactive",
-      image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&h=250&fit=crop",
-      description: "Warehouse and manufacturing units spread over 50 acres.",
-      projectValue: "₹35 Crore",
-      completion: 100,
-    },
-    {
-      id: 4,
-      name: "Harbor View Mall",
-      location: "Waterfront, Kolkata",
-      startDate: "2024-01-20",
-      staffAssigned: ["Rajesh Kumar", "Priya Sharma", "Amit Verma"],
-      status: "active",
-      image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?w=400&h=250&fit=crop",
-      description: "Shopping mall with multiplex, food court, and 100+ retail outlets.",
-      projectValue: "₹45 Crore",
-      completion: 30,
-    },
-    {
-      id: 5,
-      name: "Sunset Hills Villa Project",
-      location: "Eastern Hills, Bangalore",
-      startDate: "2023-09-05",
-      staffAssigned: ["Neha Gupta", "Rahul Mehta"],
-      status: "inactive",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=250&fit=crop",
-      description: "Premium villas with private gardens and clubhouse.",
-      projectValue: "₹28 Crore",
-      completion: 100,
-    },
-    {
-      id: 6,
-      name: "Tech Hub Innovation Center",
-      location: "Tech Corridor, Hyderabad",
-      startDate: "2024-03-01",
-      staffAssigned: ["Sandeep Reddy", "Anjali Nair", "Vikram Singh", "Divya Patil"],
-      status: "active",
-      image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=400&h=250&fit=crop",
-      description: "Co-working and office spaces for startups and tech companies.",
-      projectValue: "₹18 Crore",
-      completion: 20,
-    },
-    {
-      id: 7,
-      name: "Metro Transit Station",
-      location: "Central District, Pune",
-      startDate: "2024-02-10",
-      staffAssigned: ["Mahesh Joshi", "Sonali Patil"],
-      status: "active",
-      image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=250&fit=crop",
-      description: "Integrated metro station with commercial spaces and parking.",
-      projectValue: "₹60 Crore",
-      completion: 15,
-    },
-  ];
+/* ── Brand button ── */
+const BrandBtn = ({ children, onClick, disabled, size = "md", outline = false, style = {} }) => {
+  const pad = size === "sm" ? "5px 14px" : size === "lg" ? "10px 28px" : "7px 20px";
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        background: outline ? "transparent" : BRAND,
+        color: outline ? BRAND : "#fff",
+        border: `1.5px solid ${BRAND}`,
+        padding: pad,
+        borderRadius: "8px",
+        fontWeight: 600,
+        fontSize: "13px",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.6 : 1,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        transition: "background 0.18s, color 0.18s",
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+};
 
-  // ========== State ==========
-  const [sites, setSites] = useState([]);
-  const [filteredSites, setFilteredSites] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [onSearch, setOnSearch] = useState(true);
-  const [selectedSite, setSelectedSite] = useState(null);
-  const [modal, setModal] = useState(false);
-  const [addModal, setAddModal] = useState(false);
-  const [newSite, setNewSite] = useState({
-    name: "",
-    location: "",
-    startDate: "",
-    staffAssigned: [],
-    description: "",
-    projectValue: "",
-    image: "",
-  });
+/* ── Status Badge ── */
+const StatusBadge = ({ status }) => {
+  const sc = STATUS_CONFIG[status] || { text: status || "Active", bg: "#6c757d" };
+  return (
+    <span style={{
+      background: sc.bg + "22",
+      color: sc.bg,
+      border: `1px solid ${sc.bg}55`,
+      padding: "3px 11px",
+      borderRadius: "20px",
+      fontSize: "11px",
+      fontWeight: 700,
+      letterSpacing: "0.3px",
+      whiteSpace: "nowrap",
+    }}>
+      {sc.text}
+    </span>
+  );
+};
+
+/* ── Site Card ── */
+const SiteCard = ({ site, onView, onDelete, deleting }) => (
+  <div style={{
+    borderRadius: "14px",
+    overflow: "hidden",
+    border: "1px solid #e8e8e8",
+    background: "#fff",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+    transition: "box-shadow 0.2s, transform 0.2s",
+  }}
+    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 6px 24px rgba(100,70,52,0.13)"}
+    onMouseLeave={e => e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"}
+  >
+    {/* Image */}
+    <div style={{ position: "relative", height: "148px", flexShrink: 0 }}>
+      <img
+        src={site.image}
+        alt={site.name}
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        onError={e => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=250&fit=crop"; }}
+      />
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.35) 100%)",
+      }} />
+      <div style={{ position: "absolute", top: "10px", right: "10px" }}>
+        <StatusBadge status={site.status} />
+      </div>
+    </div>
+
+    {/* Body */}
+    <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+      <h6 style={{ margin: 0, fontWeight: 700, fontSize: "14px", color: "#1a1a2e", lineHeight: 1.3 }}>{site.name}</h6>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "2px" }}>
+        <MetaRow icon="map-pin" text={site.location} />
+        <MetaRow icon="calendar" text={formatDate(site.startDate)} />
+        <MetaRow icon="users" text={`${site.staffAssigned?.length || 0} staff assigned`} />
+        {site.projectValue && <MetaRow icon="trend-up" text={site.projectValue} />}
+      </div>
+
+      {site.completion > 0 && site.status === "active" && (
+        <div style={{ marginTop: "6px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#888", marginBottom: "4px" }}>
+            <span>Completion</span><span style={{ fontWeight: 700, color: BRAND }}>{site.completion}%</span>
+          </div>
+          <div style={{ height: "5px", background: "#f0ece9", borderRadius: "10px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${site.completion}%`, background: `linear-gradient(90deg, ${BRAND}, #a0674a)`, borderRadius: "10px" }} />
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Footer */}
+    <div style={{ padding: "0 16px 16px", display: "flex", gap: "8px" }}>
+      <BrandBtn onClick={() => onView(site)} style={{ flex: 1, justifyContent: "center" }}>
+        View Details
+      </BrandBtn>
+      <button
+        onClick={() => onDelete(site._id, site.name)}
+        disabled={deleting === site._id}
+        style={{
+          background: "#fff0f0", color: "#dc3545", border: "1.5px solid #f5c6cb",
+          padding: "7px 13px", borderRadius: "8px", cursor: "pointer",
+          display: "inline-flex", alignItems: "center", fontSize: "14px",
+          transition: "background 0.18s",
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = "#fde8e8"}
+        onMouseLeave={e => e.currentTarget.style.background = "#fff0f0"}
+      >
+        {deleting === site._id ? <Spinner size="sm" /> : <Icon name="trash" />}
+      </button>
+    </div>
+  </div>
+);
+
+const MetaRow = ({ icon, text }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+    <Icon name={icon} style={{ fontSize: "12px", color: "#aaa", flexShrink: 0 }} />
+    <span style={{ fontSize: "12px", color: "#777", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{text}</span>
+  </div>
+);
+
+/* ── Add Site Modal – multi-section layout ── */
+const EMPTY_SITE = { name: "", location: "", startDate: "", staffAssigned: [], description: "", projectValue: "", image: "", completion: 0, budget: 0 };
+
+const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
+  const [form, setForm] = useState(EMPTY_SITE);
   const [staffInput, setStaffInput] = useState("");
-  const [formErrors, setFormErrors] = useState({});
-  const history = useHistory();
-  
-  // Load dummy data on mount
-  useEffect(() => {
-    setSites(dummySites);
-    setFilteredSites(dummySites);
-  }, []);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-  // Filter sites based on search
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredSites(sites);
-    } else {
-      const term = searchTerm.toLowerCase();
-      const filtered = sites.filter(
-        (site) =>
-          site.name.toLowerCase().includes(term) ||
-          site.location.toLowerCase().includes(term) ||
-          site.staffAssigned.some((staff) => staff.toLowerCase().includes(term))
-      );
-      setFilteredSites(filtered);
-    }
-  }, [searchTerm, sites]);
+  const reset = () => { setForm(EMPTY_SITE); setStaffInput(""); setErrors({}); };
 
-  // ========== Handlers ==========
-  const toggleSearch = () => setOnSearch(!onSearch);
+  const close = () => { reset(); onClose(); };
 
-  // Replace the viewSiteDetails function
-  const viewSiteDetails = (site) => {
-    history.push(`/SiteManagement/site/${site.id}`, { site });
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleDateChange = (e) => {
+    const v = e.target.value;
+    if (v.match(/^\d{2}-\d{2}-\d{4}$/)) set("startDate", convertToYYYYMMDD(v));
+    else set("startDate", v);
   };
 
-  const validateForm = () => {
-    const errors = {};
-    if (!newSite.name.trim()) errors.name = "Site name is required";
-    if (!newSite.location.trim()) errors.location = "Location is required";
-    if (!newSite.startDate) errors.startDate = "Start date is required";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddSite = () => {
-    if (!validateForm()) return;
-
-    const newId = sites.length + 1;
-    const siteToAdd = {
-      id: newId,
-      ...newSite,
-      staffAssigned: newSite.staffAssigned.length ? newSite.staffAssigned : ["Not Assigned"],
-      status: "active",
-      image: newSite.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=250&fit=crop",
-      completion: 0,
-    };
-    setSites([siteToAdd, ...sites]);
-    setAddModal(false);
-    resetNewSiteForm();
-  };
-
-  const resetNewSiteForm = () => {
-    setNewSite({
-      name: "",
-      location: "",
-      startDate: "",
-      staffAssigned: [],
-      description: "",
-      projectValue: "",
-      image: "",
-    });
-    setStaffInput("");
-    setFormErrors({});
-  };
-
-  const handleAddStaff = () => {
-    const staffName = staffInput.trim();
-    if (staffName && !newSite.staffAssigned.includes(staffName)) {
-      setNewSite({
-        ...newSite,
-        staffAssigned: [...newSite.staffAssigned, staffName],
-      });
+  const addStaff = () => {
+    const n = staffInput.trim();
+    if (n && !form.staffAssigned.includes(n)) {
+      set("staffAssigned", [...form.staffAssigned, n]);
       setStaffInput("");
     }
   };
 
-  const handleRemoveStaff = (staffToRemove) => {
-    setNewSite({
-      ...newSite,
-      staffAssigned: newSite.staffAssigned.filter((s) => s !== staffToRemove),
-    });
+  const removeStaff = (s) => set("staffAssigned", form.staffAssigned.filter(x => x !== s));
+
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = "Site name is required";
+    if (!form.location.trim()) e.location = "Location is required";
+    if (!form.startDate) e.startDate = "Start date is required";
+    setErrors(e);
+    return !Object.keys(e).length;
   };
 
-  // Format date as DD-MM-YYYY for display
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    // Convert from YYYY-MM-DD to DD-MM-YYYY
-    const [year, month, day] = dateString.split("-");
-    if (year && month && day) {
-      return `${day}-${month}-${year}`;
-    }
-    return dateString;
-  };
-
-  // Handle date input change in form (convert DD-MM-YYYY to YYYY-MM-DD for storage)
-  const handleDateChange = (e) => {
-    const inputValue = e.target.value;
-    // If user types in DD-MM-YYYY format
-    if (inputValue.match(/^\d{2}-\d{2}-\d{4}$/)) {
-      const yyyymmdd = convertToYYYYMMDD(inputValue);
-      setNewSite({ ...newSite, startDate: yyyymmdd });
-    } 
-    // If user uses native date picker (YYYY-MM-DD)
-    else if (inputValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      setNewSite({ ...newSite, startDate: inputValue });
-    }
-    else {
-      setNewSite({ ...newSite, startDate: inputValue });
+  const submit = async () => {
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      await onAdd({
+        ...form,
+        staffAssigned: form.staffAssigned.length ? form.staffAssigned : ["Not Assigned"],
+        image: form.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=250&fit=crop",
+      });
+      close();
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Get display value for date input (show DD-MM-YYYY)
-  const getDateDisplayValue = (dateStr) => {
-    if (!dateStr) return "";
-    return formatDateToDDMMYYYY(dateStr);
-  };
-
-  const getStatusBadge = (status) => {
-    let statusText = "";
-    let bgColor = "";
-    
-    if (status === "active") {
-      statusText = "Active";
-      bgColor = "#06c96a";
-    } else if (status === "inactive" || status === "Completed") {
-      statusText = "Completed";
-      bgColor = "#dc3545";
-    } else {
-      statusText = status || "Active";
-      bgColor = "#6c757d";
-    }
-    
-    return (
-      <span
-        className="badge"
-        style={{
-          backgroundColor: bgColor,
-          color: "#fff",
-          padding: "5px 12px",
-          borderRadius: "14px",
-          textTransform: "capitalize",
-          display: "inline-block",
-          minWidth: "90px",
-          textAlign: "center",
-        }}
+  return (
+    <Modal isOpen={isOpen} toggle={close} size="lg" centered>
+      <ModalHeader
+        toggle={close}
+        style={{ borderBottom: "none", padding: "24px 28px 0" }}
       >
-        {statusText}
-      </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "36px", height: "36px", background: BRAND + "18",
+            borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Icon name="building" style={{ color: BRAND, fontSize: "18px" }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "17px", color: "#1a1a2e" }}>Add New Project Site</div>
+            <div style={{ fontSize: "12px", color: "#aaa", marginTop: "1px" }}>Fill in the project information below</div>
+          </div>
+        </div>
+      </ModalHeader>
+
+      <ModalBody style={{ padding: "20px 28px 28px", maxHeight: "78vh", overflowY: "auto" }}>
+
+        {/* ── Section: Basic Info ── */}
+        <SectionLabel icon="info" label="Basic Information" />
+        <Row>
+          <Col md="6">
+            <FieldGroup label="Site Name *" error={errors.name}>
+              <Input placeholder="e.g. Block B Tower" value={form.name} onChange={e => set("name", e.target.value)} invalid={!!errors.name} style={inputStyle} />
+            </FieldGroup>
+          </Col>
+          <Col md="6">
+            <FieldGroup label="Location *" error={errors.location}>
+              <Input placeholder="City, State" value={form.location} onChange={e => set("location", e.target.value)} invalid={!!errors.location} style={inputStyle} />
+            </FieldGroup>
+          </Col>
+          <Col md="6">
+            <FieldGroup label="Start Date * (DD-MM-YYYY)" error={errors.startDate}>
+              <Input
+                placeholder="DD-MM-YYYY"
+                value={formatDateToDDMMYYYY(form.startDate)}
+                onChange={handleDateChange}
+                invalid={!!errors.startDate}
+                style={inputStyle}
+              />
+            </FieldGroup>
+          </Col>
+          <Col md="6">
+            <FieldGroup label="Project Value (₹)">
+              <Input placeholder="e.g. ₹15 Crore" value={form.projectValue} onChange={e => set("projectValue", e.target.value)} style={inputStyle} />
+            </FieldGroup>
+          </Col>
+          <Col md="6">
+            <FieldGroup label="Budget (₹)">
+              <Input type="number" placeholder="Numeric amount" value={form.budget || ""} onChange={e => set("budget", Number(e.target.value))} style={inputStyle} />
+            </FieldGroup>
+          </Col>
+          <Col md="6">
+            <FieldGroup label="Completion (%)">
+              <Input type="number" min="0" max="100" placeholder="0–100" value={form.completion || ""} onChange={e => set("completion", Number(e.target.value))} style={inputStyle} />
+            </FieldGroup>
+          </Col>
+          <Col md="12">
+            <FieldGroup label="Description">
+              <Input type="textarea" rows="3" placeholder="Brief description of the project…" value={form.description} onChange={e => set("description", e.target.value)} style={{ ...inputStyle, resize: "none" }} />
+            </FieldGroup>
+          </Col>
+        </Row>
+
+        {/* ── Section: Media ── */}
+        <SectionLabel icon="image" label="Cover Image" />
+        <FieldGroup label="Image URL (optional)">
+          <Input placeholder="https://example.com/image.jpg" value={form.image} onChange={e => set("image", e.target.value)} style={inputStyle} />
+          <small style={{ color: "#aaa", fontSize: "11px" }}>Leave blank to use a default construction image</small>
+        </FieldGroup>
+        {form.image && (
+          <div style={{ marginBottom: "16px" }}>
+            <img src={form.image} alt="preview" style={{ height: "90px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }}
+              onError={e => e.target.style.display = "none"} />
+          </div>
+        )}
+
+        {/* ── Section: Staff ── */}
+        <SectionLabel icon="users" label="Assign Staff" />
+        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+          <Input
+            placeholder="Enter staff name, press Enter or Add"
+            value={staffInput}
+            onChange={e => setStaffInput(e.target.value)}
+            onKeyPress={e => e.key === "Enter" && addStaff()}
+            style={inputStyle}
+          />
+          <BrandBtn onClick={addStaff} outline style={{ whiteSpace: "nowrap", flexShrink: 0 }}>+ Add</BrandBtn>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px" }}>
+          {form.staffAssigned.map((s, i) => (
+            <span key={i} style={staffPillStyle} onClick={() => removeStaff(s)}>
+              {s}
+              <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
+            </span>
+          ))}
+          {!form.staffAssigned.length && (
+            <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>
+              No staff added — click to remove a badge
+            </span>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div style={{
+          display: "flex", justifyContent: "flex-end", gap: "10px",
+          marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0",
+        }}>
+          <button
+            onClick={close}
+            style={{
+              background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0",
+              padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <BrandBtn onClick={submit} disabled={submitting} size="md">
+            {submitting ? <><Spinner size="sm" /> Adding…</> : <><Icon name="plus" /> Add Site</>}
+          </BrandBtn>
+        </div>
+      </ModalBody>
+    </Modal>
+  );
+};
+
+const SectionLabel = ({ icon, label }) => (
+  <div style={{
+    display: "flex", alignItems: "center", gap: "7px",
+    margin: "18px 0 12px",
+    paddingBottom: "8px",
+    borderBottom: "1px solid #f2ede9",
+  }}>
+    <Icon name={icon} style={{ color: BRAND, fontSize: "14px" }} />
+    <span style={{ fontWeight: 700, fontSize: "12px", color: BRAND, textTransform: "uppercase", letterSpacing: "0.7px" }}>{label}</span>
+  </div>
+);
+
+const FieldGroup = ({ label, error, children }) => (
+  <FormGroup style={{ marginBottom: "14px" }}>
+    <label style={{ fontSize: "12px", fontWeight: 600, color: "#555", marginBottom: "5px", display: "block" }}>{label}</label>
+    {children}
+    {error && <div style={{ color: "#dc3545", fontSize: "11px", marginTop: "4px" }}>{error}</div>}
+  </FormGroup>
+);
+
+const inputStyle = {
+  borderRadius: "8px",
+  border: "1.5px solid #e8e4e0",
+  fontSize: "13px",
+  padding: "8px 12px",
+  color: "#1a1a2e",
+  background: "#fdfcfc",
+  outline: "none",
+};
+
+const staffPillStyle = {
+  display: "inline-flex", alignItems: "center",
+  background: BRAND + "15", color: BRAND,
+  border: `1px solid ${BRAND}33`,
+  padding: "4px 12px", borderRadius: "20px",
+  fontSize: "12px", fontWeight: 600,
+  cursor: "pointer",
+  transition: "background 0.15s",
+};
+
+/* ── Main Page ── */
+const SiteManagement = () => {
+  const [sites, setSites] = useState([]);
+  const [filteredSites, setFilteredSites] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [addModal, setAddModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const history = useHistory();
+
+  useEffect(() => { fetchProjects(); }, []);
+
+  useEffect(() => {
+    const term = searchTerm.toLowerCase().trim();
+    setFilteredSites(
+      !term ? sites : sites.filter(s =>
+        s.name.toLowerCase().includes(term) ||
+        s.location.toLowerCase().includes(term) ||
+        s.staffAssigned?.some(st => st.toLowerCase().includes(term))
+      )
     );
+  }, [searchTerm, sites]);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const r = await axios.get(`${API_URL}/projects`);
+      if (r.data.success) { setSites(r.data.data); setFilteredSites(r.data.data); }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load projects.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleAdd = async (siteData) => {
+    const r = await axios.post(`${API_URL}/projects`, siteData);
+    if (r.data.success) {
+      showSuccess("Project added successfully!");
+      await fetchProjects();
+    }
+  };
+
+  const handleDelete = async (projectId, projectName) => {
+    if (!window.confirm(`Delete "${projectName}"? This will permanently remove all associated media and documents.`)) return;
+    try {
+      setDeleting(projectId);
+      const r = await axios.delete(`${API_URL}/projects/${projectId}`);
+      if (r.data.success) { showSuccess("Project deleted."); await fetchProjects(); }
+    } catch (err) {
+      showError(err.response?.data?.message || "Failed to delete project.");
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const showSuccess = (m) => { setSuccessMessage(m); setTimeout(() => setSuccessMessage(null), 3000); };
+  const showError = (m) => { setError(m); setTimeout(() => setError(null), 5000); };
+
+  if (loading) {
+    return (
+      <Content>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: "12px" }}>
+          <Spinner style={{ color: BRAND, width: "36px", height: "36px" }} />
+          <p style={{ color: "#aaa", fontSize: "14px", margin: 0 }}>Loading projects…</p>
+        </div>
+      </Content>
+    );
+  }
 
   return (
     <React.Fragment>
       <Head title="Project Management | Projects" />
       <Content>
+        {/* ── Page Header ── */}
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              <BlockTitle page tag="h3">
-                Project Management
-              </BlockTitle>
+              <BlockTitle page tag="h3">Project Management</BlockTitle>
               <BlockDes className="text-soft">
                 <p>Manage all construction and project sites</p>
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <Button 
-                style={{
-                  backgroundColor: "#644634",
-                  borderColor: "#800000",
-                  color: "#fff"
-                }} 
-                className="btn-icon" 
-                onClick={() => setAddModal(true)}>
-                <Icon name="plus" />
-              </Button>
+              <BrandBtn onClick={() => setAddModal(true)} size="md">
+                <Icon name="plus" /> Add Project
+              </BrandBtn>
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>
 
-        {/* White container for search and cards */}
-        <Block className="card card-bordered">
-          {/* Search Bar */}
-          <div className="card-inner position-relative card-tools-toggle border-bottom">
-            <div className="card-title-group">
-              <div className="card-tools">
-                <div className="form-inline flex-nowrap gx-3">
-                  <div className="form-wrap"></div>
-                  <div className="btn-wrap">
-                    <span className="d-md-none">
-                      <Button color="light" outline className="btn-dim btn-icon">
-                        <Icon name="arrow-right"></Icon>
-                      </Button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="card-tools mr-n1">
-                <ul className="btn-toolbar gx-1">
-                  <li>
-                    <a
-                      href="#search"
-                      onClick={(ev) => {
-                        ev.preventDefault();
-                        toggleSearch();
+        {/* ── Alerts ── */}
+        {error && (
+          <Alert color="danger" className="mb-3 d-flex align-items-center justify-content-between">
+            <span>{error}</span>
+            <Button close onClick={() => setError(null)} />
+          </Alert>
+        )}
+        {successMessage && (
+          <Alert color="success" className="mb-3 d-flex align-items-center justify-content-between">
+            <span>{successMessage}</span>
+            <Button close onClick={() => setSuccessMessage(null)} />
+          </Alert>
+        )}
+
+        {/* ── Content Card ── */}
+        <Block>
+          <div className="card card-bordered" style={{ borderRadius: "12px", overflow: "hidden" }}>
+            {/* Toolbar */}
+            <div style={{
+              padding: "14px 20px",
+              borderBottom: "1px solid #f0ece9",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              background: "#fdfcfc",
+            }}>
+              {/* Left: count */}
+              <span style={{ fontSize: "13px", color: "#888", fontWeight: 500 }}>
+                {filteredSites.length} <span style={{ color: "#bbb" }}>/</span> {sites.length} projects
+              </span>
+
+              {/* Right: search toggle */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {searchOpen ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ position: "relative" }}>
+                      <Icon name="search" style={{
+                        position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
+                        color: "#bbb", fontSize: "13px", pointerEvents: "none",
+                      }} />
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Search by name, location, staff…"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{
+                          padding: "7px 12px 7px 30px",
+                          borderRadius: "8px",
+                          border: "1.5px solid #e8e4e0",
+                          fontSize: "13px",
+                          width: "260px",
+                          outline: "none",
+                          background: "#fff",
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => { setSearchOpen(false); setSearchTerm(""); }}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "#aaa", fontSize: "18px", lineHeight: 1, padding: "2px 6px",
                       }}
-                      className="btn btn-icon search-toggle toggle-search"
-                    >
-                      <Icon name="search"></Icon>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className={`card-search search-wrap ${!onSearch && "active"}`}>
-              <div className="card-body">
-                <div className="search-content">
-                  <Button
-                    className="search-back btn-icon toggle-search active"
-                    onClick={() => {
-                      setSearchTerm("");
-                      toggleSearch();
+                    >×</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    style={{
+                      background: "#f5f5f5", border: "1.5px solid #e8e4e0",
+                      borderRadius: "8px", padding: "7px 14px",
+                      cursor: "pointer", display: "flex", alignItems: "center",
+                      gap: "5px", fontSize: "13px", color: "#666",
                     }}
                   >
-                    <Icon name="arrow-left"></Icon>
-                  </Button>
-                  <input
-                    type="text"
-                    className="border-transparent form-focus-none form-control"
-                    placeholder="Search by site name, location, or assigned staff..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <Button className="search-submit btn-icon">
-                    <Icon name="search"></Icon>
-                  </Button>
-                </div>
+                    <Icon name="search" style={{ fontSize: "13px" }} /> Search
+                  </button>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Sites Cards Grid */}
-          <div className="card-inner">
-            <Row className="g-gs">
-              {filteredSites.length > 0 ? (
-                filteredSites.map((site) => (
-                  <Col xxl="3" lg="4" md="6" key={site.id}>
-                    <Card className="site-card h-100 shadow-sm" style={{ borderRadius: "12px" }}>
-                      <CardImg
-                        top
-                        src={site.image}
-                        alt={site.name}
-                        style={{ height: "140px", objectFit: "cover", borderTopLeftRadius: "12px", borderTopRightRadius: "12px" }}
+            {/* Grid */}
+            <div style={{ padding: "20px" }}>
+              <Row className="g-4">
+                {filteredSites.length > 0 ? (
+                  filteredSites.map(site => (
+                    <Col xxl="3" lg="4" md="6" key={site._id}>
+                      <SiteCard
+                        site={site}
+                        onView={s => history.push(`/SiteManagement/site/${s._id}`, { site: s })}
+                        onDelete={handleDelete}
+                        deleting={deleting}
                       />
-                      <CardBody className="p-3">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <CardTitle tag="h6" className="mb-0 fw-bold" style={{ fontSize: "0.9rem" }}>
-                            {site.name}
-                          </CardTitle>
-                          {getStatusBadge(site.status)}
-                        </div>
-                        <CardText className="small">
-                          <div className="mb-1">
-                            <Icon name="map-pin" size={12} className="me-1 text-muted" />
-                            <span className="text-muted">{site.location}</span>
-                          </div>
-                          <div className="mb-1">
-                            <Icon name="calendar" size={12} className="me-1 text-muted" />
-                            <span className="text-muted">{formatDate(site.startDate)}</span>
-                          </div>
-                          <div className="mb-2">
-                            <Icon name="users" size={12} className="me-1 text-muted" />
-                            <span className="text-muted">{site.staffAssigned.length} staff</span>
-                          </div>
-                          {site.projectValue && (
-                            <div className="mb-2">
-                              <Icon name="trend-up" size={12} className="me-1 text-muted" />
-                              <span className="text-muted">{site.projectValue}</span>
-                            </div>
-                          )}
-                          {site.completion && site.status === "active" && (
-                            <div className="mt-2">
-                              <div className="d-flex justify-content-between small mb-1">
-                                <span>Completion</span>
-                                <span>{site.completion}%</span>
-                              </div>
-                              <div className="progress" style={{ height: "4px" }}>
-                                <div
-                                  className="progress-bar bg-primary"
-                                  style={{ width: `${site.completion}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
-                        </CardText>
-                      </CardBody>
-                      <CardFooter className="bg-transparent border-top-0 pb-3 pt-0 px-3">
-                        <Button 
-                          style={{
-                            backgroundColor: "#644634",
-                            borderColor: "#800000",
-                            color: "#fff",
-                            padding: "6px 20px"
-                          }} 
-                          outline 
-                          size="sm" 
-                          block 
-                          onClick={() => viewSiteDetails(site)}>
-                          View Details
-                        </Button>
-                      </CardFooter>
-                    </Card>
+                    </Col>
+                  ))
+                ) : (
+                  <Col xs="12">
+                    <div style={{
+                      textAlign: "center", padding: "60px 20px",
+                      border: "1px dashed #e0dbd7", borderRadius: "12px",
+                      background: "#fdfcfc",
+                    }}>
+                      <div style={{
+                        width: "60px", height: "60px",
+                        background: BRAND + "12",
+                        borderRadius: "50%",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto 16px",
+                      }}>
+                        <Icon name="building" style={{ fontSize: "26px", color: BRAND }} />
+                      </div>
+                      <h6 style={{ color: "#555", fontWeight: 700 }}>No projects found</h6>
+                      <p style={{ color: "#aaa", fontSize: "13px", margin: "4px 0 18px" }}>
+                        {searchTerm ? "Try a different search term" : "Add your first project to get started"}
+                      </p>
+                      {!searchTerm && (
+                        <BrandBtn onClick={() => setAddModal(true)}>
+                          <Icon name="plus" /> Add Project
+                        </BrandBtn>
+                      )}
+                    </div>
                   </Col>
-                ))
-              ) : (
-                <Col xs="12">
-                  <div className="text-center py-5">
-                    <Icon name="building" size={48} className="text-soft" />
-                    <h5 className="mt-3">No sites found</h5>
-                    <p className="text-muted">Try adjusting your search or add a new site.</p>
-                  </div>
-                </Col>
-              )}
-            </Row>
+                )}
+              </Row>
+            </div>
           </div>
         </Block>
 
-        {/* Site Details Modal - Scrollable with visible scrollbar */}
-        <Modal isOpen={modal} toggle={() => setModal(false)} size="lg" className="site-modal">
-          <ModalHeader toggle={() => setModal(false)}>Site Details</ModalHeader>
-          <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
-            {selectedSite && (
-              <div className="site-details">
-                <div className="text-center mb-4">
-                  <img
-                    src={selectedSite.image}
-                    alt={selectedSite.name}
-                    style={{ maxWidth: "100%", height: "250px", objectFit: "cover", borderRadius: "8px" }}
-                  />
-                </div>
-                <Row className="mb-4">
-                  <Col md="8">
-                    <h4>{selectedSite.name}</h4>
-                    <p className="text-muted">
-                      <Icon name="map-pin" /> {selectedSite.location}
-                    </p>
-                  </Col>
-                  <Col md="4" className="text-md-end">
-                    {getStatusBadge(selectedSite.status)}
-                  </Col>
-                </Row>
-
-                <Row className="mb-4">
-                  <Col md="6">
-                    <strong>Start Date:</strong>
-                    <p>{formatDate(selectedSite.startDate)}</p>
-                  </Col>
-                  <Col md="6">
-                    <strong>Project Value:</strong>
-                    <p>{selectedSite.projectValue || "N/A"}</p>
-                  </Col>
-                </Row>
-
-                <div className="mb-4">
-                  <strong>Description:</strong>
-                  <p>{selectedSite.description || "No description provided."}</p>
-                </div>
-
-                <div className="mb-4">
-                  <strong>Assigned Staff:</strong>
-                  <ul className="mt-2">
-                    {selectedSite.staffAssigned.map((staff, idx) => (
-                      <li key={idx}>{staff}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {selectedSite.completion && (
-                  <div className="mb-4">
-                    <strong>Completion Status</strong>
-                    <div className="mt-2">
-                      <div className="d-flex justify-content-between small mb-1">
-                        <span>Progress</span>
-                        <span>{selectedSite.completion}%</span>
-                      </div>
-                      <div className="progress">
-                        <div
-                          className="progress-bar bg-success"
-                          style={{ width: `${selectedSite.completion}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="d-flex justify-content-end gap-2 mt-3">
-                  <Button color="secondary" onClick={() => setModal(false)}>
-                    Close
-                  </Button>
-                  <Button color="primary">Edit Site</Button>
-                </div>
-              </div>
-            )}
-          </ModalBody>
-        </Modal>
-
-        {/* Add New Site Modal - Scrollable with visible scrollbar */}
-        <Modal isOpen={addModal} toggle={() => { setAddModal(false); resetNewSiteForm(); }} size="xl">
-          <ModalHeader toggle={() => { setAddModal(false); resetNewSiteForm(); }}>Add New Site</ModalHeader>
-          <ModalBody style={{ maxHeight: "85vh", overflowY: "auto" }}>
-            <FormGroup>
-              <label>Site Name *</label>
-              <Input
-                type="text"
-                placeholder="Enter site name"
-                value={newSite.name}
-                onChange={(e) => setNewSite({ ...newSite, name: e.target.value })}
-                invalid={!!formErrors.name}
-              />
-              {formErrors.name && <div className="invalid-feedback d-block">{formErrors.name}</div>}
-            </FormGroup>
-            <FormGroup>
-              <label>Location *</label>
-              <Input
-                type="text"
-                placeholder="City, State"
-                value={newSite.location}
-                onChange={(e) => setNewSite({ ...newSite, location: e.target.value })}
-                invalid={!!formErrors.location}
-              />
-              {formErrors.location && <div className="invalid-feedback d-block">{formErrors.location}</div>}
-            </FormGroup>
-            <FormGroup>
-              <label>Start Date * (DD-MM-YYYY)</label>
-              <Input
-                type="text"
-                placeholder="DD-MM-YYYY"
-                value={getDateDisplayValue(newSite.startDate)}
-                onChange={handleDateChange}
-                invalid={!!formErrors.startDate}
-              />
-              {formErrors.startDate && <div className="invalid-feedback d-block">{formErrors.startDate}</div>}
-              <small className="text-muted">Enter date in DD-MM-YYYY format (e.g., 15-01-2024)</small>
-            </FormGroup>
-            <FormGroup>
-              <label>Project Value (₹)</label>
-              <Input
-                type="text"
-                placeholder="e.g., ₹15 Crore"
-                value={newSite.projectValue}
-                onChange={(e) => setNewSite({ ...newSite, projectValue: e.target.value })}
-              />
-            </FormGroup>
-            <FormGroup>
-              <label>Description</label>
-              <Input
-                type="textarea"
-                rows="3"
-                placeholder="Brief description of the site/project"
-                value={newSite.description}
-                onChange={(e) => setNewSite({ ...newSite, description: e.target.value })}
-              />
-            </FormGroup>
-            <FormGroup>
-              <label>Image URL (optional)</label>
-              <Input
-                type="text"
-                placeholder="https://example.com/image.jpg"
-                value={newSite.image}
-                onChange={(e) => setNewSite({ ...newSite, image: e.target.value })}
-              />
-              <small className="text-muted">Leave blank to use default image</small>
-            </FormGroup>
-            <FormGroup>
-              <label>Assign Staff (multiple)</label>
-              <div className="d-flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Enter staff name"
-                  value={staffInput}
-                  onChange={(e) => setStaffInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddStaff()}
-                />
-                <Button color="secondary" 
-                  style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
-                    marginTop: "0.3rem",
-                    color: "#fff",
-                    padding: "12px 20px"
-                  }} 
-                  onClick={handleAddStaff}>
-                  Add
-                </Button>
-              </div>
-              <div className="mt-4">
-                {newSite.staffAssigned.map((staff, idx) => (
-                  <Badge 
-                    key={idx} 
-                    color="primary" 
-                    pill 
-                    className="me-1 mb-1" 
-                    style={{ cursor: "pointer", fontSize: "0.8rem", padding: "5px 10px" }}
-                    onClick={() => handleRemoveStaff(staff)}
-                  >
-                    {staff} &times;
-                  </Badge>
-                ))}
-                {newSite.staffAssigned.length === 0 && (
-                  <small className="text-muted" style={{marginTop:"3px"}}>No staff added yet. Type name and click Add.</small>
-                )}
-              </div>
-              <small className="text-muted">Click on a badge to remove staff</small>
-            </FormGroup>
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button color="secondary" className="p-3" style={{ marginTop: "-1rem" }} onClick={() => { setAddModal(false); resetNewSiteForm(); }}>
-                Cancel
-              </Button>
-              <Button 
-                style={{
-                  backgroundColor: "#644634",
-                  borderColor: "#800000",
-                  marginTop: "-1rem",
-                  color: "#fff",
-                  padding: "6px 20px"
-                }} 
-                className="p-3" 
-                onClick={handleAddSite}>
-                Add Site
-              </Button>
-            </div>
-          </ModalBody>
-        </Modal>
+        {/* ── Add Site Modal ── */}
+        <AddSiteModal
+          isOpen={addModal}
+          onClose={() => setAddModal(false)}
+          onAdd={handleAdd}
+        />
       </Content>
     </React.Fragment>
   );
