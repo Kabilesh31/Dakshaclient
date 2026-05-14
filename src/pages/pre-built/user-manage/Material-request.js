@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
@@ -17,6 +17,7 @@ import {
   Icon,
   Button,
   DataTable,
+  RSelect,
 } from "../../../components/Component";
 import {
   Modal,
@@ -32,9 +33,7 @@ import {
   Spinner,
 } from "reactstrap";
 
-// ----------------------------------------------------------------------
-// API Base URL (adjust to your backend)
-// ----------------------------------------------------------------------
+// API Base URL
 const API_BASE = "http://localhost:8000/api/material-requests";
 
 // Dummy item database for autocomplete
@@ -55,9 +54,7 @@ const dummyItemDatabase = [
   { itemCode: "PAINT-WHITE", itemName: "WHITE PAINT 10 LTR", uom: "LTR", warehouse: "Stores - SD" },
 ];
 
-// ----------------------------------------------------------------------
-// Date Helpers: YYYY-MM-DD <-> DD/MM/YYYY
-// ----------------------------------------------------------------------
+// Date Helpers
 const formatDateToDDMMYYYY = (dateStr) => {
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
@@ -70,14 +67,12 @@ const formatDateToYYYYMMDD = (dateStr) => {
   return `${year}-${month}-${day}`;
 };
 
-// Convert YYYY-MM-DD to Date object for react-datepicker
 const toDateObject = (dateStr) => {
   if (!dateStr) return null;
   const [year, month, day] = dateStr.split("-");
   return new Date(`${year}-${month}-${day}T00:00:00`);
 };
 
-// Convert Date object to YYYY-MM-DD string
 const toYYYYMMDD = (date) => {
   if (!date || isNaN(date.getTime())) return "";
   const year = date.getFullYear();
@@ -86,12 +81,9 @@ const toYYYYMMDD = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-// ----------------------------------------------------------------------
-// Reusable DatePicker Component (calendar with dd/MM/yyyy)
-// ----------------------------------------------------------------------
+// Reusable DatePicker
 const CalendarDateInput = ({ value, onChange, placeholder = "dd/mm/yyyy", required = false, id, className }) => {
   const selectedDate = value ? toDateObject(value) : null;
-
   const handleDateChange = (date) => {
     if (date) {
       const yyyymmdd = toYYYYMMDD(date);
@@ -100,7 +92,6 @@ const CalendarDateInput = ({ value, onChange, placeholder = "dd/mm/yyyy", requir
       onChange("");
     }
   };
-
   return (
     <DatePicker
       selected={selectedDate}
@@ -115,15 +106,11 @@ const CalendarDateInput = ({ value, onChange, placeholder = "dd/mm/yyyy", requir
   );
 };
 
-// ----------------------------------------------------------------------
-// Autocomplete Item Row Component (with calendar date picker)
-// ----------------------------------------------------------------------
+// Autocomplete Item Row
 const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKeyDown, selectSuggestion, suggestions, activeSuggestionIndex, setActiveSuggestionIndex, isActive, inputRef }) => {
   return (
     <tr>
-      <td style={{ padding: "8px 12px", textAlign: "center", verticalAlign: "middle" }}>
-        {item.no || index + 1}
-      </td>
+      <td style={{ padding: "8px 12px", textAlign: "center", verticalAlign: "middle" }}>{item.no || index + 1}</td>
       <td style={{ padding: "8px 12px", position: "relative", verticalAlign: "middle" }}>
         <input
           ref={inputRef}
@@ -171,19 +158,14 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
                 <div style={{ fontWeight: 600, color: "#111827", fontSize: "0.85rem", marginBottom: "2px" }}>
                   {suggestion.itemCode}
                 </div>
-                <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>
-                  {suggestion.itemName}
-                </div>
+                <div style={{ color: "#6b7280", fontSize: "0.78rem" }}>{suggestion.itemName}</div>
               </div>
             ))}
           </div>
         )}
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <CalendarDateInput
-          value={item.requiredBy}
-          onChange={(date) => handleItemChange(index, "requiredBy", date)}
-        />
+        <CalendarDateInput value={item.requiredBy} onChange={(date) => handleItemChange(index, "requiredBy", date)} />
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
         <Input
@@ -196,29 +178,16 @@ const ItemRow = ({ item, index, handleItemChange, handleItemCodeChange, handleKe
         />
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input
-          type="text"
-          value={item.warehouse}
-          onChange={(e) => handleItemChange(index, "warehouse", e.target.value)}
-          bsSize="sm"
-        />
+        <Input type="text" value={item.warehouse} onChange={(e) => handleItemChange(index, "warehouse", e.target.value)} bsSize="sm" />
       </td>
       <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-        <Input
-          type="text"
-          value={item.uom}
-          onChange={(e) => handleItemChange(index, "uom", e.target.value)}
-          placeholder="UOM"
-          bsSize="sm"
-        />
+        <Input type="text" value={item.uom} onChange={(e) => handleItemChange(index, "uom", e.target.value)} placeholder="UOM" bsSize="sm" />
       </td>
     </tr>
   );
 };
 
-// ----------------------------------------------------------------------
-// Delete Confirmation Modal (same as before)
-// ----------------------------------------------------------------------
+// Confirmation Modal
 const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading }) => {
   return (
     <Modal isOpen={isOpen} toggle={toggle} className="modal-dialog-centered" size="lg">
@@ -274,9 +243,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
   );
 };
 
-// ----------------------------------------------------------------------
 // Main Component
-// ----------------------------------------------------------------------
 const MaterialRequestPage = () => {
   const history = useHistory();
   const [materialRequests, setMaterialRequests] = useState([]);
@@ -288,46 +255,48 @@ const MaterialRequestPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
 
-  // Modal states
   const [addModal, setAddModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedRequest, setSelectedRequest] = useState(null);
 
-  // Form state
   const [newRequest, setNewRequest] = useState({
     transactionDate: "",
     purpose: "Purchase",
     requiredBy: "",
     priceList: "Standard Buying",
     warehouse: "Stores - SD",
-    items: [
-      {
-        no: 1,
-        itemCode: "",
-        itemName: "",
-        requiredBy: "",
-        quantity: 0,
-        warehouse: "Stores - SD",
-        uom: "",
-      },
-    ],
+    items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, warehouse: "Stores - SD", uom: "" }],
   });
 
-  // Autocomplete state
   const [activeAutocompleteIndex, setActiveAutocompleteIndex] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const itemInputRefs = useRef({});
 
-  // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteRequestId, setDeleteRequestId] = useState(null);
 
-  // Get unique purposes and statuses for filters
-  const uniquePurposes = useRef(new Set());
-  const uniqueStatuses = useRef(new Set());
+  const [uniquePurposes, setUniquePurposes] = useState([]);
+  const [uniqueStatuses, setUniqueStatuses] = useState([]);
 
-  // Toast helpers
+  // Filter options for RSelect
+  const statusFilterOptions = useMemo(() => {
+    return [
+      { value: "All", label: "All Status" },
+      ...uniqueStatuses.map(s => ({ value: s, label: s })),
+    ];
+  }, [uniqueStatuses]);
+
+  const purposeFilterOptions = useMemo(() => {
+    return [
+      { value: "All", label: "All Purposes" },
+      ...uniquePurposes.map(p => ({ value: p, label: p })),
+    ];
+  }, [uniquePurposes]);
+
+  const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter);
+  const selectedPurposeFilter = purposeFilterOptions.find(opt => opt.value === purposeFilter);
+
   const showSuccess = (message) => toast.success(message);
   const showError = (message) => toast.error(message);
 
@@ -338,14 +307,15 @@ const MaterialRequestPage = () => {
       const response = await axios.get(API_BASE);
       if (response.data.success) {
         setMaterialRequests(response.data.data);
-        
-        // Extract unique purposes and statuses
+        const purposes = new Set();
+        const statuses = new Set();
         response.data.data.forEach(req => {
-          if (req.purpose) uniquePurposes.current.add(req.purpose);
-          if (req.status) uniqueStatuses.current.add(req.status);
+          if (req.purpose) purposes.add(req.purpose);
+          if (req.status) statuses.add(req.status);
         });
+        setUniquePurposes(Array.from(purposes).sort());
+        setUniqueStatuses(Array.from(statuses).sort());
       } else {
-        console.error("Failed to fetch:", response.data.message);
         showError(response.data.message || "Failed to fetch material requests");
       }
     } catch (error) {
@@ -417,11 +387,8 @@ const MaterialRequestPage = () => {
     fetchMaterialRequests();
   }, []);
 
-  // Apply filters
   useEffect(() => {
     let result = [...materialRequests];
-    
-    // Apply search filter
     if (search.trim() !== "") {
       const keyword = search.toLowerCase();
       result = result.filter(
@@ -432,45 +399,23 @@ const MaterialRequestPage = () => {
           req.status?.toLowerCase().includes(keyword)
       );
     }
-    
-    // Apply status filter
-    if (statusFilter !== "All") {
-      result = result.filter((req) => req.status === statusFilter);
-    }
-    
-    // Apply purpose filter
-    if (purposeFilter !== "All") {
-      result = result.filter((req) => req.purpose === purposeFilter);
-    }
-    
+    if (statusFilter !== "All") result = result.filter((req) => req.status === statusFilter);
+    if (purposeFilter !== "All") result = result.filter((req) => req.purpose === purposeFilter);
     setFiltered(result);
   }, [search, statusFilter, purposeFilter, materialRequests]);
 
   const sliceTitle = (title, maxLength = 55) => {
     if (!title) return "";
-    if (title.length <= maxLength) return title;
-    return title.slice(0, maxLength) + "...";
+    return title.length <= maxLength ? title : title.slice(0, maxLength) + "...";
   };
 
   const getStatusBadge = (status) => {
-    let backgroundColor = "";
-    let borderColor = "";
+    let backgroundColor = "", borderColor = "";
     switch (status) {
-      case "Pending":
-        backgroundColor = "#f59e0f";
-        borderColor = "#d97706";
-        break;
-      case "Ordered":
-        backgroundColor = "#10b981";
-        borderColor = "#059669";
-        break;
-      case "Partially Ordered":
-        backgroundColor = "#3b82f6";
-        borderColor = "#2563eb";
-        break;
-      default:
-        backgroundColor = "#6b7280";
-        borderColor = "#4b5563";
+      case "Pending": backgroundColor = "#f59e0f"; borderColor = "#d97706"; break;
+      case "Ordered": backgroundColor = "#10b981"; borderColor = "#059669"; break;
+      case "Partially Ordered": backgroundColor = "#3b82f6"; borderColor = "#2563eb"; break;
+      default: backgroundColor = "#6b7280"; borderColor = "#4b5563";
     }
     return (
       <span
@@ -503,17 +448,7 @@ const MaterialRequestPage = () => {
       requiredBy: "",
       priceList: "Standard Buying",
       warehouse: "Stores - SD",
-      items: [
-        {
-          no: 1,
-          itemCode: "",
-          itemName: "",
-          requiredBy: "",
-          quantity: 0,
-          warehouse: "Stores - SD",
-          uom: "",
-        },
-      ],
+      items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, warehouse: "Stores - SD", uom: "" }],
     });
     setSuggestions([]);
     setActiveAutocompleteIndex(null);
@@ -568,7 +503,6 @@ const MaterialRequestPage = () => {
       if (!item.quantity || item.quantity <= 0) return showError(`Item ${i+1}: Quantity must be greater than 0`);
       if (!item.uom) return showError(`Item ${i+1}: UOM is required`);
     }
-
     const dataToSend = {
       transactionDate: newRequest.transactionDate,
       purpose: newRequest.purpose,
@@ -577,13 +511,9 @@ const MaterialRequestPage = () => {
       warehouse: newRequest.warehouse,
       items: newRequest.items.map(({ no, ...rest }) => rest),
     };
-
     let success = false;
-    if (modalMode === "add") {
-      success = await createMaterialRequest(dataToSend);
-    } else {
-      success = await updateMaterialRequest(selectedRequest._id, dataToSend);
-    }
+    if (modalMode === "add") success = await createMaterialRequest(dataToSend);
+    else success = await updateMaterialRequest(selectedRequest._id, dataToSend);
     if (success) {
       setAddModal(false);
       resetForm();
@@ -607,7 +537,6 @@ const MaterialRequestPage = () => {
     const updatedItems = [...newRequest.items];
     updatedItems[index].itemCode = value;
     setNewRequest((prev) => ({ ...prev, items: updatedItems }));
-
     if (value && value.trim().length > 0) {
       const filtered = dummyItemDatabase.filter(
         (item) =>
@@ -683,9 +612,6 @@ const MaterialRequestPage = () => {
     }));
   };
 
-  // ----------------------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------------------
   return (
     <>
       <Head title="Material Request" />
@@ -720,46 +646,37 @@ const MaterialRequestPage = () => {
             </div>
           ) : (
             <DataTable className="card-stretch w-100">
-              {/* Search & Filter Bar */}
               <div className="card-inner position-relative card-tools-toggle">
                 <div className="card-title-group">
                   <div className="card-tools">
                     <div className="form-inline flex-nowrap gx-3">
-                      {/* Status Filter */}
-                      <div className="form-wrap">
-                        <select
-                          className="form-control"
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          style={{ minWidth: "130px", height: "40px" }}
-                        >
-                          <option value="All">All Status</option>
-                          {Array.from(uniqueStatuses.current).sort().map(status => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
-                        </select>
+                      {/* Status Filter - RSelect */}
+                      <div className="form-wrap" style={{ minWidth: "160px" }}>
+                        <RSelect
+                          options={statusFilterOptions}
+                          value={selectedStatusFilter}
+                          onChange={(opt) => setStatusFilter(opt?.value || "All")}
+                          placeholder="Select Status"
+                          isClearable={false}
+                          classNamePrefix="react-select"
+                        />
                       </div>
-                      
-                      {/* Purpose Filter */}
-                      <div className="form-wrap">
-                        <select
-                          className="form-control"
-                          value={purposeFilter}
-                          onChange={(e) => setPurposeFilter(e.target.value)}
-                          style={{ minWidth: "150px", height: "40px" }}
-                        >
-                          <option value="All">All Purposes</option>
-                          {Array.from(uniquePurposes.current).sort().map(purpose => (
-                            <option key={purpose} value={purpose}>{purpose}</option>
-                          ))}
-                        </select>
+                      {/* Purpose Filter - RSelect */}
+                      <div className="form-wrap" style={{ minWidth: "180px" }}>
+                        <RSelect
+                          options={purposeFilterOptions}
+                          value={selectedPurposeFilter}
+                          onChange={(opt) => setPurposeFilter(opt?.value || "All")}
+                          placeholder="Select Purpose"
+                          isClearable={false}
+                          classNamePrefix="react-select"
+                        />
                       </div>
-                      
-                      {/* {(search || statusFilter !== "All" || purposeFilter !== "All") && (
+                      {(search || statusFilter !== "All" || purposeFilter !== "All") && (
                         <Button color="link" onClick={resetFilters} className="ms-2">
                           Clear Filters
                         </Button>
-                      )} */}
+                      )}
                     </div>
                   </div>
                   <div className="card-tools mr-n1">
@@ -803,7 +720,6 @@ const MaterialRequestPage = () => {
                 </div>
               </div>
 
-              {/* Table */}
               <div style={{ padding: "0 20px 20px" }}>
                 <div
                   style={{
@@ -822,13 +738,16 @@ const MaterialRequestPage = () => {
                   >
                     <thead>
                       <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "30%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "5%" }}>
+                          S.No
+                        </th>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "28%" }}>
                           Title
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           Status
                         </th>
-                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "10%" }}>
                           Purpose
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
@@ -837,7 +756,7 @@ const MaterialRequestPage = () => {
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "15%" }}>
                           ID
                         </th>
-                        <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "10%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "8%" }}>
                           Actions
                         </th>
                       </tr>
@@ -846,6 +765,9 @@ const MaterialRequestPage = () => {
                       {filtered.length > 0 ? (
                         filtered.map((req, idx) => (
                           <tr key={req._id} style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                            <td style={{ padding: "14px 16px", textAlign: "center", color: "#6b7280", fontSize: "0.85rem" }}>
+                              {idx + 1}
+                            </td>
                             <td style={{ padding: "14px 16px" }}>
                               <button
                                 onClick={() => goToDetails(req)}
@@ -866,25 +788,23 @@ const MaterialRequestPage = () => {
                                 {sliceTitle(req.title, 55)}
                               </button>
                             </td>
-                            <td style={{ padding: "8px 12px" }}>
-                              {getStatusBadge(req.status)}
-                            </td>
-                            <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>
-                              {req.purpose}
-                            </td>
+                            <td style={{ padding: "8px 12px" }}>{getStatusBadge(req.status)}</td>
+                            <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>{req.purpose}</td>
                             <td style={{ padding: "14px 16px", color: "#374151", fontSize: "0.85rem" }}>
                               {formatDateToDDMMYYYY(req.requiredBy)}
                             </td>
                             <td style={{ padding: "14px 16px" }}>
-                              <code style={{
-                                backgroundColor: "#f9fafb",
-                                padding: "4px 10px",
-                                borderRadius: "4px",
-                                fontSize: "0.82rem",
-                                color: "#374151",
-                                border: "1px solid #e5e7eb",
-                                fontWeight: 600,
-                              }}>
+                              <code
+                                style={{
+                                  backgroundColor: "#f9fafb",
+                                  padding: "4px 10px",
+                                  borderRadius: "4px",
+                                  fontSize: "0.82rem",
+                                  color: "#374151",
+                                  border: "1px solid #e5e7eb",
+                                  fontWeight: 600,
+                                }}
+                              >
                                 {req._id}
                               </code>
                             </td>
@@ -907,7 +827,7 @@ const MaterialRequestPage = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
+                          <td colSpan="7" style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
                             No material requests found
                           </td>
                         </tr>
@@ -923,16 +843,16 @@ const MaterialRequestPage = () => {
 
       {/* Add/Edit Modal */}
       <Modal
-  isOpen={addModal}
-  toggle={() => {
-    setAddModal(false);
-    resetForm();
-  }}
-  centered
-  size="xl"
-  backdrop="static"
-  className="material-request-modal"
->
+        isOpen={addModal}
+        toggle={() => {
+          setAddModal(false);
+          resetForm();
+        }}
+        centered
+        size="xl"
+        backdrop="static"
+        className="material-request-modal"
+      >
         <ModalHeader
           toggle={() => {
             setAddModal(false);
@@ -1069,7 +989,6 @@ const MaterialRequestPage = () => {
         </ModalBody>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         toggle={() => setShowDeleteConfirm(false)}
@@ -1079,7 +998,6 @@ const MaterialRequestPage = () => {
         loading={deleteLoading}
       />
 
-      {/* Toast Container */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -1097,22 +1015,20 @@ const MaterialRequestPage = () => {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-          .material-request-modal .modal-dialog {
-  max-width: 95%;
-  height: 75vh;
-  margin: 1rem auto;
-}
-
-.material-request-modal .modal-content {
-  height: 75vh;
-  border-radius: 12px;
-}
-
-.material-request-modal .modal-body {
-  overflow-y: auto;
-  max-height: calc(75vh - 120px);
-  padding: 20px;
-}
+        .material-request-modal .modal-dialog {
+          max-width: 95%;
+          height: 75vh;
+          margin: 1rem auto;
+        }
+        .material-request-modal .modal-content {
+          height: 75vh;
+          border-radius: 12px;
+        }
+        .material-request-modal .modal-body {
+          overflow-y: auto;
+          max-height: calc(75vh - 120px);
+          padding: 20px;
+        }
       `}</style>
     </>
   );

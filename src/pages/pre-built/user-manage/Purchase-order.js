@@ -1,6 +1,6 @@
 // PurchaseOrderPage.js - Status badge aligned with MaterialRequestDetails theme
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { useHistory } from "react-router-dom";
@@ -13,6 +13,7 @@ import {
   Icon,
   Button,
   DataTable,
+  RSelect,
 } from "../../../components/Component";
 import {
   Modal,
@@ -75,7 +76,6 @@ const StatusBadge = ({ status }) => {
           dotColor: "#EF4444",
         };
       case "To Receive and Bill":
-        // Map to Ordered style (green)
         return {
           background: "green",
           color: "White",
@@ -452,7 +452,18 @@ const PurchaseOrderPage = () => {
   const [deleteOrderId, setDeleteOrderId] = useState(null);
 
   // Get unique statuses for filter
-  const uniqueStatuses = useRef(new Set());
+  const [uniqueStatuses, setUniqueStatuses] = useState([]);
+
+  // Build filter options for RSelect
+  const statusFilterOptions = useMemo(() => {
+    return [
+      { value: "All", label: "All Status" },
+      ...uniqueStatuses.map(s => ({ value: s, label: s })),
+    ];
+  }, [uniqueStatuses]);
+
+  // Selected object for RSelect
+  const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter);
 
   // Toast helpers
   const showSuccess = (message) => toast.success(message);
@@ -468,9 +479,11 @@ const PurchaseOrderPage = () => {
         setPurchaseOrders(response.data.data);
         
         // Extract unique statuses
+        const statuses = new Set();
         response.data.data.forEach(order => {
-          if (order.status) uniqueStatuses.current.add(order.status);
+          if (order.status) statuses.add(order.status);
         });
+        setUniqueStatuses(Array.from(statuses).sort());
       } else {
         showError(response.data.message || "Failed to fetch purchase orders");
       }
@@ -907,26 +920,23 @@ const PurchaseOrderPage = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    {/* Status Filter */}
-                    <div className="form-wrap">
-                      <select
-                        className="form-control"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        style={{ minWidth: "150px" }}
-                      >
-                        <option value="All">All Status</option>
-                        {Array.from(uniqueStatuses.current).sort().map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
+                    {/* Status Filter - RSelect */}
+                    <div className="form-wrap" style={{ minWidth: "160px" }}>
+                      <RSelect
+                        options={statusFilterOptions}
+                        value={selectedStatusFilter}
+                        onChange={(opt) => setStatusFilter(opt?.value || "All")}
+                        placeholder="Select Status"
+                        isClearable={false}
+                        classNamePrefix="react-select"
+                      />
                     </div>
                     
-                    {/* {(search || statusFilter !== "All") && (
+                    {(search || statusFilter !== "All") && (
                       <Button color="link" onClick={resetFilters} className="ms-2">
                         Clear Filters
                       </Button>
-                    )} */}
+                    )}
                   </div>
                 </div>
                 <div className="card-tools mr-n1">
@@ -979,112 +989,237 @@ const PurchaseOrderPage = () => {
             )}
 
             {/* Purchase Orders Table */}
-            {!loading && (
-              <>
-                <div style={{ overflowX: "auto", padding: "0 20px 20px" }}>
-                  <div
+             {/* Purchase Orders Table */}
+{!loading && (
+  <div style={{ overflowX: "auto", padding: "0 20px 20px" }}>
+    <div
+      style={{
+        borderRadius: "12px",
+        marginTop: "20px",
+        border: "1px solid #e5e7eb",
+        overflow: "hidden",
+        background: "#fff",
+      }}
+    >
+      <table
+        style={{
+          width: "100%",
+          borderCollapse: "collapse",
+          fontSize: "0.88rem",
+          tableLayout: "fixed",
+        }}
+      >
+        <thead>
+          <tr
+            style={{
+              background: "#f9fafb",
+              borderBottom: "2px solid #e5e7eb",
+            }}
+          >
+            {[
+              { label: "S.No", width: "6%" },
+              { label: "Supplier Name", width: "26%" },
+              { label: "Status", width: "16%" },
+              { label: "Date", width: "14%" },
+              { label: "Grand Total", width: "16%" },
+              { label: "Order ID", width: "16%" },
+              { label: "Actions", width: "10%" },
+            ].map((head, i) => (
+              <th
+                key={i}
+                style={{
+                  padding: "14px 20px",
+                  textAlign: "center",
+                  fontWeight: 600,
+                  color: "#374151",
+                  width: head.width,
+                  whiteSpace: "nowrap",
+                  verticalAlign: "middle",
+                }}
+              >
+                {head.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {filtered.length > 0 ? (
+            filtered.map((order, idx) => (
+              <tr
+                key={order._id}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#fafafa")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "#fff")
+                }
+                style={{
+                  borderBottom:
+                    idx < filtered.length - 1
+                      ? "1px solid #f3f4f6"
+                      : "none",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                {/* S.No */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    color: "#6b7280",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {idx + 1}
+                </td>
+
+                {/* Supplier Name */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    overflow: "hidden",
+                  }}
+                >
+                  <button
+                    onClick={() => goToDetails(order)}
                     style={{
-                      borderRadius: "8px",
-                      marginTop: "20px",
-                      border: "1px solid #e5e7eb",
+                      background: "none",
+                      border: "none",
+                      color: "#2563eb",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                      fontSize: "0.88rem",
+                      width: "100%",
                       overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                      textAlign: "center",
                     }}
                   >
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: "0.88rem",
-                      }}
-                    >
-                      <thead>
-                        <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "25%" }}>
-                            Supplier Name
-                          </th>
-                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "15%" }}>
-                            Status
-                          </th>
-                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
-                            Date
-                          </th>
-                          <th style={{ padding: "14px 16px", textAlign: "right", fontWeight: 600, color: "#374151", width: "15%" }}>
-                            Grand Total
-                          </th>
-                          <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "18%" }}>
-                            Order ID
-                          </th>
-                          <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "10%" }}>
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.length > 0 ? (
-                          filtered.map((order, idx) => (
-                            <tr
-                              key={order._id}
-                              style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f3f4f6" : "none" }}
-                            >
-                              <td style={{ padding: "14px 16px" }}>
-                                <button
-                                  onClick={() => goToDetails(order)}
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "#2563eb",
-                                    cursor: "pointer",
-                                    fontWeight: 500,
-                                    textAlign: "left",
-                                    padding: 0,
-                                    fontSize: "0.88rem",
-                                  }}
-                                >
-                                  {order.supplierName}
-                                </button>
-                              </td>
-                              <td style={{ padding: "10px 14px" }}>
-                                <StatusBadge status={order.status} />
-                              </td>
-                              <td style={{ padding: "14px 16px", color: "#6b7280" }}>
-                                {fmtDisplay(order.date) || "—"}
-                              </td>
-                              <td style={{ padding: "14px 16px", textAlign: "right", color: "#27500A", fontWeight: 600 }}>
-                                {fmtCurrency(order.grandTotal)}
-                              </td>
-                              <td style={{ padding: "14px 16px" }}>
-                                <CodePill>{order._id}</CodePill>
-                              </td>
-                              <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                                <UncontrolledDropdown>
-                                  <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                                    <Icon name="more-h" />
-                                  </DropdownToggle>
-                                  <DropdownMenu right>
-                                    <DropdownItem onClick={() => goToDetails(order)}>
-                                      <Icon name="eye" /> View
-                                    </DropdownItem>
-                                    <DropdownItem onClick={() => handleDeleteClick(order._id)}>
-                                      <Icon name="trash" /> Delete
-                                    </DropdownItem>
-                                  </DropdownMenu>
-                                </UncontrolledDropdown>
-                               </td>
-                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan="6" style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
-                              No purchase orders found
-                             </td>
-                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                    {order.supplierName || "—"}
+                  </button>
+                </td>
+
+                {/* Status */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <StatusBadge status={order.status} />
                   </div>
-                </div>
-              </>
-            )}
+                </td>
+
+                {/* Date */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    color: "#6b7280",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {fmtDisplay(order.date) || "—"}
+                </td>
+
+                {/* Grand Total */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    color: "#27500A",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {fmtCurrency(order.grandTotal || 0)}
+                </td>
+
+                {/* Order ID */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  <CodePill>{order._id}</CodePill>
+                </td>
+
+                {/* Actions */}
+                <td
+                  style={{
+                    padding: "14px 20px",
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  <UncontrolledDropdown>
+                    <DropdownToggle
+                      tag="a"
+                      className="btn btn-icon btn-trigger"
+                    >
+                      <Icon name="more-h" />
+                    </DropdownToggle>
+
+                    <DropdownMenu right>
+                      <DropdownItem
+                        onClick={() => goToDetails(order)}
+                      >
+                        <Icon name="eye" /> View
+                      </DropdownItem>
+
+                      <DropdownItem
+                        onClick={() =>
+                          handleDeleteClick(order._id)
+                        }
+                      >
+                        <Icon name="trash" /> Delete
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </UncontrolledDropdown>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="7"
+                style={{
+                  textAlign: "center",
+                  padding: "48px 20px",
+                  color: "#9ca3af",
+                  fontSize: "14px",
+                }}
+              >
+                No purchase orders found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
           </DataTable>
         </Block>
       </Content>
@@ -1240,7 +1375,7 @@ const PurchaseOrderPage = () => {
                   </colgroup>
                   <thead>
                     <tr>
-                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb", textAlign: "center" }}>No</th>
+                      <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "center", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>No</th>
                       <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Item code</th>
                       <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Required by</th>
                       <th style={{ background: "#f9fafb", padding: "8px 10px", textAlign: "left", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em", color: "#6b7280", borderBottom: "0.5px solid #e5e7eb" }}>Qty</th>

@@ -671,6 +671,9 @@ const Quotation = () => {
             <DataTableHead>
               <DataTableRow className="nk-tb-col-check"></DataTableRow>
               <DataTableRow>
+                <span className="sub-text">S.No.</span>   {/* New S.No. header */}
+              </DataTableRow>
+              <DataTableRow>
                 <span className="sub-text">Client Name</span>
               </DataTableRow>
               <DataTableRow size="md">
@@ -691,9 +694,12 @@ const Quotation = () => {
             </DataTableHead>
 
             {currentItems.length > 0 ? (
-              currentItems.map((quote) => (
+              currentItems.map((quote, idx) => (
                 <DataTableItem key={quote.id}>
                   <DataTableRow className="nk-tb-col-check"></DataTableRow>
+                  <DataTableRow>
+                    <span>{indexOfFirstItem + idx + 1}</span>   {/* Serial number */}
+                  </DataTableRow>
                   <DataTableRow>
                     <div className="user-card">
                       <div className="user-info">
@@ -780,7 +786,7 @@ const Quotation = () => {
               ))
             ) : (
               <DataTableItem>
-                <DataTableRow colSpan={7} className="text-center">
+                <DataTableRow colSpan={8} className="text-center">   {/* Updated colSpan to 8 */}
                   <span className="text-silent">No quotations found</span>
                 </DataTableRow>
               </DataTableItem>
@@ -804,7 +810,7 @@ const Quotation = () => {
         </DataTable>
       </div>
 
-      {/* CREATE / EDIT MODAL (unchanged from previous version) */}
+      {/* CREATE / EDIT MODAL (unchanged) */}
       <Modal
         isOpen={formModalOpen}
         toggle={() => setFormModalOpen(false)}
@@ -950,14 +956,14 @@ const Quotation = () => {
                               onChange={(e) => updateLineItemQuantity(item.id, parseInt(e.target.value) || 1)}
                               className="quantity-input"
                             />
-                          </td>
-                          <td>₹{(item.price * item.quantity).toLocaleString()}</td>
-                          <td>
+                           </td>
+                           <td>₹{(item.price * item.quantity).toLocaleString()}</td>
+                           <td>
                             <button className="remove-item-btn" onClick={() => removeLineItem(item.id)}>
                               <Icon name="x" />
                             </button>
-                          </td>
-                        </tr>
+                           </td>
+                         </tr>
                       ))}
                     </tbody>
                   </table>

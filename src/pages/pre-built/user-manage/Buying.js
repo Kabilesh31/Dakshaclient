@@ -1,5 +1,5 @@
 // Buying.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
@@ -54,6 +54,13 @@ const unitOptions = [
 ];
 
 const statusOptions = [
+  { value: "Enabled", label: "Enabled" },
+  { value: "Disabled", label: "Disabled" },
+];
+
+// Status filter options (including "All")
+const statusFilterOptions = [
+  { value: "All", label: "All Status" },
   { value: "Enabled", label: "Enabled" },
   { value: "Disabled", label: "Disabled" },
 ];
@@ -382,6 +389,18 @@ const Buying = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
 
+  // Options for group filter dropdown (including "All")
+  const groupFilterOptions = useMemo(() => {
+    return [
+      { value: "All", label: "All Groups" },
+      ...availableGroups.map(g => ({ value: g, label: g }))
+    ];
+  }, [availableGroups]);
+
+  // Selected option objects for RSelect
+  const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter);
+  const selectedGroupFilter = groupFilterOptions.find(opt => opt.value === groupFilter);
+
   // API Functions
   const fetchItems = async () => {
     setLoading(true);
@@ -632,43 +651,30 @@ const Buying = () => {
               <div className="card-title-group">
                 <div className="card-tools">
                   <div className="form-inline flex-nowrap gx-3">
-                    <div className="form-wrap">
-                      <select
-                        className="form-control"
-                        value={statusFilter}
-                        onChange={(e) => {
-                          setStatusFilter(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        style={{ minWidth: "120px" }}
-                      >
-                        <option value="All">All Status</option>
-                        <option value="Enabled">Enabled</option>
-                        <option value="Disabled">Disabled</option>
-                      </select>
+                    {/* Status Filter - RSelect */}
+                    <div className="form-wrap" style={{ minWidth: "160px" }}>
+                      <RSelect
+                        options={statusFilterOptions}
+                        value={selectedStatusFilter}
+                        onChange={(opt) => setStatusFilter(opt?.value || "All")}
+                        placeholder="Select Status"
+                        isClearable={false}
+                        classNamePrefix="react-select"
+                      />
                     </div>
-                    
-                    <div className="form-wrap">
-                      <select
-                        className="form-control"
-                        value={groupFilter}
-                        onChange={(e) => {
-                          setGroupFilter(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        style={{ minWidth: "120px",  height : "40px" }}
-                      >
-                        <option value="All">All Groups</option>
-                        {availableGroups && availableGroups.length > 0 ? (
-                          availableGroups.map(group => (
-                            <option key={group} value={group}>{group}</option>
-                          ))
-                        ) : (
-                          <option disabled>No groups available</option>
-                        )}
-                      </select>
+
+                    {/* Group Filter - RSelect */}
+                    <div className="form-wrap" style={{ minWidth: "180px" }}>
+                      <RSelect
+                        options={groupFilterOptions}
+                        value={selectedGroupFilter}
+                        onChange={(opt) => setGroupFilter(opt?.value || "All")}
+                        placeholder="Select Group"
+                        isClearable={false}
+                        classNamePrefix="react-select"
+                      />
                     </div>
-                    
+
                     {(search || statusFilter !== "All" || groupFilter !== "All") && (
                       <Button color="link" onClick={resetFilters} className="ms-2">
                         Clear Filters
@@ -739,7 +745,7 @@ const Buying = () => {
                         <th className="px-4 py-2 text-start">Item Group</th>
                         <th className="px-4 py-2 text-start">Item Code</th>
                         <th className="px-4 py-2 text-center">Actions</th>
-                       </tr>
+                      </tr>
                     </thead>
                     <tbody>
                       {items.length > 0 ? (
