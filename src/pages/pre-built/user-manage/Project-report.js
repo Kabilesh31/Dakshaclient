@@ -545,17 +545,17 @@ const ProjectsReportPage = () => {
                 <Nav tabs>
                   <NavItem>
                     <NavLink className={activeTab === "gallery" ? "active" : ""} onClick={() => setActiveTab("gallery")}>
-                      <FaImage /> Gallery ({selectedProject.galleryImages?.length || 0})
+                       Gallery ({selectedProject.galleryImages?.length || 0})
                     </NavLink>
                   </NavItem>
                   <NavItem>
                     <NavLink className={activeTab === "siteplans" ? "active" : ""} onClick={() => setActiveTab("siteplans")}>
-                      <FaMap /> Site Plans ({selectedProject.sitePlanImages?.length || 0})
+                     Site Plans ({selectedProject.sitePlanImages?.length || 0})
                     </NavLink>
                   </NavItem>
                   <NavItem>
                     <NavLink className={activeTab === "documents" ? "active" : ""} onClick={() => setActiveTab("documents")}>
-                      <FaPdf /> Documents ({selectedProject.documents?.length || 0})
+                       Documents ({selectedProject.documents?.length || 0})
                     </NavLink>
                   </NavItem>
                 </Nav>
