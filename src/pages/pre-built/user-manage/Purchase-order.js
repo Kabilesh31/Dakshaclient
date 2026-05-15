@@ -407,6 +407,7 @@ const PurchaseOrderPage = () => {
     supplierName: "", 
     costCenter: "", 
     project: "",
+    projectId : "",
     modeOfPayment: "Check", 
     termsOfPayment: "Net 30 Days", 
     requiredBy: "",
@@ -1375,7 +1376,17 @@ const PurchaseOrderPage = () => {
                   <RSelect
                     options={projectOptions}
                     value={selectedProject}
-                    onChange={handleProjectChange}
+                    onChange={(e) => {
+                        const selectedProject = projects.find(
+                          (p) => p._id === e.target.value
+                        );
+
+                        setNewOrder({
+                          ...newOrder,
+                          projectId: selectedProject?._id || "",
+                          project: selectedProject?.name || "",
+                        });
+                      }}
                     placeholder="Select project"
                     isClearable
                     styles={selectStyles}
