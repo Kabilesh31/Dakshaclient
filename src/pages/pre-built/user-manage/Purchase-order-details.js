@@ -20,7 +20,11 @@ import {
   ModalHeader,
   ModalBody,
   Label,
+  Spinner,
 } from "reactstrap";
+
+// ---------- API BASE URL (change to your backend port) ----------
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
 /* ---------- DUMMY ITEM DATABASE ---------- */
 const dummyItemDatabase = [
@@ -122,14 +126,11 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
       maxWidth: "794px",
       margin: "0 auto",
     }}>
-      {/* Centered supplier name at top */}
       <div style={{ textAlign: "center", fontSize: "11px", fontWeight: "600", borderBottom: "1px solid #ccc", paddingBottom: "4px", marginBottom: "6px", letterSpacing: "1px" }}>
         {orderData?.supplierName?.toUpperCase() || "SRI VIGNESWARA HARDWARES"}
       </div>
 
-      {/* Header: Company Info Left + PO Title Right */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-        {/* Left: Company Info */}
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: "700", fontSize: "14px", marginBottom: "2px" }}>SREE DAKSHA INDUSTRIES</div>
           <div style={{ fontSize: "10px", lineHeight: "1.5", color: "#333" }}>
@@ -142,7 +143,6 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
           </div>
         </div>
 
-        {/* Right: PO Box */}
         <div style={{ textAlign: "right", minWidth: "160px" }}>
           <div style={{
             border: "2px solid #000",
@@ -156,10 +156,8 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </div>
       </div>
 
-      {/* Divider */}
       <div style={{ borderTop: "1.5px solid #000", marginBottom: "8px" }} />
 
-      {/* Supplier / Date / Payment Row */}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "11px" }}>
         <div style={{ flex: 1 }}>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -181,16 +179,13 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </div>
       </div>
 
-      {/* Warehouse */}
       <div style={{ fontSize: "11px", marginBottom: "8px" }}>
         <span style={{ color: "#555" }}>Warehouse Name</span>
         <div style={{ fontWeight: "600" }}>{orderData?.warehouse || "CALIES C - SD"}</div>
       </div>
 
-      {/* Divider */}
       <div style={{ borderTop: "1px solid #000", marginBottom: "0" }} />
 
-      {/* Items Table */}
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", marginBottom: "0" }}>
         <thead>
           <tr style={{ backgroundColor: "#f0f0f0" }}>
@@ -200,7 +195,7 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
             <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "center", width: "70px" }}>Quantity</th>
             <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "right", width: "80px" }}>Rate</th>
             <th style={{ border: "1px solid #999", padding: "5px 8px", textAlign: "right", width: "90px" }}>Amount</th>
-          </tr>
+           </tr>
         </thead>
         <tbody>
           {items.length > 0 ? items.map((item, idx) => (
@@ -222,15 +217,12 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </tbody>
       </table>
 
-      {/* Totals Section */}
       <div style={{ display: "flex", justifyContent: "space-between", borderLeft: "1px solid #ccc", borderRight: "1px solid #ccc", borderBottom: "1px solid #ccc", marginBottom: "16px" }}>
-        {/* Left: Amount in words */}
         <div style={{ flex: 1, padding: "8px 10px", borderRight: "1px solid #ccc", fontSize: "10.5px" }}>
           <div style={{ color: "#555", marginBottom: "2px" }}>In Words (Company Currency):</div>
           <div style={{ fontWeight: "600", lineHeight: "1.5" }}>{amountToWords(grandTotal)}</div>
         </div>
 
-        {/* Right: Totals */}
         <div style={{ minWidth: "230px", fontSize: "11px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 10px", borderBottom: "1px solid #e0e0e0" }}>
             <span>Total</span>
@@ -251,19 +243,17 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </div>
       </div>
 
-      {/* Terms and Conditions */}
       <div style={{ marginBottom: "28px", fontSize: "10px" }}>
         <div style={{ fontWeight: "700", fontSize: "11px", marginBottom: "5px", textDecoration: "underline" }}>TERMS AND CONDITIONS:</div>
         <ol style={{ margin: 0, paddingLeft: "16px", lineHeight: "1.8", color: "#444" }}>
           <li>Goods/Services must be supplied exactly as per specification only. If supplied otherwise acceptance subject to our sole discretionary powers.</li>
           <li>Supply of spurious goods or substandard goods/deficiency in services will not be accepted. If found later, amount will be deducted from bill amount.</li>
           <li>Part shipment will be allowed subject to the confirmation by the company. Payment strictly in accordance with the terms of payment / Cr.period.</li>
-          <li>For delay in payment supplied is not entitled for any interest. Payment will be made after the agreed period subject to the condition No.1 &amp; No.2</li>
+          <li>For delay in payment supplied is not entitled for any interest. Payment will be made after the agreed period subject to the condition No.1 & No.2</li>
           <li>For supply delay, the supplier is solely responsible and has to compensate the company as prescribed by the company. Bill should accompany with a copy of PO.</li>
         </ol>
       </div>
 
-      {/* Signature Section */}
       <div style={{ textAlign: "right", fontSize: "11px", marginBottom: "40px", paddingRight: "20px" }}>
         For Sree Daksha Industries
       </div>
@@ -292,6 +282,9 @@ const PurchaseOrderDetails = () => {
   const location = useLocation();
   const history = useHistory();
   const [orderData, setOrderData] = useState(location.state?.orderData || null);
+  const [loading, setLoading] = useState(!location.state?.orderData && id);
+  const [error, setError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
@@ -302,6 +295,31 @@ const PurchaseOrderDetails = () => {
   const [activeAutocompleteIndex, setActiveAutocompleteIndex] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  // Fetch order data if not provided via location state
+  useEffect(() => {
+    if (!orderData && id) {
+      fetchOrderData();
+    }
+  }, [id, orderData]);
+
+  const fetchOrderData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE}/purchase-orders/${id}`);
+      const result = await response.json();
+      if (result.success) {
+        setOrderData(result.data);
+      } else {
+        setError(result.message || "Failed to fetch purchase order");
+      }
+    } catch (err) {
+      setError(err.message || "Network error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -415,19 +433,50 @@ const PurchaseOrderDetails = () => {
     setEditedItems(updated.map((item, i) => ({ ...item, no: i + 1 })));
   };
 
-  // Save edits
-  const saveEdits = () => {
+  // Save edits with API call
+  const saveEdits = async () => {
+    // Prepare updated items with correct amounts
     const updatedItems = editedItems.map((item, idx) => ({
       ...item,
       no: idx + 1,
       amount: (item.quantity || 0) * (item.rate || 0),
     }));
     const newGrandTotal = updatedItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-    setOrderData({ ...orderData, items: updatedItems, grandTotal: newGrandTotal });
-    setIsEditing(false);
-    setEditedItems([]);
-    setActiveAutocompleteIndex(null);
-    setSuggestions([]);
+    
+    // Build payload - only send items and grandTotal (other fields remain unchanged on server)
+    const payload = {
+      items: updatedItems,
+      grandTotal: newGrandTotal,
+    };
+    
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/purchase-orders/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state with server response
+        setOrderData(result.data);
+        setIsEditing(false);
+        setEditedItems([]);
+        setActiveAutocompleteIndex(null);
+        setSuggestions([]);
+        alert("Purchase order updated successfully!");
+      } else {
+        alert(result.message || "Failed to update purchase order");
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Network error: Could not update purchase order. Make sure backend is running on port 8000.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Helper function to format date for editing input display (DD-MM-YYYY format)
@@ -454,7 +503,6 @@ const PurchaseOrderDetails = () => {
   const downloadCSV = () => {
     if (!orderData || !orderData.items || orderData.items.length === 0) return;
     
-    // Helper to format date for CSV (DD-MM-YYYY)
     const formatForCSV = (dateStr) => {
       if (!dateStr) return "";
       const [year, month, day] = dateStr.split("-");
@@ -497,7 +545,23 @@ const PurchaseOrderDetails = () => {
     URL.revokeObjectURL(url);
   };
 
-  if (!orderData) {
+  if (loading) {
+    return (
+      <>
+        <Head title="Loading..." />
+        <Content>
+          <Block>
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <Spinner color="primary" />
+              <p style={{ marginTop: "20px", color: "#64748b" }}>Loading purchase order...</p>
+            </div>
+          </Block>
+        </Content>
+      </>
+    );
+  }
+
+  if (error || !orderData) {
     return (
       <>
         <Head title="Purchase Order Details" />
@@ -507,8 +571,10 @@ const PurchaseOrderDetails = () => {
               <div style={{ width: "80px", height: "80px", borderRadius: "50%", backgroundColor: "#fef3e0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                 <Icon name="alert-circle" style={{ fontSize: "36px", color: "#f5a623" }} />
               </div>
-              <h4 style={{ marginBottom: "8px", fontWeight: 600, color: "#1e293b" }}>No Order Data Found</h4>
-              <p style={{ color: "#64748b", marginBottom: "24px", fontSize: "0.95rem" }}>The purchase order information could not be loaded.</p>
+              <h4 style={{ marginBottom: "8px", fontWeight: 600, color: "#1e293b" }}>{error ? "Error Loading Order" : "No Order Data Found"}</h4>
+              <p style={{ color: "#64748b", marginBottom: "24px", fontSize: "0.95rem" }}>
+                {error || "The purchase order information could not be loaded."}
+              </p>
               <Button color="primary" onClick={() => history.push("/purchase-order")}>
                 <Icon name="arrow-left" /> Back to Purchase Orders
               </Button>
@@ -580,28 +646,12 @@ const PurchaseOrderDetails = () => {
     return found ? found.itemName : "-";
   };
 
-  // State for edit mode date display values
-  const [dateDisplayValues, setDateDisplayValues] = useState({});
-
-  // Initialize date display values when entering edit mode
-  useEffect(() => {
-    if (isEditing && editedItems.length > 0) {
-      const initialValues = {};
-      editedItems.forEach((item, idx) => {
-        initialValues[idx] = item.requiredBy ? formatDateToDDMMYYYY(item.requiredBy) : "";
-      });
-      setDateDisplayValues(initialValues);
-    }
-  }, [isEditing, editedItems]);
-
   return (
     <>
       <Head title={`Purchase Order ${id}`} />
 
-      {/* Inject print styles */}
       <style>{printStyles}</style>
 
-      {/* Hidden Print Area */}
       <PrintDocument
         orderData={orderData}
         id={id}
@@ -609,7 +659,6 @@ const PurchaseOrderDetails = () => {
         formatCurrency={formatCurrency}
       />
 
-      {/* ====== SCREEN VIEW (hidden during print) ====== */}
       <Content>
         <BlockHead size="sm">
           <BlockBetween>
@@ -629,22 +678,22 @@ const PurchaseOrderDetails = () => {
             </BlockHeadContent>
 
             <div className="d-flex align-items-center gap-2">
-             
-               <Button
-                                        color="dark"
-                                        size="sm"
-                                        className=""
-                                        onClick={() => history.push("/purchase-order")}
-                                      >
-                                        <Icon name="arrow-left" /> Back
-                                      </Button>
+              <Button
+                color="dark"
+                size="sm"
+                className=""
+                onClick={() => history.push("/purchase-order")}
+              >
+                <Icon name="arrow-left" /> Back
+              </Button>
               {isEditing ? (
                 <>
-                  <Button color="secondary" size="sm" onClick={cancelEditing}>
+                  <Button color="secondary" size="sm" onClick={cancelEditing} disabled={isSaving}>
                     <Icon name="cross" /> Cancel
                   </Button>
-                  <Button color="success" size="sm" onClick={saveEdits}>
-                    <Icon name="check-circle" /> Save Changes
+                  <Button color="success" size="sm" onClick={saveEdits} disabled={isSaving}>
+                    {isSaving ? <Spinner size="sm" style={{ marginRight: "8px" }} /> : <Icon name="check-circle" />}
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </Button>
                 </>
               ) : (
@@ -659,8 +708,6 @@ const PurchaseOrderDetails = () => {
                       style={{ borderRadius: "4px", padding: "15px 14px", fontSize: "0.85rem" }}
                     >
                       <Icon name="download" />
-                      
-                      
                     </DropdownToggle>
                     <DropdownMenu right>
                       <DropdownItem onClick={downloadCSV}>
@@ -894,7 +941,7 @@ const PurchaseOrderDetails = () => {
 
             {isEditing && (
               <div className="mb-3">
-                <Button color="light" size="sm" onClick={addEditRow}>
+                <Button color="light" size="sm" onClick={addEditRow} disabled={isSaving}>
                   <Icon name="plus" /> Add Row
                 </Button>
               </div>
