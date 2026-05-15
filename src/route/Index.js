@@ -136,6 +136,8 @@ import MaterialRequestDetails from "../pages/pre-built/user-manage/Material-requ
 import SupplierDetails from "../pages/pre-built/user-manage/SupplierDetails";
 import BuyingDetails from "../pages/pre-built/user-manage/BuyingDetails";
 import PurchaseOrderDetails from "../pages/pre-built/user-manage/Purchase-order-details";
+import ProjectReportPage from "../pages/pre-built/user-manage/Project-report";
+import SuppliersReportPage from "../pages/pre-built/user-manage/Suppliers-report";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -339,6 +341,24 @@ const Pages = () => {
           render={() => (
             <UserContextProvider>
               <BlankPage />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Project-report`}
+          render={() => (
+            <UserContextProvider>
+              <ProjectReportPage />
+            </UserContextProvider>
+          )}
+        ></Route>
+        <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/Suppliers-report`}
+          render={() => (
+            <UserContextProvider>
+              <SuppliersReportPage />
             </UserContextProvider>
           )}
         ></Route>
