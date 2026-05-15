@@ -4,6 +4,8 @@ import Head from "../../../layout/head/Head";
 import Content from "../../../layout/content/Content";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   Block,
   BlockHead,
@@ -37,12 +39,14 @@ const formatDateToDDMMYYYY = (d) => {
   const [y, m, day] = d.split("-");
   return y && m && day ? `${day}-${m}-${y}` : d;
 };
+
 const convertToYYYYMMDD = (d) => {
   if (!d) return "";
   if (d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
   const [day, m, y] = d.split("-");
   return day && m && y ? `${y}-${m}-${day}` : "";
 };
+
 const formatDate = (d) => {
   if (!d) return "N/A";
   const [y, m, day] = d.split("-");
@@ -191,36 +195,308 @@ const MetaRow = ({ icon, text }) => (
   </div>
 );
 
-/* ── Add Site Modal – multi-section layout ── */
+/* ── Staff Assignment Component with Dropdown ── */
+const StaffAssignment = ({ assignedStaff, onAddStaff, onRemoveStaff }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [allStaff, setAllStaff] = useState([]);
+
+  // Fetch staff from backend on component mount
+  useEffect(() => {
+    fetchStaffList();
+  }, []);
+
+  const fetchStaffList = async () => {
+    const token = localStorage.getItem("token")
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/user`, {
+        headers : {
+          Authorization : `Bearer ${token}`
+        }
+      });
+      if (response.status === 200) {
+        console.log(response.data.data);
+      } else {
+        // Fallback dummy data if API fails
+        setAllStaff([
+          { _id: "1", name: "John Doe", email: "john@example.com", role: "Engineer" },
+          { _id: "2", name: "Jane Smith", email: "jane@example.com", role: "Architect" },
+          { _id: "3", name: "Mike Johnson", email: "mike@example.com", role: "Site Supervisor" },
+          { _id: "4", name: "Sarah Williams", email: "sarah@example.com", role: "Project Manager" },
+          { _id: "5", name: "David Brown", email: "david@example.com", role: "Safety Officer" },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+      // Set dummy data if API fails
+      setAllStaff([
+        { _id: "1", name: "John Doe", email: "john@example.com", role: "Engineer" },
+        { _id: "2", name: "Jane Smith", email: "jane@example.com", role: "Architect" },
+        { _id: "3", name: "Mike Johnson", email: "mike@example.com", role: "Site Supervisor" },
+        { _id: "4", name: "Sarah Williams", email: "sarah@example.com", role: "Project Manager" },
+        { _id: "5", name: "David Brown", email: "david@example.com", role: "Safety Officer" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    if (value.trim()) {
+      // Filter staff based on search term
+      const filtered = allStaff.filter(staff =>
+        staff.name.toLowerCase().includes(value.toLowerCase()) ||
+        staff.email?.toLowerCase().includes(value.toLowerCase()) ||
+        staff.role?.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered.slice(0, 8)); // Limit to 8 suggestions
+      setShowDropdown(true);
+    } else {
+      setSuggestions([]);
+      setShowDropdown(false);
+    }
+  };
+
+  const handleSelectStaff = (staff) => {
+    if (!assignedStaff.some(s => s.name === staff.name)) {
+      onAddStaff(staff.name);
+    }
+    setSearchTerm("");
+    setShowDropdown(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && searchTerm.trim()) {
+      // Allow adding custom staff name not in the list
+      if (!assignedStaff.some(s => s.name === searchTerm.trim())) {
+        onAddStaff(searchTerm.trim());
+      }
+      setSearchTerm("");
+      setShowDropdown(false);
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+          <div style={{ flex: 1, position: "relative" }}>
+            <Input
+              placeholder="Type staff name to search..."
+              value={searchTerm}
+              onChange={handleInputChange}
+              onFocus={() => searchTerm.trim() && setShowDropdown(true)}
+              onKeyPress={handleKeyPress}
+              style={inputStyle}
+            />
+            <Icon 
+              name="users" 
+              style={{ 
+                position: "absolute", 
+                right: "12px", 
+                top: "50%", 
+                transform: "translateY(-50%)",
+                color: "#aaa",
+                fontSize: "14px",
+                pointerEvents: "none"
+              }} 
+            />
+          </div>
+          <BrandBtn 
+            onClick={() => {
+              if (searchTerm.trim()) {
+                if (!assignedStaff.some(s => s.name === searchTerm.trim())) {
+                  onAddStaff(searchTerm.trim());
+                }
+                setSearchTerm("");
+                setShowDropdown(false);
+              }
+            }} 
+            outline 
+            style={{ whiteSpace: "nowrap", flexShrink: 0 }}
+          >
+            + Add
+          </BrandBtn>
+        </div>
+
+        {/* Dropdown Suggestions */}
+        {showDropdown && suggestions.length > 0 && (
+          <div style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            background: "#fff",
+            border: "1px solid #e8e4e0",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            zIndex: 1000,
+            maxHeight: "250px",
+            overflowY: "auto",
+            marginTop: "4px"
+          }}>
+            {suggestions.map(staff => (
+              <div
+                key={staff._id}
+                onClick={() => handleSelectStaff(staff)}
+                style={{
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  borderBottom: "1px solid #f0ece9",
+                  transition: "background 0.15s",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "#fdfaf8"}
+                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: "13px", color: "#333" }}>{staff.name}</div>
+                  {staff.role && (
+                    <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                      {staff.role} {staff.email && `• ${staff.email}`}
+                    </div>
+                  )}
+                </div>
+                <Icon name="plus" style={{ fontSize: "12px", color: BRAND }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showDropdown && suggestions.length === 0 && searchTerm.trim() && (
+          <div style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            background: "#fff",
+            border: "1px solid #e8e4e0",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            zIndex: 1000,
+            padding: "12px",
+            textAlign: "center",
+            marginTop: "4px"
+          }}>
+            <span style={{ fontSize: "12px", color: "#888" }}>
+              No staff found. Press "Add" or Enter to add "{searchTerm}"
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Display assigned staff badges */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginTop: "12px" }}>
+        {assignedStaff.map((staff, i) => (
+          <span 
+            key={i} 
+            style={staffPillStyle} 
+            onClick={() => onRemoveStaff(staff.name)}
+          >
+            {staff.name || staff}
+            <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
+          </span>
+        ))}
+        {!assignedStaff.length && (
+          <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>
+            No staff assigned
+          </span>
+        )}
+      </div>
+      
+    </div>
+  );
+};
+
+/* ── Add Site Modal – with Date Picker, Image Upload and Staff Dropdown ── */
 const EMPTY_SITE = { name: "", location: "", startDate: "", staffAssigned: [], description: "", projectValue: "", image: "", completion: 0, budget: 0 };
 
 const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   const [form, setForm] = useState(EMPTY_SITE);
-  const [staffInput, setStaffInput] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const reset = () => { setForm(EMPTY_SITE); setStaffInput(""); setErrors({}); };
+  const reset = () => { 
+    setForm(EMPTY_SITE); 
+    setErrors({}); 
+    setImagePreview("");
+    setSelectedDate(null);
+  };
 
   const close = () => { reset(); onClose(); };
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handleDateChange = (e) => {
-    const v = e.target.value;
-    if (v.match(/^\d{2}-\d{2}-\d{4}$/)) set("startDate", convertToYYYYMMDD(v));
-    else set("startDate", v);
-  };
-
-  const addStaff = () => {
-    const n = staffInput.trim();
-    if (n && !form.staffAssigned.includes(n)) {
-      set("staffAssigned", [...form.staffAssigned, n]);
-      setStaffInput("");
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    if (date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      const yyyymmdd = `${year}-${month}-${day}`;
+      set("startDate", yyyymmdd);
+    } else {
+      set("startDate", "");
     }
   };
 
-  const removeStaff = (s) => set("staffAssigned", form.staffAssigned.filter(x => x !== s));
+  const handleAddStaff = (staffName) => {
+    if (staffName && !form.staffAssigned.includes(staffName)) {
+      set("staffAssigned", [...form.staffAssigned, staffName]);
+    }
+  };
+
+  const handleRemoveStaff = (staffName) => {
+    set("staffAssigned", form.staffAssigned.filter(s => s !== staffName));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    
+    const uploadFormData = new FormData();
+    uploadFormData.append('image', file);
+
+    try {
+      const response = await axios.post(`${API_URL}/upload/image`, uploadFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.success) {
+        set("image", response.data.data.url);
+        setImagePreview(response.data.data.url);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const validate = () => {
     const e = {};
@@ -241,10 +517,37 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
         image: form.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=250&fit=crop",
       });
       close();
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert("Failed to add project. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const CustomDateInput = ({ value, onClick }) => (
+    <div style={{ position: "relative", width: "100%" }}>
+      <Input
+        value={value}
+        onClick={onClick}
+        readOnly
+        placeholder="Select Date"
+        style={{ ...inputStyle, cursor: "pointer", backgroundColor: "#fff" }}
+      />
+      <Icon 
+        name="calendar" 
+        style={{ 
+          position: "absolute", 
+          right: "12px", 
+          top: "50%", 
+          transform: "translateY(-50%)",
+          color: "#aaa",
+          fontSize: "14px",
+          pointerEvents: "none"
+        }} 
+      />
+    </div>
+  );
 
   return (
     <Modal isOpen={isOpen} toggle={close} size="lg" centered>
@@ -252,11 +555,9 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
         toggle={close}
         style={{ borderBottom: "none", padding: "24px 28px 0" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "17px", color: "#1a1a2e" }}>Add New Project Site</div>
-          </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: "17px", color: "#1a1a2e" }}>Add New Project Site</div>
+          <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>Fill in the project details below</div>
         </div>
       </ModalHeader>
 
@@ -276,14 +577,19 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
             </FieldGroup>
           </Col>
           <Col md="6">
-            <FieldGroup label="Start Date * (DD-MM-YYYY)" error={errors.startDate}>
-              <Input
-                placeholder="DD-MM-YYYY"
-                value={formatDateToDDMMYYYY(form.startDate)}
+            <FieldGroup label="Start Date *" error={errors.startDate}>
+              <DatePicker
+                selected={selectedDate}
                 onChange={handleDateChange}
-                invalid={!!errors.startDate}
-                style={inputStyle}
+                dateFormat="dd-MM-yyyy"
+                placeholderText="DD-MM-YYYY"
+                customInput={<CustomDateInput />}
+                wrapperClassName="w-100"
+                popperPlacement="bottom-start"
               />
+              <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "4px" }}>
+                Select date in DD-MM-YYYY format
+              </small>
             </FieldGroup>
           </Col>
           <Col md="6">
@@ -308,64 +614,84 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
           </Col>
         </Row>
 
-        {/* ── Section: Media ── */}
+        {/* ── Section: Cover Image Upload ── */}
         <SectionLabel icon="image" label="Cover Image" />
-        <FieldGroup label="Image URL (optional)">
-          <Input placeholder="https://example.com/image.jpg" value={form.image} onChange={e => set("image", e.target.value)} style={inputStyle} />
-          <small style={{ color: "#aaa", fontSize: "11px" }}>Leave blank to use a default construction image</small>
+        <FieldGroup label="Upload Image (JPG, PNG, GIF up to 5MB)">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <label style={{
+              background: BRAND + "10",
+              border: `1.5px dashed ${BRAND}40`,
+              borderRadius: "8px",
+              padding: "10px 20px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              color: BRAND,
+              fontWeight: 500,
+            }}>
+              <Icon name="upload" />
+              {uploadingImage ? "Uploading..." : "Choose Image"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploadingImage}
+                style={{ display: "none" }}
+              />
+            </label>
+            {uploadingImage && <Spinner size="sm" style={{ color: BRAND }} />}
+          </div>
+          <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "6px" }}>
+            Upload a project cover image (will be stored in Cloudinary)
+          </small>
         </FieldGroup>
-        {form.image && (
+        
+        {imagePreview && (
           <div style={{ marginBottom: "16px" }}>
-            <img src={form.image} alt="preview" style={{ height: "90px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }}
-              onError={e => e.target.style.display = "none"} />
+            <img 
+              src={imagePreview} 
+              alt="preview" 
+              style={{ 
+                height: "90px", 
+                borderRadius: "8px", 
+                objectFit: "cover", 
+                border: "1px solid #eee",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+              }} 
+            />
           </div>
         )}
 
-        {/* ── Section: Staff ── */}
+        {/* ── Section: Staff Assignment with Dropdown ── */}
         <SectionLabel icon="users" label="Assign Staff" />
-        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-          <Input
-            placeholder="Enter staff name, press Enter or Add"
-            value={staffInput}
-            onChange={e => setStaffInput(e.target.value)}
-            onKeyPress={e => e.key === "Enter" && addStaff()}
-            style={inputStyle}
-          />
-          <BrandBtn onClick={addStaff} outline style={{ whiteSpace: "nowrap", flexShrink: 0 }}>+ Add</BrandBtn>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px" }}>
-          {form.staffAssigned.map((s, i) => (
-            <span key={i} style={staffPillStyle} onClick={() => removeStaff(s)}>
-              {s}
-              <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
-            </span>
-          ))}
-          {!form.staffAssigned.length && (
-            <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>
-              No staff added — click to remove a badge
-            </span>
-          )}
-        </div>
-
-        {/* ── Footer ── */}
-        <div style={{
-          display: "flex", justifyContent: "flex-end", gap: "10px",
-          marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0",
-        }}>
-          <button
-            onClick={close}
-            style={{
-              background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0",
-              padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-          <BrandBtn onClick={submit} disabled={submitting} size="md">
-            {submitting ? <><Spinner size="sm" /> Adding…</> : <><Icon name="plus" /> Add Site</>}
-          </BrandBtn>
-        </div>
+        <StaffAssignment 
+          assignedStaff={form.staffAssigned.map(name => ({ name }))}
+          onAddStaff={handleAddStaff}
+          onRemoveStaff={handleRemoveStaff}
+        />
       </ModalBody>
+
+      {/* ── Footer ── */}
+      <div style={{
+        display: "flex", justifyContent: "flex-end", gap: "10px",
+        padding: "20px 28px 28px",
+        borderTop: "1px solid #f0f0f0",
+      }}>
+        <button
+          onClick={close}
+          style={{
+            background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0",
+            padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
+        <BrandBtn onClick={submit} disabled={submitting || uploadingImage} size="md">
+          {submitting ? <><Spinner size="sm" /> Adding…</> : <><Icon name="plus" /> Add Site</>}
+        </BrandBtn>
+      </div>
     </Modal>
   );
 };
@@ -398,6 +724,7 @@ const inputStyle = {
   color: "#1a1a2e",
   background: "#fdfcfc",
   outline: "none",
+  width: "100%",
 };
 
 const staffPillStyle = {

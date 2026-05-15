@@ -160,6 +160,256 @@ const staffPillStyle = {
   fontSize: "12px", fontWeight: 600,
 };
 
+/* ─── Document Card ──────────────────────────────────── */
+const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
+  const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
+  const dateStr = doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "";
+
+  return (
+    <div style={{
+      background: "#fff",
+      border: `1px solid ${isActive ? BRAND + "55" : "#eee"}`,
+      borderRadius: "12px",
+      padding: "16px 14px 12px",
+      display: "flex", flexDirection: "column", gap: "10px",
+      transition: "border-color 0.18s, box-shadow 0.18s",
+      boxShadow: isActive ? `0 0 0 3px ${BRAND}18` : "none",
+    }}>
+      {/* Icon */}
+      <div style={{ width: "44px", height: "44px", background: "#fdecea", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon name="file-pdf" style={{ color: "#dc3545", fontSize: "22px" }} />
+      </div>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: "13px", color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {doc.originalName || doc.filename}
+        </div>
+        <div style={{ fontSize: "11px", color: "#999", marginTop: "3px" }}>
+          {sizeKB} KB {dateStr && <>· {dateStr}</>}
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
+        <button
+          onClick={onView}
+          style={{
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+            padding: "7px 10px", borderRadius: "8px",
+            border: `1px solid ${BRAND}`, background: BRAND + "12", color: BRAND,
+            fontSize: "12px", fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          <Icon name="eye" /> View
+        </button>
+        <button
+          onClick={onDelete}
+          disabled={deletingItem === doc._id}
+          style={{
+            width: "36px", display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "7px", borderRadius: "8px",
+            border: "1px solid #dc3545", background: "#fef2f2", color: "#dc3545",
+            fontSize: "14px", cursor: deletingItem === doc._id ? "not-allowed" : "pointer",
+            opacity: deletingItem === doc._id ? 0.6 : 1,
+          }}
+        >
+          {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Purchase Order Accordion ───────────────────────── */
+const STATUS_BADGE = {
+  approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
+  pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
+  rejected: { bg: "#fcebeb", color: "#a32d2d", label: "Rejected" },
+};
+
+const POAccordion = ({ orders }) => {
+  const [openId, setOpenId] = useState(null);
+
+  const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
+
+  const grandTotal = orders.reduce((sum, po) => {
+    const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
+    return sum + poTotal;
+  }, 0);
+
+  const formatINR = (val) =>
+    "₹" + Number(val).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+
+  return (
+    <div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {orders.map((po) => {
+          const isOpen = openId === po._id;
+          const items = po.items || [];
+          const poTotal = items.reduce((s, i) => s + (i.quantity * i.unitPrice || i.amount || 0), 0);
+          const badge = STATUS_BADGE[po.status?.toLowerCase()] || STATUS_BADGE.pending;
+
+          return (
+            <div key={po._id}
+              style={{
+                background: "#fff",
+                border: `1px solid ${isOpen ? BRAND + "55" : "#eee"}`,
+                borderRadius: "12px", overflow: "hidden",
+                transition: "border-color 0.2s",
+              }}
+            >
+              {/* Header */}
+              <div
+                onClick={() => toggle(po._id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "14px 16px", cursor: "pointer", userSelect: "none",
+                  background: isOpen ? BRAND + "06" : "#fff",
+                  transition: "background 0.18s",
+                }}
+              >
+                {/* PO Icon */}
+                <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: BRAND + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon name="file-text" style={{ color: BRAND, fontSize: "17px" }} />
+                </div>
+
+                {/* PO Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>{po.poNumber || po._id}</div>
+                  <div style={{ fontSize: "12px", color: "#888", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {po.vendor || po.supplierName || "Vendor"}
+                  </div>
+                </div>
+
+                {/* Status Badge */}
+                <span style={{
+                  fontSize: "11px", fontWeight: 600, padding: "3px 10px",
+                  borderRadius: "20px", background: badge.bg, color: badge.color,
+                  flexShrink: 0,
+                }}>
+                  {badge.label}
+                </span>
+
+                {/* Total Pill */}
+                <span style={{
+                  fontSize: "13px", fontWeight: 600, color: BRAND,
+                  background: BRAND + "12", padding: "4px 12px", borderRadius: "20px",
+                  flexShrink: 0,
+                }}>
+                  {formatINR(poTotal)}
+                </span>
+
+                {/* Chevron */}
+                <span style={{
+                  color: "#aaa", fontSize: "18px", transition: "transform 0.25s",
+                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0,
+                }}>
+                  ▾
+                </span>
+              </div>
+
+              {/* Body */}
+              <div style={{
+                maxHeight: isOpen ? "600px" : "0",
+                overflow: "hidden",
+                transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
+              }}>
+                <div style={{ padding: "0 16px 16px" }}>
+                  {/* Items Table */}
+                  {items.length > 0 ? (
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", tableLayout: "fixed" }}>
+                      <colgroup>
+                        <col style={{ width: "40%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                      </colgroup>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid #f0f0f0" }}>
+                          {["Item", "Qty", "Unit Price", "Amount"].map((h, i) => (
+                            <th key={h} style={{
+                              padding: "6px 8px 10px", fontSize: "11px", fontWeight: 600,
+                              color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px",
+                              textAlign: i > 0 ? "right" : "left",
+                            }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item, idx) => {
+                          const amount = item.quantity * item.unitPrice || item.amount || 0;
+                          return (
+                            <tr key={item._id || idx} style={{ borderBottom: idx < items.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                              <td style={{ padding: "10px 8px", verticalAlign: "top" }}>
+                                <div style={{ fontWeight: 600, color: "#1a1a2e", fontSize: "13px" }}>{item.name || item.itemName}</div>
+                                {item.category && (
+                                  <span style={{ fontSize: "11px", color: "#888", background: "#f5f5f5", padding: "2px 8px", borderRadius: "20px", display: "inline-block", marginTop: "3px" }}>
+                                    {item.category}
+                                  </span>
+                                )}
+                              </td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>
+                                {item.quantity} {item.unit || ""}
+                              </td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>
+                                {formatINR(item.rate || 0)}
+                              </td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", fontWeight: 600, color: "#1a1a2e", verticalAlign: "top" }}>
+                                {formatINR(amount)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div style={{ padding: "16px", background: "#fafafa", borderRadius: "8px", textAlign: "center", color: "#bbb", fontSize: "13px" }}>
+                      No items found for this order.
+                    </div>
+                  )}
+
+                  {/* Order Total Bar */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    marginTop: "12px", padding: "12px 14px",
+                    background: BRAND + "10", borderRadius: "8px",
+                    border: `1px solid ${BRAND}22`,
+                  }}>
+                    <div style={{ fontSize: "13px", color: BRAND, fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Icon name="calculator" style={{ fontSize: "14px" }} /> Order Total
+                    </div>
+                    <div style={{ fontSize: "17px", fontWeight: 700, color: BRAND }}>
+                      {formatINR(poTotal)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Grand Total */}
+      {orders.length > 0 && (
+        <div style={{
+          marginTop: "16px", background: BRAND,
+          borderRadius: "12px", padding: "16px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "rgba(255,255,255,0.85)", fontSize: "14px", fontWeight: 600 }}>
+            <Icon name="report-money" style={{ fontSize: "18px", color: "#fff" }} />
+            Total Purchase Order Value
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>
+            {formatINR(grandTotal)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ─── Main Component ─────────────────────────────────── */
 const SiteDetail = () => {
   const { id } = useParams();
@@ -179,12 +429,14 @@ const SiteDetail = () => {
   const [galleryImages, setGalleryImages] = useState([]);
   const [sitePlanImages, setSitePlanImages] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [deletingItem, setDeletingItem] = useState(null);
 
   const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
 
   useEffect(() => { fetchSiteDetails(); }, [id]);
+  useEffect(() => { fetchPurchaseOrders(); }, [id]);
 
   const fetchSiteDetails = async () => {
     try {
@@ -199,6 +451,17 @@ const SiteDetail = () => {
       }
     } catch (err) { setError(err.response?.data?.message || "Failed to load site details"); }
     finally { setLoading(false); }
+  };
+
+  const fetchPurchaseOrders = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/purchase-orders/byProjectId/${id}`);
+      if (response.status === 200) {
+        setPurchaseOrders(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch purchase orders", err);
+    }
   };
 
   const handleFileUpload = async (e, type) => {
@@ -453,48 +716,39 @@ const SiteDetail = () => {
                 </Row>
               ) : <EmptyState text="No site plans uploaded yet." />}
 
-              {/* ── Documents ── */}
+              {/* ── Documents — Card Grid ── */}
               <SectionDivider title="Project Documents">
                 <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
               </SectionDivider>
+
               {documents.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                  gap: "14px",
+                }}>
                   {documents.map((doc) => (
-                    <div key={doc._id} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "20px 16px", borderRadius: "10px",
-                      border: `1px solid ${pdfSidebar.doc?._id === doc._id ? BRAND + "44" : "#eee"}`,
-                      background: pdfSidebar.doc?._id === doc._id ? BRAND + "08" : "#fafafa",
-                      transition: "background 0.2s, border-color 0.2s",
-                    }}>
-                      <div className="d-flex align-items-center gap-3">
-                        <div style={{ width: "40px", height: "40px", background: "#fdecea", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Icon name="file-pdf" style={{ color: "#dc3545", fontSize: "20px" }} />
-                        </div>
-                        <div style={{marginLeft : "20px"}}>
-                          <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>{doc.originalName || doc.filename}</div>
-                          <div style={{ fontSize: "12px", color: "#888" }}>
-                            {(doc.size / 1024).toFixed(1)} KB &bull; {new Date(doc.uploadedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="d-flex gap-2">
-                        <Button color="primary" style={{padding:"14px"}} size="sm" onClick={() => setPdfSidebar({ open: true, doc })}>
-                          <Icon name="eye" />
-                        </Button>
-                        <BrandBtn style={{padding:"14px"}}  size="sm"  danger onClick={() => handleDeleteDocument(doc._id)} disabled={deletingItem === doc._id}>
-                          {deletingItem === doc._id ? <Spinner size="sm" /> : <><Icon name="trash" /></>}
-                        </BrandBtn>
-                      </div>
-                    </div>
+                    <DocumentCard
+                      key={doc._id}
+                      doc={doc}
+                      isActive={pdfSidebar.doc?._id === doc._id}
+                      deletingItem={deletingItem}
+                      onView={() => setPdfSidebar({ open: true, doc })}
+                      onDelete={() => handleDeleteDocument(doc._id)}
+                    />
                   ))}
                 </div>
               ) : <EmptyState text="No documents uploaded yet." />}
 
-              {/* ── Footer ── */}
-              {/* <div className="d-flex justify-content-end mt-5">
-                <BrandBtn outline onClick={() => history.push("/SiteManagement")}>Close</BrandBtn>
-              </div> */}
+              {/* ── Purchase Orders — Accordion ── */}
+              <SectionDivider title="Purchase Orders" />
+
+              {purchaseOrders.length > 0 ? (
+                <POAccordion orders={purchaseOrders} />
+              ) : (
+                <EmptyState text="No purchase orders found for this project." />
+              )}
+
             </div>
           </div>
         </Block>
@@ -528,8 +782,6 @@ const SiteDetail = () => {
         </ModalHeader>
 
         <ModalBody style={{ padding: "16px 28px 28px", maxHeight: "78vh", overflowY: "auto" }}>
-
-          {/* ── Basic Info ── */}
           <SectionLabel icon="info" label="Basic Information" />
           <Row>
             <Col md="6">
@@ -569,7 +821,6 @@ const SiteDetail = () => {
             </Col>
           </Row>
 
-          {/* ── Cover Image ── */}
           <SectionLabel icon="image" label="Cover Image" />
           <FieldGroup label="Image URL">
             <Input type="text" value={editedSite.image || ""} onChange={(e) => setEditedSite({ ...editedSite, image: e.target.value })} style={inputStyle} />
@@ -583,7 +834,6 @@ const SiteDetail = () => {
             </div>
           )}
 
-          {/* ── Staff ── */}
           <SectionLabel icon="users" label="Assign Staff" />
           <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
             <Input type="text" placeholder="Enter staff name, press Enter or Add"
@@ -604,7 +854,6 @@ const SiteDetail = () => {
             )}
           </div>
 
-          {/* ── Footer ── */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0" }}>
             <button
               onClick={() => { setEditModal(false); setFormErrors({}); }}

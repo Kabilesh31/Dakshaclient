@@ -407,6 +407,7 @@ const PurchaseOrderPage = () => {
     supplierName: "", 
     costCenter: "", 
     project: "",
+    projectId : "",
     modeOfPayment: "Check", 
     termsOfPayment: "Net 30 Days", 
     requiredBy: "",
@@ -1302,9 +1303,19 @@ const PurchaseOrderPage = () => {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Project</label>
-                  <select style={fc} value={newOrder.project} onChange={(e) => setNewOrder({ ...newOrder, project: e.target.value })}>
+                  <select style={fc} value={newOrder.project}  onChange={(e) => {
+                        const selectedProject = projects.find(
+                          (p) => p._id === e.target.value
+                        );
+
+                        setNewOrder({
+                          ...newOrder,
+                          projectId: selectedProject?._id || "",
+                          project: selectedProject?.name || "",
+                        });
+                      }}>
                     <option value="">Select project</option>
-                    {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {projects.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                   {projectsLoading && <span style={{ fontSize: 10, color: "#9ca3af" }}>Loading projects...</span>}
                 </div>
