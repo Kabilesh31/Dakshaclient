@@ -19,12 +19,13 @@ const menu = [
     icon: "user-list",      // ni ni-user-list
     text: "Ongoing Sites",
     link: "/SiteManagement",
-  },{
-    icon: "bag",
-    text: "Orders",
-    link: "/Orders"
-
   },
+  // {
+  //   icon: "bag",
+  //   text: "Orders",
+  //   link: "/Orders"
+
+  // },
   {
   icon: "truck",   // good for supplier/logistics
   text: "Suppliers",
