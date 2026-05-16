@@ -19,12 +19,13 @@ const menu = [
     icon: "user-list",      // ni ni-user-list
     text: "Ongoing Sites",
     link: "/SiteManagement",
-  },{
-    icon: "bag",
-    text: "Orders",
-    link: "/Orders"
-
   },
+  // {
+  //   icon: "bag",
+  //   text: "Orders",
+  //   link: "/Orders"
+
+  // },
   {
   icon: "truck",   // good for supplier/logistics
   text: "Suppliers",
@@ -53,11 +54,12 @@ const menu = [
     },
   ],
 },
+  // {
+  //   icon: "file-text",      // ni ni-user-alt
+  //   text: "Bills",
+  //   link: "/Bills",
+  // },
   {
-    icon: "file-text",      // ni ni-user-alt
-    text: "Bills",
-    link: "/Bills",
-  },{
     icon: "file-text",      // ni ni-user-alt
     text: "Quotation",
     link: "/Quotation",
