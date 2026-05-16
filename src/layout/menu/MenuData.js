@@ -87,6 +87,15 @@ const menu = [
         icon: "user-list",
         text: "Staffs",
         link: "/staff-report", // new page (we will create later)
+      },
+      {
+        icon: "truck",
+        text: "Suppliers",
+        link: "/suppliers-report", // new page (we will create later)
+      },{
+        icon: "user-list",
+        text: "Project",
+        link: "/project-report", // new page (we will create later)
       }
     ],
   },
