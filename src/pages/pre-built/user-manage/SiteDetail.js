@@ -160,68 +160,7 @@ const staffPillStyle = {
   fontSize: "12px", fontWeight: 600,
 };
 
-/* ─── Document Card ──────────────────────────────────── */
-const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
-  const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-  const dateStr = doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "";
-
-  return (
-    <div style={{
-      background: "#fff",
-      border: `1px solid ${isActive ? BRAND + "55" : "#eee"}`,
-      borderRadius: "12px",
-      padding: "16px 14px 12px",
-      display: "flex", flexDirection: "column", gap: "10px",
-      transition: "border-color 0.18s, box-shadow 0.18s",
-      boxShadow: isActive ? `0 0 0 3px ${BRAND}18` : "none",
-    }}>
-      {/* Icon */}
-      <div style={{ width: "44px", height: "44px", background: "#fdecea", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon name="file-pdf" style={{ color: "#dc3545", fontSize: "22px" }} />
-      </div>
-
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: "13px", color: "#1a1a2e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {doc.originalName || doc.filename}
-        </div>
-        <div style={{ fontSize: "11px", color: "#999", marginTop: "3px" }}>
-          {sizeKB} KB {dateStr && <>· {dateStr}</>}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
-        <button
-          onClick={onView}
-          style={{
-            flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
-            padding: "7px 10px", borderRadius: "8px",
-            border: `1px solid ${BRAND}`, background: BRAND + "12", color: BRAND,
-            fontSize: "12px", fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          <Icon name="eye" /> View
-        </button>
-        <button
-          onClick={onDelete}
-          disabled={deletingItem === doc._id}
-          style={{
-            width: "36px", display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "7px", borderRadius: "8px",
-            border: "1px solid #dc3545", background: "#fef2f2", color: "#dc3545",
-            fontSize: "14px", cursor: deletingItem === doc._id ? "not-allowed" : "pointer",
-            opacity: deletingItem === doc._id ? 0.6 : 1,
-          }}
-        >
-          {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/* ─── Purchase Order Accordion ───────────────────────── */
+/* ─── Purchase Order Accordion (unchanged) ───────────── */
 const STATUS_BADGE = {
   approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
   pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
@@ -259,7 +198,6 @@ const POAccordion = ({ orders }) => {
                 transition: "border-color 0.2s",
               }}
             >
-              {/* Header */}
               <div
                 onClick={() => toggle(po._id)}
                 style={{
@@ -269,54 +207,32 @@ const POAccordion = ({ orders }) => {
                   transition: "background 0.18s",
                 }}
               >
-                {/* PO Icon */}
                 <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: BRAND + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon name="file-text" style={{ color: BRAND, fontSize: "17px" }} />
                 </div>
-
-                {/* PO Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>{po.poNumber || po._id}</div>
                   <div style={{ fontSize: "12px", color: "#888", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {po.vendor || po.supplierName || "Vendor"}
                   </div>
                 </div>
-
-                {/* Status Badge */}
-                <span style={{
-                  fontSize: "11px", fontWeight: 600, padding: "3px 10px",
-                  borderRadius: "20px", background: badge.bg, color: badge.color,
-                  flexShrink: 0,
-                }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "20px", background: badge.bg, color: badge.color, flexShrink: 0 }}>
                   {badge.label}
                 </span>
-
-                {/* Total Pill */}
-                <span style={{
-                  fontSize: "13px", fontWeight: 600, color: BRAND,
-                  background: BRAND + "12", padding: "4px 12px", borderRadius: "20px",
-                  flexShrink: 0,
-                }}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: BRAND, background: BRAND + "12", padding: "4px 12px", borderRadius: "20px", flexShrink: 0 }}>
                   {formatINR(poTotal)}
                 </span>
-
-                {/* Chevron */}
-                <span style={{
-                  color: "#aaa", fontSize: "18px", transition: "transform 0.25s",
-                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0,
-                }}>
+                <span style={{ color: "#aaa", fontSize: "18px", transition: "transform 0.25s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
                   ▾
                 </span>
               </div>
 
-              {/* Body */}
               <div style={{
                 maxHeight: isOpen ? "600px" : "0",
                 overflow: "hidden",
                 transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
               }}>
                 <div style={{ padding: "0 16px 16px" }}>
-                  {/* Items Table */}
                   {items.length > 0 ? (
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", tableLayout: "fixed" }}>
                       <colgroup>
@@ -328,11 +244,7 @@ const POAccordion = ({ orders }) => {
                       <thead>
                         <tr style={{ borderBottom: "1px solid #f0f0f0" }}>
                           {["Item", "Qty", "Unit Price", "Amount"].map((h, i) => (
-                            <th key={h} style={{
-                              padding: "6px 8px 10px", fontSize: "11px", fontWeight: 600,
-                              color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px",
-                              textAlign: i > 0 ? "right" : "left",
-                            }}>{h}</th>
+                            <th key={h} style={{ padding: "6px 8px 10px", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: i > 0 ? "right" : "left" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -349,15 +261,9 @@ const POAccordion = ({ orders }) => {
                                   </span>
                                 )}
                               </td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>
-                                {item.quantity} {item.unit || ""}
-                              </td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>
-                                {formatINR(item.rate || 0)}
-                              </td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", fontWeight: 600, color: "#1a1a2e", verticalAlign: "top" }}>
-                                {formatINR(amount)}
-                              </td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>{item.quantity} {item.unit || ""}</td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>{formatINR(item.rate || 0)}</td>
+                              <td style={{ padding: "10px 8px", textAlign: "right", fontWeight: 600, color: "#1a1a2e", verticalAlign: "top" }}>{formatINR(amount)}</td>
                             </tr>
                           );
                         })}
@@ -368,20 +274,9 @@ const POAccordion = ({ orders }) => {
                       No items found for this order.
                     </div>
                   )}
-
-                  {/* Order Total Bar */}
-                  <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    marginTop: "12px", padding: "12px 14px",
-                    background: BRAND + "10", borderRadius: "8px",
-                    border: `1px solid ${BRAND}22`,
-                  }}>
-                    <div style={{ fontSize: "13px", color: BRAND, fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Icon name="calculator" style={{ fontSize: "14px" }} /> Order Total
-                    </div>
-                    <div style={{ fontSize: "17px", fontWeight: 700, color: BRAND }}>
-                      {formatINR(poTotal)}
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", padding: "12px 14px", background: BRAND + "10", borderRadius: "8px", border: `1px solid ${BRAND}22` }}>
+                    <div style={{ fontSize: "13px", color: BRAND, fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Icon name="calculator" /> Order Total</div>
+                    <div style={{ fontSize: "17px", fontWeight: 700, color: BRAND }}>{formatINR(poTotal)}</div>
                   </div>
                 </div>
               </div>
@@ -389,21 +284,12 @@ const POAccordion = ({ orders }) => {
           );
         })}
       </div>
-
-      {/* Grand Total */}
       {orders.length > 0 && (
-        <div style={{
-          marginTop: "16px", background: BRAND,
-          borderRadius: "12px", padding: "16px 20px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
+        <div style={{ marginTop: "16px", background: BRAND, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "rgba(255,255,255,0.85)", fontSize: "14px", fontWeight: 600 }}>
-            <Icon name="report-money" style={{ fontSize: "18px", color: "#fff" }} />
-            Total Purchase Order Value
+            <Icon name="report-money" style={{ fontSize: "18px", color: "#fff" }} /> Total Purchase Order Value
           </div>
-          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>
-            {formatINR(grandTotal)}
-          </div>
+          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>{formatINR(grandTotal)}</div>
         </div>
       )}
     </div>
@@ -433,6 +319,7 @@ const SiteDetail = () => {
   const [deletingItem, setDeletingItem] = useState(null);
 
   const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
 
   useEffect(() => { fetchSiteDetails(); }, [id]);
@@ -511,7 +398,11 @@ const SiteDetail = () => {
     try {
       await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`);
       setDocuments(p => p.filter(d => d._id !== documentId));
-      if (pdfSidebar.doc?._id === documentId) setPdfSidebar({ open: false, doc: null });
+      if (pdfSidebar.doc?._id === documentId) {
+        if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+        setPdfSidebar({ open: false, doc: null });
+        setPdfBlobUrl(null);
+      }
       showSuccess("Document deleted.");
     } catch { showError("Failed to delete document."); }
     finally { setDeletingItem(null); }
@@ -557,6 +448,29 @@ const SiteDetail = () => {
   };
 
   const getPdfUrl = (doc) => `${BASE_URL}${doc.url}`;
+
+  // Fetch PDF as blob with authentication headers
+  const openPdf = async (doc) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.get(getPdfUrl(doc), {
+        responseType: "blob",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const blobUrl = URL.createObjectURL(response.data);
+      setPdfBlobUrl(blobUrl);
+      setPdfSidebar({ open: true, doc });
+    } catch (err) {
+      console.error("Failed to load PDF", err);
+      showError("Could not load PDF. Please try again.");
+    }
+  };
+
+  const closePdfSidebar = () => {
+    if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
+    setPdfSidebar({ open: false, doc: null });
+    setPdfBlobUrl(null);
+  };
 
   const STATUS_CONFIG = {
     active:    { text: "Active",    bg: "#06c96a" },
@@ -629,22 +543,14 @@ const SiteDetail = () => {
                       style={{ width: "100%", height: "280px", objectFit: "cover", display: "block" }}
                       onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"; }}
                     />
-                    <span style={{
-                      position: "absolute", top: "14px", right: "14px",
-                      background: sc.bg + "22", color: sc.bg,
-                      border: `1px solid ${sc.bg}55`,
-                      padding: "4px 14px", borderRadius: "20px",
-                      fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px",
-                    }}>{sc.text}</span>
+                    <span style={{ position: "absolute", top: "14px", right: "14px", background: sc.bg + "22", color: sc.bg, border: `1px solid ${sc.bg}55`, padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px" }}>{sc.text}</span>
                   </div>
                 </Col>
                 <Col lg="7">
                   <div style={{ paddingLeft: "8px" }}>
                     <h4 style={{ fontWeight: 700, marginBottom: "6px" }}>{site.name}</h4>
                     <p className="text-muted mb-1"><Icon name="map-pin" className="me-1" />{site.location}</p>
-                    <p className="text-muted mb-3" style={{ fontSize: "13px" }}>
-                      <Icon name="hash" className="me-1" />Project ID: {site.projectId}
-                    </p>
+                    <p className="text-muted mb-3" style={{ fontSize: "13px" }}><Icon name="hash" className="me-1" />Project ID: {site.projectId}</p>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginBottom: "16px" }}>
                       <InfoBox label="Start Date" value={formatDate(site.startDate)} />
                       <InfoBox label="Project Value" value={site.projectValue || "N/A"} />
@@ -716,50 +622,212 @@ const SiteDetail = () => {
                 </Row>
               ) : <EmptyState text="No site plans uploaded yet." />}
 
-              {/* ── Documents — Card Grid ── */}
-              <SectionDivider title="Project Documents">
-                <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
-              </SectionDivider>
+              {/* ── Documents — Google Drive Style Grid (with actual PDF fetch) ── */}
+            {/* ── Documents — Google Drive Style Grid ── */}
+<SectionDivider title="Project Documents">
+  <UploadBtn
+    id="docUpload"
+    label="Upload PDFs"
+    accept=".pdf"
+    uploading={uploading}
+    onChange={(e) => handleFileUpload(e, "document")}
+  />
+</SectionDivider>
 
-              {documents.length > 0 ? (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                  gap: "14px",
-                }}>
-                  {documents.map((doc) => (
-                    <DocumentCard
-                      key={doc._id}
-                      doc={doc}
-                      isActive={pdfSidebar.doc?._id === doc._id}
-                      deletingItem={deletingItem}
-                      onView={() => setPdfSidebar({ open: true, doc })}
-                      onDelete={() => handleDeleteDocument(doc._id)}
-                    />
-                  ))}
-                </div>
-              ) : <EmptyState text="No documents uploaded yet." />}
+{documents.length > 0 ? (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+      gap: "18px",
+    }}
+  >
+    {documents.map((doc) => {
+      const sizeKB = doc.size
+        ? (doc.size / 1024).toFixed(1)
+        : "—";
 
-              {/* ── Purchase Orders — Accordion ── */}
-              <SectionDivider title="Purchase Orders" />
+      const dateStr = doc.uploadedAt
+        ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "";
 
-              {purchaseOrders.length > 0 ? (
-                <POAccordion orders={purchaseOrders} />
+      return (
+        <div
+          key={doc._id}
+          style={{
+            background: "#f1f3f4",
+            borderRadius: "14px",
+            overflow: "hidden",
+            transition: "all 0.2s ease",
+            cursor: "pointer",
+            border:
+              pdfSidebar.doc?._id === doc._id
+                ? `2px solid ${BRAND}`
+                : "2px solid transparent",
+          }}
+          onClick={() => openPdf(doc)}
+        >
+          {/* PDF Preview */}
+          <div
+            style={{
+              height: "170px",
+              background: "#eceff1",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <iframe
+              src={`${BASE_URL}${doc.url}#toolbar=0&navpanes=0&scrollbar=0`}
+              title={doc.originalName || doc.filename}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                pointerEvents: "none",
+                background: "#fff",
+              }}
+            />
+
+            {/* PDF Badge */}
+            <div
+              style={{
+                position: "absolute",
+                top: "14px",
+                left: "14px",
+                width: "20px",
+                height: "20px",
+                borderRadius: "8px",
+                background: "#ea4335",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+                fontSize: "9px",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                boxShadow: "0 2px 8px rgba(234,67,53,0.3)",
+              }}
+            >
+              PDF
+            </div>
+
+            {/* Delete Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteDocument(doc._id);
+              }}
+              disabled={deletingItem === doc._id}
+              style={{
+                position: "absolute",
+                top: "14px",
+                right: "14px",
+                width: "30px",
+                height: "30px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(0,0,0,0.45)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "12px",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              {deletingItem === doc._id ? (
+                <Spinner size="sm" />
               ) : (
-                <EmptyState text="No purchase orders found for this project." />
+                <Icon name="trash" />
               )}
+            </button>
+          </div>
+
+          {/* Bottom Info */}
+          <div
+            style={{
+              padding: "10px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: "38px",
+                height: "38px",
+                borderRadius: "50%",
+                background: "#ea4335",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon
+                name="file-pdf"
+                style={{
+                  color: "#fff",
+                  fontSize: "16px",
+                }}
+              />
+            </div>
+
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#202124",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {doc.originalName || doc.filename}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#5f6368",
+                  marginTop: "3px",
+                }}
+              >
+                {sizeKB} KB • {dateStr}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+) : (
+  <EmptyState text="No documents uploaded yet." />
+)}
 
             </div>
           </div>
         </Block>
       </Content>
 
-      {/* ── PDF Sidebar ── */}
-      <SidebarViewer isOpen={pdfSidebar.open} onClose={() => setPdfSidebar({ open: false, doc: null })}
-        title={pdfSidebar.doc?.originalName || pdfSidebar.doc?.filename || "Document"}>
-        {pdfSidebar.doc && (
-          <iframe src={getPdfUrl(pdfSidebar.doc)} title={pdfSidebar.doc.originalName}
-            style={{ width: "100%", height: "100%", border: "none" }} />
+      {/* ── PDF Sidebar (uses blob URL for authenticated access) ── */}
+      <SidebarViewer
+        isOpen={pdfSidebar.open}
+        onClose={closePdfSidebar}
+        title={pdfSidebar.doc?.originalName || pdfSidebar.doc?.filename || "Document"}
+      >
+        {pdfBlobUrl && (
+          <iframe
+            src={pdfBlobUrl}
+            title={pdfSidebar.doc?.originalName}
+            style={{ width: "100%", height: "100%", border: "none" }}
+          />
         )}
       </SidebarViewer>
 
