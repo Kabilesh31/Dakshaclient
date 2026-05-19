@@ -122,7 +122,7 @@ function buildPrintHTML(requestData, id) {
       </div>
     </div>
     <div class="mr-box">
-      <div class="mr-title">MATERIAL REQUEST</div>
+     
       <div class="mr-id">${id || requestData?._id || "MREQ-00644"}</div>
     </div>
   </div>

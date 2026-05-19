@@ -144,15 +144,15 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </div>
 
         <div style={{ textAlign: "right", minWidth: "160px" }}>
-          <div style={{
+          {/* <div style={{
             border: "2px solid #000",
             padding: "6px 14px",
             display: "inline-block",
             marginBottom: "4px",
-          }}>
-            <div style={{ fontWeight: "700", fontSize: "13px", letterSpacing: "0.5px" }}>PURCHASE ORDER</div>
+          }}> */}
+            
             <div style={{ fontSize: "11px", fontWeight: "600", color: "#333" }}>{id || orderData?._id || "PO-00677"}</div>
-          </div>
+          {/* </div> */}
         </div>
       </div>
 
