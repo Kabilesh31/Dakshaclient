@@ -661,6 +661,7 @@ const Quotation = () => {
             <DataTableBody compact>
               <DataTableHead>
                 <DataTableRow className="nk-tb-col-check" />
+                <DataTableRow><span className="sub-text">S.No</span></DataTableRow>
                 <DataTableRow><span className="sub-text">Client Name</span></DataTableRow>
                 <DataTableRow size="md"><span className="sub-text">Date</span></DataTableRow>
                 <DataTableRow><span className="sub-text">Quotation #</span></DataTableRow>
@@ -670,12 +671,16 @@ const Quotation = () => {
               </DataTableHead>
 
               {currentItems.length > 0
-                ? currentItems.map((quote) => (
+                ? currentItems.map((quote, index) => (
                     <DataTableItem key={quote._id}>
+                   
                       <DataTableRow className="nk-tb-col-check" />
+                       <DataTableRow size="md">
+                        <span>{index + 1}</span>
+                      </DataTableRow>
                       <DataTableRow>
                         <div className="user-card">
-                          <UserAvatar text={getInitials(quote.client.name)} className="sm" />
+                          {/* <UserAvatar text={getInitials(quote.client.name)} className="sm" /> */}
                           <div className="user-info">
                             <span className="tb-lead">{quote.client.name}</span>
                             <span className="tb-sub">{quote.client.contactPerson}</span>
@@ -683,7 +688,9 @@ const Quotation = () => {
                         </div>
                       </DataTableRow>
                       <DataTableRow size="md">
-                        <span>{new Date(quote.date).toLocaleDateString()}</span>
+                        <span>
+                          {new Date(quote.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+                        </span>
                       </DataTableRow>
                       <DataTableRow>
                         <span
@@ -735,7 +742,7 @@ const Quotation = () => {
             </DataTableBody>
 
             <div className="card-inner">
-              {currentItems.length > 0 ? (
+              {/* {currentItems.length > 0 ? (
                 <PaginationComponent
                   itemPerPage={itemPerPage}
                   totalItems={data.length}
@@ -746,7 +753,7 @@ const Quotation = () => {
                 <div className="text-center">
                   <span className="text-silent">No data found</span>
                 </div>
-              )}
+              )} */}
             </div>
           </DataTable>
         </Block>
@@ -795,7 +802,9 @@ const Quotation = () => {
                   </div>
                   <div className="col-md-6 text-right">
                     <h5>{selectedQuotation.quoteNumber}</h5>
-                    <p>Date: {new Date(selectedQuotation.date).toLocaleDateString()}</p>
+                    <p>
+                      Date: {new Date(selectedQuotation.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+                    </p>
                     <span style={S.badge(selectedQuotation.status)}>{selectedQuotation.status}</span>
                   </div>
                 </div>
