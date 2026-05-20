@@ -160,7 +160,139 @@ const staffPillStyle = {
   fontSize: "12px", fontWeight: 600,
 };
 
-/* ─── Purchase Order Accordion (fixed) ──────────────── */
+/* ─── GOOGLE DRIVE STYLE DOCUMENT CARD ───────────────── */
+const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
+  const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
+  const dateStr = doc.uploadedAt
+    ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : "";
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: `1px solid ${isActive ? BRAND + "55" : "#e2e8f0"}`,
+        borderRadius: "12px",
+        transition: "box-shadow 0.2s, transform 0.1s",
+        cursor: "default",
+        position: "relative",
+        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.1)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 16px 16px",
+          background: "#fafcff",
+          borderTopLeftRadius: "12px",
+          borderTopRightRadius: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "64px",
+            height: "64px",
+            background: "#fef2f2",
+            borderRadius: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon name="file-pdf" style={{ color: "#dc3545", fontSize: "32px" }} />
+        </div>
+      </div>
+
+      <div style={{ padding: "12px 16px 16px", borderTop: "1px solid #f0f0f0" }}>
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: "14px",
+            color: "#1a1a2e",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            marginBottom: "8px",
+          }}
+          title={doc.originalName || doc.filename}
+        >
+          {doc.originalName || doc.filename}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            color: "#94a3b8",
+            marginBottom: "12px",
+          }}
+        >
+          <span>{sizeKB} KB</span>
+          {dateStr && <span>{dateStr}</span>}
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={onView}
+            style={{
+              flex: 1,
+              background: BRAND + "10",
+              border: `1px solid ${BRAND}30`,
+              borderRadius: "8px",
+              padding: "7px 0",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: BRAND,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = BRAND + "20")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = BRAND + "10")}
+          >
+            <Icon name="eye" size={12} /> View
+          </button>
+          <button
+            onClick={onDelete}
+            disabled={deletingItem === doc._id}
+            style={{
+              width: "38px",
+              background: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              color: "#dc3545",
+              cursor: deletingItem === doc._id ? "not-allowed" : "pointer",
+              opacity: deletingItem === doc._id ? 0.6 : 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "border-color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#dc3545")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+          >
+            {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" size={13} />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Purchase Order Accordion (unchanged) ───────────── */
 const STATUS_BADGE = {
   approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
   pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
@@ -169,6 +301,7 @@ const STATUS_BADGE = {
 
 const POAccordion = ({ orders }) => {
   const [openId, setOpenId] = useState(null);
+
   const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
 
   const grandTotal = orders.reduce((sum, po) => {
@@ -317,8 +450,7 @@ const SiteDetail = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [deletingItem, setDeletingItem] = useState(null);
 
-  const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null, loading: false });
-  const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
+  const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
 
   useEffect(() => { fetchSiteDetails(); }, [id]);
@@ -397,11 +529,7 @@ const SiteDetail = () => {
     try {
       await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`);
       setDocuments(p => p.filter(d => d._id !== documentId));
-      if (pdfSidebar.doc?._id === documentId) {
-        if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-        setPdfSidebar({ open: false, doc: null, loading: false });
-        setPdfBlobUrl(null);
-      }
+      if (pdfSidebar.doc?._id === documentId) setPdfSidebar({ open: false, doc: null });
       showSuccess("Document deleted.");
     } catch { showError("Failed to delete document."); }
     finally { setDeletingItem(null); }
@@ -447,37 +575,6 @@ const SiteDetail = () => {
   };
 
   const getPdfUrl = (doc) => `${BASE_URL}${doc.url}`;
-
-  const openPdf = async (doc) => {
-    if (pdfSidebar.open) {
-      if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-      setPdfBlobUrl(null);
-    }
-    setPdfSidebar({ open: true, doc, loading: true });
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) throw new Error("Authentication token not found. Please log in again.");
-      const response = await axios.get(getPdfUrl(doc), {
-        responseType: "blob",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const blobUrl = URL.createObjectURL(blob);
-      setPdfBlobUrl(blobUrl);
-      setPdfSidebar({ open: true, doc, loading: false });
-    } catch (err) {
-      console.error("Failed to load PDF", err);
-      setPdfSidebar({ open: false, doc: null, loading: false });
-      showError(`Could not load PDF: ${err.response?.data?.message || err.message || "Please try again."}`);
-      window.open(getPdfUrl(doc), "_blank");
-    }
-  };
-
-  const closePdfSidebar = () => {
-    if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-    setPdfSidebar({ open: false, doc: null, loading: false });
-    setPdfBlobUrl(null);
-  };
 
   const STATUS_CONFIG = {
     active:    { text: "Active",    bg: "#06c96a" },
@@ -542,7 +639,7 @@ const SiteDetail = () => {
           <div className="card card-bordered" style={{ borderRadius: "12px", overflow: "hidden" }}>
             <div className="card-inner" style={{ padding: "28px" }}>
 
-              {/* Hero */}
+              {/* ── Hero ── */}
               <Row className="g-4 mb-2">
                 <Col lg="5">
                   <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden" }}>
@@ -572,7 +669,7 @@ const SiteDetail = () => {
                 </Col>
               </Row>
 
-              {/* Staff */}
+              {/* ── Staff ── */}
               <SectionDivider title="Assigned Staff" />
               <div className="d-flex flex-wrap gap-2">
                 {site.staffAssigned?.length
@@ -580,7 +677,7 @@ const SiteDetail = () => {
                   : <p className="text-muted mb-0">No staff assigned yet.</p>}
               </div>
 
-              {/* Progress */}
+              {/* ── Progress ── */}
               {site.status === "active" && site.completion !== undefined && (
                 <>
                   <SectionDivider title="Project Completion" />
@@ -594,7 +691,7 @@ const SiteDetail = () => {
                 </>
               )}
 
-              {/* Gallery */}
+              {/* ── Gallery ── */}
               <SectionDivider title="Project Gallery">
                 <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
               </SectionDivider>
@@ -612,7 +709,7 @@ const SiteDetail = () => {
                 </Row>
               ) : <EmptyState text="No gallery images uploaded yet." />}
 
-              {/* Site Plans */}
+              {/* ── Site Plans ── */}
               <SectionDivider title="Site Plans">
                 <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
               </SectionDivider>
@@ -629,98 +726,230 @@ const SiteDetail = () => {
                 </Row>
               ) : <EmptyState text="No site plans uploaded yet." />}
 
-              {/* Documents — Fixed Grid with PDF opening */}
+              {/* ── Documents — Google Drive Style Grid ── */}
               <SectionDivider title="Project Documents">
                 <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
               </SectionDivider>
 
               {documents.length > 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
-                  {documents.map((doc) => {
-                    const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-                    const dateStr = doc.uploadedAt
-                      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                      : "";
-                    return (
-                      <div
-                        key={doc._id}
-                        style={{
-                          background: "#f1f3f4",
-                          borderRadius: "14px",
-                          overflow: "hidden",
-                          transition: "all 0.2s ease",
-                          cursor: "pointer",
-                          border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
-                        }}
-                        onClick={() => openPdf(doc)}
-                      >
-                        <div style={{ height: "170px", background: "#eceff1", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <object
-                            data={`${BASE_URL}${doc.url}#toolbar=0&navpanes=0&scrollbar=0`}
-                            type="application/pdf"
-                            style={{ width: "100%", height: "100%", pointerEvents: "none", background: "#fff" }}
-                            aria-label={doc.originalName || doc.filename}
-                          >
-                            <div style={{ textAlign: "center", color: "#666" }}>
-                              <Icon name="file-pdf" style={{ fontSize: "32px", color: "#ea4335" }} />
-                              <p style={{ fontSize: "12px" }}>PDF Preview</p>
-                            </div>
-                          </object>
-                          <div style={{ position: "absolute", top: "14px", left: "14px", width: "20px", height: "20px", borderRadius: "8px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", boxShadow: "0 2px 8px rgba(234,67,53,0.3)" }}>PDF</div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
-                            disabled={deletingItem === doc._id}
-                            style={{ position: "absolute", top: "14px", right: "14px", width: "30px", height: "30px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", backdropFilter: "blur(4px)" }}
-                          >
-                            {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
-                          </button>
-                        </div>
-                        <div style={{ padding: "10px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                          <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
-                          </div>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {doc.originalName || doc.filename}
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+               <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+    gap: "18px",
+  }}
+>
+  {documents.map((doc) => {
+    const sizeKB = doc.size
+      ? (doc.size / 1024).toFixed(1)
+      : "—";
+
+    const dateStr = doc.uploadedAt
+      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : "";
+
+    return (
+      <div
+        key={doc._id}
+        style={{
+          background: "#f1f3f4",
+          borderRadius: "14px",
+          overflow: "hidden",
+          transition: "all 0.2s ease",
+          cursor: "pointer",
+          border:
+            pdfSidebar.doc?._id === doc._id
+              ? `2px solid ${BRAND}`
+              : "2px solid transparent",
+        }}
+        onClick={() => setPdfSidebar({ open: true, doc })}
+      >
+        {/* Thumbnail */}
+       {/* Thumbnail */}
+{/* Thumbnail */}
+<div
+  style={{
+    height: "170px",
+    background: "#dfe3e8",
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
+  {/* PDF Preview Image Instead of iframe */}
+  <div
+    style={{
+      width: "100%",
+      height: "100%",
+      background: "#fff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+    }}
+  >
+    <embed
+      src={getPdfUrl(doc)}
+      type="application/pdf"
+      style={{
+        width: "100%",
+        height: "100%",
+        border: "none",
+        overflow: "hidden",
+        pointerEvents: "none",
+      }}
+    />
+  </div>
+
+  {/* Smaller PDF Badge */}
+  <div
+    style={{
+      position: "absolute",
+      top: "10px",
+      left: "10px",
+      width: "20px",
+      height: "20px",
+      borderRadius: "6px",
+      background: "#ea4335",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#fff",
+      fontSize: "9px",
+      fontWeight: 700,
+      letterSpacing: "0.4px",
+    }}
+  >
+    PDF
+  </div>
+
+  {/* Delete Button */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      handleDeleteDocument(doc._id);
+    }}
+    disabled={deletingItem === doc._id}
+    style={{
+      position: "absolute",
+      top: "10px",
+      right: "10px",
+      width: "28px",
+      height: "28px",
+      borderRadius: "50%",
+      border: "none",
+      background: "rgba(0,0,0,0.45)",
+      color: "#fff",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "12px",
+    }}
+  >
+    {deletingItem === doc._id ? (
+      <Spinner size="sm" />
+    ) : (
+      <Icon name="trash" />
+    )}
+  </button>
+</div>
+
+        {/* Bottom Info */}
+        <div
+          style={{
+            padding: "14px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+          }}
+        >
+          {/* Small Icon */}
+          <div
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              background: "#ea4335",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon
+              name="file-pdf"
+              style={{
+                color: "#fff",
+                fontSize: "16px",
+              }}
+            />
+          </div>
+
+          {/* File Details */}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#202124",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {doc.originalName || doc.filename}
+            </div>
+
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#5f6368",
+                marginTop: "3px",
+              }}
+            >
+              {sizeKB} KB • {dateStr}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
               ) : (
                 <EmptyState text="No documents uploaded yet." />
               )}
+
+              {/* ── Purchase Orders — Accordion ── */}
+              <SectionDivider title="Purchase Orders" />
+              {purchaseOrders.length > 0 ? (
+                <POAccordion orders={purchaseOrders} />
+              ) : (
+                <EmptyState text="No purchase orders found for this project." />
+              )}
+
             </div>
           </div>
         </Block>
       </Content>
 
-      {/* PDF Sidebar */}
-      <SidebarViewer isOpen={pdfSidebar.open} onClose={closePdfSidebar} title={pdfSidebar.doc?.originalName || pdfSidebar.doc?.filename || "Document"}>
-        {pdfSidebar.loading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", flexDirection: "column", gap: "16px" }}>
-            <Spinner style={{ color: BRAND, width: "40px", height: "40px" }} />
-            <p style={{ color: "#666" }}>Loading PDF...</p>
-          </div>
-        ) : pdfBlobUrl ? (
-          <iframe src={pdfBlobUrl} title={pdfSidebar.doc?.originalName} style={{ width: "100%", height: "100%", border: "none" }} />
-        ) : (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", flexDirection: "column", gap: "16px" }}>
-            <Icon name="alert-triangle" style={{ fontSize: "48px", color: "#dc3545" }} />
-            <p style={{ color: "#666" }}>Failed to load PDF. Please try again.</p>
-            <BrandBtn onClick={() => pdfSidebar.doc && openPdf(pdfSidebar.doc)}>Retry</BrandBtn>
-          </div>
+      {/* ── PDF Sidebar ── */}
+      <SidebarViewer isOpen={pdfSidebar.open} onClose={() => setPdfSidebar({ open: false, doc: null })}
+        title={pdfSidebar.doc?.originalName || pdfSidebar.doc?.filename || "Document"}>
+        {pdfSidebar.doc && (
+          <iframe src={getPdfUrl(pdfSidebar.doc)} title={pdfSidebar.doc.originalName}
+            style={{ width: "100%", height: "100%", border: "none" }} />
         )}
       </SidebarViewer>
 
-      {/* Image Sidebar */}
+      {/* ── Image Sidebar ── */}
       <ImageSidebar isOpen={imgSidebar.open} onClose={() => setImgSidebar({ ...imgSidebar, open: false })}
         images={imgSidebar.images} startIndex={imgSidebar.index} title={imgSidebar.title} />
 
-      {/* Edit Modal */}
+      {/* ── Edit Modal ── */}
       <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} size="lg" centered>
         <ModalHeader toggle={() => { setEditModal(false); setFormErrors({}); }} style={{ borderBottom: "none", padding: "24px 28px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -733,32 +962,90 @@ const SiteDetail = () => {
             </div>
           </div>
         </ModalHeader>
+
         <ModalBody style={{ padding: "16px 28px 28px", maxHeight: "78vh", overflowY: "auto" }}>
           <SectionLabel icon="info" label="Basic Information" />
           <Row>
-            <Col md="6"><FieldGroup label="Site Name *" error={formErrors.name}><Input type="text" value={editedSite.name || ""} onChange={(e) => setEditedSite({ ...editedSite, name: e.target.value })} invalid={!!formErrors.name} style={inputStyle} /></FieldGroup></Col>
-            <Col md="6"><FieldGroup label="Location *" error={formErrors.location}><Input type="text" value={editedSite.location || ""} onChange={(e) => setEditedSite({ ...editedSite, location: e.target.value })} invalid={!!formErrors.location} style={inputStyle} /></FieldGroup></Col>
-            <Col md="6"><FieldGroup label="Start Date *" error={formErrors.startDate}><Input type="date" value={editedSite.startDate || ""} onChange={(e) => setEditedSite({ ...editedSite, startDate: e.target.value })} invalid={!!formErrors.startDate} style={inputStyle} /></FieldGroup></Col>
-            <Col md="6"><FieldGroup label="Project Value (₹)"><Input type="text" value={editedSite.projectValue || ""} onChange={(e) => setEditedSite({ ...editedSite, projectValue: e.target.value })} style={inputStyle} /></FieldGroup></Col>
-            <Col md="6"><FieldGroup label="Budget (₹)"><Input type="number" value={editedSite.budget || 0} onChange={(e) => setEditedSite({ ...editedSite, budget: Number(e.target.value) })} style={inputStyle} /></FieldGroup></Col>
-            <Col md="6"><FieldGroup label="Completion (%)"><Input type="number" min="0" max="100" value={editedSite.completion || 0} onChange={(e) => setEditedSite({ ...editedSite, completion: Number(e.target.value) })} style={inputStyle} /></FieldGroup></Col>
-            <Col md="12"><FieldGroup label="Description"><Input type="textarea" rows="3" value={editedSite.description || ""} onChange={(e) => setEditedSite({ ...editedSite, description: e.target.value })} style={{ ...inputStyle, resize: "none" }} /></FieldGroup></Col>
+            <Col md="6">
+              <FieldGroup label="Site Name *" error={formErrors.name}>
+                <Input type="text" value={editedSite.name || ""} onChange={(e) => setEditedSite({ ...editedSite, name: e.target.value })} invalid={!!formErrors.name} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="6">
+              <FieldGroup label="Location *" error={formErrors.location}>
+                <Input type="text" value={editedSite.location || ""} onChange={(e) => setEditedSite({ ...editedSite, location: e.target.value })} invalid={!!formErrors.location} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="6">
+              <FieldGroup label="Start Date *" error={formErrors.startDate}>
+                <Input type="date" value={editedSite.startDate || ""} onChange={(e) => setEditedSite({ ...editedSite, startDate: e.target.value })} invalid={!!formErrors.startDate} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="6">
+              <FieldGroup label="Project Value (₹)">
+                <Input type="text" value={editedSite.projectValue || ""} onChange={(e) => setEditedSite({ ...editedSite, projectValue: e.target.value })} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="6">
+              <FieldGroup label="Budget (₹)">
+                <Input type="number" value={editedSite.budget || 0} onChange={(e) => setEditedSite({ ...editedSite, budget: Number(e.target.value) })} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="6">
+              <FieldGroup label="Completion (%)">
+                <Input type="number" min="0" max="100" value={editedSite.completion || 0} onChange={(e) => setEditedSite({ ...editedSite, completion: Number(e.target.value) })} style={inputStyle} />
+              </FieldGroup>
+            </Col>
+            <Col md="12">
+              <FieldGroup label="Description">
+                <Input type="textarea" rows="3" value={editedSite.description || ""} onChange={(e) => setEditedSite({ ...editedSite, description: e.target.value })} style={{ ...inputStyle, resize: "none" }} />
+              </FieldGroup>
+            </Col>
           </Row>
+
           <SectionLabel icon="image" label="Cover Image" />
-          <FieldGroup label="Image URL"><Input type="text" value={editedSite.image || ""} onChange={(e) => setEditedSite({ ...editedSite, image: e.target.value })} style={inputStyle} /></FieldGroup>
-          {editedSite.image && <div style={{ marginBottom: "16px" }}><img src={editedSite.image} alt="preview" style={{ height: "80px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }} onError={e => e.target.style.display = "none"} /></div>}
+          <FieldGroup label="Image URL">
+            <Input type="text" value={editedSite.image || ""} onChange={(e) => setEditedSite({ ...editedSite, image: e.target.value })} style={inputStyle} />
+            <small style={{ color: "#aaa", fontSize: "11px" }}>Enter image URL or leave as is</small>
+          </FieldGroup>
+          {editedSite.image && (
+            <div style={{ marginBottom: "16px" }}>
+              <img src={editedSite.image} alt="preview"
+                style={{ height: "80px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }}
+                onError={e => e.target.style.display = "none"} />
+            </div>
+          )}
+
           <SectionLabel icon="users" label="Assign Staff" />
           <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-            <Input type="text" placeholder="Enter staff name, press Enter or Add" value={staffInput} onChange={(e) => setStaffInput(e.target.value)} onKeyPress={(e) => e.key === "Enter" && handleAddStaff()} style={inputStyle} />
+            <Input type="text" placeholder="Enter staff name, press Enter or Add"
+              value={staffInput} onChange={(e) => setStaffInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleAddStaff()}
+              style={inputStyle}
+            />
             <BrandBtn outline onClick={handleAddStaff} style={{ flexShrink: 0 }}>+ Add</BrandBtn>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginBottom: "4px" }}>
-            {editedSite.staffAssigned?.map((s, i) => <span key={i} style={{ ...staffPillStyle, cursor: "pointer" }} onClick={() => handleRemoveStaff(s)}>{s} <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span></span>)}
-            {!editedSite.staffAssigned?.length && <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>No staff added yet</span>}
+            {editedSite.staffAssigned?.map((s, i) => (
+              <span key={i} style={{ ...staffPillStyle, cursor: "pointer" }} onClick={() => handleRemoveStaff(s)}>
+                {s} <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
+              </span>
+            ))}
+            {!editedSite.staffAssigned?.length && (
+              <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>No staff added yet</span>
+            )}
           </div>
+
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0" }}>
-            <button onClick={() => { setEditModal(false); setFormErrors({}); }} style={{ background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0", padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}>Cancel</button>
-            <BrandBtn onClick={handleEditSite} disabled={savingEdit}>{savingEdit ? <><Spinner size="sm" /> Saving…</> : <><Icon name="check" /> Save Changes</>}</BrandBtn>
+            <button
+              onClick={() => { setEditModal(false); setFormErrors({}); }}
+              style={{ background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0", padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+            <BrandBtn onClick={handleEditSite} disabled={savingEdit}>
+              {savingEdit ? <><Spinner size="sm" /> Saving…</> : <><Icon name="check" /> Save Changes</>}
+            </BrandBtn>
           </div>
         </ModalBody>
       </Modal>
@@ -783,8 +1070,16 @@ const SectionDivider = ({ title, children }) => (
 
 const UploadBtn = ({ id, label, accept, uploading, onChange }) => (
   <>
-    <button onClick={() => document.getElementById(id).click()} disabled={uploading}
-      style={{ background: BRAND, color: "#fff", border: "none", padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1, display: "flex", alignItems: "center", gap: "6px" }}>
+    <button
+      onClick={() => document.getElementById(id).click()}
+      disabled={uploading}
+      style={{
+        background: BRAND, color: "#fff", border: "none",
+        padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
+        cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1,
+        display: "flex", alignItems: "center", gap: "6px",
+      }}
+    >
       {label}
     </button>
     <input id={id} type="file" accept={accept} multiple style={{ display: "none" }} onChange={onChange} disabled={uploading} />
@@ -804,7 +1099,10 @@ const ImageCard = ({ img, idx, deletingItem, onView, onDelete }) => (
 );
 
 const EmptyState = ({ text }) => (
-  <div style={{ padding: "24px", background: "#fafafa", borderRadius: "10px", border: "1px dashed #ddd", textAlign: "center", color: "#aaa", fontSize: "14px" }}>{text}</div>
+  <div style={{ padding: "24px", background: "#fafafa", borderRadius: "10px", border: "1px dashed #ddd", textAlign: "center", color: "#aaa", fontSize: "14px" }}>
+    {text}
+  </div>
 );
 
 export default SiteDetail;
+

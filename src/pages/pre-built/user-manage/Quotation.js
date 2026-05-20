@@ -75,8 +75,7 @@ const S = {
   }),
 };
 
-// ─── QuotationForm — defined OUTSIDE the parent so React never remounts it ────
-//     Remounting on every render is the root cause of inputs losing focus.
+// ─── QuotationForm — Enhanced with boxed item entry and labels ────────────────
 const QuotationForm = ({
   formData,
   setFormData,
@@ -91,7 +90,8 @@ const QuotationForm = ({
   isEditMode,
 }) => (
   <div className="mt-4">
-    <h6 className="mb-3">Customer Details</h6>
+    {/* Customer Details */}
+    {/* <h6 className="mb-3">Customer Details</h6> */}
     <div className="row gy-3 mb-4">
       {[
         { label: "Client Name *", field: "name", type: "text", placeholder: "Enter client name", col: "col-md-6" },
@@ -132,42 +132,58 @@ const QuotationForm = ({
       </div>
     </div>
 
-    <h6 className="mb-3">Items</h6>
-    <div className="row g-2 mb-3">
-      <div className="col-md-5">
-        <input
-          className="form-control"
-          type="text"
-          value={newItem.name}
-          onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
-          placeholder="Item name"
-        />
-      </div>
-      <div className="col-md-3">
-        <input
-          className="form-control"
-          type="number"
-          value={newItem.price}
-          onChange={(e) => setNewItem((p) => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-          placeholder="Price"
-        />
-      </div>
-      <div className="col-md-2">
-        <input
-          className="form-control"
-          type="number"
-          value={newItem.quantity}
-          onChange={(e) => setNewItem((p) => ({ ...p, quantity: parseInt(e.target.value) || 1 }))}
-          placeholder="Qty"
-        />
-      </div>
-      <div className="col-md-2">
-        <Button color="primary" onClick={handleAddItem} block>
-          <Icon name="plus" /> Add
-        </Button>
+    {/* Item Entry - Boxed Section with Labels */}
+    <h6 className="mb-2 mt-2">Items</h6>
+    <div
+      className="item-entry-box"
+      style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: "12px",
+        padding: "1rem",
+        background: "#fafcff",
+        marginBottom: "1.5rem",
+      }}
+    >
+      <div className="row g-3 align-items-end">
+        <div className="col-md-5">
+          <label className="form-label">Item Name</label>
+          <input
+            className="form-control"
+            type="text"
+            value={newItem.name}
+            onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
+            placeholder="e.g., Cement, Steel, Labour"
+          />
+        </div>
+        <div className="col-md-3">
+          <label className="form-label">Price (₹)</label>
+          <input
+            className="form-control"
+            type="number"
+            value={newItem.price}
+            onChange={(e) => setNewItem((p) => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+            placeholder="Price per unit"
+          />
+        </div>
+        <div className="col-md-2">
+          <label className="form-label">Quantity</label>
+          <input
+            className="form-control"
+            type="number"
+            value={newItem.quantity}
+            onChange={(e) => setNewItem((p) => ({ ...p, quantity: parseInt(e.target.value) || 1 }))}
+            placeholder="Qty"
+          />
+        </div>
+        <div className="col-md-2">
+          <Button color="primary" onClick={handleAddItem} block style={{ marginTop: "0" }}>
+            <Icon name="plus" /> Add
+          </Button>
+        </div>
       </div>
     </div>
 
+    {/* Existing Item List */}
     {formData.lineItems.length > 0 && (
       <div className="table-responsive mb-4">
         <table className="table table-bordered table-sm">
@@ -212,7 +228,8 @@ const QuotationForm = ({
       </div>
     )}
 
-    <div className="row gy-3">
+    {/* Discount, Status, Notes */}
+    <div className="row gy-3 mb-4">
       <div className="col-md-6">
         <FormGroup>
           <label className="form-label">Discount (₹)</label>
@@ -255,6 +272,7 @@ const QuotationForm = ({
       </div>
     </div>
 
+    {/* Totals Box */}
     <div style={S.totalsBox}>
       <div className="d-flex justify-content-between mb-1">
         <span>Subtotal:</span>
@@ -272,6 +290,7 @@ const QuotationForm = ({
       </div>
     </div>
 
+    {/* Action Buttons */}
     <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2 mt-4">
       <li>
         <Button style={S.saveBtn} size="md" onClick={saveQuotation}>
@@ -827,8 +846,8 @@ const Quotation = () => {
                         <tr key={idx}>
                           <td>{idx + 1}</td>
                           <td>{item.name}</td>
-                          <td className="text-center">₹ {item.quantity}</td>
-                          <td className="text-right">{item.price.toLocaleString()}</td>
+                          <td className="text-center">₹ {item.price}</td>
+                          <td className="text-right">{item.quantity}</td>
                           <td className="text-right">₹{(item.price * item.quantity).toLocaleString()}</td>
                         </tr>
                       ))}
