@@ -3,6 +3,7 @@ import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 import { findUpper } from "../../../utils/Utils";
 import { errorToast, successToast, warningToast } from "../../../utils/toaster";
+import axios from "axios";
 
 import {
   FormGroup,
@@ -25,7 +26,6 @@ import {
   Row,
   Col,
   UserAvatar,
-  PaginationComponent,
   DataTable,
   DataTableBody,
   DataTableHead,
@@ -33,67 +33,13 @@ import {
   DataTableItem,
   Button,
   RSelect,
-  TooltipComponent,
-  BlockContent,
 } from "../../../components/Component";
-import { useForm } from "react-hook-form";
-import CreatableSelect from "react-select/creatable";
-
-// ---------- DUMMY DATA (replace with real API later) ----------
-const dummyStockItems = [
-  {
-    id: "1",
-    itemName: "Cement Bag",
-    itemCode: "CMT001",
-    quantity: 500,
-    price: 320,
-    unit: "bag",
-    weight: "50 kg",
-    assignedTo: [],
-  },
-  {
-    id: "2",
-    itemName: "Steel Rod 12mm",
-    itemCode: "STL012",
-    quantity: 200,
-    price: 5800,
-    unit: "piece",
-    weight: "12 kg",
-    assignedTo: [],
-  },
-  {
-    id: "3",
-    itemName: "Brick",
-    itemCode: "BRK001",
-    quantity: 10000,
-    price: 8,
-    unit: "piece",
-    weight: "2.5 kg",
-    assignedTo: [],
-  },
-  {
-    id: "4",
-    itemName: "Paint (White) 5L",
-    itemCode: "PNT001",
-    quantity: 80,
-    price: 1250,
-    unit: "can",
-    weight: "5 L",
-    assignedTo: [],
-  },
-];
-
-const dummySites = [
-  { id: "s1", name: "Downtown Office Complex" },
-  { id: "s2", name: "Riverside Residential Tower" },
-  { id: "s3", name: "Greenfield Industrial Park" },
-];
 
 const ProductsListCompact = () => {
   // ---------- State ----------
   const [stockItems, setStockItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [sites, setSites] = useState([]);
+  const [sites, setSites] = useState([]); // Real projects from API
   const [searchText, setSearchText] = useState("");
   const [onSearch, setOnSearch] = useState(false);
   const searchRef = useRef(null);
@@ -112,52 +58,95 @@ const ProductsListCompact = () => {
   const [assignQuantity, setAssignQuantity] = useState(1);
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Form data for add/edit
   const [formData, setFormData] = useState({
-    itemName: "",
-    itemCode: "",
+    name: "",
+    category: "",
     quantity: "",
-    price: "",
     unit: "",
-    weight: "",
+    unitPrice: "",
+    supplier: "",
+    minStockLevel: "",
+    location: "",
+    description: "",
   });
 
-  // ---------- Load dummy data ----------
+  // ---------- API Calls ----------
+  const fetchInventory = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/inventory`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      const items = res.data.data || [];
+      setStockItems(items);
+      setFilteredItems(items);
+    } catch (error) {
+      console.error("Failed to fetch inventory:", error);
+      errorToast("Failed to load inventory data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSites = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKENDURL}/api/projects`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      const projects = res.data.data || [];
+      // Only active projects
+      const activeProjects = projects.filter(p => p.status === "active");
+      setSites(activeProjects.map(p => ({ id: p._id, name: p.name })));
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+      errorToast("Failed to load sites list");
+      setSites([]);
+    }
+  };
+
   useEffect(() => {
-    // Simulate API fetch
-    setStockItems(dummyStockItems);
-    setFilteredItems(dummyStockItems);
-    setSites(dummySites);
+    fetchInventory();
+    fetchSites();
   }, []);
 
-  // Filtering and sorting
+  // Filter and sort
   useEffect(() => {
     let filtered = [...stockItems];
     if (searchText.trim()) {
       const term = searchText.toLowerCase();
       filtered = filtered.filter(
         (item) =>
-          item.itemName.toLowerCase().includes(term) ||
-          item.itemCode.toLowerCase().includes(term)
+          item.name.toLowerCase().includes(term) ||
+          item.category.toLowerCase().includes(term) ||
+          (item.supplier && item.supplier.toLowerCase().includes(term))
       );
     }
-    // Sorting
     if (sort === "asc") {
-      filtered.sort((a, b) => a.itemName.localeCompare(b.itemName));
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      filtered.sort((a, b) => b.itemName.localeCompare(a.itemName));
+      filtered.sort((a, b) => b.name.localeCompare(a.name));
     }
     setFilteredItems(filtered);
     setCurrentPage(1);
   }, [searchText, stockItems, sort]);
 
-  // ---------- Stats ----------
+  // Stats
   const totalItems = stockItems.length;
   const totalQuantity = stockItems.reduce((sum, i) => sum + i.quantity, 0);
-  const lowStockItems = stockItems.filter((i) => i.quantity < 10).length;
+  const lowStockItems = stockItems.filter(
+    (i) => i.status === "low-stock" || i.status === "critical"
+  ).length;
 
-  // ---------- Pagination ----------
+  // Pagination
   const indexOfLast = currentPage * itemPerPage;
   const indexOfFirst = indexOfLast - itemPerPage;
   const currentItems = filteredItems.slice(indexOfFirst, indexOfLast);
@@ -167,69 +156,130 @@ const ProductsListCompact = () => {
   // ---------- Add / Edit / Delete ----------
   const resetForm = () => {
     setFormData({
-      itemName: "",
-      itemCode: "",
+      name: "",
+      category: "",
       quantity: "",
-      price: "",
       unit: "",
-      weight: "",
+      unitPrice: "",
+      supplier: "",
+      minStockLevel: "",
+      location: "",
+      description: "",
     });
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.itemName || !formData.itemCode || !formData.quantity || !formData.price) {
-      warningToast("Please fill required fields");
+    if (!formData.name || !formData.category || !formData.quantity || !formData.unit) {
+      warningToast("Please fill required fields (Name, Category, Quantity, Unit)");
       return;
     }
-    const newItem = {
-      id: Date.now().toString(),
-      ...formData,
-      quantity: parseInt(formData.quantity),
-      price: parseFloat(formData.price),
-      assignedTo: [],
-    };
-    setStockItems([newItem, ...stockItems]);
-    successToast("Stock item added");
-    setModalAdd(false);
-    resetForm();
+    setLoading(true);
+    try {
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        quantity: parseInt(formData.quantity),
+        unit: formData.unit,
+        unitPrice: parseFloat(formData.unitPrice) || 0,
+        supplier: formData.supplier || "Unknown",
+        minStockLevel: parseInt(formData.minStockLevel) || 0,
+        location: formData.location || "Unassigned",
+        description: formData.description || "",
+      };
+      const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/inventory`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      const newItem = res.data.data;
+      setStockItems([newItem, ...stockItems]);
+      successToast("Stock item added");
+      setModalAdd(false);
+      resetForm();
+    } catch (error) {
+      console.error(error);
+      errorToast("Failed to add item");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!selectedItem) return;
-    const updated = stockItems.map((item) =>
-      item.id === selectedItem.id ? { ...item, ...formData, quantity: parseInt(formData.quantity), price: parseFloat(formData.price) } : item
-    );
-    setStockItems(updated);
-    successToast("Item updated");
-    setModalEdit(false);
-    resetForm();
+    setLoading(true);
+    try {
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        quantity: parseInt(formData.quantity),
+        unit: formData.unit,
+        unitPrice: parseFloat(formData.unitPrice),
+        supplier: formData.supplier,
+        minStockLevel: parseInt(formData.minStockLevel),
+        location: formData.location,
+        description: formData.description,
+      };
+      const res = await axios.put(`${process.env.REACT_APP_BACKENDURL}/api/inventory/${selectedItem._id}`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      const updatedItem = res.data.data;
+      setStockItems(stockItems.map(item => (item._id === updatedItem._id ? updatedItem : item)));
+      successToast("Item updated");
+      setModalEdit(false);
+      resetForm();
+    } catch (error) {
+      console.error(error);
+      errorToast("Failed to update item");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openEditModal = (item) => {
     setSelectedItem(item);
     setFormData({
-      itemName: item.itemName,
-      itemCode: item.itemCode,
+      name: item.name,
+      category: item.category,
       quantity: item.quantity,
-      price: item.price,
-      unit: item.unit || "",
-      weight: item.weight || "",
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      supplier: item.supplier,
+      minStockLevel: item.minStockLevel,
+      location: item.location,
+      description: item.description,
     });
     setModalEdit(true);
   };
 
-  const handleDelete = () => {
-    if (deleteItem) {
-      setStockItems(stockItems.filter((i) => i.id !== deleteItem.id));
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    setLoading(true);
+    try {
+      await axios.delete(`${process.env.REACT_APP_BACKENDURL}/api/inventory/${deleteItem._id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      setStockItems(stockItems.filter(i => i._id !== deleteItem._id));
       successToast("Item deleted");
       setDeleteModal(false);
       setDeleteItem(null);
+    } catch (error) {
+      console.error(error);
+      errorToast("Failed to delete item");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ---------- Site Assignment (decrease stock) ----------
+  // ---------- Assign to Site ----------
   const openAssignModal = (item) => {
     setSelectedItem(item);
     setAssignSiteId("");
@@ -237,49 +287,54 @@ const ProductsListCompact = () => {
     setModalAssign(true);
   };
 
-  const handleAssignSubmit = () => {
+  const handleAssignSubmit = async () => {
     if (!assignSiteId || assignQuantity <= 0) {
-      warningToast("Select site and valid quantity");
+      warningToast("Select a site and valid quantity");
       return;
     }
-    const site = sites.find((s) => s.id === assignSiteId);
-    if (!site) return;
+    const site = sites.find(s => s.id === assignSiteId);
+    if (!site) {
+      warningToast("Selected site not found");
+      return;
+    }
     if (assignQuantity > selectedItem.quantity) {
-      warningToast("Not enough stock");
+      warningToast(`Not enough stock. Available: ${selectedItem.quantity} ${selectedItem.unit}`);
       return;
     }
-
-    // Reduce stock quantity
-    const updatedItems = stockItems.map((item) =>
-      item.id === selectedItem.id
-        ? {
-            ...item,
-            quantity: item.quantity - assignQuantity,
-            assignedTo: [
-              ...item.assignedTo,
-              {
-                siteId: site.id,
-                siteName: site.name,
-                quantity: assignQuantity,
-                date: new Date().toISOString(),
-              },
-            ],
-          }
-        : item
-    );
-    setStockItems(updatedItems);
-    successToast(`${assignQuantity} ${selectedItem.unit || "unit"} assigned to ${site.name}`);
-    setModalAssign(false);
+    setLoading(true);
+    try {
+      const payload = {
+        quantity: assignQuantity,
+        site: site.name,
+        reason: `Assigned to ${site.name}`,
+        user: localStorage.getItem("userName") || "Admin",
+      };
+      const res = await axios.post(`${process.env.REACT_APP_BACKENDURL}/api/inventory/${selectedItem._id}/use`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          "session-token": localStorage.getItem("sessionToken"),
+        },
+      });
+      const updatedItem = res.data.data;
+      setStockItems(stockItems.map(item => (item._id === updatedItem._id ? updatedItem : item)));
+      successToast(`${assignQuantity} ${selectedItem.unit} assigned to ${site.name}`);
+      setModalAssign(false);
+    } catch (error) {
+      console.error(error);
+      errorToast(error.response?.data?.message || "Failed to assign material");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ---------- Helper for display ----------
-  const getStatusBadge = (qty) => {
-    if (qty === 0) return <span className="badge bg-danger">Out of Stock</span>;
-    if (qty < 10) return <span className="badge bg-warning text-dark">Low Stock</span>;
+  // ---------- Helper ----------
+  const getStatusBadge = (item) => {
+    if (item.quantity === 0) return <span className="badge bg-danger">Critical</span>;
+    if (item.quantity <= item.minStockLevel) return <span className="badge bg-warning text-dark">Low Stock</span>;
     return <span className="badge bg-success">In Stock</span>;
   };
 
-  // ---------- Search outside click ----------
+  // Search outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -310,10 +365,7 @@ const ProductsListCompact = () => {
               </BlockHeadContent>
               <BlockHeadContent>
                 <div className="toggle-wrap nk-block-tools-toggle">
-                  <Button
-                    className="btn-icon btn-trigger toggle-expand mr-n1"
-                    onClick={() => {}}
-                  >
+                  <Button className="btn-icon btn-trigger toggle-expand mr-n1" onClick={() => {}}>
                     <Icon name="menu-alt-r" />
                   </Button>
                   <div className="toggle-expand-content" style={{ display: "block" }}>
@@ -321,12 +373,11 @@ const ProductsListCompact = () => {
                       <li className="nk-block-tools-opt">
                         <Button
                           style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 6px"
-  }} 
+                            backgroundColor: "#644634",
+                            borderColor: "#800000",
+                            color: "#fff",
+                            padding: "6px 6px",
+                          }}
                           className="btn-icon"
                           onClick={() => {
                             resetForm();
@@ -346,7 +397,6 @@ const ProductsListCompact = () => {
 
         <Block>
           <Row>
-            {/* Main Content - Stock List */}
             <Col md="12">
               <DataTable className="card-stretch">
                 {/* Search Bar */}
@@ -440,7 +490,7 @@ const ProductsListCompact = () => {
                           autoFocus={onSearch}
                           type="text"
                           className="border-transparent form-focus-none form-control"
-                          placeholder="Search by item name or code"
+                          placeholder="Search by name, category or supplier"
                           value={searchText}
                           onChange={(e) => setSearchText(e.target.value)}
                         />
@@ -459,7 +509,7 @@ const ProductsListCompact = () => {
                       <span className="sub-text">Item Name</span>
                     </DataTableRow>
                     <DataTableRow size="sm">
-                      <span className="sub-text">Code</span>
+                      <span className="sub-text">Category</span>
                     </DataTableRow>
                     <DataTableRow size="sm">
                       <span className="sub-text">Quantity</span>
@@ -468,7 +518,7 @@ const ProductsListCompact = () => {
                       <span className="sub-text">Price (₹)</span>
                     </DataTableRow>
                     <DataTableRow size="sm">
-                      <span className="sub-text">Unit / Weight</span>
+                      <span className="sub-text">Unit / Supplier</span>
                     </DataTableRow>
                     <DataTableRow>
                       <span className="sub-text">Status</span>
@@ -478,37 +528,43 @@ const ProductsListCompact = () => {
                     </DataTableRow>
                   </DataTableHead>
 
-                  {currentItems.length > 0 ? (
+                  {loading && currentItems.length === 0 ? (
+                    <DataTableItem>
+                      <DataTableRow colSpan="7" className="text-center py-5">
+                        <span className="text-silent">Loading...</span>
+                      </DataTableRow>
+                    </DataTableItem>
+                  ) : currentItems.length > 0 ? (
                     currentItems.map((item) => (
-                      <DataTableItem key={item.id}>
+                      <DataTableItem key={item._id}>
                         <DataTableRow>
                           <div className="user-card">
                             <UserAvatar
-  className="xs"
-  text={findUpper(item.itemName)}
-  style={{
-    backgroundColor: "#644634",
-    color: "#fff"
-  }}
-/>
+                              className="xs"
+                              text={findUpper(item.name)}
+                              style={{
+                                backgroundColor: "#644634",
+                                color: "#fff",
+                              }}
+                            />
                             <div className="user-info ml-2">
-                              <span className="tb-lead">{item.itemName}</span>
+                              <span className="tb-lead">{item.name}</span>
                             </div>
                           </div>
                         </DataTableRow>
                         <DataTableRow size="sm">
-                          <span>{item.itemCode}</span>
+                          <span>{item.category}</span>
                         </DataTableRow>
                         <DataTableRow size="sm">
                           <span className="fw-bold">{item.quantity}</span>
                         </DataTableRow>
                         <DataTableRow size="md">
-                          <span className="text-primary fw-bold">₹ {item.price.toLocaleString()}</span>
+                          <span className="text-primary fw-bold">₹ {item.unitPrice.toLocaleString()}</span>
                         </DataTableRow>
                         <DataTableRow size="sm">
-                          <span>{item.unit ? `${item.unit} / ${item.weight}` : item.weight || "-"}</span>
+                          <span>{item.unit} / {item.supplier}</span>
                         </DataTableRow>
-                        <DataTableRow>{getStatusBadge(item.quantity)}</DataTableRow>
+                        <DataTableRow>{getStatusBadge(item)}</DataTableRow>
                         <DataTableRow className="nk-tb-col-tools">
                           <ul className="nk-tb-actions gx-1">
                             <li>
@@ -550,7 +606,7 @@ const ProductsListCompact = () => {
 
                 {/* Pagination */}
                 <div className="card-inner">
-                  {currentItems.length > 0 ? (
+                  {currentItems.length > 0 && (
                     <div className="d-flex justify-content-center align-items-center">
                       <button
                         className="btn btn-icon btn-sm btn-outline-light mx-1"
@@ -583,8 +639,6 @@ const ProductsListCompact = () => {
                         <em className="icon ni ni-chevron-right" />
                       </button>
                     </div>
-                  ) : (
-                    <div className="text-center text-silent">No data found</div>
                   )}
                 </div>
               </DataTable>
@@ -592,9 +646,9 @@ const ProductsListCompact = () => {
           </Row>
         </Block>
 
-        {/* ---------- ADD MODAL ---------- */}
+        {/* ADD MODAL */}
         <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} centered size="lg">
-          <ModalBody style={{ maxHeight: "80vh", overflowY: "auto" }}>
+          <ModalBody style={{ maxHeight: "90vh", overflowY: "auto" }}>
             <a href="#close" className="close" onClick={() => setModalAdd(false)}>
               <Icon name="cross-sm" />
             </a>
@@ -605,19 +659,19 @@ const ProductsListCompact = () => {
                   <label className="form-label">Item Name <span className="text-danger">*</span></label>
                   <input
                     className="form-control"
-                    value={formData.itemName}
-                    onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Item Code <span className="text-danger">*</span></label>
+                  <label className="form-label">Category <span className="text-danger">*</span></label>
                   <input
                     className="form-control"
-                    value={formData.itemCode}
-                    onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })}
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -636,48 +690,80 @@ const ProductsListCompact = () => {
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <label className="form-label">Price (₹) <span className="text-danger">*</span></label>
+                  <label className="form-label">Unit <span className="text-danger">*</span></label>
                   <input
-                    type="number"
                     className="form-control"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     required
                   />
                 </FormGroup>
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <label className="form-label">Unit (e.g., bag, piece)</label>
+                  <label className="form-label">Unit Price (₹)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.unitPrice}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Supplier</label>
                   <input
                     className="form-control"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Min Stock Level</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.minStockLevel}
+                    onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
                   />
                 </FormGroup>
               </Col>
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Weight / Size (e.g., 50 kg, 5 L)</label>
+                  <label className="form-label">Storage Location</label>
                   <input
                     className="form-control"
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   />
                 </FormGroup>
               </Col>
               <Col md="12">
-                <Button color="primary" type="submit">
-                  Add Item
+                <FormGroup>
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="12">
+                <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
+                  {loading ? "Adding..." : "Add Item"}
                 </Button>
               </Col>
             </Form>
           </ModalBody>
         </Modal>
 
-        {/* ---------- EDIT MODAL ---------- */}
+        {/* EDIT MODAL */}
         <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} centered size="lg">
-          <ModalBody style={{ maxHeight: "80vh", overflowY: "auto" }}>
+          <ModalBody style={{ maxHeight: "90vh", overflowY: "auto" }}>
             <a href="#close" className="close" onClick={() => setModalEdit(false)}>
               <Icon name="cross-sm" />
             </a>
@@ -688,19 +774,19 @@ const ProductsListCompact = () => {
                   <label className="form-label">Item Name</label>
                   <input
                     className="form-control"
-                    value={formData.itemName}
-                    onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </FormGroup>
               </Col>
               <Col md="6">
                 <FormGroup>
-                  <label className="form-label">Item Code</label>
+                  <label className="form-label">Category</label>
                   <input
                     className="form-control"
-                    value={formData.itemCode}
-                    onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })}
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     required
                   />
                 </FormGroup>
@@ -719,52 +805,78 @@ const ProductsListCompact = () => {
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <label className="form-label">Price (₹)</label>
+                  <label className="form-label">Unit</label>
                   <input
-                    type="number"
                     className="form-control"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     required
                   />
                 </FormGroup>
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <label className="form-label">Unit</label>
+                  <label className="form-label">Unit Price (₹)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.unitPrice}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Supplier</label>
                   <input
                     className="form-control"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="6">
+                <FormGroup>
+                  <label className="form-label">Min Stock Level</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formData.minStockLevel}
+                    onChange={(e) => setFormData({ ...formData, minStockLevel: e.target.value })}
                   />
                 </FormGroup>
               </Col>
               <Col md="12">
                 <FormGroup>
-                  <label className="form-label">Weight / Size</label>
+                  <label className="form-label">Storage Location</label>
                   <input
                     className="form-control"
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   />
                 </FormGroup>
               </Col>
               <Col md="12">
-                <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }}  type="submit">
-                  Update Item
+                <FormGroup>
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </FormGroup>
+              </Col>
+              <Col md="12">
+                <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
+                  {loading ? "Updating..." : "Update Item"}
                 </Button>
               </Col>
             </Form>
           </ModalBody>
         </Modal>
 
-        {/* ---------- ASSIGN TO SITE MODAL ---------- */}
+        {/* ASSIGN TO SITE MODAL (uses real projects) */}
         <Modal isOpen={modalAssign} toggle={() => setModalAssign(false)} centered>
           <ModalBody>
             <a href="#close" className="close" onClick={() => setModalAssign(false)}>
@@ -773,10 +885,11 @@ const ProductsListCompact = () => {
             <h5 className="title mb-3">Assign to Site</h5>
             <Form>
               <FormGroup>
-                <label>Site</label>
+                <label>Select Project / Site</label>
                 <RSelect
                   options={sites.map((s) => ({ label: s.name, value: s.id }))}
-                  onChange={(opt) => setAssignSiteId(opt?.value)}
+                  onChange={(opt) => setAssignSiteId(opt?.value || "")}
+                  placeholder="Choose a site..."
                 />
               </FormGroup>
               <FormGroup>
@@ -789,24 +902,22 @@ const ProductsListCompact = () => {
                   min="1"
                   max={selectedItem?.quantity}
                 />
-                <small className="text-muted">Available: {selectedItem?.quantity || 0}</small>
+                <small className="text-muted">Available: {selectedItem?.quantity || 0} {selectedItem?.unit}</small>
               </FormGroup>
               <div className="mt-3">
-                <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "6px 20px"
-  }}  onClick={handleAssignSubmit}>
-                  Assign
+                <Button
+                  style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }}
+                  onClick={handleAssignSubmit}
+                  disabled={loading}
+                >
+                  {loading ? "Assigning..." : "Assign"}
                 </Button>
               </div>
             </Form>
           </ModalBody>
         </Modal>
 
-        {/* ---------- DELETE CONFIRMATION ---------- */}
+        {/* DELETE CONFIRMATION MODAL */}
         <Modal isOpen={deleteModal} toggle={() => setDeleteModal(false)} className="modal-dialog-centered">
           <div className="modal-header">
             <h5 className="modal-title">Confirm Delete</h5>
@@ -815,40 +926,24 @@ const ProductsListCompact = () => {
             </button>
           </div>
           <div className="modal-body">
-            Are you sure you want to delete <strong>{deleteItem?.itemName}</strong>?
+            Are you sure you want to delete <strong>{deleteItem?.name}</strong>?
           </div>
           <div className="modal-footer">
             <Button color="secondary" onClick={() => setDeleteModal(false)}>
               Cancel
             </Button>
-            <Button style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-   
-    color: "#fff",
-    padding: "8px 20px"
-  }} onClick={handleDelete}>
-              Delete
+            <Button
+              style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "8px 20px" }}
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              {loading ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </Modal>
       </Content>
 
       <style jsx>{`
-        .product-card {
-          background: #ffffff;
-          border: 1px solid #e5e9f2;
-          border-radius: 8px;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          height: 90%;
-          margin: 8px;
-          padding: 5px;
-        }
-        .product-card:hover {
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-          transform: translateY(-2px);
-        }
         .badge {
           padding: 4px 8px;
           border-radius: 20px;
