@@ -1,4 +1,4 @@
-// SiteManagement.js
+// SiteManagement.js (Fixed version)
 import React, { useState, useEffect } from "react";
 import Head from "../../../layout/head/Head";
 import Content from "../../../layout/content/Content";
@@ -195,230 +195,19 @@ const MetaRow = ({ icon, text }) => (
   </div>
 );
 
-/* ── Staff Assignment Component with Dropdown ── */
-const StaffAssignment = ({ assignedStaff, onAddStaff, onRemoveStaff }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [allStaff, setAllStaff] = useState([]);
-
-  // Fetch staff from backend on component mount
-  useEffect(() => {
-    fetchStaffList();
-  }, []);
-
-  const fetchStaffList = async () => {
-    const token = localStorage.getItem("token")
-    try {
-      setLoading(true);
-      const response = await axios.get(`${API_URL}/user`, {
-        headers : {
-          Authorization : `Bearer ${token}`
-        }
-      });
-      if (response.status === 200) {
-        console.log(response.data.data);
-      } else {
-        // Fallback dummy data if API fails
-        setAllStaff([
-          { _id: "1", name: "John Doe", email: "john@example.com", role: "Engineer" },
-          { _id: "2", name: "Jane Smith", email: "jane@example.com", role: "Architect" },
-          { _id: "3", name: "Mike Johnson", email: "mike@example.com", role: "Site Supervisor" },
-          { _id: "4", name: "Sarah Williams", email: "sarah@example.com", role: "Project Manager" },
-          { _id: "5", name: "David Brown", email: "david@example.com", role: "Safety Officer" },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error fetching staff:", error);
-      // Set dummy data if API fails
-      setAllStaff([
-        { _id: "1", name: "John Doe", email: "john@example.com", role: "Engineer" },
-        { _id: "2", name: "Jane Smith", email: "jane@example.com", role: "Architect" },
-        { _id: "3", name: "Mike Johnson", email: "mike@example.com", role: "Site Supervisor" },
-        { _id: "4", name: "Sarah Williams", email: "sarah@example.com", role: "Project Manager" },
-        { _id: "5", name: "David Brown", email: "david@example.com", role: "Safety Officer" },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    
-    if (value.trim()) {
-      // Filter staff based on search term
-      const filtered = allStaff.filter(staff =>
-        staff.name.toLowerCase().includes(value.toLowerCase()) ||
-        staff.email?.toLowerCase().includes(value.toLowerCase()) ||
-        staff.role?.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filtered.slice(0, 8)); // Limit to 8 suggestions
-      setShowDropdown(true);
-    } else {
-      setSuggestions([]);
-      setShowDropdown(false);
-    }
-  };
-
-  const handleSelectStaff = (staff) => {
-    if (!assignedStaff.some(s => s.name === staff.name)) {
-      onAddStaff(staff.name);
-    }
-    setSearchTerm("");
-    setShowDropdown(false);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && searchTerm.trim()) {
-      // Allow adding custom staff name not in the list
-      if (!assignedStaff.some(s => s.name === searchTerm.trim())) {
-        onAddStaff(searchTerm.trim());
-      }
-      setSearchTerm("");
-      setShowDropdown(false);
-      e.preventDefault();
-    }
-  };
-
-  return (
-    <div>
-      <div style={{ position: "relative" }}>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-          <div style={{ flex: 1, position: "relative" }}>
-            <Input
-              placeholder="Type staff name to search..."
-              value={searchTerm}
-              onChange={handleInputChange}
-              onFocus={() => searchTerm.trim() && setShowDropdown(true)}
-              onKeyPress={handleKeyPress}
-              style={inputStyle}
-            />
-            <Icon 
-              name="users" 
-              style={{ 
-                position: "absolute", 
-                right: "12px", 
-                top: "50%", 
-                transform: "translateY(-50%)",
-                color: "#aaa",
-                fontSize: "14px",
-                pointerEvents: "none"
-              }} 
-            />
-          </div>
-          <BrandBtn 
-            onClick={() => {
-              if (searchTerm.trim()) {
-                if (!assignedStaff.some(s => s.name === searchTerm.trim())) {
-                  onAddStaff(searchTerm.trim());
-                }
-                setSearchTerm("");
-                setShowDropdown(false);
-              }
-            }} 
-            outline 
-            style={{ whiteSpace: "nowrap", flexShrink: 0 }}
-          >
-            + Add
-          </BrandBtn>
-        </div>
-
-        {/* Dropdown Suggestions */}
-        {showDropdown && suggestions.length > 0 && (
-          <div style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            background: "#fff",
-            border: "1px solid #e8e4e0",
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            zIndex: 1000,
-            maxHeight: "250px",
-            overflowY: "auto",
-            marginTop: "4px"
-          }}>
-            {suggestions.map(staff => (
-              <div
-                key={staff._id}
-                onClick={() => handleSelectStaff(staff)}
-                style={{
-                  padding: "10px 12px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #f0ece9",
-                  transition: "background 0.15s",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "#fdfaf8"}
-                onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-              >
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: "13px", color: "#333" }}>{staff.name}</div>
-                  {staff.role && (
-                    <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
-                      {staff.role} {staff.email && `• ${staff.email}`}
-                    </div>
-                  )}
-                </div>
-                <Icon name="plus" style={{ fontSize: "12px", color: BRAND }} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showDropdown && suggestions.length === 0 && searchTerm.trim() && (
-          <div style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            background: "#fff",
-            border: "1px solid #e8e4e0",
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            zIndex: 1000,
-            padding: "12px",
-            textAlign: "center",
-            marginTop: "4px"
-          }}>
-            <span style={{ fontSize: "12px", color: "#888" }}>
-              No staff found. Press "Add" or Enter to add "{searchTerm}"
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Display assigned staff badges */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginTop: "12px" }}>
-        {assignedStaff.map((staff, i) => (
-          <span 
-            key={i} 
-            style={staffPillStyle} 
-            onClick={() => onRemoveStaff(staff.name)}
-          >
-            {staff.name || staff}
-            <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
-          </span>
-        ))}
-        {!assignedStaff.length && (
-          <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>
-            No staff assigned
-          </span>
-        )}
-      </div>
-      
-    </div>
-  );
+/* ── Add Site Modal – with Date Picker, Image Upload ── */
+const EMPTY_SITE = { 
+  name: "", 
+  location: "", 
+  startDate: "", 
+  staffAssigned: [], 
+  description: "", 
+  projectValue: "", 
+  image: null, // Changed from "" to null to track if image is selected
+  imagePreview: "", // Separate state for preview
+  completion: 0, 
+  budget: 0 
 };
-
-/* ── Add Site Modal – with Date Picker, Image Upload and Staff Dropdown ── */
-const EMPTY_SITE = { name: "", location: "", startDate: "", staffAssigned: [], description: "", projectValue: "", image: "", completion: 0, budget: 0 };
 
 const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   const [form, setForm] = useState(EMPTY_SITE);
@@ -427,11 +216,13 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Store the actual file
 
   const reset = () => { 
     setForm(EMPTY_SITE); 
     setErrors({}); 
     setImagePreview("");
+    setImageFile(null);
     setSelectedDate(null);
   };
 
@@ -452,17 +243,7 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
     }
   };
 
-  const handleAddStaff = (staffName) => {
-    if (staffName && !form.staffAssigned.includes(staffName)) {
-      set("staffAssigned", [...form.staffAssigned, staffName]);
-    }
-  };
-
-  const handleRemoveStaff = (staffName) => {
-    set("staffAssigned", form.staffAssigned.filter(s => s !== staffName));
-  };
-
-  const handleImageUpload = async (e) => {
+  const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -476,26 +257,18 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
       return;
     }
 
-    setUploadingImage(true);
+    // Store the file for later upload
+    setImageFile(file);
     
-    const uploadFormData = new FormData();
-    uploadFormData.append('image', file);
-
-    try {
-      const response = await axios.post(`${API_URL}/upload/image`, uploadFormData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (response.data.success) {
-        set("image", response.data.data.url);
-        setImagePreview(response.data.data.url);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload image. Please try again.');
-    } finally {
-      setUploadingImage(false);
-    }
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    
+    // Set image in form to trigger validation if needed
+    set("image", file.name);
   };
 
   const validate = () => {
@@ -510,16 +283,43 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   const submit = async () => {
     if (!validate()) return;
     setSubmitting(true);
+    
     try {
-      await onAdd({
-        ...form,
-        staffAssigned: form.staffAssigned.length ? form.staffAssigned : ["Not Assigned"],
-        image: form.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=250&fit=crop",
+      // Create FormData for multipart/form-data upload
+      const formData = new FormData();
+      formData.append('name', form.name.trim());
+      formData.append('location', form.location.trim());
+      formData.append('description', form.description || "");
+      formData.append('startDate', form.startDate);
+      formData.append('projectValue', form.projectValue || "");
+      formData.append('completion', form.completion || 0);
+      formData.append('budget', form.budget || 0);
+      formData.append('staffAssigned', JSON.stringify([]));
+      
+      // Append image if selected
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
+      const token = localStorage.getItem("token");
+      const response = await axios.post(`${API_URL}/projects`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token && { Authorization: `Bearer ${token}` })
+        }
       });
-      close();
+
+      if (response.data.success) {
+        await onAdd(response.data.data);
+        close();
+        // Show success message in parent component
+        window.dispatchEvent(new CustomEvent('projectAdded', { detail: { message: 'Project added successfully!' } }));
+      } else {
+        throw new Error(response.data.message || "Failed to add project");
+      }
     } catch (error) {
       console.error("Submit error:", error);
-      alert("Failed to add project. Please try again.");
+      alert(error.response?.data?.message || "Failed to add project. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -568,12 +368,24 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
         <Row>
           <Col md="6">
             <FieldGroup label="Site Name *" error={errors.name}>
-              <Input placeholder="e.g. Block B Tower" value={form.name} onChange={e => set("name", e.target.value)} invalid={!!errors.name} style={inputStyle} />
+              <Input 
+                placeholder="e.g. Block B Tower" 
+                value={form.name} 
+                onChange={e => set("name", e.target.value)} 
+                invalid={!!errors.name} 
+                style={inputStyle} 
+              />
             </FieldGroup>
           </Col>
           <Col md="6">
             <FieldGroup label="Location *" error={errors.location}>
-              <Input placeholder="City, State" value={form.location} onChange={e => set("location", e.target.value)} invalid={!!errors.location} style={inputStyle} />
+              <Input 
+                placeholder="City, State" 
+                value={form.location} 
+                onChange={e => set("location", e.target.value)} 
+                invalid={!!errors.location} 
+                style={inputStyle} 
+              />
             </FieldGroup>
           </Col>
           <Col md="6">
@@ -594,22 +406,48 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
           </Col>
           <Col md="6">
             <FieldGroup label="Project Value (₹)">
-              <Input placeholder="e.g. ₹15 Crore" value={form.projectValue} onChange={e => set("projectValue", e.target.value)} style={inputStyle} />
+              <Input 
+                placeholder="e.g. ₹15 Crore" 
+                value={form.projectValue} 
+                onChange={e => set("projectValue", e.target.value)} 
+                style={inputStyle} 
+              />
             </FieldGroup>
           </Col>
           <Col md="6">
             <FieldGroup label="Budget (₹)">
-              <Input type="number" placeholder="Numeric amount" value={form.budget || ""} onChange={e => set("budget", Number(e.target.value))} style={inputStyle} />
+              <Input 
+                type="number" 
+                placeholder="Numeric amount" 
+                value={form.budget || ""} 
+                onChange={e => set("budget", Number(e.target.value))} 
+                style={inputStyle} 
+              />
             </FieldGroup>
           </Col>
           <Col md="6">
             <FieldGroup label="Completion (%)">
-              <Input type="number" min="0" max="100" placeholder="0–100" value={form.completion || ""} onChange={e => set("completion", Number(e.target.value))} style={inputStyle} />
+              <Input 
+                type="number" 
+                min="0" 
+                max="100" 
+                placeholder="0–100" 
+                value={form.completion || ""} 
+                onChange={e => set("completion", Number(e.target.value))} 
+                style={inputStyle} 
+              />
             </FieldGroup>
           </Col>
           <Col md="12">
             <FieldGroup label="Description">
-              <Input type="textarea" rows="3" placeholder="Brief description of the project…" value={form.description} onChange={e => set("description", e.target.value)} style={{ ...inputStyle, resize: "none" }} />
+              <Input 
+                type="textarea" 
+                rows="3" 
+                placeholder="Brief description of the project…" 
+                value={form.description} 
+                onChange={e => set("description", e.target.value)} 
+                style={{ ...inputStyle, resize: "none" }} 
+              />
             </FieldGroup>
           </Col>
         </Row>
@@ -632,16 +470,21 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
               fontWeight: 500,
             }}>
               <Icon name="upload" />
-              {uploadingImage ? "Uploading..." : "Choose Image"}
+              {uploadingImage ? "Uploading..." : imageFile ? "Change Image" : "Choose Image"}
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
+                onChange={handleImageSelect}
+                disabled={uploadingImage || submitting}
                 style={{ display: "none" }}
               />
             </label>
             {uploadingImage && <Spinner size="sm" style={{ color: BRAND }} />}
+            {imageFile && (
+              <span style={{ fontSize: "12px", color: "#888" }}>
+                {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+              </span>
+            )}
           </div>
           <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "6px" }}>
             Upload a project cover image (will be stored in Cloudinary)
@@ -663,14 +506,6 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
             />
           </div>
         )}
-
-        {/* ── Section: Staff Assignment with Dropdown ── */}
-        <SectionLabel icon="users" label="Assign Staff" />
-        <StaffAssignment 
-          assignedStaff={form.staffAssigned.map(name => ({ name }))}
-          onAddStaff={handleAddStaff}
-          onRemoveStaff={handleRemoveStaff}
-        />
       </ModalBody>
 
       {/* ── Footer ── */}
@@ -681,9 +516,11 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
       }}>
         <button
           onClick={close}
+          disabled={submitting}
           style={{
             background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0",
-            padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: "pointer",
+            padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: submitting ? "not-allowed" : "pointer",
+            opacity: submitting ? 0.6 : 1,
           }}
         >
           Cancel
@@ -727,16 +564,6 @@ const inputStyle = {
   width: "100%",
 };
 
-const staffPillStyle = {
-  display: "inline-flex", alignItems: "center",
-  background: BRAND + "15", color: BRAND,
-  border: `1px solid ${BRAND}33`,
-  padding: "4px 12px", borderRadius: "20px",
-  fontSize: "12px", fontWeight: 600,
-  cursor: "pointer",
-  transition: "background 0.15s",
-};
-
 /* ── Main Page ── */
 const SiteManagement = () => {
   const [sites, setSites] = useState([]);
@@ -749,6 +576,15 @@ const SiteManagement = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const history = useHistory();
+
+  // Listen for project added events
+  useEffect(() => {
+    const handleProjectAdded = (e) => {
+      showSuccess(e.detail?.message || "Project added successfully!");
+    };
+    window.addEventListener('projectAdded', handleProjectAdded);
+    return () => window.removeEventListener('projectAdded', handleProjectAdded);
+  }, []);
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -767,9 +603,18 @@ const SiteManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      const r = await axios.get(`${API_URL}/projects`);
-      if (r.data.success) { setSites(r.data.data); setFilteredSites(r.data.data); }
+      const token = localStorage.getItem("token");
+      const r = await axios.get(`${API_URL}/projects`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (r.data.success) { 
+        setSites(r.data.data); 
+        setFilteredSites(r.data.data); 
+      } else {
+        setError(r.data.message || "Failed to load projects.");
+      }
     } catch (err) {
+      console.error("Fetch error:", err);
       setError(err.response?.data?.message || "Failed to load projects.");
     } finally {
       setLoading(false);
@@ -777,20 +622,28 @@ const SiteManagement = () => {
   };
 
   const handleAdd = async (siteData) => {
-    const r = await axios.post(`${API_URL}/projects`, siteData);
-    if (r.data.success) {
-      showSuccess("Project added successfully!");
-      await fetchProjects();
-    }
+    // The project is already created in the modal with the image
+    // Just refresh the list
+    await fetchProjects();
+    return Promise.resolve();
   };
 
   const handleDelete = async (projectId, projectName) => {
     if (!window.confirm(`Delete "${projectName}"? This will permanently remove all associated media and documents.`)) return;
     try {
       setDeleting(projectId);
-      const r = await axios.delete(`${API_URL}/projects/${projectId}`);
-      if (r.data.success) { showSuccess("Project deleted."); await fetchProjects(); }
+      const token = localStorage.getItem("token");
+      const r = await axios.delete(`${API_URL}/projects/${projectId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (r.data.success) { 
+        showSuccess("Project deleted."); 
+        await fetchProjects(); 
+      } else {
+        throw new Error(r.data.message || "Failed to delete project");
+      }
     } catch (err) {
+      console.error("Delete error:", err);
       showError(err.response?.data?.message || "Failed to delete project.");
     } finally {
       setDeleting(null);
