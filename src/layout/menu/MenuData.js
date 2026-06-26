@@ -37,11 +37,7 @@ const menu = [
   text: "Buying",
   active: false,
   subMenu: [
-    {
-      icon: "package",   // item icon
-      text: "Items",
-      link: "/Buying",
-    },
+  
     {
       icon: "clipboard",   // request icon
       text: "Material Request",
@@ -51,6 +47,11 @@ const menu = [
       icon: "file-text",   // order icon
       text: "Purchase Order",
       link: "/purchase-order",
+    },
+      {
+      icon: "package",   // item icon
+      text: "Items",
+      link: "/Buying",
     },
   ],
 },

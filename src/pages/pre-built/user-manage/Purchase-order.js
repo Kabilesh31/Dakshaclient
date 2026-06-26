@@ -438,8 +438,13 @@ const PurchaseOrderPage = () => {
     [suppliers]
   );
   
+  // FIXED: Use _id consistently for project options
   const projectOptions = useMemo(() => 
-    projects.map(p => ({ value: p.id, label: p.name })), 
+    projects.map(p => ({ 
+      value: p._id || p.id,  // Use _id as the value
+      label: p.name,
+      ...p 
+    })), 
     [projects]
   );
   
@@ -453,7 +458,7 @@ const PurchaseOrderPage = () => {
   
   // Selected objects for RSelect
   const selectedSupplier = supplierOptions.find(opt => opt.value === newOrder.supplierId) || null;
-  const selectedProject = projectOptions.find(opt => opt.value === newOrder.project) || null;
+  const selectedProject = projectOptions.find(opt => opt.value === newOrder.projectId) || null;
   const selectedModeOfPayment = modeOfPaymentOptions.find(opt => opt.value === newOrder.modeOfPayment) || modeOfPaymentOptions[0];
   
   // Autocomplete State
@@ -778,6 +783,7 @@ const PurchaseOrderPage = () => {
       supplierName: "", 
       costCenter: "", 
       project: "",
+      projectId: "",
       modeOfPayment: "Check", 
       termsOfPayment: "Net 30 Days", 
       requiredBy: "",
@@ -801,6 +807,25 @@ const PurchaseOrderPage = () => {
     setSuggestions([]);
     setActiveAutocompleteIndex(null);
     setActiveSuggestionIndex(-1);
+  };
+
+  // FIXED: Handle project selection correctly
+  const handleProjectChange = (selectedOption) => {
+    if (selectedOption) {
+      // The selected option already contains the project data
+      setNewOrder({
+        ...newOrder,
+        projectId: selectedOption.value, // This is the _id
+        project: selectedOption.label,    // This is the name
+      });
+    } else {
+      // Handle clearing the selection
+      setNewOrder({
+        ...newOrder,
+        projectId: "",
+        project: "",
+      });
+    }
   };
 
   const handleAddOrder = async () => {
@@ -848,10 +873,6 @@ const PurchaseOrderPage = () => {
       supplierAddress: selectedSupplier?.address || "",
       supplierContact: selectedSupplier?.contact || "",
     });
-  };
-
-  const handleProjectChange = (selectedOption) => {
-    setNewOrder({ ...newOrder, project: selectedOption?.value || "" });
   };
 
   const handleModeOfPaymentChange = (selectedOption) => {
@@ -1376,17 +1397,7 @@ const PurchaseOrderPage = () => {
                   <RSelect
                     options={projectOptions}
                     value={selectedProject}
-                    onChange={(e) => {
-                        const selectedProject = projects.find(
-                          (p) => p._id === e.target.value
-                        );
-
-                        setNewOrder({
-                          ...newOrder,
-                          projectId: selectedProject?._id || "",
-                          project: selectedProject?.name || "",
-                        });
-                      }}
+                    onChange={handleProjectChange}
                     placeholder="Select project"
                     isClearable
                     styles={selectStyles}

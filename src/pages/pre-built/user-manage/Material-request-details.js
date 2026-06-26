@@ -7,7 +7,7 @@ import Head from "../../../layout/head/Head";
 import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
 
 // API base URL – adjust to your environment
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = process.env.REACT_APP_BACKENDURL || "http://localhost:8000/api";
 
 /* ─────────────────────────────────────────────
    BUILD PRINT HTML
@@ -517,7 +517,7 @@ const MaterialRequestDetails = () => {
     const fetchRequest = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/material-requests/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/material-requests/${id}`);
         const result = await response.json();
         if (result.success) {
           setRequestData(result.data);
@@ -608,7 +608,7 @@ const MaterialRequestDetails = () => {
 
     setUploading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/material-requests/${id}/upload`, {
+      const response = await fetch(`${API_BASE_URL}/api/material-requests/${id}/upload`, {
         method: "POST",
         body: formData,
       });
@@ -635,7 +635,7 @@ const MaterialRequestDetails = () => {
     setDeletingId(publicId);
     try {
       const encodedPublicId = encodeURIComponent(publicId);
-      const response = await fetch(`${API_BASE_URL}/material-requests/${id}/attachment/${encodedPublicId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/material-requests/${id}/attachment/${encodedPublicId}`, {
         method: "DELETE",
       });
       const result = await response.json();

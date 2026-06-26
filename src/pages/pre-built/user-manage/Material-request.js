@@ -33,8 +33,8 @@ import {
   Spinner,
 } from "reactstrap";
 
-// API Base URL
-const API_BASE = "http://localhost:8000/api/material-requests";
+
+const API_BASE = `${process.env.REACT_APP_BACKENDURL}/api/material-requests`;
 
 // Dummy item database for autocomplete
 const dummyItemDatabase = [
