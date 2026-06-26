@@ -24,7 +24,7 @@ import {
 } from "reactstrap";
 
 // ---------- API BASE URL (change to your backend port) ----------
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+const API_BASE = process.env.REACT_APP_BACKENDURL || "http://localhost:8000/api";
 
 /* ---------- DUMMY ITEM DATABASE ---------- */
 const dummyItemDatabase = [
@@ -307,7 +307,7 @@ const PurchaseOrderDetails = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/purchase-orders/${id}`);
+      const response = await fetch(`${API_BASE}/api/purchase-orders/${id}`);
       const result = await response.json();
       if (result.success) {
         setOrderData(result.data);
@@ -451,7 +451,7 @@ const PurchaseOrderDetails = () => {
     
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE}/purchase-orders/${id}`, {
+      const response = await fetch(`${API_BASE}/api/purchase-orders/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
