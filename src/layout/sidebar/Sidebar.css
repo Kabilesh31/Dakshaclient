@@ -1,83 +1,65 @@
+/* Remove the gradient from the main sidebar */
 .nk-sidebar {
-  background: linear-gradient(180deg, #431b0c, #3a3c3d) !important; /* change to any color */
+  background: #000000 !important; /* Black background for the whole sidebar */
+  border: none !important; /* Remove any border */
+  border-right: none !important; /* Remove right border if any */
+  box-shadow: none !important; /* Remove any shadow that might look like a border */
 }
+
+/* Make the header (logo area) white */
+.nk-sidebar-head {
+  background: #ffffff !important; /* White background for logo section */
+  padding: 1rem 1.25rem;
+  border: none !important; /* Remove any border from header */
+  border-bottom: none !important; /* Remove bottom border from header */
+}
+
+/* Content area with your specified gradient */
+.nk-sidebar-content {
+  background: linear-gradient(135deg, #293b75 0%, #4f5a8f 50%, #39435e 100%) !important;
+  border: none !important; /* Remove any border */
+}
+
+/* Remove border from the entire sidebar element */
 .custom-sidebar {
-  background: linear-gradient(180deg, #0f172a, #020617);
+  background: #000000 !important;
+  border: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
 }
+
+/* Keep existing menu styles */
 .nk-sidebar .nk-menu-text {
-  color: #cbd5e1 !important; /* light gray */
+  color: #cbd5e1 !important;
 }
-/* Default text */
+
 .nk-sidebar .nk-menu-link {
   color: #cbd5e1;
 }
 
-/* 🔥 Hover text color */
-.nk-sidebar .nk-menu-link:hover .nk-menu-text {
-  color: #22c55e; /* change to your color */
-}
-
-/* 🔥 Hover icon color */
-.nk-sidebar .nk-menu-link:hover .nk-menu-icon {
-  color: #b6c391;
-}
-
-/* 🔥 Active menu text */
-.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text {
-  color: #38bdf8; /* active color */
-}
-
-/* 🔥 Active icon */
-.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
-  color: #38bdf8;
-}/* Default */
-.nk-sidebar .nk-menu-link .nk-menu-text {
-  color: #cbd5e1;
-}
-
-/* 🔥 Hover - TEXT */
-.nk-sidebar .nk-menu-link:hover .nk-menu-text {
-  color: #d0b519 !important;
-}
-
-/* 🔥 Hover - ICON */
-.nk-sidebar .nk-menu-link:hover .nk-menu-icon {
-  color: #d0b519 !important;
-}
-
-/* 🔥 Active - TEXT */
-.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text {
-  color: #f3d950 !important;
-}
-
-/* 🔥 Active - ICON */
-.nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
-  color: #f3d950 !important;
-}
-/* Base link style */
-.nk-sidebar .nk-menu-link {
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-/* 🔥 Hover - full background */
 .nk-sidebar .nk-menu-link:hover {
-  background: rgba(99, 102, 241, 0.15); /* soft indigo */
+  background: rgba(99, 102, 241, 0.15);
 }
 
-/* 🔥 Hover text + icon */
 .nk-sidebar .nk-menu-link:hover .nk-menu-text,
 .nk-sidebar .nk-menu-link:hover .nk-menu-icon {
   color: #e09436 !important;
 }
 
-/* 🔥 Active - full background */
 .nk-sidebar .nk-menu-item.active > .nk-menu-link {
-  background: rgba(34, 197, 94, 0.15); /* soft green */
+  background: rgba(34, 197, 94, 0.15);
 }
 
-/* 🔥 Active text + icon */
 .nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-text,
 .nk-sidebar .nk-menu-item.active > .nk-menu-link .nk-menu-icon {
   color: #cf9323 !important;
+}
+
+/* Ensure logo text/icon is visible on white background */
+.nk-sidebar-brand .logo-text {
+  color: #000000 !important;
+}
+
+.nk-sidebar-brand .logo-icon {
+  color: #000000 !important;
 }

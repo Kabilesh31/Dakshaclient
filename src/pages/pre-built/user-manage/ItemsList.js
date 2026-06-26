@@ -503,106 +503,115 @@ const ProductsListCompact = () => {
                 </div>
 
                 {/* Table */}
-                <DataTableBody compact>
-                  <DataTableHead>
-                    <DataTableRow>
-                      <span className="sub-text">Item Name</span>
-                    </DataTableRow>
-                    <DataTableRow size="sm">
-                      <span className="sub-text">Category</span>
-                    </DataTableRow>
-                    <DataTableRow size="sm">
-                      <span className="sub-text">Quantity</span>
-                    </DataTableRow>
-                    <DataTableRow size="md">
-                      <span className="sub-text">Price (₹)</span>
-                    </DataTableRow>
-                    <DataTableRow size="sm">
-                      <span className="sub-text">Unit / Supplier</span>
-                    </DataTableRow>
-                    <DataTableRow>
-                      <span className="sub-text">Status</span>
-                    </DataTableRow>
-                    <DataTableRow className="nk-tb-col-tools text-right">
-                      <span className="sub-text">Actions</span>
-                    </DataTableRow>
-                  </DataTableHead>
+               <DataTableBody compact>
+  <DataTableHead>
+    <DataTableRow>
+      <span className="sub-text">S.No</span>
+    </DataTableRow>
+    <DataTableRow>
+      <span className="sub-text">Item Name</span>
+    </DataTableRow>
+    <DataTableRow size="sm">
+      <span className="sub-text">Category</span>
+    </DataTableRow>
+    <DataTableRow size="sm">
+      <span className="sub-text">Quantity</span>
+    </DataTableRow>
+    <DataTableRow size="md">
+      <span className="sub-text">Price (₹)</span>
+    </DataTableRow>
+    <DataTableRow size="sm">
+      <span className="sub-text">Unit / Supplier</span>
+    </DataTableRow>
+    <DataTableRow>
+      <span className="sub-text">Status</span>
+    </DataTableRow>
+    <DataTableRow className="nk-tb-col-tools text-right">
+      <span className="sub-text">Actions</span>
+    </DataTableRow>
+  </DataTableHead>
 
-                  {loading && currentItems.length === 0 ? (
-                    <DataTableItem>
-                      <DataTableRow colSpan="7" className="text-center py-5">
-                        <span className="text-silent">Loading...</span>
-                      </DataTableRow>
-                    </DataTableItem>
-                  ) : currentItems.length > 0 ? (
-                    currentItems.map((item) => (
-                      <DataTableItem key={item._id}>
-                        <DataTableRow>
-                          <div className="user-card">
-                            <UserAvatar
-                              className="xs"
-                              text={findUpper(item.name)}
-                              style={{
-                                backgroundColor: "#644634",
-                                color: "#fff",
-                              }}
-                            />
-                            <div className="user-info ml-2">
-                              <span className="tb-lead">{item.name}</span>
-                            </div>
-                          </div>
-                        </DataTableRow>
-                        <DataTableRow size="sm">
-                          <span>{item.category}</span>
-                        </DataTableRow>
-                        <DataTableRow size="sm">
-                          <span className="fw-bold">{item.quantity}</span>
-                        </DataTableRow>
-                        <DataTableRow size="md">
-                          <span className="text-primary fw-bold">₹ {item.unitPrice.toLocaleString()}</span>
-                        </DataTableRow>
-                        <DataTableRow size="sm">
-                          <span>{item.unit} / {item.supplier}</span>
-                        </DataTableRow>
-                        <DataTableRow>{getStatusBadge(item)}</DataTableRow>
-                        <DataTableRow className="nk-tb-col-tools">
-                          <ul className="nk-tb-actions gx-1">
-                            <li>
-                              <UncontrolledDropdown>
-                                <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
-                                  <Icon name="more-h" />
-                                </DropdownToggle>
-                                <DropdownMenu right>
-                                  <DropdownItem onClick={() => openEditModal(item)}>
-                                    <Icon name="edit-alt-fill" className="mr-1" /> Edit
-                                  </DropdownItem>
-                                  <DropdownItem onClick={() => openAssignModal(item)}>
-                                    <Icon name="building" className="mr-1" /> Assign to Site
-                                  </DropdownItem>
-                                  <DropdownItem
-                                    className="text-danger"
-                                    onClick={() => {
-                                      setDeleteItem(item);
-                                      setDeleteModal(true);
-                                    }}
-                                  >
-                                    <Icon name="trash-fill" className="mr-1" /> Delete
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              </UncontrolledDropdown>
-                            </li>
-                          </ul>
-                        </DataTableRow>
-                      </DataTableItem>
-                    ))
-                  ) : (
-                    <DataTableItem>
-                      <DataTableRow colSpan="7" className="text-center py-5">
-                        <span className="text-silent">No stock items found</span>
-                      </DataTableRow>
-                    </DataTableItem>
-                  )}
-                </DataTableBody>
+  {loading && currentItems.length === 0 ? (
+    <DataTableItem>
+      <DataTableRow colSpan="8" className="text-center py-5">
+        <span className="text-silent">Loading...</span>
+      </DataTableRow>
+    </DataTableItem>
+  ) : currentItems.length > 0 ? (
+    currentItems.map((item, index) => {
+      const serialNumber = (currentPage - 1) * itemPerPage + index + 1;
+      return (
+        <DataTableItem key={item._id}>
+          <DataTableRow>
+            <span>{serialNumber}</span>
+          </DataTableRow>
+          <DataTableRow>
+            <div className="user-card">
+              <UserAvatar
+                className="xs"
+                text={findUpper(item.name)}
+                style={{
+                  backgroundColor: "#644634",
+                  color: "#fff",
+                }}
+              />
+              <div className="user-info ml-2">
+                <span className="tb-lead">{item.name}</span>
+              </div>
+            </div>
+          </DataTableRow>
+          <DataTableRow size="sm">
+            <span>{item.category}</span>
+          </DataTableRow>
+          <DataTableRow size="sm">
+            <span className="fw-bold">{item.quantity}</span>
+          </DataTableRow>
+          <DataTableRow size="md">
+            <span className="text-primary fw-bold">₹ {item.unitPrice.toLocaleString()}</span>
+          </DataTableRow>
+          <DataTableRow size="sm">
+            <span>{item.unit} / {item.supplier}</span>
+          </DataTableRow>
+          <DataTableRow>{getStatusBadge(item)}</DataTableRow>
+          <DataTableRow className="nk-tb-col-tools">
+            <ul className="nk-tb-actions gx-1">
+              <li>
+                <UncontrolledDropdown>
+                  <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
+                    <Icon name="more-h" />
+                  </DropdownToggle>
+                  <DropdownMenu right>
+                    <DropdownItem onClick={() => openEditModal(item)}>
+                      <Icon name="edit-alt-fill" className="mr-1" /> Edit
+                    </DropdownItem>
+                    <DropdownItem onClick={() => openAssignModal(item)}>
+                      <Icon name="building" className="mr-1" /> Assign to Site
+                    </DropdownItem>
+                    <DropdownItem
+                      className="text-danger"
+                      onClick={() => {
+                        setDeleteItem(item);
+                        setDeleteModal(true);
+                      }}
+                    >
+                      <Icon name="trash-fill" className="mr-1" /> Delete
+                    </DropdownItem>
+                  </DropdownMenu>
+                </UncontrolledDropdown>
+              </li>
+            </ul>
+          </DataTableRow>
+        </DataTableItem>
+      );
+    })
+  ) : (
+    <DataTableItem>
+      <DataTableRow colSpan="8" className="text-center py-5">
+        <span className="text-silent">No stock items found</span>
+      </DataTableRow>
+    </DataTableItem>
+  )}
+</DataTableBody>
 
                 {/* Pagination */}
                 <div className="card-inner">

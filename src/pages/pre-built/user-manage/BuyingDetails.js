@@ -319,7 +319,7 @@ const BuyingDetails = () => {
               <div style={styles.itemSub}>Item ID: #{displayId}</div>
             </div>
 
-            
+                
             <Button
                             color="dark"
                             size="sm"
