@@ -35,6 +35,7 @@ import {
 
 
 const API_BASE = `${process.env.REACT_APP_BACKENDURL}/api/material-requests`;
+const PROJECT_API_BASE = `${process.env.REACT_APP_BACKENDURL}/api/projects`;
 
 // Dummy item database for autocomplete
 const dummyItemDatabase = [
@@ -255,6 +256,10 @@ const MaterialRequestPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [onSearch, setOnSearch] = useState(false);
 
+  // Projects state
+  const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+
   const [addModal, setAddModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -265,6 +270,8 @@ const MaterialRequestPage = () => {
     requiredBy: "",
     priceList: "Standard Buying",
     warehouse: "Stores - SD",
+    project: "",
+    projectId: "",
     items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, warehouse: "Stores - SD", uom: "" }],
   });
 
@@ -294,11 +301,38 @@ const MaterialRequestPage = () => {
     ];
   }, [uniquePurposes]);
 
+  // Project options for RSelect
+  const projectOptions = useMemo(() => {
+    return projects.map(p => ({
+      value: p._id,
+      label: p.name || p.title || p._id,
+      projectName: p.name || p.title || p._id,
+    }));
+  }, [projects]);
+
   const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter);
   const selectedPurposeFilter = purposeFilterOptions.find(opt => opt.value === purposeFilter);
+  const selectedProject = projectOptions.find(opt => opt.value === newRequest.projectId);
 
   const showSuccess = (message) => toast.success(message);
   const showError = (message) => toast.error(message);
+
+  // Fetch Projects
+  const fetchProjects = async () => {
+    setProjectsLoading(true);
+    try {
+      const response = await axios.get(PROJECT_API_BASE);
+      if (response.data.success) {
+        setProjects(response.data.data || []);
+      } else {
+        console.error("Failed to fetch projects:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
 
   // API Calls
   const fetchMaterialRequests = async () => {
@@ -385,6 +419,7 @@ const MaterialRequestPage = () => {
 
   useEffect(() => {
     fetchMaterialRequests();
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -396,7 +431,8 @@ const MaterialRequestPage = () => {
           req.title?.toLowerCase().includes(keyword) ||
           req._id?.toLowerCase().includes(keyword) ||
           req.purpose?.toLowerCase().includes(keyword) ||
-          req.status?.toLowerCase().includes(keyword)
+          req.status?.toLowerCase().includes(keyword) ||
+          req.project?.toLowerCase().includes(keyword)
       );
     }
     if (statusFilter !== "All") result = result.filter((req) => req.status === statusFilter);
@@ -448,6 +484,8 @@ const MaterialRequestPage = () => {
       requiredBy: "",
       priceList: "Standard Buying",
       warehouse: "Stores - SD",
+      project: "",
+      projectId: "",
       items: [{ no: 1, itemCode: "", itemName: "", requiredBy: "", quantity: 0, warehouse: "Stores - SD", uom: "" }],
     });
     setSuggestions([]);
@@ -478,6 +516,8 @@ const MaterialRequestPage = () => {
       requiredBy: request.requiredBy || "",
       priceList: request.priceList || "Standard Buying",
       warehouse: request.warehouse || "Stores - SD",
+      project: request.project || "",
+      projectId: request.projectId || "",
       items: request.items.map((item, idx) => ({
         no: idx + 1,
         itemCode: item.itemCode || "",
@@ -495,6 +535,7 @@ const MaterialRequestPage = () => {
     if (!newRequest.transactionDate) return showError("Transaction Date is required");
     if (!newRequest.requiredBy) return showError("Required By date is required");
     if (!newRequest.purpose) return showError("Purpose is required");
+    if (!newRequest.projectId) return showError("Project is required");
     if (newRequest.items.length === 0) return showError("At least one item is required");
     for (let i = 0; i < newRequest.items.length; i++) {
       const item = newRequest.items[i];
@@ -503,14 +544,21 @@ const MaterialRequestPage = () => {
       if (!item.quantity || item.quantity <= 0) return showError(`Item ${i+1}: Quantity must be greater than 0`);
       if (!item.uom) return showError(`Item ${i+1}: UOM is required`);
     }
+    
+    // Get the project name from selected project
+    const selectedProjectObj = projectOptions.find(p => p.value === newRequest.projectId);
+    
     const dataToSend = {
       transactionDate: newRequest.transactionDate,
       purpose: newRequest.purpose,
       requiredBy: newRequest.requiredBy,
       priceList: newRequest.priceList,
       warehouse: newRequest.warehouse,
+      project: selectedProjectObj?.projectName || newRequest.project || "",
+      projectId: newRequest.projectId,
       items: newRequest.items.map(({ no, ...rest }) => rest),
     };
+    
     let success = false;
     if (modalMode === "add") success = await createMaterialRequest(dataToSend);
     else success = await updateMaterialRequest(selectedRequest._id, dataToSend);
@@ -612,6 +660,23 @@ const MaterialRequestPage = () => {
     }));
   };
 
+  // Handle project selection
+  const handleProjectChange = (selectedOption) => {
+    if (selectedOption) {
+      setNewRequest({
+        ...newRequest,
+        projectId: selectedOption.value,
+        project: selectedOption.projectName || selectedOption.label,
+      });
+    } else {
+      setNewRequest({
+        ...newRequest,
+        projectId: "",
+        project: "",
+      });
+    }
+  };
+
   return (
     <>
       <Head title="Material Request" />
@@ -711,7 +776,7 @@ const MaterialRequestPage = () => {
                       <input
                         type="text"
                         className="form-control border-transparent"
-                        placeholder="Search by title, ID, purpose or status"
+                        placeholder="Search by title, ID, purpose, status or project"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                       />
@@ -741,19 +806,22 @@ const MaterialRequestPage = () => {
                         <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "5%" }}>
                           S.No
                         </th>
-                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "28%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "20%" }}>
                           Title
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
+                          Project
+                        </th>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "10%" }}>
                           Status
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "10%" }}>
                           Purpose
                         </th>
-                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "10%" }}>
                           Required By
                         </th>
-                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "15%" }}>
+                        <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           ID
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "8%" }}>
@@ -785,8 +853,11 @@ const MaterialRequestPage = () => {
                                 }}
                                 title={req.title}
                               >
-                                {sliceTitle(req.title, 55)}
+                                {sliceTitle(req.title, 45)}
                               </button>
+                            </td>
+                            <td style={{ padding: "14px 16px", color: "#374151", fontSize: "0.85rem" }}>
+                              {sliceTitle(req.project || "N/A", 20)}
                             </td>
                             <td style={{ padding: "8px 12px" }}>{getStatusBadge(req.status)}</td>
                             <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>{req.purpose}</td>
@@ -827,7 +898,7 @@ const MaterialRequestPage = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="7" style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
+                          <td colSpan="8" style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
                             No material requests found
                           </td>
                         </tr>
@@ -892,11 +963,26 @@ const MaterialRequestPage = () => {
             </div>
             <div className="col-md-4">
               <FormGroup>
-                <Label for="requiredBy">Required By *</Label>
+                <Label for="requiredBy">Required Date *</Label>
                 <CalendarDateInput
                   id="requiredBy"
                   value={newRequest.requiredBy}
                   onChange={(date) => setNewRequest({ ...newRequest, requiredBy: date })}
+                />
+              </FormGroup>
+            </div>
+            <div className="col-md-6">
+              <FormGroup>
+                <Label for="project">Project *</Label>
+                <RSelect
+                  options={projectOptions}
+                  value={selectedProject}
+                  onChange={handleProjectChange}
+                  placeholder={projectsLoading ? "Loading projects..." : "Select a project..."}
+                  isClearable={true}
+                  isLoading={projectsLoading}
+                  classNamePrefix="react-select"
+                  noOptionsMessage={() => projectsLoading ? "Loading..." : "No projects found"}
                 />
               </FormGroup>
             </div>
@@ -908,17 +994,6 @@ const MaterialRequestPage = () => {
                   id="priceList"
                   value={newRequest.priceList}
                   onChange={(e) => setNewRequest({ ...newRequest, priceList: e.target.value })}
-                />
-              </FormGroup>
-            </div>
-            <div className="col-md-6">
-              <FormGroup>
-                <Label for="warehouse">Set Warehouse</Label>
-                <Input
-                  type="text"
-                  id="warehouse"
-                  value={newRequest.warehouse}
-                  onChange={(e) => setNewRequest({ ...newRequest, warehouse: e.target.value })}
                 />
               </FormGroup>
             </div>
