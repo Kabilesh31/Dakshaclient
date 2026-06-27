@@ -292,7 +292,7 @@ const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
   );
 };
 
-/* ─── Purchase Order Accordion (unchanged) ───────────── */
+/* ─── Purchase Order Accordion ───────────────────────── */
 const STATUS_BADGE = {
   approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
   pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
@@ -459,21 +459,30 @@ const SiteDetail = () => {
   const fetchSiteDetails = async () => {
     try {
       setLoading(true); setError(null);
-      const r = await axios.get(`${API_URL}/projects/${id}`);
+      const token = localStorage.getItem("token");
+      const r = await axios.get(`${API_URL}/projects/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (r.data.success) {
         const d = r.data.data;
-        setSite(d); setEditedSite(d);
+        setSite(d); 
+        setEditedSite(d);
         setGalleryImages(d.galleryImages || []);
         setSitePlanImages(d.sitePlanImages || []);
         setDocuments(d.documents || []);
       }
-    } catch (err) { setError(err.response?.data?.message || "Failed to load site details"); }
+    } catch (err) { 
+      setError(err.response?.data?.message || "Failed to load site details"); 
+    }
     finally { setLoading(false); }
   };
 
   const fetchPurchaseOrders = async () => {
     try {
-      const response = await axios.get(`${API_URL}/purchase-orders/byProjectId/${id}`);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_URL}/purchase-orders/byProjectId/${id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (response.status === 200) {
         setPurchaseOrders(response.data.data || []);
       }
@@ -486,23 +495,40 @@ const SiteDetail = () => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setUploading(true);
+    
+    const token = localStorage.getItem("token");
     const endpointMap = {
       gallery: `${API_URL}/projects/${id}/upload-gallery`,
       "site-plan": `${API_URL}/projects/${id}/upload-site-plan`,
       document: `${API_URL}/projects/${id}/upload-document`,
     };
+
+    let successCount = 0;
     for (const file of files) {
       const fd = new FormData();
       fd.append(type === "document" ? "document" : "image", file);
       try {
-        const r = await axios.post(endpointMap[type], fd, { headers: { "Content-Type": "multipart/form-data" } });
+        const r = await axios.post(endpointMap[type], fd, { 
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            ...(token && { Authorization: `Bearer ${token}` })
+          } 
+        });
         if (r.data.success) {
-          if (type === "gallery") setGalleryImages(p => [...p, r.data.data]);
-          else if (type === "site-plan") setSitePlanImages(p => [...p, r.data.data]);
-          else setDocuments(p => [...p, r.data.data]);
-          showSuccess(`${type.replace("-", " ")} uploaded successfully!`);
+          successCount++;
+          const uploadedData = r.data.data;
+          if (type === "gallery") setGalleryImages(p => [...p, uploadedData]);
+          else if (type === "site-plan") setSitePlanImages(p => [...p, uploadedData]);
+          else setDocuments(p => [...p, uploadedData]);
         }
-      } catch { showError(`Failed to upload ${type}.`); }
+      } catch (err) {
+        console.error(`Failed to upload ${type}:`, err);
+        showError(`Failed to upload ${file.name}`);
+      }
+    }
+    
+    if (successCount > 0) {
+      showSuccess(`${successCount} file(s) uploaded successfully!`);
     }
     setUploading(false);
     e.target.value = "";
@@ -511,11 +537,14 @@ const SiteDetail = () => {
   const handleDeleteImage = async (imageId, type) => {
     if (!window.confirm("Delete this image?")) return;
     setDeletingItem(imageId);
+    const token = localStorage.getItem("token");
     const endpoint = type === "gallery"
       ? `${API_URL}/projects/${id}/gallery/${imageId}`
       : `${API_URL}/projects/${id}/siteplan/${imageId}`;
     try {
-      await axios.delete(endpoint);
+      await axios.delete(endpoint, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (type === "gallery") setGalleryImages(p => p.filter(i => i._id !== imageId));
       else setSitePlanImages(p => p.filter(i => i._id !== imageId));
       showSuccess("Image deleted.");
@@ -526,8 +555,11 @@ const SiteDetail = () => {
   const handleDeleteDocument = async (documentId) => {
     if (!window.confirm("Delete this document?")) return;
     setDeletingItem(documentId);
+    const token = localStorage.getItem("token");
     try {
-      await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`);
+      await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       setDocuments(p => p.filter(d => d._id !== documentId));
       if (pdfSidebar.doc?._id === documentId) setPdfSidebar({ open: false, doc: null });
       showSuccess("Document deleted.");
@@ -542,8 +574,11 @@ const SiteDetail = () => {
     if (!editedSite.startDate) errors.startDate = "Start date is required";
     if (Object.keys(errors).length) { setFormErrors(errors); return; }
     setSavingEdit(true);
+    const token = localStorage.getItem("token");
     try {
-      const r = await axios.put(`${API_URL}/projects/${id}`, editedSite);
+      const r = await axios.put(`${API_URL}/projects/${id}`, editedSite, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (r.data.success) {
         setSite(r.data.data);
         showSuccess("Site updated successfully!");
@@ -574,7 +609,12 @@ const SiteDetail = () => {
     return y && m && day ? `${day}-${m}-${y}` : d;
   };
 
-  const getPdfUrl = (doc) => `${BASE_URL}${doc.url}`;
+  const getPdfUrl = (doc) => {
+    // Handle different URL formats
+    if (doc.url?.startsWith('http')) return doc.url;
+    if (doc.url?.startsWith('/uploads')) return `${BASE_URL}${doc.url}`;
+    return `${BASE_URL}${doc.url || ''}`;
+  };
 
   const STATUS_CONFIG = {
     active:    { text: "Active",    bg: "#06c96a" },
@@ -670,12 +710,12 @@ const SiteDetail = () => {
               </Row>
 
               {/* ── Staff ── */}
-              <SectionDivider title="Assigned Staff" />
+              {/* <SectionDivider title="Assigned Staff" />
               <div className="d-flex flex-wrap gap-2">
                 {site.staffAssigned?.length
                   ? site.staffAssigned.map((s, i) => <span key={i} style={staffPillStyle}>{s}</span>)
                   : <p className="text-muted mb-0">No staff assigned yet.</p>}
-              </div>
+              </div> */}
 
               {/* ── Progress ── */}
               {site.status === "active" && site.completion !== undefined && (
@@ -732,193 +772,183 @@ const SiteDetail = () => {
               </SectionDivider>
 
               {documents.length > 0 ? (
-               <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: "18px",
-  }}
->
-  {documents.map((doc) => {
-    const sizeKB = doc.size
-      ? (doc.size / 1024).toFixed(1)
-      : "—";
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: "18px",
+                  }}
+                >
+                  {documents.map((doc) => {
+                    const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
+                    const dateStr = doc.uploadedAt
+                      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "";
 
-    const dateStr = doc.uploadedAt
-      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : "";
+                    return (
+                      <div
+                        key={doc._id}
+                        style={{
+                          background: "#f1f3f4",
+                          borderRadius: "14px",
+                          overflow: "hidden",
+                          transition: "all 0.2s ease",
+                          cursor: "pointer",
+                          border: pdfSidebar.doc?._id === doc._id
+                            ? `2px solid ${BRAND}`
+                            : "2px solid transparent",
+                        }}
+                        onClick={() => setPdfSidebar({ open: true, doc })}
+                      >
+                        {/* Thumbnail */}
+                        <div
+                          style={{
+                            height: "170px",
+                            background: "#dfe3e8",
+                            position: "relative",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              background: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <embed
+                              src={getPdfUrl(doc)}
+                              type="application/pdf"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                border: "none",
+                                overflow: "hidden",
+                                pointerEvents: "none",
+                              }}
+                            />
+                          </div>
 
-    return (
-      <div
-        key={doc._id}
-        style={{
-          background: "#f1f3f4",
-          borderRadius: "14px",
-          overflow: "hidden",
-          transition: "all 0.2s ease",
-          cursor: "pointer",
-          border:
-            pdfSidebar.doc?._id === doc._id
-              ? `2px solid ${BRAND}`
-              : "2px solid transparent",
-        }}
-        onClick={() => setPdfSidebar({ open: true, doc })}
-      >
-        {/* Thumbnail */}
-       {/* Thumbnail */}
-{/* Thumbnail */}
-<div
-  style={{
-    height: "170px",
-    background: "#dfe3e8",
-    position: "relative",
-    overflow: "hidden",
-  }}
->
-  {/* PDF Preview Image Instead of iframe */}
-  <div
-    style={{
-      width: "100%",
-      height: "100%",
-      background: "#fff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-    }}
-  >
-    <embed
-      src={getPdfUrl(doc)}
-      type="application/pdf"
-      style={{
-        width: "100%",
-        height: "100%",
-        border: "none",
-        overflow: "hidden",
-        pointerEvents: "none",
-      }}
-    />
-  </div>
+                          {/* PDF Badge */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "10px",
+                              left: "10px",
+                              width: "20px",
+                              height: "20px",
+                              borderRadius: "6px",
+                              background: "#ea4335",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              fontSize: "9px",
+                              fontWeight: 700,
+                              letterSpacing: "0.4px",
+                            }}
+                          >
+                            PDF
+                          </div>
 
-  {/* Smaller PDF Badge */}
-  <div
-    style={{
-      position: "absolute",
-      top: "10px",
-      left: "10px",
-      width: "20px",
-      height: "20px",
-      borderRadius: "6px",
-      background: "#ea4335",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#fff",
-      fontSize: "9px",
-      fontWeight: 700,
-      letterSpacing: "0.4px",
-    }}
-  >
-    PDF
-  </div>
+                          {/* Delete Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDocument(doc._id);
+                            }}
+                            disabled={deletingItem === doc._id}
+                            style={{
+                              position: "absolute",
+                              top: "10px",
+                              right: "10px",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "50%",
+                              border: "none",
+                              background: "rgba(0,0,0,0.45)",
+                              color: "#fff",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {deletingItem === doc._id ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <Icon name="trash" />
+                            )}
+                          </button>
+                        </div>
 
-  {/* Delete Button */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      handleDeleteDocument(doc._id);
-    }}
-    disabled={deletingItem === doc._id}
-    style={{
-      position: "absolute",
-      top: "10px",
-      right: "10px",
-      width: "28px",
-      height: "28px",
-      borderRadius: "50%",
-      border: "none",
-      background: "rgba(0,0,0,0.45)",
-      color: "#fff",
-      cursor: "pointer",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "12px",
-    }}
-  >
-    {deletingItem === doc._id ? (
-      <Spinner size="sm" />
-    ) : (
-      <Icon name="trash" />
-    )}
-  </button>
-</div>
+                        {/* Bottom Info */}
+                        <div
+                          style={{
+                            padding: "14px",
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "10px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "38px",
+                              height: "38px",
+                              borderRadius: "50%",
+                              background: "#ea4335",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Icon
+                              name="file-pdf"
+                              style={{
+                                color: "#fff",
+                                fontSize: "16px",
+                              }}
+                            />
+                          </div>
 
-        {/* Bottom Info */}
-        <div
-          style={{
-            padding: "14px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "10px",
-          }}
-        >
-          {/* Small Icon */}
-          <div
-            style={{
-              width: "38px",
-              height: "38px",
-              borderRadius: "50%",
-              background: "#ea4335",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icon
-              name="file-pdf"
-              style={{
-                color: "#fff",
-                fontSize: "16px",
-              }}
-            />
-          </div>
-
-          {/* File Details */}
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#202124",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {doc.originalName || doc.filename}
-            </div>
-
-            <div
-              style={{
-                fontSize: "12px",
-                color: "#5f6368",
-                marginTop: "3px",
-              }}
-            >
-              {sizeKB} KB • {dateStr}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                color: "#202124",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {doc.originalName || doc.filename}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#5f6368",
+                                marginTop: "3px",
+                              }}
+                            >
+                              {sizeKB} KB • {dateStr}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <EmptyState text="No documents uploaded yet." />
               )}
@@ -1016,7 +1046,7 @@ const SiteDetail = () => {
             </div>
           )}
 
-          <SectionLabel icon="users" label="Assign Staff" />
+          {/* <SectionLabel icon="users" label="Assign Staff" />
           <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
             <Input type="text" placeholder="Enter staff name, press Enter or Add"
               value={staffInput} onChange={(e) => setStaffInput(e.target.value)}
@@ -1024,8 +1054,8 @@ const SiteDetail = () => {
               style={inputStyle}
             />
             <BrandBtn outline onClick={handleAddStaff} style={{ flexShrink: 0 }}>+ Add</BrandBtn>
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginBottom: "4px" }}>
+          </div> */}
+          {/* <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginBottom: "4px" }}>
             {editedSite.staffAssigned?.map((s, i) => (
               <span key={i} style={{ ...staffPillStyle, cursor: "pointer" }} onClick={() => handleRemoveStaff(s)}>
                 {s} <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
@@ -1034,7 +1064,7 @@ const SiteDetail = () => {
             {!editedSite.staffAssigned?.length && (
               <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>No staff added yet</span>
             )}
-          </div>
+          </div> */}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0" }}>
             <button
@@ -1080,7 +1110,8 @@ const UploadBtn = ({ id, label, accept, uploading, onChange }) => (
         display: "flex", alignItems: "center", gap: "6px",
       }}
     >
-      {label}
+      {uploading ? <Spinner size="sm" style={{ color: "#fff" }} /> : <Icon name="upload" />}
+      {uploading ? "Uploading..." : label}
     </button>
     <input id={id} type="file" accept={accept} multiple style={{ display: "none" }} onChange={onChange} disabled={uploading} />
   </>
@@ -1105,4 +1136,3 @@ const EmptyState = ({ text }) => (
 );
 
 export default SiteDetail;
-
