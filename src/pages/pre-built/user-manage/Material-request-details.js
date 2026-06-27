@@ -988,126 +988,177 @@ const MaterialRequestDetails = () => {
               </div>
             ) : (
               <div style={S.attachmentGrid}>
-                {attachments.map((att) => (
-                  <div
-                    key={att.publicId}
-                    style={{
-                      ...S.attachmentItem,
-                      cursor: "pointer",
-                    }}
-                  >
-                    {/* Preview Click Area */}
+                {attachments.map((att) => {
+                  const isSelected = att.isSelected === true;
+                  return (
                     <div
+                      key={att.publicId}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                      onClick={() => {
-                        if (att.fileType?.startsWith("image/")) {
-                          // Open image preview
-                          window.open(att.fileUrl, "_blank");
-                        } else {
-                          // Download PDF
-                          const link = document.createElement("a");
-                          link.href = att.fileUrl;
-                          link.download = att.fileName || "document.pdf";
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }
+                        ...S.attachmentItem,
+                        cursor: "pointer",
+                        border: isSelected ? "2px solid #10B981" : "0.5px solid #e5e7eb",
+                        background: isSelected ? "#F0FDF4" : "#fff",
+                        boxShadow: isSelected ? "0 0 0 4px rgba(16, 185, 129, 0.1)" : "none",
+                        position: "relative",
                       }}
                     >
-                      <div style={S.attachmentPreview}>
-                        {att.fileType?.startsWith("image/") ? (
-                          <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
-                        ) : (
-                          <Icon name="file-pdf" style={{ fontSize: 28, color: "#ef4444" }} />
-                        )}
-                      </div>
-
-                      <div style={S.attachmentInfo}>
-                        <div style={S.attachmentName} title={att.fileName}>
-                          {att.fileName}
+                      {/* Selected Badge */}
+                      {isSelected && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: -6,
+                            right: -6,
+                            background: "#10B981",
+                            color: "#fff",
+                            borderRadius: "50%",
+                            width: 20,
+                            height: 20,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ✓
                         </div>
+                      )}
 
-                        <div style={S.attachmentMeta}>
-                          {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
-                          {att.fileSize ? formatFileSize(att.fileSize) : "—"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {/* View */}
-                      <button
-                        type="button"
-                        style={S.removeBtn}
-                        title="View file"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(att.fileUrl, "_blank");
+                      {/* Preview Click Area */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          flex: 1,
+                          minWidth: 0,
                         }}
-                      >
-                        <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
-                      </button>
-
-                      {/* Download */}
-                      <button
-                        type="button"
-                        style={S.removeBtn}
-                        title="Download file"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            const response = await fetch(att.fileUrl);
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
+                        onClick={() => {
+                          if (att.fileType?.startsWith("image/")) {
+                            window.open(att.fileUrl, "_blank");
+                          } else {
                             const link = document.createElement("a");
-                            link.href = url;
-                            link.download = att.fileName || "download";
+                            link.href = att.fileUrl;
+                            link.download = att.fileName || "document.pdf";
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                          } catch (err) {
-                            console.error("Download failed:", err);
-                            alert("Unable to download file");
                           }
                         }}
                       >
-                        <Icon name="downloadload" style={{ fontSize: 14, color: "#16a34a" }} />
-                      </button>
+                        <div style={S.attachmentPreview}>
+                          {att.fileType?.startsWith("image/") ? (
+                            <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
+                          ) : (
+                            <Icon name="file-pdf" style={{ fontSize: 28, color: isSelected ? "#10B981" : "#ef4444" }} />
+                          )}
+                        </div>
 
-                      {/* Delete */}
-                      <button
-                        type="button"
-                        style={S.removeBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteAttachment(att.publicId);
-                        }}
-                        disabled={deletingId === att.publicId}
-                        title="Remove file"
-                      >
-                        {deletingId === att.publicId ? (
-                          <Icon
-                            name="spinner"
-                            style={{
-                              animation: "spin 1s linear infinite",
-                              fontSize: 12,
-                            }}
-                          />
-                        ) : (
-                          <Icon name="trash" style={{ fontSize: 14, color: "#ef4444" }} />
-                        )}
-                      </button>
+                        <div style={S.attachmentInfo}>
+                          <div style={S.attachmentName} title={att.fileName}>
+                            {att.fileName}
+                            {isSelected && (
+                              <span
+                                style={{
+                                  marginLeft: 8,
+                                  fontSize: 10,
+                                  color: "#10B981",
+                                  fontWeight: 600,
+                                  background: "#D1FAE5",
+                                  padding: "2px 8px",
+                                  borderRadius: 4,
+                                }}
+                              >
+                                Selected
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={S.attachmentMeta}>
+                            {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
+                            {att.fileSize ? formatFileSize(att.fileSize) : "—"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {/* View */}
+                        <button
+                          type="button"
+                          style={S.removeBtn}
+                          title="View file"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(att.fileUrl, "_blank");
+                          }}
+                        >
+                          <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
+                        </button>
+
+                        {/* Download */}
+                        <button
+                          type="button"
+                          style={S.removeBtn}
+                          title="Download file"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const response = await fetch(att.fileUrl);
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.download = att.fileName || "download";
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error("Download failed:", err);
+                              alert("Unable to download file");
+                            }
+                          }}
+                        >
+                          <Icon name="download" style={{ fontSize: 14, color: "#16a34a" }} />
+                        </button>
+
+                        {/* Delete - disabled if selected */}
+                        <button
+                          type="button"
+                          style={{
+                            ...S.removeBtn,
+                            opacity: isSelected ? 0.5 : 1,
+                            cursor: isSelected ? "not-allowed" : "pointer",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isSelected) {
+                              handleDeleteAttachment(att.publicId);
+                            } else {
+                              alert("Cannot delete the selected attachment. Please unselect it first.");
+                            }
+                          }}
+                          disabled={isSelected || deletingId === att.publicId}
+                          title={isSelected ? "Cannot delete selected attachment" : "Remove file"}
+                        >
+                          {deletingId === att.publicId ? (
+                            <Icon
+                              name="spinner"
+                              style={{
+                                animation: "spin 1s linear infinite",
+                                fontSize: 12,
+                              }}
+                            />
+                          ) : (
+                            <Icon name="trash" style={{ fontSize: 14, color: isSelected ? "#9ca3af" : "#ef4444" }} />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

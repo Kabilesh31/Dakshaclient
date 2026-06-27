@@ -76,42 +76,40 @@ const menu = [
   //   link: "/sales",
   // },
   
-   {
-    icon: "bar-chart",
-    text: "Reports",
-    active: false,
-    subMenu: [
-      // {
-      //   icon: "user-alt",
-      //   text: "Customers",
-      //   link: "/reports", // existing page
-      // },
-      {
-        icon: "user-list",
-        text: "Staffs",
-        link: "/staff-report", // new page (we will create later)
-      },
-      {
-        icon: "truck",
-        text: "Suppliers",
-        link: "/suppliers-report", // new page (we will create later)
-      },{
-        icon: "user-list",
-        text: "Project",
-        link: "/project-report", // new page (we will create later)
-      }
-    ],
-  },
+  //  {
+  //   icon: "bar-chart",
+  //   text: "Reports",
+  //   active: false,
+  //   subMenu: [
+   
+  //     {
+  //       icon: "user-list",
+  //       text: "Staffs",
+  //       link: "/staff-report", 
+  //     },
+  //     {
+  //       icon: "truck",
+  //       text: "Suppliers",
+  //       link: "/suppliers-report", // new page (we will create later)
+  //     },{
+  //       icon: "user-list",
+  //       text: "Project",
+  //       link: "/project-report", // new page (we will create later)
+  //     }
+  //   ],
+  // },
 
+  // {
+  //   icon: "calendar-check",
+  //   text: "Staff Attendance",
+  //   link: "/blank",
+  // },
+  // {
+  //   icon: "package",          // ni ni-cart
+  //   text: "Inventory",
+  //   link: "/items",
+  // },
   {
-    icon: "calendar-check",
-    text: "Staff Attendance",
-    link: "/blank",
-  },{
-    icon: "package",          // ni ni-cart
-    text: "Inventory",
-    link: "/items",
-  },{
   icon: "setting",
   text: "Settings",
   link: "/Settings",

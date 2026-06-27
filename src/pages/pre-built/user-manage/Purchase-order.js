@@ -1340,10 +1340,24 @@ const PurchaseOrderPage = () => {
           {activeTab === "details" && (
             <div style={{ padding: 20, maxHeight: "60vh", overflowY: "auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <label style={fl}>Project</label>
+                  <RSelect
+                    options={projectOptions}
+                    value={selectedProject}
+                    onChange={handleProjectChange}
+                    placeholder="Select project"
+                    isClearable
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                    isLoading={projectsLoading}
+                  />
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Series</label>
                   <input style={fc} type="text" value={newOrder.series} onChange={(e) => setNewOrder({ ...newOrder, series: e.target.value })} />
                 </div>
+                
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <label style={fl}>Date <span style={{ color: "#E24B4A" }}>*</span></label>
                   <DateInput 
@@ -1392,19 +1406,7 @@ const PurchaseOrderPage = () => {
                   <label style={fl}>Cost center</label>
                   <input style={fc} type="text" placeholder="Cost center" value={newOrder.costCenter} onChange={(e) => setNewOrder({ ...newOrder, costCenter: e.target.value })} />
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <label style={fl}>Project</label>
-                  <RSelect
-                    options={projectOptions}
-                    value={selectedProject}
-                    onChange={handleProjectChange}
-                    placeholder="Select project"
-                    isClearable
-                    styles={selectStyles}
-                    classNamePrefix="react-select"
-                    isLoading={projectsLoading}
-                  />
-                </div>
+                
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 20, margin: "14px 0", flexWrap: "wrap" }}>
