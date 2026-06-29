@@ -93,14 +93,14 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
         </a>
         <div className="p-2 text-center">
           <div className="mb-4">
-            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#4B5694" }} />
           </div>
           <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
           <p className="text-muted mb-4">{message || "Are you sure you want to delete this item? This action cannot be undone."}</p>
           <div className="d-flex gap-8 justify-content-center">
             <Button
               style={{
-                backgroundColor: "#644634",
+                backgroundColor: "#4B5694",
                 borderColor: "#800000",
                 color: "#fff",
                 padding: "15px 24px",
@@ -187,9 +187,9 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
       itemCode: itemCode.trim(),
       name: name.trim(),
       status: status.value,
-      item_group: group.value,
+      group: group.value,
       hsnSac: hsnSac.trim(),
-      stock_uom: unitMeasure.value,
+      unitMeasure: unitMeasure.value,
       maintainStock,
       isFixedAsset,
     };
@@ -329,7 +329,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
                     <Button
                       className="btn-icon"
                       style={{
-                        backgroundColor: "#644634",
+                        backgroundColor: "#4B5694",
                         borderColor: "#800000",
                         marginLeft: "30px",
                         color: "#fff",
@@ -632,8 +632,7 @@ const Buying = () => {
                 <Button
                   className="btn-icon"
                   style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
+                    backgroundColor: "#4B5694",
                     color: "#fff",
                   }}
                   onClick={handleAdd}

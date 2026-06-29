@@ -28,7 +28,7 @@ import Head from "../../../layout/head/Head";
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
 const BASE_URL = `${process.env.REACT_APP_BACKENDURL}` || "http://localhost:5000";
 
-const BRAND = "#644634";
+const BRAND = "#4B5694";
 
 /* ─── Shared: Brand Button ───────────────────────────── */
 const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false, size = "md", style = {} }) => {
@@ -646,9 +646,7 @@ const SiteDetail = () => {
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              <BrandBtn outline onClick={() => history.push("/SiteManagement")} size="sm" style={{ marginBottom: "8px" }}>
-                <Icon name="arrow-left" /> Back
-              </BrandBtn>
+              
               <BlockTitle page tag="h3" className="mt-2">{site.name}</BlockTitle>
               <BlockDes className="text-soft">
                 <p>Complete project information and media gallery</p>

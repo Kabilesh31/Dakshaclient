@@ -347,7 +347,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
         </a>
         <div className="p-2 text-center">
           <div className="mb-4">
-            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#4B5694" }} />
           </div>
           <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
           <p className="text-muted mb-4">
@@ -356,7 +356,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
           <div className="d-flex gap-8 justify-content-center">
             <Button
               style={{
-                backgroundColor: "#644634",
+                backgroundColor: "#4B5694",
                 borderColor: "#800000",
                 color: "#fff",
                 padding: "15px 24px",
@@ -941,7 +941,7 @@ const PurchaseOrderPage = () => {
     }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isSelected ? "#644634" : state.isFocused ? "#f3f4f6" : "white",
+      backgroundColor: state.isSelected ? "#4B5694" : state.isFocused ? "#f3f4f6" : "white",
       color: state.isSelected ? "white" : "#111827",
       fontSize: 13,
     }),
@@ -974,8 +974,8 @@ const PurchaseOrderPage = () => {
                 <Button
                   className="btn-icon"
                   style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
+                    backgroundColor: "#4B5694",
+                   
                     color: "#fff",
                   }}
                   onClick={() => { resetForm(); setAddModal(true); }}
@@ -1085,7 +1085,7 @@ const PurchaseOrderPage = () => {
                     <thead>
                       <tr
                         style={{
-                          background: "#f9fafb",
+                          // background: "#f9fafb",
                           borderBottom: "2px solid #e5e7eb",
                         }}
                       >
@@ -1325,7 +1325,7 @@ const PurchaseOrderPage = () => {
                   cursor: "pointer",
                   background: "none",
                   border: "none",
-                  borderBottom: activeTab === key ? "2px solid #644634" : "2px solid transparent",
+                  borderBottom: activeTab === key ? "2px solid #4B5694" : "2px solid transparent",
                   marginBottom: -1,
                   transition: "all 0.15s ease"
                 }}
@@ -1438,8 +1438,8 @@ const PurchaseOrderPage = () => {
                       padding: "5px 10px", 
                       borderRadius: 6, 
                       cursor: "pointer", 
-                      border: "0.5px solid #644634", 
-                      background: "#644634", 
+                      border: "0.5px solid #4B5694", 
+                      background: "#4B5694", 
                       color: "#fff" 
                     }} 
                     onClick={() => setShowMRModal(true)}
@@ -1491,7 +1491,7 @@ const PurchaseOrderPage = () => {
                 </table>
               </div>
 
-              <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #644634", background: "#644634", color: "#fff" }} onClick={addItemRow}>
+              <button style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 6, cursor: "pointer", border: "0.5px solid #4B5694", background: "#4B5694", color: "#fff" }} onClick={addItemRow}>
                 <Icon name="plus" style={{ fontSize: 13 }} /> Add row
               </button>
 
@@ -1566,8 +1566,8 @@ const PurchaseOrderPage = () => {
               </button>
               <Button 
                 style={{ 
-                  backgroundColor: "#644634", 
-                  borderColor: "#644634", 
+                  backgroundColor: "#4B5694", 
+                  borderColor: "#4B5694", 
                   color: "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -1614,8 +1614,8 @@ const PurchaseOrderPage = () => {
                           padding: "7px 14px", 
                           borderRadius: 8, 
                           cursor: "pointer", 
-                          border: "0.5px solid #644634", 
-                          background: "#644634", 
+                          border: "0.5px solid #4B5694", 
+                          background: "#4B5694", 
                           color: "#fff" 
                         }} 
                         onClick={() => selectMR(mr)}

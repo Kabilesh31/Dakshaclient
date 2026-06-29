@@ -732,7 +732,7 @@
 
 /* Button Styles */
 .btn-primary {
-  background-color: #644634;
+  background-color: #4B5694;
   border-color: #800000;
 }
 
@@ -743,6 +743,6 @@
 
 /* Form Control Focus */
 .form-control:focus {
-  border-color: #644634;
+  border-color: #4B5694;
   box-shadow: 0 0 0 0.2rem rgba(100, 70, 52, 0.25);
 }

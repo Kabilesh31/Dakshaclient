@@ -54,7 +54,7 @@ const S = {
   },
   grandTotalValue: { color: "#28a745" },
   saveBtn: {
-    backgroundColor: "#644634",
+    backgroundColor: "#4B5694",
     borderColor: "#800000",
     color: "#fff",
     padding: "6px 20px",
@@ -564,7 +564,7 @@ const Quotation = () => {
                     <li className="nk-block-tools-opt">
                       <Button
                         className="btn-icon"
-                        style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff" }}
+                        style={{ backgroundColor: "#4B5694", color: "#fff" }}
                         onClick={() => { setIsEditMode(false); resetForm(); setModal({ add: true }); }}
                       >
                         <Icon name="plus" />
@@ -680,13 +680,13 @@ const Quotation = () => {
             <DataTableBody compact>
               <DataTableHead>
                 <DataTableRow className="nk-tb-col-check" />
-                <DataTableRow><span className="sub-text">S.No</span></DataTableRow>
-                <DataTableRow><span className="sub-text">Client Name</span></DataTableRow>
-                <DataTableRow size="md"><span className="sub-text">Date</span></DataTableRow>
-                <DataTableRow><span className="sub-text">Quotation #</span></DataTableRow>
-                <DataTableRow size="md"><span className="sub-text">Total Value</span></DataTableRow>
-                <DataTableRow><span className="sub-text">Status</span></DataTableRow>
-                <DataTableRow className="nk-tb-col-tools text-right"><span>More</span></DataTableRow>
+                <DataTableRow><span style={{fontWeight:"bold", color: "#636363"}}>S.No</span></DataTableRow>
+                <DataTableRow><span style={{fontWeight:"bold", color: "#636363"}}>Client Name</span></DataTableRow>
+                <DataTableRow size="md"><span style={{fontWeight:"bold", color: "#636363"}}>Date</span></DataTableRow>
+                <DataTableRow><span style={{fontWeight:"bold", color: "#636363"}}>Quotation #</span></DataTableRow>
+                <DataTableRow size="md"><span style={{fontWeight:"bold", color: "#636363"}}>Total Value</span></DataTableRow>
+                <DataTableRow><span style={{fontWeight:"bold", color: "#636363"}}>Status</span></DataTableRow>
+                <DataTableRow className="text-right" ><span style={{fontWeight:"bold", color: "#636363"}}>More</span></DataTableRow>
               </DataTableHead>
 
               {currentItems.length > 0

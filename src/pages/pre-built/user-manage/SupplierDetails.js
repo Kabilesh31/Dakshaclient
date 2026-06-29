@@ -184,25 +184,17 @@ const SupplierDetails = () => {
           <div style={S.topbar}>
             <div>
               <div style={S.breadcrumb}>
-                <span>Buying</span>
-                <span style={S.bcSep}>›</span>
+                
                 <span>Suppliers</span>
                 <span style={S.bcSep}>›</span>
                 <span style={{ color: "#111827" }}>{name}</span>
               </div>
               <div style={S.pageTitle}>{name}</div>
-              <div style={S.pageSub}>Supplier ID: #{id}</div>
+              {/* <div style={S.pageSub}>Supplier ID: #{id}</div> */}
             </div>
             <div style={S.actions}>
               
-               <Button
-                color="dark"
-                size="sm"
-                className="mb-2"
-                onClick={() => history.push("/Suppliers")}
-              >
-                <Icon name="arrow-left" /> Back
-              </Button>
+               
              
             </div>
           </div>

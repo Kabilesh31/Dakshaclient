@@ -625,7 +625,7 @@ const ProjectsReportPage = () => {
                           return (
                             <div
                               key={doc._id}
-                              style={{ background: "#f1f3f4", borderRadius: "14px", overflow: "hidden", transition: "all 0.2s ease", cursor: "pointer", border: selectedDocument?._id === doc._id && pdfSidebarOpen ? `2px solid #644634` : "2px solid transparent" }}
+                              style={{ background: "#f1f3f4", borderRadius: "14px", overflow: "hidden", transition: "all 0.2s ease", cursor: "pointer", border: selectedDocument?._id === doc._id && pdfSidebarOpen ? `2px solid #4B5694` : "2px solid transparent" }}
                               onClick={() => openPdfSidebar(doc)}
                             >
                               <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>

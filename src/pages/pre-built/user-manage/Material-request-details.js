@@ -215,7 +215,7 @@ const S = {
     borderRadius: 8,
     cursor: "pointer",
     border: "0.5px solid #534AB7",
-    background: "#644634",
+    background: "#4B5694",
     color: "#EEEDFE",
   },
   btnInfo: {
@@ -277,7 +277,6 @@ const S = {
     textAlign: "left",
     fontWeight: 500,
     fontSize: 11,
-    textTransform: "uppercase",
     letterSpacing: "0.05em",
     color: "#6b7280",
   },
@@ -319,20 +318,24 @@ const S = {
     flexWrap: "wrap",
     gap: 12,
   },
-  attachmentGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 },
+ attachmentGrid: { 
+  display: "grid", 
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
+  gap: 16 
+},
   attachmentItem: {
-    background: "#fff",
-    border: "0.5px solid #e5e7eb",
-    borderRadius: 10,
-    padding: "10px 12px",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    transition: "all 0.1s",
-  },
+  background: "#fff",
+  border: "0.5px solid #e5e7eb",
+  borderRadius: 12,
+  padding: "12px",
+  display: "flex",
+  flexDirection: "column",
+  transition: "all 0.2s ease",
+  position: "relative",
+},
   attachmentPreview: {
-    width: 40,
-    height: 40,
+    width: 200,
+    height: 200,
     borderRadius: 6,
     background: "#f3f4f6",
     display: "flex",
@@ -724,8 +727,6 @@ const MaterialRequestDetails = () => {
           <div style={S.topbar}>
             <div>
               <div style={S.breadcrumb}>
-                <span>Buying</span>
-                <span style={S.breadcrumbSep}>›</span>
                 <span>Material requests</span>
                 <span style={S.breadcrumbSep}>›</span>
                 <span style={{ color: "#111827" }}>{id}</span>
@@ -738,9 +739,7 @@ const MaterialRequestDetails = () => {
             </div>
 
             <div style={S.actions}>
-              <Button color="dark" size="sm" className="mt-1" onClick={() => history.push("/material-request")}>
-                <Icon name="arrow-left" /> Back
-              </Button>
+             
               <button style={S.btnInfo} onClick={handlePrint}>
                 <Icon name="printer" />
               </button>
@@ -913,255 +912,329 @@ const MaterialRequestDetails = () => {
           </div>
 
           {/* ATTACHMENTS SECTION */}
-          <div style={S.attachmentArea}>
-            <div style={S.attachmentHeader}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Icon name="paperclip" style={{ fontSize: 16, color: "#534AB7" }} />
-                <span style={{ fontWeight: 500, fontSize: 14, color: "#1f2937" }}>Attachments</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "#9ca3af",
-                    background: "#f3f4f6",
-                    padding: "2px 8px",
-                    borderRadius: 12,
-                  }}
-                >
-                  {attachments.length}
-                </span>
-              </div>
-
-              <UncontrolledDropdown>
-                {/* FIX: changed button style to primary and adjusted disabled state */}
-                <DropdownToggle
-                  tag="button"
-                  style={uploading ? { ...S.btnPrimary, opacity: 0.6, cursor: "not-allowed" } : S.btnPrimary}
-                  disabled={uploading}
-                >
-                  {uploading ? (
-                    <>
-                      <Icon name="spinner" style={{ animation: "spin 1s linear infinite" }} /> Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="plus" /> Add file <Icon name="chevron-down" style={{ fontSize: 11 }} />
-                    </>
-                  )}
-                </DropdownToggle>
-                <DropdownMenu right>
-                  <DropdownItem onClick={() => pdfInputRef.current?.click()} disabled={uploading}>
-                    <Icon name="file-pdf" className="me-2" style={{ color: "#dc2626" }} /> Upload PDF
-                  </DropdownItem>
-                  <DropdownItem onClick={() => imageInputRef.current?.click()} disabled={uploading}>
-                    <Icon name="image" className="me-2" style={{ color: "#10b981" }} /> Upload Image
-                  </DropdownItem>
-                </DropdownMenu>
-              </UncontrolledDropdown>
-
-              <input
-                type="file"
-                ref={pdfInputRef}
-                accept="application/pdf"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  if (e.target.files[0]) handleFileUpload(e.target.files[0], "pdf");
-                  e.target.value = "";
+        <div style={S.attachmentArea}>
+          <div style={S.attachmentHeader}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="paperclip" style={{ fontSize: 16, color: "#534AB7" }} />
+              <span style={{ fontWeight: 500, fontSize: 14, color: "#1f2937" }}>Attachments</span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#9ca3af",
+                  background: "#f3f4f6",
+                  padding: "2px 8px",
+                  borderRadius: 12,
                 }}
-              />
-              <input
-                type="file"
-                ref={imageInputRef}
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  if (e.target.files[0]) handleFileUpload(e.target.files[0], "image");
-                  e.target.value = "";
-                }}
-              />
+              >
+                {attachments.length}
+              </span>
             </div>
 
-            {attachments.length === 0 ? (
-              <div style={S.emptyAttachments}>
-                <Icon name="upload-cloud" style={{ fontSize: 32, color: "#cbd5e1", marginBottom: 8 }} />
-                <div style={{ fontSize: 13 }}>No files attached</div>
-                <div style={{ fontSize: 11, marginTop: 4 }}>Click "Add file" to upload PDFs or images</div>
-              </div>
-            ) : (
-              <div style={S.attachmentGrid}>
-                {attachments.map((att) => {
-                  const isSelected = att.isSelected === true;
-                  return (
-                    <div
-                      key={att.publicId}
-                      style={{
-                        ...S.attachmentItem,
-                        cursor: "pointer",
-                        border: isSelected ? "2px solid #10B981" : "0.5px solid #e5e7eb",
-                        background: isSelected ? "#F0FDF4" : "#fff",
-                        boxShadow: isSelected ? "0 0 0 4px rgba(16, 185, 129, 0.1)" : "none",
-                        position: "relative",
-                      }}
-                    >
-                      {/* Selected Badge */}
-                      {isSelected && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: -6,
-                            right: -6,
-                            background: "#10B981",
-                            color: "#fff",
-                            borderRadius: "50%",
-                            width: 20,
-                            height: 20,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            fontWeight: "bold",
-                          }}
-                        >
-                          ✓
-                        </div>
-                      )}
+            <UncontrolledDropdown>
+              <DropdownToggle
+                tag="button"
+                style={uploading ? { ...S.btnPrimary, opacity: 0.6, cursor: "not-allowed" } : S.btnPrimary}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Icon name="spinner" style={{ animation: "spin 1s linear infinite" }} /> Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="plus" /> Add file <Icon name="chevron-down" style={{ fontSize: 11 }} />
+                  </>
+                )}
+              </DropdownToggle>
+              <DropdownMenu right>
+                <DropdownItem onClick={() => pdfInputRef.current?.click()} disabled={uploading}>
+                  <Icon name="file-pdf" className="me-2" style={{ color: "#dc2626" }} /> Upload PDF
+                </DropdownItem>
+                <DropdownItem onClick={() => imageInputRef.current?.click()} disabled={uploading}>
+                  <Icon name="image" className="me-2" style={{ color: "#10b981" }} /> Upload Image
+                </DropdownItem>
+              </DropdownMenu>
+            </UncontrolledDropdown>
 
-                      {/* Preview Click Area */}
+            <input
+              type="file"
+              ref={pdfInputRef}
+              accept="application/pdf"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                if (e.target.files[0]) handleFileUpload(e.target.files[0], "pdf");
+                e.target.value = "";
+              }}
+            />
+            <input
+              type="file"
+              ref={imageInputRef}
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                if (e.target.files[0]) handleFileUpload(e.target.files[0], "image");
+                e.target.value = "";
+              }}
+            />
+          </div>
+
+          {attachments.length === 0 ? (
+            <div style={S.emptyAttachments}>
+              <Icon name="upload-cloud" style={{ fontSize: 32, color: "#cbd5e1", marginBottom: 8 }} />
+              <div style={{ fontSize: 13 }}>No files attached</div>
+              <div style={{ fontSize: 11, marginTop: 4 }}>Click "Add file" to upload PDFs or images</div>
+            </div>
+          ) : (
+            <div style={S.attachmentGrid}>
+              {attachments.map((att) => {
+                const isSelected = att.isSelected === true;
+                return (
+                  <div
+                    key={att.publicId}
+                    style={{
+                      ...S.attachmentItem,
+                      flexDirection: "column",
+                      alignItems: "stretch",
+                      padding: "12px",
+                      cursor: "pointer",
+                      border: isSelected ? "2px solid #10B981" : "0.5px solid #e5e7eb",
+                      background: isSelected ? "#F0FDF4" : "#fff",
+                      boxShadow: isSelected ? "0 0 0 4px rgba(16, 185, 129, 0.1)" : "none",
+                      position: "relative",
+                    }}
+                  >
+                    {/* Selected Badge */}
+                    {isSelected && (
                       <div
                         style={{
+                          position: "absolute",
+                          top: -6,
+                          right: -6,
+                          background: "#10B981",
+                          color: "#fff",
+                          borderRadius: "50%",
+                          width: 20,
+                          height: 20,
                           display: "flex",
                           alignItems: "center",
-                          gap: 12,
-                          flex: 1,
-                          minWidth: 0,
+                          justifyContent: "center",
+                          fontSize: 12,
+                          fontWeight: "bold",
                         }}
-                        onClick={() => {
-                          if (att.fileType?.startsWith("image/")) {
-                            window.open(att.fileUrl, "_blank");
-                          } else {
+                      >
+                        ✓
+                      </div>
+                    )}
+
+                    {/* Preview - Larger and centered */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: 180,
+                        background: "#f9fafb",
+                        borderRadius: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        marginBottom: 10,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        if (att.fileType?.startsWith("image/")) {
+                          window.open(att.fileUrl, "_blank");
+                        } else {
+                          const link = document.createElement("a");
+                          link.href = att.fileUrl;
+                          link.download = att.fileName || "document.pdf";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                    >
+                      {att.fileType?.startsWith("image/") ? (
+                        <img
+                          src={att.fileUrl}
+                          alt={att.fileName}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div style={{ textAlign: "center" }}>
+                          <Icon name="file-pdf" style={{ fontSize: 48, color: isSelected ? "#10B981" : "#ef4444" }} />
+                          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 8 }}>PDF Document</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* File Info */}
+                    <div style={{ marginBottom: 10 }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "#1f2937",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={att.fileName}
+                      >
+                        {att.fileName}
+                        {isSelected && (
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: 10,
+                              color: "#10B981",
+                              fontWeight: 600,
+                              background: "#D1FAE5",
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                            }}
+                          >
+                            Selected
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
+                        {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
+                        {att.fileSize ? formatFileSize(att.fileSize) : "—"}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons - Bottom aligned */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        paddingTop: 8,
+                        borderTop: "0.5px solid #f3f4f6",
+                      }}
+                    >
+                      {/* View Button */}
+                      <button
+                        type="button"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "0.5px solid #e5e7eb",
+                          background: "#fff",
+                          color: "#2563eb",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          transition: "all 0.1s",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(att.fileUrl, "_blank");
+                        }}
+                      >
+                        <Icon name="eye" style={{ fontSize: 14 }} />
+                        View
+                      </button>
+
+                      {/* Download Button */}
+                      <button
+                        type="button"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "0.5px solid #e5e7eb",
+                          background: "#fff",
+                          color: "#16a34a",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: "pointer",
+                          transition: "all 0.1s",
+                        }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const response = await fetch(att.fileUrl);
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
                             const link = document.createElement("a");
-                            link.href = att.fileUrl;
-                            link.download = att.fileName || "document.pdf";
+                            link.href = url;
+                            link.download = att.fileName || "download";
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } catch (err) {
+                            console.error("Download failed:", err);
+                            alert("Unable to download file");
                           }
                         }}
                       >
-                        <div style={S.attachmentPreview}>
-                          {att.fileType?.startsWith("image/") ? (
-                            <img src={att.fileUrl} alt={att.fileName} style={S.previewImg} />
-                          ) : (
-                            <Icon name="file-pdf" style={{ fontSize: 28, color: isSelected ? "#10B981" : "#ef4444" }} />
-                          )}
-                        </div>
+                        <Icon name="download" style={{ fontSize: 14 }} />
+                        Download
+                      </button>
 
-                        <div style={S.attachmentInfo}>
-                          <div style={S.attachmentName} title={att.fileName}>
-                            {att.fileName}
-                            {isSelected && (
-                              <span
-                                style={{
-                                  marginLeft: 8,
-                                  fontSize: 10,
-                                  color: "#10B981",
-                                  fontWeight: 600,
-                                  background: "#D1FAE5",
-                                  padding: "2px 8px",
-                                  borderRadius: 4,
-                                }}
-                              >
-                                Selected
-                              </span>
-                            )}
-                          </div>
-
-                          <div style={S.attachmentMeta}>
-                            {att.fileType?.startsWith("image/") ? "Image" : "PDF"} •{" "}
-                            {att.fileSize ? formatFileSize(att.fileSize) : "—"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {/* View */}
-                        <button
-                          type="button"
-                          style={S.removeBtn}
-                          title="View file"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(att.fileUrl, "_blank");
-                          }}
-                        >
-                          <Icon name="eye" style={{ fontSize: 14, color: "#2563eb" }} />
-                        </button>
-
-                        {/* Download */}
-                        <button
-                          type="button"
-                          style={S.removeBtn}
-                          title="Download file"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const response = await fetch(att.fileUrl);
-                              const blob = await response.blob();
-                              const url = window.URL.createObjectURL(blob);
-                              const link = document.createElement("a");
-                              link.href = url;
-                              link.download = att.fileName || "download";
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              window.URL.revokeObjectURL(url);
-                            } catch (err) {
-                              console.error("Download failed:", err);
-                              alert("Unable to download file");
-                            }
-                          }}
-                        >
-                          <Icon name="download" style={{ fontSize: 14, color: "#16a34a" }} />
-                        </button>
-
-                        {/* Delete - disabled if selected */}
-                        <button
-                          type="button"
-                          style={{
-                            ...S.removeBtn,
-                            opacity: isSelected ? 0.5 : 1,
-                            cursor: isSelected ? "not-allowed" : "pointer",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isSelected) {
-                              handleDeleteAttachment(att.publicId);
-                            } else {
-                              alert("Cannot delete the selected attachment. Please unselect it first.");
-                            }
-                          }}
-                          disabled={isSelected || deletingId === att.publicId}
-                          title={isSelected ? "Cannot delete selected attachment" : "Remove file"}
-                        >
-                          {deletingId === att.publicId ? (
-                            <Icon
-                              name="spinner"
-                              style={{
-                                animation: "spin 1s linear infinite",
-                                fontSize: 12,
-                              }}
-                            />
-                          ) : (
-                            <Icon name="trash" style={{ fontSize: 14, color: isSelected ? "#9ca3af" : "#ef4444" }} />
-                          )}
-                        </button>
-                      </div>
+                      {/* Delete Button - disabled if selected */}
+                      <button
+                        type="button"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "0.5px solid #e5e7eb",
+                          background: isSelected ? "#f3f4f6" : "#fff",
+                          color: isSelected ? "#9ca3af" : "#ef4444",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          cursor: isSelected ? "not-allowed" : "pointer",
+                          opacity: isSelected ? 0.6 : 1,
+                          transition: "all 0.1s",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isSelected) {
+                            handleDeleteAttachment(att.publicId);
+                          } else {
+                            alert("Cannot delete the selected attachment. Please unselect it first.");
+                          }
+                        }}
+                        disabled={isSelected || deletingId === att.publicId}
+                        title={isSelected ? "Cannot delete selected attachment" : "Remove file"}
+                      >
+                        {deletingId === att.publicId ? (
+                          <Icon
+                            name="spinner"
+                            style={{
+                              animation: "spin 1s linear infinite",
+                              fontSize: 14,
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <Icon name="trash" style={{ fontSize: 14 }} />
+                            Delete
+                          </>
+                        )}
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         </div>
       </Content>
     </>

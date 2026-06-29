@@ -214,7 +214,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
         </a>
         <div className="p-2 text-center">
           <div className="mb-4">
-            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#4B5694" }} />
           </div>
           <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
           <p className="text-muted mb-4">
@@ -223,7 +223,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
           <div className="d-flex gap-8 justify-content-center">
             <Button
               style={{
-                backgroundColor: "#644634",
+                backgroundColor: "#4B5694",
                 borderColor: "#800000",
                 color: "#fff",
                 padding: "15px 24px",
@@ -687,9 +687,18 @@ const MaterialRequestPage = () => {
               <BlockTitle tag="h3">Material Request</BlockTitle>
               <p className="text-muted">Total Requests: {filtered.length}</p>
             </BlockHeadContent>
-            <Button className="btn-icon" color="primary" onClick={openAddModal}>
-              <Icon name="plus" />
-            </Button>
+        
+             <Button
+                className="btn-icon"
+                style={{
+                  backgroundColor: "#4B5694",
+                  
+                  color: "#fff"
+                }}
+                onClick={openAddModal}
+              >
+                <Icon name="plus" />
+              </Button>
           </BlockBetween>
         </BlockHead>
 
@@ -802,7 +811,7 @@ const MaterialRequestPage = () => {
                     }}
                   >
                     <thead>
-                      <tr style={{ backgroundColor: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                      <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
                         <th style={{ padding: "14px 16px", textAlign: "center", fontWeight: 600, color: "#374151", width: "5%" }}>
                           S.No
                         </th>
@@ -819,7 +828,7 @@ const MaterialRequestPage = () => {
                           Purpose
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "10%" }}>
-                          Required By
+                          Required Date
                         </th>
                         <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 600, color: "#374151", width: "12%" }}>
                           ID

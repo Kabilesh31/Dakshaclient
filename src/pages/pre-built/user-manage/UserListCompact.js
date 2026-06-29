@@ -404,16 +404,16 @@ const UserListCompact = () => {
                     </li>
                     <li className="nk-block-tools-opt">
                       <Button
-  className="btn-icon"
-  style={{
-    backgroundColor: "#644634",
-    borderColor: "#800000",
-    color: "#fff"
-  }}
-  onClick={() => setModal({ add: true })}
->
-  <Icon name="plus" />
-</Button>
+                        className="btn-icon"
+                        style={{
+                          backgroundColor: "#4B5694",
+                          
+                          color: "#fff"
+                        }}
+                        onClick={() => setModal({ add: true })}
+                      >
+                        <Icon name="plus" />
+                      </Button>
                     </li>
                   </ul>
                 </div>
@@ -578,101 +578,101 @@ const UserListCompact = () => {
               </div>
             </div>
            <DataTableBody compact>
-  <DataTableHead>
-    <DataTableRow className="nk-tb-col-check"></DataTableRow>
-    <DataTableRow>
-      <span className="sub-text">S.No</span>
-    </DataTableRow>
-    <DataTableRow>
-      <span className="sub-text">User Name</span>
-    </DataTableRow>
-    <DataTableRow size="md">
-      <span className="sub-text">Role</span>
-    </DataTableRow>
-    <DataTableRow size="sm">
-      <span className="sub-text">Email</span>
-    </DataTableRow>
-    <DataTableRow size="md">
-      <span className="sub-text">Phone</span>
-    </DataTableRow>
-    <DataTableRow>
-      <span className="sub-text">Status</span>
-    </DataTableRow>
-    <DataTableRow className="nk-tb-col-tools text-right">
-      <span>More</span>
-    </DataTableRow>
-  </DataTableHead>
-  {currentItems.length > 0
-    ? currentItems.map((item, index) => {
-        const serialNumber = (currentPage - 1) * itemPerPage + index + 1;
-        return (
-          <DataTableItem key={item._id}>
-            <DataTableRow className="nk-tb-col-check"></DataTableRow>
-            <DataTableRow>
-              <span>{serialNumber}</span>
-            </DataTableRow>
-            <DataTableRow>
-              <div className="user-card">
-                <UserAvatar
-                  theme={item.avatarBg}
-                  className="xs"
-                  text={findUpper(item.name)}
-                  image={item.image}
-                ></UserAvatar>
-                <div className="user-info">
-                  <span className="tb-lead">{item.name} </span>
-                </div>
-              </div>
-            </DataTableRow>
-            <DataTableRow size="md">
-              <span>{item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}</span>
-            </DataTableRow>
-            <DataTableRow size="sm">
-              <span>{item.email}</span>
-            </DataTableRow>
-            <DataTableRow size="md">
-              <span>{item.phone}</span>
-            </DataTableRow>
-            <DataTableRow>
-              <span
-                className={`badge ${item.status === "active" ? "bg-success" : "bg-danger"}`}
-                style={{ padding: "4px 10px", color: "white", borderRadius: "14px" }}
-              >
-                {item.status === "active" ? "Active" : "Deactive"}
-              </span>
-            </DataTableRow>
-            <DataTableRow className="nk-tb-col-tools">
-              <ul className="nk-tb-actions gx-1">
-                <li>
-                  <UncontrolledDropdown>
-                    <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
-                      <Icon name="more-h"></Icon>
-                    </DropdownToggle>
-                    <DropdownMenu right>
-                      <ul className="link-list-opt no-bdr">
-                        <li onClick={() => onEditClick(item._id)}>
-                          <DropdownItem
-                            tag="a"
-                            href="#edit"
-                            onClick={(ev) => {
-                              ev.preventDefault();
-                            }}
-                          >
-                            <Icon name="edit"></Icon>
-                            <span>Edit</span>
-                          </DropdownItem>
-                        </li>
-                      </ul>
-                    </DropdownMenu>
-                  </UncontrolledDropdown>
-                </li>
-              </ul>
-            </DataTableRow>
-          </DataTableItem>
-        );
-      })
-    : null}
-</DataTableBody>
+                <DataTableHead>
+                  <DataTableRow className="nk-tb-col-check"></DataTableRow>
+                  <DataTableRow>
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">S.No</span>
+                  </DataTableRow>
+                  <DataTableRow>
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">User Name</span>
+                  </DataTableRow>
+                  <DataTableRow size="md">
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">Role</span>
+                  </DataTableRow>
+                  <DataTableRow size="sm">
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">Email</span>
+                  </DataTableRow>
+                  <DataTableRow size="md">
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">Phone</span>
+                  </DataTableRow>
+                  <DataTableRow>
+                    <span style={{fontWeight:"bold", color: "#636363"}} className="sub-text">Status</span>
+                  </DataTableRow>
+                  <DataTableRow className="nk-tb-col-tools text-right">
+                    <span style={{fontWeight:"bold", color: "#636363"}}>More</span>
+                  </DataTableRow>
+                </DataTableHead>
+                {currentItems.length > 0
+                  ? currentItems.map((item, index) => {
+                      const serialNumber = (currentPage - 1) * itemPerPage + index + 1;
+                      return (
+                        <DataTableItem key={item._id}>
+                          <DataTableRow className="nk-tb-col-check"></DataTableRow>
+                          <DataTableRow>
+                            <span>{serialNumber}</span>
+                          </DataTableRow>
+                          <DataTableRow>
+                            <div className="user-card">
+                              <UserAvatar
+                                theme={item.avatarBg}
+                                className="xs"
+                                text={findUpper(item.name)}
+                                image={item.image}
+                              ></UserAvatar>
+                              <div className="user-info">
+                                <span className="tb-lead">{item.name} </span>
+                              </div>
+                            </div>
+                          </DataTableRow>
+                          <DataTableRow size="md">
+                            <span>{item.role?.charAt(0).toUpperCase() + item.role?.slice(1)}</span>
+                          </DataTableRow>
+                          <DataTableRow size="sm">
+                            <span>{item.email}</span>
+                          </DataTableRow>
+                          <DataTableRow size="md">
+                            <span>{item.phone}</span>
+                          </DataTableRow>
+                          <DataTableRow>
+                            <span
+                              className={`badge ${item.status === "active" ? "bg-success" : "bg-danger"}`}
+                              style={{ padding: "4px 10px", color: "white", borderRadius: "14px" }}
+                            >
+                              {item.status === "active" ? "Active" : "Deactive"}
+                            </span>
+                          </DataTableRow>
+                          <DataTableRow className="nk-tb-col-tools">
+                            <ul className="nk-tb-actions gx-1">
+                              <li>
+                                <UncontrolledDropdown>
+                                  <DropdownToggle tag="a" className="dropdown-toggle btn btn-icon btn-trigger">
+                                    <Icon name="more-h"></Icon>
+                                  </DropdownToggle>
+                                  <DropdownMenu right>
+                                    <ul className="link-list-opt no-bdr">
+                                      <li onClick={() => onEditClick(item._id)}>
+                                        <DropdownItem
+                                          tag="a"
+                                          href="#edit"
+                                          onClick={(ev) => {
+                                            ev.preventDefault();
+                                          }}
+                                        >
+                                          <Icon name="edit"></Icon>
+                                          <span>Edit</span>
+                                        </DropdownItem>
+                                      </li>
+                                    </ul>
+                                  </DropdownMenu>
+                                </UncontrolledDropdown>
+                              </li>
+                            </ul>
+                          </DataTableRow>
+                        </DataTableItem>
+                      );
+                    })
+                  : null}
+              </DataTableBody>
             <div className="card-inner">
               {currentItems.length > 0 ? (
                 <PaginationComponent
@@ -802,7 +802,7 @@ const UserListCompact = () => {
                       <li>
                         <Button  className="btn-icon"
   style={{
-    backgroundColor: "#644634",
+    backgroundColor: "#4B5694",
     borderColor: "#800000",
     color: "#fff",
     padding: "6px 20px"
@@ -916,7 +916,7 @@ const UserListCompact = () => {
                       <li>
                         <Button className="btn-icon"
   style={{
-    backgroundColor: "#644634",
+    backgroundColor: "#4B5694",
     borderColor: "#800000",
     color: "#fff",
     padding: "6px 20px"
