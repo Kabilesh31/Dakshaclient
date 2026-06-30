@@ -144,15 +144,7 @@ const PrintDocument = ({ orderData, id, formatDateForPrint, formatCurrency }) =>
         </div>
 
         <div style={{ textAlign: "right", minWidth: "160px" }}>
-          {/* <div style={{
-            border: "2px solid #000",
-            padding: "6px 14px",
-            display: "inline-block",
-            marginBottom: "4px",
-          }}> */}
-            
-            <div style={{ fontSize: "11px", fontWeight: "600", color: "#333" }}>{id || orderData?._id || "PO-00677"}</div>
-          {/* </div> */}
+          <div style={{ fontSize: "11px", fontWeight: "600", color: "#333" }}>{id || orderData?._id || "PO-00677"}</div>
         </div>
       </div>
 
@@ -678,17 +670,10 @@ const PurchaseOrderDetails = () => {
             </BlockHeadContent>
 
             <div className="d-flex align-items-center gap-2">
-              <Button
-                color="dark"
-                size="sm"
-                className=""
-                onClick={() => history.push("/purchase-order")}
-              >
-                <Icon name="arrow-left" /> Back
-              </Button>
+              
               {isEditing ? (
                 <>
-                  <Button color="secondary" size="sm" onClick={cancelEditing} disabled={isSaving}>
+                  <Button color="warning" size="sm" onClick={cancelEditing} disabled={isSaving}>
                     <Icon name="cross" /> Cancel
                   </Button>
                   <Button color="success" size="sm" onClick={saveEdits} disabled={isSaving}>
@@ -698,7 +683,7 @@ const PurchaseOrderDetails = () => {
                 </>
               ) : (
                 <>
-                  <Button color="warning" outline size="sm" onClick={startEditing}>
+                  <Button color="primary" outline size="sm" onClick={startEditing}>
                     <Icon name="edit" />
                   </Button>
                   <UncontrolledDropdown>
@@ -725,7 +710,14 @@ const PurchaseOrderDetails = () => {
         </BlockHead>
 
         <Block>
-          <div className="card-inner">
+          {/* WHITE CARD BACKGROUND ADDED HERE */}
+          <div className="card-inner" style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)",
+            padding: "28px",
+            border: "1px solid #e5e7eb"
+          }}>
             {/* Order ID and Supplier Info */}
             <div style={{ marginBottom: "28px", paddingBottom: "24px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "8px", fontFamily: "monospace", fontWeight: 500 }}>
@@ -966,6 +958,7 @@ const PurchaseOrderDetails = () => {
               </div>
             )}
           </div>
+          {/* END OF WHITE CARD */}
         </Block>
       </Content>
 

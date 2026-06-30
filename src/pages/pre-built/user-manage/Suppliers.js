@@ -85,7 +85,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
         </a>
         <div className="p-2 text-center">
           <div className="mb-4">
-            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#644634" }} />
+            <Icon name="alert-circle" style={{ fontSize: "3rem", color: "#4B5694" }} />
           </div>
           <h5 className="title mb-2">{title || "Confirm Delete"}</h5>
           <p className="text-muted mb-4">
@@ -94,7 +94,7 @@ const ConfirmationModal = ({ isOpen, toggle, onConfirm, title, message, loading 
           <div className="d-flex gap-8 justify-content-center">
             <Button
               style={{
-                backgroundColor: "#644634",
+                backgroundColor: "#4B5694",
                 borderColor: "#800000",
                 color: "#fff",
                 padding: "15px 24px",
@@ -316,7 +316,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                       <Button
                         type="button"
                         style={{
-                          backgroundColor: "#644634",
+                          backgroundColor: "#4B5694",
                           borderColor: "#800000",
                           color: "#fff",
                           padding: "15px 20px",
@@ -468,7 +468,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                     <Button
                       className="btn-icon"
                       style={{
-                        backgroundColor: "#644634",
+                        backgroundColor: "#4B5694",
                         borderColor: "#800000",
                         color: "#fff",
                         padding: "6px 20px",
@@ -710,8 +710,8 @@ const Suppliers = () => {
                 <Button
                   className="btn-icon"
                   style={{
-                    backgroundColor: "#644634",
-                    borderColor: "#800000",
+                    backgroundColor: "#4B5694",
+                   
                     color: "#fff",
                   }}
                   onClick={handleAdd}

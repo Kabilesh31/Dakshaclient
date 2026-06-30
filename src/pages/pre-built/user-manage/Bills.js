@@ -225,7 +225,7 @@ const Bills = () => {
     }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isSelected ? "#644634" : state.isFocused ? "#f3f4f6" : "white",
+      backgroundColor: state.isSelected ? "#4B5694" : state.isFocused ? "#f3f4f6" : "white",
       color: state.isSelected ? "white" : "#111827",
       fontSize: 13,
     }),
@@ -443,7 +443,7 @@ const Bills = () => {
             <BlockHeadContent>
               <Button
                 style={{
-                  backgroundColor: "#644634",
+                  backgroundColor: "#4B5694",
                   borderColor: "#800000",
                   color: "#fff",
                   padding: "6px 6px"
@@ -676,7 +676,7 @@ const Bills = () => {
                 </div>
                 <div className="d-flex justify-content-end gap-2">
                   <Button color="secondary" className="p-2" onClick={() => setViewModal(false)}>Close</Button>
-                  <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} className="p-2">Download PDF</Button>
+                  <Button style={{ backgroundColor: "#4B5694", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} className="p-2">Download PDF</Button>
                 </div>
               </div>
             )}
@@ -819,7 +819,7 @@ const Bills = () => {
               <Button color="secondary" className="p-3 mb-5" onClick={() => setFormModal(false)}>Cancel</Button>
               <Button
                 style={{
-                  backgroundColor: "#644634",
+                  backgroundColor: "#4B5694",
                   borderColor: "#800000",
                   color: "#fff",
                   padding: "6px 20px"

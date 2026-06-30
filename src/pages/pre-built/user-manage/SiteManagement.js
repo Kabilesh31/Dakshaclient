@@ -30,7 +30,7 @@ import {
 
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api`;
 
-const BRAND = "#644634";
+const BRAND = "#4B5694";
 const BRAND_DARK = "#4e3427";
 
 /* ── helpers ── */
@@ -678,9 +678,18 @@ const SiteManagement = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-              <BrandBtn onClick={() => setAddModal(true)} size="md">
-                <Icon name="plus" /> Add Project
-              </BrandBtn>
+            
+               <Button
+                                      className="btn-icon"
+                                      style={{
+                                        backgroundColor: "#4B5694",
+                                        
+                                        color: "#fff"
+                                      }}
+                                      onClick={() => setAddModal(true)} 
+                                    >
+                                      <Icon name="plus" />
+                                    </Button>
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>

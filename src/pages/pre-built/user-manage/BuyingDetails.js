@@ -318,15 +318,6 @@ const BuyingDetails = () => {
               <div style={styles.itemTitle}>{name}</div>
               <div style={styles.itemSub}>Item ID: #{displayId}</div>
             </div>
-
-                
-            <Button
-                            color="dark"
-                            size="sm"
-                            className="mb-2"
-                            onClick={() => history.push("/Buying")}>
-                            <Icon name="arrow-left" /> Back
-                          </Button>
           </div>
 
           {/* ── summary metrics ── */}

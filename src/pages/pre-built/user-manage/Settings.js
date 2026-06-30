@@ -216,7 +216,7 @@ const Settings = () => {
                         </Row>
                         <div className="settings-actions mt-4 ">
                           <Button style={{
-    backgroundColor: "#644634",
+    backgroundColor: "#4B5694",
     borderColor: "#800000",
    marginRight: "0.5rem",
     color: "#fff",

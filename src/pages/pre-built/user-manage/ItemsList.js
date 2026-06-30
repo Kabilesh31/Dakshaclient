@@ -373,7 +373,7 @@ const ProductsListCompact = () => {
                       <li className="nk-block-tools-opt">
                         <Button
                           style={{
-                            backgroundColor: "#644634",
+                            backgroundColor: "#4B5694",
                             borderColor: "#800000",
                             color: "#fff",
                             padding: "6px 6px",
@@ -551,7 +551,7 @@ const ProductsListCompact = () => {
                 className="xs"
                 text={findUpper(item.name)}
                 style={{
-                  backgroundColor: "#644634",
+                  backgroundColor: "#4B5694",
                   color: "#fff",
                 }}
               />
@@ -762,7 +762,7 @@ const ProductsListCompact = () => {
                 </FormGroup>
               </Col>
               <Col md="12">
-                <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
+                <Button style={{ backgroundColor: "#4B5694", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
                   {loading ? "Adding..." : "Add Item"}
                 </Button>
               </Col>
@@ -877,7 +877,7 @@ const ProductsListCompact = () => {
                 </FormGroup>
               </Col>
               <Col md="12">
-                <Button style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
+                <Button style={{ backgroundColor: "#4B5694", borderColor: "#800000", color: "#fff", padding: "6px 20px" }} type="submit" disabled={loading}>
                   {loading ? "Updating..." : "Update Item"}
                 </Button>
               </Col>
@@ -915,7 +915,7 @@ const ProductsListCompact = () => {
               </FormGroup>
               <div className="mt-3">
                 <Button
-                  style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "6px 20px" }}
+                  style={{ backgroundColor: "#4B5694", borderColor: "#800000", color: "#fff", padding: "6px 20px" }}
                   onClick={handleAssignSubmit}
                   disabled={loading}
                 >
@@ -942,7 +942,7 @@ const ProductsListCompact = () => {
               Cancel
             </Button>
             <Button
-              style={{ backgroundColor: "#644634", borderColor: "#800000", color: "#fff", padding: "8px 20px" }}
+              style={{ backgroundColor: "#4B5694", borderColor: "#800000", color: "#fff", padding: "8px 20px" }}
               onClick={handleDelete}
               disabled={loading}
             >
