@@ -99,10 +99,15 @@ const menu = [
   //   ],
   // },
 
+  {
+    icon: "calendar-check",
+    text: "Staff Attendance",
+    link: "/blank",
+  },
   // {
   //   icon: "calendar-check",
-  //   text: "Staff Attendance",
-  //   link: "/blank",
+  //   text: "Employee Attendance",
+  //   link: "/",
   // },
   // {
   //   icon: "package",          // ni ni-cart
