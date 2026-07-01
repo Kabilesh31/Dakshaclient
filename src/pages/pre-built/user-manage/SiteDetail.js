@@ -30,7 +30,14 @@ const BASE_URL = `${process.env.REACT_APP_BACKENDURL}` || "http://localhost:5000
 
 const BRAND = "#4B5694";
 
-/* ─── Shared: Brand Button ───────────────────────────── */
+// ─── STATUS BADGE ──────────────────────────────────────────────
+const STATUS_BADGE = {
+  approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
+  pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
+  rejected: { bg: "#fcebeb", color: "#a32d2d", label: "Rejected" },
+};
+
+// ─── Shared: Brand Button ─────────────────────────────────────
 const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false, size = "md", style = {} }) => {
   const pad = size === "sm" ? "5px 13px" : size === "lg" ? "10px 28px" : "7px 18px";
   const bg = danger ? "#dc3545" : outline ? "transparent" : BRAND;
@@ -56,7 +63,13 @@ const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false
   );
 };
 
-/* ─── Sidebar Viewer ─────────────────────────────────── */
+// ─── Format INR ──────────────────────────────────────────────
+const formatINR = (val) => {
+  if (!val && val !== 0) return "₹0";
+  return "₹" + Number(val).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+};
+
+// ─── Sidebar Viewer ────────────────────────────────────────────
 const SidebarViewer = ({ isOpen, onClose, title, children }) => (
   <>
     <div onClick={onClose} style={{
@@ -87,7 +100,7 @@ const SidebarViewer = ({ isOpen, onClose, title, children }) => (
   </>
 );
 
-/* ─── Image Gallery Sidebar ──────────────────────────── */
+// ─── Image Gallery Sidebar ─────────────────────────────────────
 const ImageSidebar = ({ isOpen, onClose, images, startIndex = 0, title }) => {
   const [current, setCurrent] = useState(startIndex);
   useEffect(() => { if (isOpen) setCurrent(startIndex); }, [isOpen, startIndex]);
@@ -130,7 +143,7 @@ const navBtnStyle = (side) => ({
   cursor: "pointer", backdropFilter: "blur(4px)",
 });
 
-/* ─── Modal helpers ──────────────────────────────────── */
+// ─── Modal helpers ─────────────────────────────────────────────
 const SectionLabel = ({ icon, label }) => (
   <div style={{ display: "flex", alignItems: "center", gap: "7px", margin: "18px 0 12px", paddingBottom: "8px", borderBottom: "1px solid #f2ede9" }}>
     <Icon name={icon} style={{ color: BRAND, fontSize: "14px" }} />
@@ -152,15 +165,328 @@ const inputStyle = {
   color: "#1a1a2e", background: "#fdfcfc",
 };
 
-const staffPillStyle = {
-  display: "inline-flex", alignItems: "center",
-  background: BRAND + "15", color: BRAND,
-  border: `1px solid ${BRAND}33`,
-  padding: "4px 12px", borderRadius: "20px",
-  fontSize: "12px", fontWeight: 600,
+// ─── DAILY WAGES SALARY ACCORDION ────────────────────────────
+const DailyWagesAccordion = ({ wages }) => {
+  const [openMonth, setOpenMonth] = useState(null);
+  const toggle = (monthKey) => setOpenMonth((prev) => (prev === monthKey ? null : monthKey));
+
+  // Group by month
+  const groupedByMonth = wages.reduce((acc, wage) => {
+    const date = new Date(wage.workDate);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+    if (!acc[monthKey]) {
+      acc[monthKey] = { monthName, monthKey, workers: [], totalAmount: 0 };
+    }
+    acc[monthKey].workers.push(wage);
+    acc[monthKey].totalAmount += wage.amount || 0;
+    return acc;
+  }, {});
+
+  const monthKeys = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a));
+  const grandTotal = monthKeys.reduce((sum, key) => sum + groupedByMonth[key].totalAmount, 0);
+
+  const getDaysInMonth = (monthKey) => {
+    const [year, month] = monthKey.split('-').map(Number);
+    return new Date(year, month, 0).getDate();
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {monthKeys.map((monthKey) => {
+          const monthData = groupedByMonth[monthKey];
+          const isOpen = openMonth === monthKey;
+          const daysInMonth = getDaysInMonth(monthKey);
+
+          return (
+            <div key={monthKey}
+              style={{
+                background: "#fff",
+                border: `1px solid ${isOpen ? BRAND + "55" : "#eee"}`,
+                borderRadius: "12px",
+                overflow: "hidden",
+                transition: "border-color 0.2s",
+              }}
+            >
+              {/* Header */}
+              <div
+                onClick={() => toggle(monthKey)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  background: isOpen ? BRAND + "06" : "#fff",
+                  transition: "background 0.18s",
+                }}
+              >
+                <div style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "8px",
+                  background: BRAND + "15",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0
+                }}>
+                  <Icon name="calendar" style={{ color: BRAND, fontSize: "17px" }} />
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>
+                    {monthData.monthName}
+                  </div>
+                  <div style={{
+                    fontSize: "12px",
+                    color: "#888",
+                    marginTop: "2px",
+                  }}>
+                    {monthData.workers.length} Workers • {daysInMonth} Days
+                  </div>
+                </div>
+
+                <span style={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: BRAND,
+                  background: BRAND + "12",
+                  padding: "4px 12px",
+                  borderRadius: "20px",
+                  flexShrink: 0
+                }}>
+                  {formatINR(monthData.totalAmount)}
+                </span>
+
+                <span style={{
+                  color: "#aaa",
+                  fontSize: "18px",
+                  transition: "transform 0.25s",
+                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                  flexShrink: 0
+                }}>
+                  ▾
+                </span>
+              </div>
+
+              {/* Expanded Content - Daily Details */}
+              <div style={{
+                maxHeight: isOpen ? "800px" : "0",
+                overflow: "hidden",
+                transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
+              }}>
+                <div style={{ padding: "0 16px 16px" }}>
+                  {/* Summary Stats */}
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                    gap: "12px",
+                    padding: "12px 0",
+                    borderBottom: "1px solid #f0f0f0",
+                    marginBottom: "12px"
+                  }}>
+                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Workers</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.workers.length}</div>
+                    </div>
+                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Amount</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{formatINR(monthData.totalAmount)}</div>
+                    </div>
+                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Working Days</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{daysInMonth}</div>
+                    </div>
+                  </div>
+
+                  {/* Daily Wage Table */}
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Worker Name</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Days Worked</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate/Day</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total</th>
+                          <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthData.workers.map((wage, idx) => (
+                          <tr key={wage._id || idx} style={{ borderBottom: idx < monthData.workers.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                            <td style={{ padding: "10px 10px", color: "#555" }}>
+                              {new Date(wage.workDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                            </td>
+                            <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
+                              {wage.workerName}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                              {wage.daysWorked || 1}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                              {formatINR(wage.dailyRate || 0)}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#1a1a2e" }}>
+                              {formatINR(wage.amount || 0)}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                              <span style={{
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                padding: "2px 10px",
+                                borderRadius: "20px",
+                                background: wage.status === "approved" ? "#eaf3de" : wage.status === "pending" ? "#faeeda" : "#fcebeb",
+                                color: wage.status === "approved" ? "#3b6d11" : wage.status === "pending" ? "#854f0b" : "#a32d2d",
+                              }}>
+                                {wage.status || "Pending"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Grand Total */}
+      {monthKeys.length > 0 && (
+        <div style={{
+          marginTop: "16px",
+          background: BRAND,
+          borderRadius: "12px",
+          padding: "16px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            color: "rgba(255,255,255,0.85)",
+            fontSize: "14px",
+            fontWeight: 600
+          }}>
+            <Icon name="wallet" style={{ fontSize: "18px", color: "#fff" }} />
+            Total Daily Wages (All Months)
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>
+            {formatINR(grandTotal)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-/* ─── GOOGLE DRIVE STYLE DOCUMENT CARD ───────────────── */
+// ─── MONTH FILTER ──────────────────────────────────────────────
+const MonthFilter = ({ 
+  selectedMonth, 
+  onMonthChange,
+  selectedYear,
+  onYearChange,
+  onFilter, 
+  onClear 
+}) => {
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const years = [];
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= currentYear - 5; y--) {
+    years.push(y);
+  }
+
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      flexWrap: "wrap"
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "12px", color: "#555", fontWeight: 600 }}>Month:</span>
+        <select
+          value={selectedMonth}
+          onChange={(e) => onMonthChange(e.target.value)}
+          style={{
+            ...inputStyle,
+            padding: "6px 10px",
+            fontSize: "12px",
+            minWidth: "120px",
+            cursor: "pointer"
+          }}
+        >
+          <option value="">All Months</option>
+          {months.map((month, index) => (
+            <option key={month} value={String(index + 1).padStart(2, '0')}>
+              {month}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "12px", color: "#555", fontWeight: 600 }}>Year:</span>
+        <select
+          value={selectedYear}
+          onChange={(e) => onYearChange(e.target.value)}
+          style={{
+            ...inputStyle,
+            padding: "6px 10px",
+            fontSize: "12px",
+            minWidth: "100px",
+            cursor: "pointer"
+          }}
+        >
+          <option value="">All Years</option>
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <BrandBtn size="sm" onClick={onFilter}>
+        <Icon name="filter" size={12} /> Apply Filter
+      </BrandBtn>
+
+      <button
+        onClick={onClear}
+        style={{
+          background: "transparent",
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          padding: "6px 14px",
+          fontSize: "12px",
+          fontWeight: 600,
+          color: "#666",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px"
+        }}
+      >
+        <Icon name="refresh" size={12} /> Clear
+      </button>
+    </div>
+  );
+};
+
+// ─── GOOGLE DRIVE STYLE DOCUMENT CARD ─────────────────────────
 const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
   const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
   const dateStr = doc.uploadedAt
@@ -292,13 +618,7 @@ const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
   );
 };
 
-/* ─── Purchase Order Accordion ───────────────────────── */
-const STATUS_BADGE = {
-  approved: { bg: "#eaf3de", color: "#3b6d11", label: "Approved" },
-  pending:  { bg: "#faeeda", color: "#854f0b", label: "Pending"  },
-  rejected: { bg: "#fcebeb", color: "#a32d2d", label: "Rejected" },
-};
-
+// ─── PURCHASE ORDER ACCORDION ──────────────────────────────────
 const POAccordion = ({ orders }) => {
   const [openId, setOpenId] = useState(null);
 
@@ -308,9 +628,6 @@ const POAccordion = ({ orders }) => {
     const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
     return sum + poTotal;
   }, 0);
-
-  const formatINR = (val) =>
-    "₹" + Number(val).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
   return (
     <div>
@@ -428,7 +745,7 @@ const POAccordion = ({ orders }) => {
   );
 };
 
-/* ─── Main Component ─────────────────────────────────── */
+// ─── MAIN COMPONENT ────────────────────────────────────────────
 const SiteDetail = () => {
   const { id } = useParams();
   const history = useHistory();
@@ -450,11 +767,19 @@ const SiteDetail = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [deletingItem, setDeletingItem] = useState(null);
 
+  // Daily Wages States
+  const [dailyWages, setDailyWages] = useState([]);
+  const [filteredDailyWages, setFilteredDailyWages] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [wagesLoading, setWagesLoading] = useState(false);
+
   const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
 
   useEffect(() => { fetchSiteDetails(); }, [id]);
   useEffect(() => { fetchPurchaseOrders(); }, [id]);
+  useEffect(() => { fetchDailyWages(); }, [id]);
 
   const fetchSiteDetails = async () => {
     try {
@@ -490,6 +815,100 @@ const SiteDetail = () => {
       console.error("Failed to fetch purchase orders", err);
     }
   };
+
+  // ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
+  const fetchDailyWages = async () => {
+    setWagesLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      // const token = localStorage.getItem("token");
+      // const response = await axios.get(`${API_URL}/projects/${id}/daily-wages`, {
+      //   headers: token ? { Authorization: `Bearer ${token}` } : {}
+      // });
+      // if (response.status === 200) {
+      //   setDailyWages(response.data.data || []);
+      //   setFilteredDailyWages(response.data.data || []);
+      // }
+
+      // Dummy data for daily wages
+      const dummyData = generateDummyDailyWages();
+      setDailyWages(dummyData);
+      setFilteredDailyWages(dummyData);
+    } catch (err) {
+      console.error("Failed to fetch daily wages", err);
+    } finally {
+      setWagesLoading(false);
+    }
+  };
+
+  const generateDummyDailyWages = () => {
+    const workers = [
+      { name: "Ramesh Kumar", rate: 600 },
+      { name: "Suresh Singh", rate: 500 },
+      { name: "Mahesh Patel", rate: 700 },
+      { name: "Rajesh Sharma", rate: 550 },
+      { name: "Ravi Gupta", rate: 650 },
+      { name: "Amit Verma", rate: 480 },
+      { name: "Vikram Yadav", rate: 620 },
+      { name: "Rahul Singh", rate: 580 },
+    ];
+
+    const wages = [];
+    const statuses = ["approved", "pending", "approved", "approved", "pending"];
+    const months = [4, 5, 6]; // April, May, June
+    const year = 2026;
+
+    months.forEach((month) => {
+      const daysInMonth = new Date(year, month, 0).getDate();
+      // Each worker works 20-25 days in a month
+      workers.forEach((worker, wIndex) => {
+        const daysWorked = Math.floor(Math.random() * 6) + 20; // 20-25 days
+        const amount = worker.rate * daysWorked;
+        const workDate = new Date(year, month - 1, Math.floor(Math.random() * daysInMonth) + 1);
+        
+        wages.push({
+          _id: `wage_${year}_${month}_${wIndex}`,
+          workerName: worker.name,
+          dailyRate: worker.rate,
+          daysWorked: daysWorked,
+          amount: amount,
+          workDate: workDate.toISOString().split('T')[0],
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          projectId: id
+        });
+      });
+    });
+
+    return wages;
+  };
+
+  const applyWagesFilter = () => {
+    let filtered = [...dailyWages];
+    
+    if (selectedMonth) {
+      filtered = filtered.filter(wage => {
+        const date = new Date(wage.workDate);
+        return String(date.getMonth() + 1).padStart(2, '0') === selectedMonth;
+      });
+    }
+    
+    if (selectedYear) {
+      filtered = filtered.filter(wage => {
+        const date = new Date(wage.workDate);
+        return date.getFullYear() === parseInt(selectedYear);
+      });
+    }
+    
+    setFilteredDailyWages(filtered);
+  };
+
+  const clearWagesFilter = () => {
+    setSelectedMonth("");
+    setSelectedYear("");
+    setFilteredDailyWages(dailyWages);
+  };
+
+  // ─── END DAILY WAGES FUNCTIONS ──────────────────────────────
 
   const handleFileUpload = async (e, type) => {
     const files = Array.from(e.target.files);
@@ -610,7 +1029,6 @@ const SiteDetail = () => {
   };
 
   const getPdfUrl = (doc) => {
-    // Handle different URL formats
     if (doc.url?.startsWith('http')) return doc.url;
     if (doc.url?.startsWith('/uploads')) return `${BASE_URL}${doc.url}`;
     return `${BASE_URL}${doc.url || ''}`;
@@ -646,7 +1064,6 @@ const SiteDetail = () => {
         <BlockHead size="sm">
           <BlockBetween>
             <BlockHeadContent>
-              
               <BlockTitle page tag="h3" className="mt-2">{site.name}</BlockTitle>
               <BlockDes className="text-soft">
                 <p>Complete project information and media gallery</p>
@@ -707,14 +1124,6 @@ const SiteDetail = () => {
                 </Col>
               </Row>
 
-              {/* ── Staff ── */}
-              {/* <SectionDivider title="Assigned Staff" />
-              <div className="d-flex flex-wrap gap-2">
-                {site.staffAssigned?.length
-                  ? site.staffAssigned.map((s, i) => <span key={i} style={staffPillStyle}>{s}</span>)
-                  : <p className="text-muted mb-0">No staff assigned yet.</p>}
-              </div> */}
-
               {/* ── Progress ── */}
               {site.status === "active" && site.completion !== undefined && (
                 <>
@@ -764,27 +1173,17 @@ const SiteDetail = () => {
                 </Row>
               ) : <EmptyState text="No site plans uploaded yet." />}
 
-              {/* ── Documents — Google Drive Style Grid ── */}
+              {/* ── Documents ── */}
               <SectionDivider title="Project Documents">
                 <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
               </SectionDivider>
 
               {documents.length > 0 ? (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                    gap: "18px",
-                  }}
-                >
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
                   {documents.map((doc) => {
                     const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
                     const dateStr = doc.uploadedAt
-                      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })
+                      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
                       : "";
 
                     return (
@@ -796,151 +1195,30 @@ const SiteDetail = () => {
                           overflow: "hidden",
                           transition: "all 0.2s ease",
                           cursor: "pointer",
-                          border: pdfSidebar.doc?._id === doc._id
-                            ? `2px solid ${BRAND}`
-                            : "2px solid transparent",
+                          border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
                         }}
                         onClick={() => setPdfSidebar({ open: true, doc })}
                       >
-                        {/* Thumbnail */}
-                        <div
-                          style={{
-                            height: "170px",
-                            background: "#dfe3e8",
-                            position: "relative",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              background: "#fff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <embed
-                              src={getPdfUrl(doc)}
-                              type="application/pdf"
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                border: "none",
-                                overflow: "hidden",
-                                pointerEvents: "none",
-                              }}
-                            />
+                        <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>
+                          <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                            <embed src={getPdfUrl(doc)} type="application/pdf" style={{ width: "100%", height: "100%", border: "none", overflow: "hidden", pointerEvents: "none" }} />
                           </div>
-
-                          {/* PDF Badge */}
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "10px",
-                              left: "10px",
-                              width: "20px",
-                              height: "20px",
-                              borderRadius: "6px",
-                              background: "#ea4335",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              fontSize: "9px",
-                              fontWeight: 700,
-                              letterSpacing: "0.4px",
-                            }}
-                          >
-                            PDF
-                          </div>
-
-                          {/* Delete Button */}
+                          <div style={{ position: "absolute", top: "10px", left: "10px", width: "20px", height: "20px", borderRadius: "6px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.4px" }}>PDF</div>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteDocument(doc._id);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
                             disabled={deletingItem === doc._id}
-                            style={{
-                              position: "absolute",
-                              top: "10px",
-                              right: "10px",
-                              width: "28px",
-                              height: "28px",
-                              borderRadius: "50%",
-                              border: "none",
-                              background: "rgba(0,0,0,0.45)",
-                              color: "#fff",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "12px",
-                            }}
+                            style={{ position: "absolute", top: "10px", right: "10px", width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
                           >
-                            {deletingItem === doc._id ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <Icon name="trash" />
-                            )}
+                            {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
                           </button>
                         </div>
-
-                        {/* Bottom Info */}
-                        <div
-                          style={{
-                            padding: "14px",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: "10px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "38px",
-                              height: "38px",
-                              borderRadius: "50%",
-                              background: "#ea4335",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Icon
-                              name="file-pdf"
-                              style={{
-                                color: "#fff",
-                                fontSize: "16px",
-                              }}
-                            />
+                        <div style={{ padding: "14px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                          <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
                           </div>
-
                           <div style={{ minWidth: 0 }}>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: "#202124",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {doc.originalName || doc.filename}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#5f6368",
-                                marginTop: "3px",
-                              }}
-                            >
-                              {sizeKB} KB • {dateStr}
-                            </div>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.originalName || doc.filename}</div>
+                            <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
                           </div>
                         </div>
                       </div>
@@ -951,12 +1229,35 @@ const SiteDetail = () => {
                 <EmptyState text="No documents uploaded yet." />
               )}
 
-              {/* ── Purchase Orders — Accordion ── */}
+              {/* ── Purchase Orders ── */}
               <SectionDivider title="Purchase Orders" />
               {purchaseOrders.length > 0 ? (
                 <POAccordion orders={purchaseOrders} />
               ) : (
                 <EmptyState text="No purchase orders found for this project." />
+              )}
+
+              {/* ── DAILY WAGES ── */}
+              <SectionDivider title="Daily Wages">
+                <MonthFilter
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                  onFilter={applyWagesFilter}
+                  onClear={clearWagesFilter}
+                />
+              </SectionDivider>
+
+              {wagesLoading ? (
+                <div style={{ padding: "20px", textAlign: "center" }}>
+                  <Spinner style={{ color: BRAND }} />
+                  <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
+                </div>
+              ) : filteredDailyWages.length > 0 ? (
+                <DailyWagesAccordion wages={filteredDailyWages} />
+              ) : (
+                <EmptyState text="No daily wages found for the selected period." />
               )}
 
             </div>
@@ -1044,26 +1345,6 @@ const SiteDetail = () => {
             </div>
           )}
 
-          {/* <SectionLabel icon="users" label="Assign Staff" />
-          <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-            <Input type="text" placeholder="Enter staff name, press Enter or Add"
-              value={staffInput} onChange={(e) => setStaffInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddStaff()}
-              style={inputStyle}
-            />
-            <BrandBtn outline onClick={handleAddStaff} style={{ flexShrink: 0 }}>+ Add</BrandBtn>
-          </div> */}
-          {/* <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minHeight: "32px", marginBottom: "4px" }}>
-            {editedSite.staffAssigned?.map((s, i) => (
-              <span key={i} style={{ ...staffPillStyle, cursor: "pointer" }} onClick={() => handleRemoveStaff(s)}>
-                {s} <span style={{ marginLeft: "5px", opacity: 0.6, fontWeight: 400 }}>×</span>
-              </span>
-            ))}
-            {!editedSite.staffAssigned?.length && (
-              <span style={{ fontSize: "12px", color: "#bbb", alignSelf: "center" }}>No staff added yet</span>
-            )}
-          </div> */}
-
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "28px", paddingTop: "20px", borderTop: "1px solid #f0f0f0" }}>
             <button
               onClick={() => { setEditModal(false); setFormErrors({}); }}
@@ -1081,7 +1362,7 @@ const SiteDetail = () => {
   );
 };
 
-/* ─── Helper components ──────────────────────────────── */
+// ─── HELPER COMPONENTS ────────────────────────────────────────
 const InfoBox = ({ label, value }) => (
   <div>
     <div style={{ fontSize: "11px", color: "#999", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: "3px" }}>{label}</div>
