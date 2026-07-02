@@ -63,6 +63,11 @@ const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false
   );
 };
 
+// ─── Capitalize First Letter ──────────────────────────────────
+const capitalizeFirst = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
 // ─── Format INR ──────────────────────────────────────────────
 const formatINR = (val) => {
   if (!val && val !== 0) return "₹0";
@@ -165,7 +170,7 @@ const inputStyle = {
   color: "#1a1a2e", background: "#fdfcfc",
 };
 
-// ─── DAILY WAGES SALARY ACCORDION ────────────────────────────
+// ─── DAILY WAGES ACCORDION ────────────────────────────────────
 // ─── DAILY WAGES ACCORDION ────────────────────────────────────
 const DailyWagesAccordion = ({ wages }) => {
   const [openMonth, setOpenMonth] = useState(null);
@@ -173,7 +178,7 @@ const DailyWagesAccordion = ({ wages }) => {
 
   // Group by month
   const groupedByMonth = wages.reduce((acc, wage) => {
-    const date = new Date(wage.workDate);
+    const date = new Date(wage.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
     
@@ -181,25 +186,50 @@ const DailyWagesAccordion = ({ wages }) => {
       acc[monthKey] = { 
         monthName, 
         monthKey, 
-        workers: [], 
+        records: [], 
         totalAmount: 0,
         totalDays: 0,
-        totalOvertime: 0
+        totalOvertime: 0,
+        uniqueEmployees: new Set()
       };
     }
-    acc[monthKey].workers.push(wage);
-    acc[monthKey].totalAmount += wage.amount || 0;
-    acc[monthKey].totalDays += wage.daysWorked || 0;
+    acc[monthKey].records.push(wage);
+    acc[monthKey].totalAmount += wage.totalSalary || 0;
+    acc[monthKey].totalDays += 1;
     acc[monthKey].totalOvertime += wage.overtimeHours || 0;
+    
+    // Track unique employees
+    let empId = wage.employeeId;
+    if (empId && typeof empId === 'object') {
+      empId = empId._id || empId;
+    }
+    if (empId) {
+      acc[monthKey].uniqueEmployees.add(empId.toString());
+    }
     return acc;
   }, {});
 
   const monthKeys = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a));
-  const grandTotal = monthKeys.reduce((sum, key) => sum + groupedByMonth[key].totalAmount, 0);
 
-  const getDaysInMonth = (monthKey) => {
-    const [year, month] = monthKey.split('-').map(Number);
-    return new Date(year, month, 0).getDate();
+  // Helper function to get employee name
+  const getEmployeeName = (record) => {
+    // If we have employeeName from processing
+    if (record.employeeName) return record.employeeName;
+    // If employeeId is populated
+    if (record.employeeId && typeof record.employeeId === 'object' && record.employeeId.name) {
+      return record.employeeId.name;
+    }
+    return 'Unknown';
+  };
+
+  // Helper function to get employee ID
+  const getEmployeeId = (record) => {
+    if (!record.employeeId) return 'N/A';
+    if (typeof record.employeeId === 'string') return record.employeeId;
+    if (typeof record.employeeId === 'object' && record.employeeId._id) {
+      return record.employeeId._id;
+    }
+    return 'N/A';
   };
 
   return (
@@ -208,7 +238,6 @@ const DailyWagesAccordion = ({ wages }) => {
         {monthKeys.map((monthKey) => {
           const monthData = groupedByMonth[monthKey];
           const isOpen = openMonth === monthKey;
-          const daysInMonth = getDaysInMonth(monthKey);
 
           return (
             <div key={monthKey}
@@ -256,7 +285,7 @@ const DailyWagesAccordion = ({ wages }) => {
                     color: "#888",
                     marginTop: "2px",
                   }}>
-                    {monthData.workers.length} Workers • {monthData.totalDays} Total Days • {monthData.totalOvertime}h Overtime
+                    {monthData.uniqueEmployees.size} Employees • {monthData.records.length} Records • {monthData.totalOvertime}h Overtime
                   </div>
                 </div>
 
@@ -283,9 +312,9 @@ const DailyWagesAccordion = ({ wages }) => {
                 </span>
               </div>
 
-              {/* Expanded Content - Daily Details */}
+              {/* Expanded Content - Daily Records */}
               <div style={{
-                maxHeight: isOpen ? "800px" : "0",
+                maxHeight: isOpen ? "1200px" : "0",
                 overflow: "hidden",
                 transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
               }}>
@@ -300,12 +329,12 @@ const DailyWagesAccordion = ({ wages }) => {
                     marginBottom: "12px"
                   }}>
                     <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Workers</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.workers.length}</div>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Records</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.records.length}</div>
                     </div>
                     <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Days</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.totalDays}</div>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Employees</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.uniqueEmployees.size}</div>
                     </div>
                     <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
                       <div style={{ fontSize: "11px", color: "#aaa" }}>Total Overtime</div>
@@ -317,67 +346,69 @@ const DailyWagesAccordion = ({ wages }) => {
                     </div>
                   </div>
 
-                  {/* Daily Wage Table */}
+                  {/* Daily Records Table */}
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                       <thead>
                         <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Worker Name</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Employee</th>
                           <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Site</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Days Worked</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate/Day</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Daily Salary</th>
                           <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Overtime</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Salary</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total</th>
                           <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {monthData.workers.map((wage, idx) => (
-                          <tr key={wage._id || idx} style={{ borderBottom: idx < monthData.workers.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                            <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
-                              {wage.workerName}
-                              <div style={{ fontSize: "11px", color: "#888" }}>
-                                ID: {wage.employeeId?.substring(0, 8) || "N/A"}
-                              </div>
-                            </td>
-                            <td style={{ padding: "10px 10px", color: "#555" }}>
-                              {wage.siteName || "N/A"}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                              {wage.daysWorked || 0}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                              {formatINR(wage.dailyRate || 0)}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                              {formatINR(wage.amount || 0)}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
-                              {wage.overtimeHours || 0}h
-                              {wage.overtimeAmount > 0 && (
+                        {monthData.records.map((record, idx) => {
+                          const employeeName = getEmployeeName(record);
+                          const employeeId = getEmployeeId(record);
+                          const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
+                          
+                          return (
+                            <tr key={record._id || idx} style={{ borderBottom: idx < monthData.records.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                              <td style={{ padding: "10px 10px", color: "#555" }}>
+                                {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
+                              </td>
+                              <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
+                                {employeeName}
                                 <div style={{ fontSize: "11px", color: "#888" }}>
-                                  {formatINR(wage.overtimeAmount)}
+                                  ID: {empIdStr.substring(0, 8) || "N/A"}
                                 </div>
-                              )}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 700, color: BRAND }}>
-                              {formatINR((wage.amount || 0) + (wage.overtimeAmount || 0))}
-                            </td>
-                            <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                              <span style={{
-                                fontSize: "10px",
-                                fontWeight: 600,
-                                padding: "2px 10px",
-                                borderRadius: "20px",
-                                background: wage.status === "approved" ? "#eaf3de" : wage.status === "pending" ? "#faeeda" : "#fcebeb",
-                                color: wage.status === "approved" ? "#3b6d11" : wage.status === "pending" ? "#854f0b" : "#a32d2d",
-                              }}>
-                                {wage.status || "Pending"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td style={{ padding: "10px 10px", color: "#555" }}>
+                                {record.siteName || record.site?.name || "N/A"}
+                              </td>
+                              <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                                {formatINR(record.dailySalary || 0)}
+                              </td>
+                              <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
+                                {record.overtimeHours || 0}h
+                                {record.overtimeAmount > 0 && (
+                                  <div style={{ fontSize: "11px", color: "#888" }}>
+                                    {formatINR(record.overtimeAmount)}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 700, color: BRAND }}>
+                                {formatINR(record.totalSalary || 0)}
+                              </td>
+                             <td style={{ padding: "10px 10px", textAlign: "center" }}>
+  <span style={{
+    fontSize: "10px",
+    fontWeight: 600,
+    padding: "2px 10px",
+    borderRadius: "20px",
+    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
+    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
+  }}>
+    {capitalizeFirst(record.status || "Pending")}
+  </span>
+</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -411,7 +442,7 @@ const DailyWagesAccordion = ({ wages }) => {
             Total Daily Wages (All Months)
           </div>
           <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>
-            {formatINR(grandTotal)}
+            {formatINR(Object.values(groupedByMonth).reduce((sum, m) => sum + m.totalAmount, 0))}
           </div>
         </div>
       )}
@@ -563,9 +594,17 @@ const POAccordion = ({ orders }) => {
                     {po.vendor || po.supplierName || "Vendor"}
                   </div>
                 </div>
-                <span style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "20px", background: badge.bg, color: badge.color, flexShrink: 0 }}>
-                  {badge.label}
-                </span>
+               <span style={{ 
+  fontSize: "11px", 
+  fontWeight: 600, 
+  padding: "3px 10px", 
+  borderRadius: "20px", 
+  background: badge.bg, 
+  color: badge.color, 
+  flexShrink: 0 
+}}>
+  {badge.label}
+</span>
                 <span style={{ fontSize: "13px", fontWeight: 600, color: BRAND, background: BRAND + "12", padding: "4px 12px", borderRadius: "20px", flexShrink: 0 }}>
                   {formatINR(poTotal)}
                 </span>
@@ -643,6 +682,100 @@ const POAccordion = ({ orders }) => {
   );
 };
 
+// ─── PROFIT & LOSS ACCORDION ────────────────────────────────────
+const PLAccordion = ({ 
+  title, 
+  icon, 
+  total, 
+  count, 
+  isOpen, 
+  onToggle, 
+  children, 
+  color 
+}) => {
+  return (
+    <div style={{
+      background: "#fff",
+      border: `1px solid ${isOpen ? color + "55" : "#eee"}`,
+      borderRadius: "12px",
+      overflow: "hidden",
+      transition: "border-color 0.2s",
+    }}>
+      <div
+        onClick={onToggle}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          padding: "14px 16px",
+          cursor: "pointer",
+          userSelect: "none",
+          background: isOpen ? color + "06" : "#fff",
+          transition: "background 0.18s",
+        }}
+      >
+        <div style={{
+          width: "36px",
+          height: "36px",
+          borderRadius: "8px",
+          background: color + "15",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0
+        }}>
+          <Icon name={icon} style={{ color: color, fontSize: "17px" }} />
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>
+            {title}
+          </div>
+          <div style={{
+            fontSize: "12px",
+            color: "#888",
+            marginTop: "2px",
+          }}>
+            {count} {count === 1 ? 'record' : 'records'}
+          </div>
+        </div>
+
+        <span style={{
+          fontSize: "13px",
+          fontWeight: 600,
+          color: color,
+          background: color + "12",
+          padding: "4px 12px",
+          borderRadius: "20px",
+          flexShrink: 0
+        }}>
+          {formatINR(total)}
+        </span>
+
+        <span style={{
+          color: "#aaa",
+          fontSize: "18px",
+          transition: "transform 0.25s",
+          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+          flexShrink: 0
+        }}>
+          ▾
+        </span>
+      </div>
+
+      <div style={{
+        maxHeight: isOpen ? "600px" : "0",
+        overflow: "hidden",
+        transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
+      }}>
+        <div style={{ padding: "0 16px 16px" }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── TAB COMPONENT ─────────────────────────────────────────────
 const Tabs = ({ tabs, activeTab, onTabChange }) => {
   return (
@@ -663,7 +796,13 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => {
             padding: "10px 20px",
             background: "transparent",
             border: "none",
-            borderBottom: activeTab === tab.id ? `3px solid ${BRAND}` : "3px solid transparent",
+            outline: "none",
+            boxShadow: "none",
+            borderRadius: 0,
+            borderBottom:
+              activeTab === tab.id
+                ? `3px solid ${BRAND}`
+                : "3px solid transparent",
             color: activeTab === tab.id ? BRAND : "#6c757d",
             fontWeight: activeTab === tab.id ? 700 : 500,
             fontSize: "13px",
@@ -725,6 +864,9 @@ const SiteDetail = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [wagesLoading, setWagesLoading] = useState(false);
 
+  // Business Accordion State
+  const [openBizSection, setOpenBizSection] = useState('budget');
+
   // Tab state
   const [activeTab, setActiveTab] = useState("info");
 
@@ -777,149 +919,87 @@ const fetchDailyWages = async () => {
   try {
     const token = localStorage.getItem("token");
     
-    // Get all employees for this site
-    const employeesResponse = await axios.get(`${API_URL}/employees`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      params: { site: id }
-    });
-    
-    if (!employeesResponse.data.success) {
-      throw new Error("Failed to fetch employees");
-    }
-    
-    const employees = employeesResponse.data.data || [];
-    console.log("Employees for site:", employees);
-    
-    if (employees.length === 0) {
-      setDailyWages([]);
-      setFilteredDailyWages([]);
-      setWagesLoading(false);
-      showError("No employees found for this site");
-      return;
-    }
-
-    // Get all attendance records for this site's employees
-    const employeeIds = employees.map(emp => emp.id);
-    
-    // Get current date and fetch last 3 months
+    // Get today's date
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
     
-    const allWages = [];
+    // Calculate date range for the last 3 months
+    const startMonth = currentMonth - 2;
+    let startYear = currentYear;
+    let startMonthNum = startMonth;
+    if (startMonth <= 0) {
+      startMonthNum = startMonth + 12;
+      startYear = currentYear - 1;
+    }
     
-    // Create a map of employee details for quick lookup
-    const employeeMap = {};
-    employees.forEach(emp => {
-      employeeMap[emp.id] = emp;
+    const startDate = `${startYear}-${String(startMonthNum).padStart(2, '0')}-01`;
+    const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
+    
+    console.log(`Fetching attendance from ${startDate} to ${endDate} for site ${id}`);
+    
+    // Fetch all attendance records for this site
+    const attendanceResponse = await axios.get(
+      `${API_URL}/attendance/range`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        params: { 
+          startDate: startDate, 
+          endDate: endDate,
+          site: id // Filter by site
+        }
+      }
+    );
+    
+    if (!attendanceResponse.data.success) {
+      throw new Error("Failed to fetch attendance records");
+    }
+    
+    const attendanceRecords = attendanceResponse.data.data || [];
+    console.log(`Found ${attendanceRecords.length} attendance records`);
+    
+    if (attendanceRecords.length === 0) {
+      setDailyWages([]);
+      setFilteredDailyWages([]);
+      setWagesLoading(false);
+      showError("No attendance records found for this site in the last 3 months");
+      return;
+    }
+    
+    // Process records - employeeId is populated by backend
+    const processedRecords = attendanceRecords.map(record => {
+      // Get employee data from populated employeeId
+      let employeeName = 'Unknown';
+      let employeeId = '';
+      let employeeSalary = 0;
+      
+      if (record.employeeId) {
+        // If employeeId is populated (object with name)
+        if (typeof record.employeeId === 'object') {
+          employeeName = record.employeeId.name || 'Unknown';
+          employeeId = record.employeeId._id || record.employeeId;
+          employeeSalary = record.employeeId.salary || 0;
+        } 
+        // If employeeId is a string
+        else if (typeof record.employeeId === 'string') {
+          employeeId = record.employeeId;
+        }
+      }
+      
+      return {
+        ...record,
+        employeeName: employeeName,
+        employeeIdDisplay: employeeId,
+        employeeSalary: employeeSalary,
+        siteName: record.siteName || record.site?.name || 'Not Assigned'
+      };
     });
     
-    for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
-      let month = currentMonth - monthOffset;
-      let year = currentYear;
-      if (month <= 0) {
-        month = month + 12;
-        year = currentYear - 1;
-      }
-      
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
-      
-      console.log(`Fetching attendance for ${year}-${String(month).padStart(2, '0')}`);
-      
-      // Fetch attendance for all employees in this date range
-      try {
-        // Use the range endpoint with employee IDs
-        const attendanceResponse = await axios.get(
-          `${API_URL}/attendance/range`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            params: { 
-              startDate: startDate, 
-              endDate: endDate,
-              site: id // Filter by site
-            }
-          }
-        );
-        
-        if (attendanceResponse.data.success) {
-          const attendanceRecords = attendanceResponse.data.data || [];
-          console.log(`Found ${attendanceRecords.length} attendance records for ${year}-${month}`);
-          
-          // Group attendance by employee
-          const groupedByEmployee = {};
-          
-          attendanceRecords.forEach(record => {
-            const empId = record.employeeId?._id || record.employeeId;
-            if (!empId) return;
-            
-            if (!groupedByEmployee[empId]) {
-              groupedByEmployee[empId] = {
-                records: [],
-                totalDays: 0,
-                totalSalary: 0,
-                totalOvertimeHours: 0,
-                totalOvertimeAmount: 0,
-                employee: employeeMap[empId] || null
-              };
-            }
-            
-            groupedByEmployee[empId].records.push(record);
-            groupedByEmployee[empId].totalDays += 1;
-            groupedByEmployee[empId].totalSalary += record.totalSalary || 0;
-            groupedByEmployee[empId].totalOvertimeHours += record.overtimeHours || 0;
-            groupedByEmployee[empId].totalOvertimeAmount += record.overtimeAmount || 0;
-          });
-          
-          // Create wage records from grouped data
-          Object.keys(groupedByEmployee).forEach(empId => {
-            const data = groupedByEmployee[empId];
-            const employee = data.employee;
-            
-            if (employee) {
-              // Get site name from first record or employee
-              let siteName = employee.siteName || 'Not Assigned';
-              if (data.records.length > 0 && data.records[0].siteName) {
-                siteName = data.records[0].siteName;
-              }
-              
-              // Get daily rate from employee salary or calculate from records
-              let dailyRate = employee.salary || 0;
-              if (dailyRate === 0 && data.records.length > 0) {
-                // Try to get daily rate from the first record
-                dailyRate = data.records[0].dailySalary || 0;
-              }
-              
-              allWages.push({
-                _id: `wage_${empId}_${year}_${month}`,
-                employeeId: empId,
-                workerName: employee.name || 'Unknown Worker',
-                dailyRate: dailyRate,
-                daysWorked: data.totalDays,
-                amount: data.totalSalary,
-                overtimeHours: data.totalOvertimeHours,
-                overtimeAmount: data.totalOvertimeAmount,
-                workDate: `${year}-${String(month).padStart(2, '0')}-01`,
-                status: "approved",
-                projectId: id,
-                siteName: siteName,
-                records: data.records
-              });
-            }
-          });
-        }
-      } catch (err) {
-        console.error(`Failed to fetch attendance for ${year}-${month}:`, err);
-      }
-    }
+    console.log("Processed records sample:", processedRecords[0]);
     
-    console.log("Daily wages data:", allWages);
-    setDailyWages(allWages);
-    setFilteredDailyWages(allWages);
+    setDailyWages(processedRecords);
+    setFilteredDailyWages(processedRecords);
     
-    if (allWages.length === 0) {
-      showError("No attendance records found for this site in the last 3 months");
-    }
   } catch (err) {
     console.error("Failed to fetch daily wages:", err);
     showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
@@ -929,59 +1009,20 @@ const fetchDailyWages = async () => {
     setWagesLoading(false);
   }
 };
-  const generateDummyDailyWages = () => {
-    const workers = [
-      { name: "Ramesh Kumar", rate: 600 },
-      { name: "Suresh Singh", rate: 500 },
-      { name: "Mahesh Patel", rate: 700 },
-      { name: "Rajesh Sharma", rate: 550 },
-      { name: "Ravi Gupta", rate: 650 },
-      { name: "Amit Verma", rate: 480 },
-      { name: "Vikram Yadav", rate: 620 },
-      { name: "Rahul Singh", rate: 580 },
-    ];
-
-    const wages = [];
-    const statuses = ["approved", "pending", "approved", "approved", "pending"];
-    const months = [4, 5, 6];
-    const year = 2026;
-
-    months.forEach((month) => {
-      const daysInMonth = new Date(year, month, 0).getDate();
-      workers.forEach((worker, wIndex) => {
-        const daysWorked = Math.floor(Math.random() * 6) + 20;
-        const amount = worker.rate * daysWorked;
-        const workDate = new Date(year, month - 1, Math.floor(Math.random() * daysInMonth) + 1);
-        
-        wages.push({
-          _id: `wage_${year}_${month}_${wIndex}`,
-          workerName: worker.name,
-          dailyRate: worker.rate,
-          daysWorked: daysWorked,
-          amount: amount,
-          workDate: workDate.toISOString().split('T')[0],
-          status: statuses[Math.floor(Math.random() * statuses.length)],
-          projectId: id
-        });
-      });
-    });
-
-    return wages;
-  };
 
   const applyWagesFilter = () => {
     let filtered = [...dailyWages];
     
     if (selectedMonth) {
-      filtered = filtered.filter(wage => {
-        const date = new Date(wage.workDate);
+      filtered = filtered.filter(record => {
+        const date = new Date(record.date);
         return String(date.getMonth() + 1).padStart(2, '0') === selectedMonth;
       });
     }
     
     if (selectedYear) {
-      filtered = filtered.filter(wage => {
-        const date = new Date(wage.workDate);
+      filtered = filtered.filter(record => {
+        const date = new Date(record.date);
         return date.getFullYear() === parseInt(selectedYear);
       });
     }
@@ -997,12 +1038,13 @@ const fetchDailyWages = async () => {
 
   // ─── END DAILY WAGES FUNCTIONS ──────────────────────────────
 
-  // ─── PROFIT & LOSS CALCULATION ──────────────────────────────
-  const calculateProfitLoss = () => {
+  // ─── BUSINESS CALCULATION ──────────────────────────────────
+  const calculateBusiness = () => {
+    // Total Budget from site
     const totalBudget = site?.budget || 0;
     
-    // Calculate total daily wages
-    const totalWages = dailyWages.reduce((sum, wage) => sum + (wage.amount || 0), 0);
+    // Calculate total daily wages (sum of totalSalary from all attendance records)
+    const totalWages = dailyWages.reduce((sum, record) => sum + (record.totalSalary || 0), 0);
     
     // Calculate total purchase orders
     const totalPurchaseOrders = purchaseOrders.reduce((sum, po) => {
@@ -1010,21 +1052,46 @@ const fetchDailyWages = async () => {
       return sum + poTotal;
     }, 0);
     
-    // Other expenses (can be extended)
-    const otherExpenses = 0;
+    // Sample transportation data - replace with API call
+    const transportation = [];
+    const totalTransportation = transportation.reduce((sum, item) => sum + (item.amount || 0), 0);
     
-    const totalExpenses = totalWages + totalPurchaseOrders + otherExpenses;
+    // Sample other expenses - replace with API call
+    const otherExpensesItems = [];
+    const otherExpenses = otherExpensesItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+    
+    // Total expenses
+    const totalExpenses = totalWages + totalPurchaseOrders + totalTransportation + otherExpenses;
+    
+    // Profit/Loss
     const profitLoss = totalBudget - totalExpenses;
+    const isProfit = profitLoss >= 0;
+    
+    // Calculate percentages
+    const expensePercentage = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0;
+    const profitPercentage = totalBudget > 0 ? (profitLoss / totalBudget) * 100 : 0;
     
     return {
       totalBudget,
       totalWages,
+      totalWageRecords: dailyWages.length,
+      purchaseOrders,
       totalPurchaseOrders,
+      totalPurchaseOrdersCount: purchaseOrders.length,
+      transportation,
+      totalTransportation,
+      otherExpensesItems,
       otherExpenses,
       totalExpenses,
       profitLoss,
-      isProfit: profitLoss >= 0
+      isProfit,
+      expensePercentage,
+      profitPercentage,
     };
+  };
+
+  const toggleBizSection = (section) => {
+    setOpenBizSection(openBizSection === section ? null : section);
   };
 
   const handleFileUpload = async (e, type) => {
@@ -1059,7 +1126,6 @@ const fetchDailyWages = async () => {
         }
       } catch (err) {
         console.error(`Failed to upload ${type}:`, err);
-        showError(`Failed to upload ${file.name}`);
       }
     }
     
@@ -1125,17 +1191,6 @@ const fetchDailyWages = async () => {
     finally { setSavingEdit(false); }
   };
 
-  const handleAddStaff = () => {
-    const name = staffInput.trim();
-    if (name && !editedSite.staffAssigned?.includes(name)) {
-      setEditedSite({ ...editedSite, staffAssigned: [...(editedSite.staffAssigned || []), name] });
-      setStaffInput("");
-    }
-  };
-
-  const handleRemoveStaff = (s) =>
-    setEditedSite({ ...editedSite, staffAssigned: editedSite.staffAssigned?.filter(x => x !== s) || [] });
-
   const showSuccess = (msg) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(null), 3000); };
   const showError = (msg) => { setError(msg); setTimeout(() => setError(null), 5000); };
 
@@ -1166,7 +1221,7 @@ const fetchDailyWages = async () => {
     { id: "documents", label: "Project Documents", icon: "file", count: documents.length },
     { id: "purchase-orders", label: "Purchase Orders", icon: "shopping-cart", count: purchaseOrders.length },
     { id: "daily-wages", label: "Daily Wages", icon: "users", count: filteredDailyWages.length },
-    { id: "profit-loss", label: "Profit & Loss", icon: "trending-up" },
+    { id: "business", label: "Business", icon: "trending-up" },
   ];
 
   if (loading) {
@@ -1182,7 +1237,7 @@ const fetchDailyWages = async () => {
 
   if (!site) return null;
   const sc = STATUS_CONFIG[site.status] || STATUS_CONFIG.active;
-  const plData = calculateProfitLoss();
+  const bizData = calculateBusiness();
 
   return (
     <React.Fragment>
@@ -1419,86 +1474,423 @@ const fetchDailyWages = async () => {
                 </>
               )}
 
-              {/* ── TAB 7: PROFIT & LOSS ── */}
-              {activeTab === "profit-loss" && (
+              {/* ── TAB 7: BUSINESS ── */}
+              {activeTab === "business" && (
                 <>
-                  <h6 style={{ fontWeight: 700, margin: "0 0 20px 0", color: "#1a1a2e", fontSize: "15px" }}>Profit & Loss Statement</h6>
+                  <h6 style={{ fontWeight: 700, margin: "0 0 20px 0", color: "#1a1a2e", fontSize: "15px" }}>
+                    Business Overview
+                  </h6>
                   
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+                  {/* Summary Cards */}
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+                    gap: "16px", 
+                    marginBottom: "24px" 
+                  }}>
                     <div style={{ background: "#f8f9fa", padding: "20px", borderRadius: "12px", border: "1px solid #e9ecef" }}>
-                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Budget</div>
-                      <div style={{ fontSize: "24px", fontWeight: 700, color: BRAND, marginTop: "6px" }}>{formatINR(plData.totalBudget)}</div>
+                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        Total Budget
+                      </div>
+                      <div style={{ fontSize: "22px", fontWeight: 700, color: BRAND, marginTop: "6px" }}>
+                        {formatINR(bizData.totalBudget)}
+                      </div>
                     </div>
                     
                     <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "1px solid #ffe0b2" }}>
-                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Expenses</div>
-                      <div style={{ fontSize: "24px", fontWeight: 700, color: "#e65100", marginTop: "6px" }}>{formatINR(plData.totalExpenses)}</div>
+                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        Total Expenses
+                      </div>
+                      <div style={{ fontSize: "22px", fontWeight: 700, color: "#e65100", marginTop: "6px" }}>
+                        {formatINR(bizData.totalExpenses)}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+                        {bizData.expensePercentage.toFixed(1)}% of budget
+                      </div>
                     </div>
 
                     <div style={{ 
-                      background: plData.isProfit ? "#e8f5e9" : "#ffebee", 
+                      background: bizData.isProfit ? "#e8f5e9" : "#ffebee", 
                       padding: "20px", 
                       borderRadius: "12px", 
-                      border: `1px solid ${plData.isProfit ? "#c8e6c9" : "#ffcdd2"}` 
+                      border: `1px solid ${bizData.isProfit ? "#c8e6c9" : "#ffcdd2"}` 
                     }}>
-                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        {plData.isProfit ? "Profit" : "Loss"}
+                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        {bizData.isProfit ? "Net Profit" : "Net Loss"}
                       </div>
                       <div style={{ 
                         fontSize: "24px", 
                         fontWeight: 700, 
-                        color: plData.isProfit ? "#2e7d32" : "#c62828", 
+                        color: bizData.isProfit ? "#2e7d32" : "#c62828", 
                         marginTop: "6px" 
                       }}>
-                        {formatINR(Math.abs(plData.profitLoss))}
+                        {formatINR(Math.abs(bizData.profitLoss))}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+                        {bizData.isProfit ? "✅ Profitable" : "⚠️ Review expenses"}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e9ecef", overflow: "hidden" }}>
-                    <div style={{ padding: "16px 20px", background: "#fafafa", borderBottom: "1px solid #e9ecef", display: "flex", alignItems: "center", gap: "10px" }}>
-                      <Icon name="list" style={{ color: BRAND }} />
-                      <span style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>Expense Breakdown</span>
-                    </div>
+                  {/* Accordion Sections */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     
-                    <div style={{ padding: "20px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
-                        <span style={{ color: "#555" }}>Daily Wages</span>
-                        <span style={{ fontWeight: 600 }}>{formatINR(plData.totalWages)}</span>
+                    {/* ── BUDGET SECTION ── */}
+                    <PLAccordion 
+                      title="Budget"
+                      icon="wallet"
+                      total={bizData.totalBudget}
+                      count={1}
+                      isOpen={openBizSection === 'budget'}
+                      onToggle={() => toggleBizSection('budget')}
+                      color={BRAND}
+                    >
+                      <div style={{ padding: "12px 0" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                          <span style={{ color: "#555" }}>Total Project Budget</span>
+                          <span style={{ fontWeight: 700, color: BRAND, fontSize: "16px" }}>{formatINR(bizData.totalBudget)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", marginTop: "8px" }}>
+                          <span style={{ color: "#555" }}>Budget Utilization</span>
+                          <span style={{ fontWeight: 600, color: bizData.expensePercentage > 90 ? "#dc3545" : "#f59e0b" }}>
+                            {bizData.expensePercentage.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div style={{ height: "8px", background: "#f0f0f0", borderRadius: "4px", marginTop: "8px", overflow: "hidden" }}>
+                          <div style={{ 
+                            height: "100%", 
+                            width: `${Math.min(bizData.expensePercentage, 100)}%`, 
+                            background: bizData.expensePercentage > 90 ? "#dc3545" : bizData.expensePercentage > 70 ? "#f59e0b" : BRAND,
+                            borderRadius: "4px",
+                            transition: "width 0.5s ease"
+                          }} />
+                        </div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
-                        <span style={{ color: "#555" }}>Purchase Orders</span>
-                        <span style={{ fontWeight: 600 }}>{formatINR(plData.totalPurchaseOrders)}</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
-                        <span style={{ color: "#555" }}>Other Expenses</span>
-                        <span style={{ fontWeight: 600 }}>{formatINR(plData.otherExpenses)}</span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0 0 0", borderTop: "2px solid #e9ecef", marginTop: "4px" }}>
-                        <span style={{ fontWeight: 700, color: "#1a1a2e" }}>Total Expenses</span>
-                        <span style={{ fontWeight: 700, fontSize: "18px", color: "#e65100" }}>{formatINR(plData.totalExpenses)}</span>
-                      </div>
+                    </PLAccordion>
+
+                    {/* ── DAILY WAGES SECTION ── */}
+                 {/* ── DAILY WAGES SECTION ── */}
+<PLAccordion 
+  title="Daily Wages"
+  icon="users"
+  total={bizData.totalWages}
+  count={bizData.totalWageRecords}
+  isOpen={openBizSection === 'wages'}
+  onToggle={() => toggleBizSection('wages')}
+  color="#e65100"
+>
+  {dailyWages.length > 0 ? (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <thead>
+          <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
+            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Employee</th>
+            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Daily Salary</th>
+            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Overtime</th>
+            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Total</th>
+            <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {dailyWages.map((record, idx) => {
+            // Get employee name
+            let employeeName = 'Unknown';
+            let employeeId = 'N/A';
+            
+            if (record.employeeId) {
+              if (typeof record.employeeId === 'object' && record.employeeId.name) {
+                employeeName = record.employeeId.name;
+                employeeId = record.employeeId._id || record.employeeId;
+              } else if (typeof record.employeeId === 'string') {
+                employeeId = record.employeeId;
+              }
+            }
+            
+            // Use employeeName from processed data if available
+            if (record.employeeName) {
+              employeeName = record.employeeName;
+            }
+            
+            const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
+            
+            return (
+              <tr key={record._id || idx} style={{ borderBottom: idx < dailyWages.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                <td style={{ padding: "10px 10px", color: "#555" }}>
+                  {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
+                </td>
+                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
+                  {employeeName}
+                  <div style={{ fontSize: "11px", color: "#888" }}>
+                    ID: {empIdStr.substring(0, 8) || "N/A"}
+                  </div>
+                </td>
+                <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                  {formatINR(record.dailySalary || 0)}
+                </td>
+                <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
+                  {record.overtimeHours || 0}h
+                  {record.overtimeAmount > 0 && (
+                    <div style={{ fontSize: "11px", color: "#888" }}>
+                      {formatINR(record.overtimeAmount)}
                     </div>
+                  )}
+                </td>
+                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#e65100" }}>
+                  {formatINR(record.totalSalary || 0)}
+                </td>
+              <td style={{ padding: "10px 10px", textAlign: "center" }}>
+  <span style={{
+    fontSize: "10px",
+    fontWeight: 600,
+    padding: "2px 10px",
+    borderRadius: "20px",
+    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
+    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
+  }}>
+    {capitalizeFirst(record.status || "Pending")}
+  </span>
+</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <EmptyState text="No wage records found." />
+  )}
+  <div style={{ 
+    marginTop: "12px", 
+    padding: "12px 14px", 
+    background: "#e6510010", 
+    borderRadius: "8px", 
+    border: "1px solid #e6510022",
+    display: "flex",
+    justifyContent: "space-between"
+  }}>
+    <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Wages</span>
+    <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(bizData.totalWages)}</span>
+  </div>
+</PLAccordion>
+
+                    {/* ── PURCHASE ORDERS SECTION ── */}
+                    <PLAccordion 
+                      title="Purchase Orders"
+                      icon="shopping-cart"
+                      total={bizData.totalPurchaseOrders}
+                      count={bizData.totalPurchaseOrdersCount}
+                      isOpen={openBizSection === 'purchase-orders'}
+                      onToggle={() => toggleBizSection('purchase-orders')}
+                      color="#dc3545"
+                    >
+                      {purchaseOrders.length > 0 ? (
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                          <thead>
+                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>PO #</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
+                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Items</th>
+                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
+                              <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {purchaseOrders.map((po, idx) => {
+                              const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
+                              return (
+                                <tr key={po._id || idx} style={{ borderBottom: idx < purchaseOrders.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                                  <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{po.poNumber || po._id}</td>
+                                  <td style={{ padding: "10px 10px", color: "#555" }}>{po.vendor || po.supplierName || "N/A"}</td>
+                                  <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                                    {po.items?.length || 0}
+                                  </td>
+                                  <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#dc3545" }}>
+                                    {formatINR(poTotal)}
+                                  </td>
+                                  <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                                    <span style={{
+                                      fontSize: "10px",
+                                      fontWeight: 600,
+                                      padding: "2px 10px",
+                                      borderRadius: "20px",
+                                      background: po.status === "approved" ? "#eaf3de" : po.status === "pending" ? "#faeeda" : "#fcebeb",
+                                      color: po.status === "approved" ? "#3b6d11" : po.status === "pending" ? "#854f0b" : "#a32d2d",
+                                    }}>
+                                      {po.status || "Pending"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <EmptyState text="No purchase orders found." />
+                      )}
+                      <div style={{ 
+                        marginTop: "12px", 
+                        padding: "12px 14px", 
+                        background: "#dc354510", 
+                        borderRadius: "8px", 
+                        border: "1px solid #dc354522",
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <span style={{ fontSize: "13px", color: "#dc3545", fontWeight: 600 }}>Total Purchase Orders</span>
+                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#dc3545" }}>{formatINR(bizData.totalPurchaseOrders)}</span>
+                      </div>
+                    </PLAccordion>
+
+                    {/* ── TRANSPORTATION SECTION ── */}
+                    <PLAccordion 
+                      title="Transportation"
+                      icon="truck"
+                      total={bizData.totalTransportation}
+                      count={bizData.transportation.length}
+                      isOpen={openBizSection === 'transportation'}
+                      onToggle={() => toggleBizSection('transportation')}
+                      color="#f59e0b"
+                    >
+                      {bizData.transportation.length > 0 ? (
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                          <thead>
+                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vehicle</th>
+                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
+                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
+                              <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bizData.transportation.map((item, idx) => (
+                              <tr key={item._id || idx} style={{ borderBottom: idx < bizData.transportation.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.vendorName || "N/A"}</td>
+                                <td style={{ padding: "10px 10px", color: "#555" }}>{item.vehicleNumber || item.vehicleType || "N/A"}</td>
+                                <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                                  {item.date ? new Date(item.date).toLocaleDateString("en-IN") : "N/A"}
+                                </td>
+                                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#f59e0b" }}>
+                                  {formatINR(item.amount || 0)}
+                                </td>
+                                <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                                  <span style={{
+                                    fontSize: "10px",
+                                    fontWeight: 600,
+                                    padding: "2px 10px",
+                                    borderRadius: "20px",
+                                    background: item.status === "paid" ? "#eaf3de" : item.status === "pending" ? "#faeeda" : "#fcebeb",
+                                    color: item.status === "paid" ? "#3b6d11" : item.status === "pending" ? "#854f0b" : "#a32d2d",
+                                  }}>
+                                    {item.status || "Pending"}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <EmptyState text="No transportation records found." />
+                      )}
+                      <div style={{ 
+                        marginTop: "12px", 
+                        padding: "12px 14px", 
+                        background: "#f59e0b10", 
+                        borderRadius: "8px", 
+                        border: "1px solid #f59e0b22",
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <span style={{ fontSize: "13px", color: "#f59e0b", fontWeight: 600 }}>Total Transportation</span>
+                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#f59e0b" }}>{formatINR(bizData.totalTransportation)}</span>
+                      </div>
+                    </PLAccordion>
+
+                    {/* ── OTHER EXPENSES SECTION ── */}
+                    <PLAccordion 
+                      title="Other Expenses"
+                      icon="more-horizontal"
+                      total={bizData.otherExpenses}
+                      count={bizData.otherExpensesItems.length}
+                      isOpen={openBizSection === 'other-expenses'}
+                      onToggle={() => toggleBizSection('other-expenses')}
+                      color="#6c757d"
+                    >
+                      {bizData.otherExpensesItems.length > 0 ? (
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                          <thead>
+                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Category</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Description</th>
+                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bizData.otherExpensesItems.map((item, idx) => (
+                              <tr key={item._id || idx} style={{ borderBottom: idx < bizData.otherExpensesItems.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.category || "Misc"}</td>
+                                <td style={{ padding: "10px 10px", color: "#555" }}>{item.description || "N/A"}</td>
+                                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#6c757d" }}>
+                                  {formatINR(item.amount || 0)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <EmptyState text="No other expenses recorded." />
+                      )}
+                      <div style={{ 
+                        marginTop: "12px", 
+                        padding: "12px 14px", 
+                        background: "#6c757d10", 
+                        borderRadius: "8px", 
+                        border: "1px solid #6c757d22",
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <span style={{ fontSize: "13px", color: "#6c757d", fontWeight: 600 }}>Total Other Expenses</span>
+                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#6c757d" }}>{formatINR(bizData.otherExpenses)}</span>
+                      </div>
+                    </PLAccordion>
+
                   </div>
 
+                  {/* Overall Summary */}
                   <div style={{ 
-                    marginTop: "20px",
-                    background: plData.isProfit ? BRAND : "#dc3545",
+                    marginTop: "24px",
+                    background: bizData.isProfit ? BRAND : "#dc3545",
                     borderRadius: "12px",
                     padding: "20px 24px",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between"
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "12px"
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#fff" }}>
-                      <Icon name={plData.isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
+                      <Icon name={bizData.isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
                       <div>
-                        <div style={{ fontSize: "14px", opacity: 0.9 }}>Overall {plData.isProfit ? "Profit" : "Loss"}</div>
-                        <div style={{ fontSize: "12px", opacity: 0.7 }}>{plData.isProfit ? "Project is on track" : "Review expenses"}</div>
+                        <div style={{ fontSize: "14px", opacity: 0.9, fontWeight: 600 }}>
+                          Overall {bizData.isProfit ? "Profit" : "Loss"}
+                        </div>
+                        <div style={{ fontSize: "12px", opacity: 0.7 }}>
+                          {bizData.isProfit 
+                            ? `${bizData.profitPercentage.toFixed(1)}% profit margin` 
+                            : `${Math.abs(bizData.profitPercentage).toFixed(1)}% loss`}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ fontSize: "28px", fontWeight: 700, color: "#fff" }}>
-                      {formatINR(Math.abs(plData.profitLoss))}
+                    <div style={{ 
+                      fontSize: "28px", 
+                      fontWeight: 700, 
+                      color: "#fff",
+                      background: "rgba(255,255,255,0.15)",
+                      padding: "4px 20px",
+                      borderRadius: "8px"
+                    }}>
+                      {formatINR(Math.abs(bizData.profitLoss))}
                     </div>
                   </div>
                 </>
