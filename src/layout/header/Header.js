@@ -25,7 +25,8 @@ const Header = ({ fixed, theme, className, setVisibility, ...props }) => {
     "/SiteManagement/site/",
     "/material-request-details/",
     "/purchase-order",
-    "/Buying/"
+    "/Buying/",
+     "/staff-attendance/" 
   ];
 
   // Check if current path matches any of the routes

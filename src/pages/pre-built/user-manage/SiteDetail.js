@@ -112,28 +112,82 @@ const ImageSidebar = ({ isOpen, onClose, images, startIndex = 0, title }) => {
   const prev = () => setCurrent((c) => (c - 1 + images.length) % images.length);
   const next = () => setCurrent((c) => (c + 1) % images.length);
   const img = images[current];
+  
+  const downloadImage = () => {
+    if (img?.url) {
+      // Fetch the image as blob and download
+      fetch(img.url)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = img.title || `image-${current + 1}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+          // Fallback: direct download
+          const link = document.createElement('a');
+          link.href = img.url;
+          link.download = img.title || `image-${current + 1}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+    }
+  };
+  
   return (
     <SidebarViewer isOpen={isOpen} onClose={onClose} title={title || `Image ${current + 1} of ${images.length}`}>
       <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#111" }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-          {img && <img src={img.url} alt={`View ${current + 1}`} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
+          {img && <img src={img.url} alt={img.title || `View ${current + 1}`} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
           {images.length > 1 && (
             <>
               <button onClick={prev} style={navBtnStyle("left")}>‹</button>
               <button onClick={next} style={navBtnStyle("right")}>›</button>
             </>
           )}
+          <button 
+            onClick={downloadImage}
+            style={{
+              position: "absolute",
+              bottom: "20px",
+              right: "20px",
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.35)"}
+            onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
+          >
+            <Icon name="download" size={16} /> Download
+          </button>
         </div>
         {images.length > 1 && (
           <div style={{ display: "flex", gap: "8px", padding: "12px 16px", overflowX: "auto", background: "#1a1a1a", flexShrink: 0 }}>
             {images.map((im, idx) => (
-              <img key={im._id || idx} src={im.url} alt={`Thumb ${idx + 1}`} onClick={() => setCurrent(idx)}
+              <img key={im._id || idx} src={im.url} alt={im.title || `Thumb ${idx + 1}`} onClick={() => setCurrent(idx)}
                 style={{ width: "60px", height: "45px", objectFit: "cover", borderRadius: "5px", cursor: "pointer", flexShrink: 0, transition: "opacity 0.2s", border: idx === current ? "2px solid #fff" : "2px solid transparent", opacity: idx === current ? 1 : 0.55 }}
               />
             ))}
           </div>
         )}
         <div style={{ textAlign: "center", padding: "8px", color: "#aaa", fontSize: "13px", background: "#111", flexShrink: 0 }}>
+          {img?.title && <span style={{ marginRight: "16px" }}>📷 {img.title}</span>}
           {current + 1} / {images.length}
         </div>
       </div>
@@ -171,12 +225,10 @@ const inputStyle = {
 };
 
 // ─── DAILY WAGES ACCORDION ────────────────────────────────────
-// ─── DAILY WAGES ACCORDION ────────────────────────────────────
 const DailyWagesAccordion = ({ wages }) => {
   const [openMonth, setOpenMonth] = useState(null);
   const toggle = (monthKey) => setOpenMonth((prev) => (prev === monthKey ? null : monthKey));
 
-  // Group by month
   const groupedByMonth = wages.reduce((acc, wage) => {
     const date = new Date(wage.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -198,7 +250,6 @@ const DailyWagesAccordion = ({ wages }) => {
     acc[monthKey].totalDays += 1;
     acc[monthKey].totalOvertime += wage.overtimeHours || 0;
     
-    // Track unique employees
     let empId = wage.employeeId;
     if (empId && typeof empId === 'object') {
       empId = empId._id || empId;
@@ -211,18 +262,14 @@ const DailyWagesAccordion = ({ wages }) => {
 
   const monthKeys = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a));
 
-  // Helper function to get employee name
   const getEmployeeName = (record) => {
-    // If we have employeeName from processing
     if (record.employeeName) return record.employeeName;
-    // If employeeId is populated
     if (record.employeeId && typeof record.employeeId === 'object' && record.employeeId.name) {
       return record.employeeId.name;
     }
     return 'Unknown';
   };
 
-  // Helper function to get employee ID
   const getEmployeeId = (record) => {
     if (!record.employeeId) return 'N/A';
     if (typeof record.employeeId === 'string') return record.employeeId;
@@ -249,7 +296,6 @@ const DailyWagesAccordion = ({ wages }) => {
                 transition: "border-color 0.2s",
               }}
             >
-              {/* Header */}
               <div
                 onClick={() => toggle(monthKey)}
                 style={{
@@ -312,14 +358,12 @@ const DailyWagesAccordion = ({ wages }) => {
                 </span>
               </div>
 
-              {/* Expanded Content - Daily Records */}
               <div style={{
                 maxHeight: isOpen ? "1200px" : "0",
                 overflow: "hidden",
                 transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
               }}>
                 <div style={{ padding: "0 16px 16px" }}>
-                  {/* Summary Stats */}
                   <div style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
@@ -346,7 +390,6 @@ const DailyWagesAccordion = ({ wages }) => {
                     </div>
                   </div>
 
-                  {/* Daily Records Table */}
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                       <thead>
@@ -394,18 +437,18 @@ const DailyWagesAccordion = ({ wages }) => {
                               <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 700, color: BRAND }}>
                                 {formatINR(record.totalSalary || 0)}
                               </td>
-                             <td style={{ padding: "10px 10px", textAlign: "center" }}>
-  <span style={{
-    fontSize: "10px",
-    fontWeight: 600,
-    padding: "2px 10px",
-    borderRadius: "20px",
-    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
-    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
-  }}>
-    {capitalizeFirst(record.status || "Pending")}
-  </span>
-</td>
+                              <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                                <span style={{
+                                  fontSize: "10px",
+                                  fontWeight: 600,
+                                  padding: "2px 10px",
+                                  borderRadius: "20px",
+                                  background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
+                                  color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
+                                }}>
+                                  {capitalizeFirst(record.status || "Pending")}
+                                </span>
+                              </td>
                             </tr>
                           );
                         })}
@@ -419,7 +462,6 @@ const DailyWagesAccordion = ({ wages }) => {
         })}
       </div>
 
-      {/* Grand Total */}
       {monthKeys.length > 0 && (
         <div style={{
           marginTop: "16px",
@@ -594,17 +636,17 @@ const POAccordion = ({ orders }) => {
                     {po.vendor || po.supplierName || "Vendor"}
                   </div>
                 </div>
-               <span style={{ 
-  fontSize: "11px", 
-  fontWeight: 600, 
-  padding: "3px 10px", 
-  borderRadius: "20px", 
-  background: badge.bg, 
-  color: badge.color, 
-  flexShrink: 0 
-}}>
-  {badge.label}
-</span>
+                <span style={{ 
+                  fontSize: "11px", 
+                  fontWeight: 600, 
+                  padding: "3px 10px", 
+                  borderRadius: "20px", 
+                  background: badge.bg, 
+                  color: badge.color, 
+                  flexShrink: 0 
+                }}>
+                  {badge.label}
+                </span>
                 <span style={{ fontSize: "13px", fontWeight: 600, color: BRAND, background: BRAND + "12", padding: "4px 12px", borderRadius: "20px", flexShrink: 0 }}>
                   {formatINR(poTotal)}
                 </span>
@@ -847,7 +889,6 @@ const SiteDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [editedSite, setEditedSite] = useState({});
-  const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -856,6 +897,10 @@ const SiteDetail = () => {
   const [documents, setDocuments] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [deletingItem, setDeletingItem] = useState(null);
+
+  // Upload title states
+  const [galleryTitle, setGalleryTitle] = useState("");
+  const [sitePlanTitle, setSitePlanTitle] = useState("");
 
   // Daily Wages States
   const [dailyWages, setDailyWages] = useState([]);
@@ -913,102 +958,89 @@ const SiteDetail = () => {
   };
 
   // ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
-// ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
-const fetchDailyWages = async () => {
-  setWagesLoading(true);
-  try {
-    const token = localStorage.getItem("token");
-    
-    // Get today's date
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-    
-    // Calculate date range for the last 3 months
-    const startMonth = currentMonth - 2;
-    let startYear = currentYear;
-    let startMonthNum = startMonth;
-    if (startMonth <= 0) {
-      startMonthNum = startMonth + 12;
-      startYear = currentYear - 1;
-    }
-    
-    const startDate = `${startYear}-${String(startMonthNum).padStart(2, '0')}-01`;
-    const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
-    
-    console.log(`Fetching attendance from ${startDate} to ${endDate} for site ${id}`);
-    
-    // Fetch all attendance records for this site
-    const attendanceResponse = await axios.get(
-      `${API_URL}/attendance/range`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        params: { 
-          startDate: startDate, 
-          endDate: endDate,
-          site: id // Filter by site
-        }
+  const fetchDailyWages = async () => {
+    setWagesLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1;
+      
+      const startMonth = currentMonth - 2;
+      let startYear = currentYear;
+      let startMonthNum = startMonth;
+      if (startMonth <= 0) {
+        startMonthNum = startMonth + 12;
+        startYear = currentYear - 1;
       }
-    );
-    
-    if (!attendanceResponse.data.success) {
-      throw new Error("Failed to fetch attendance records");
-    }
-    
-    const attendanceRecords = attendanceResponse.data.data || [];
-    console.log(`Found ${attendanceRecords.length} attendance records`);
-    
-    if (attendanceRecords.length === 0) {
+      
+      const startDate = `${startYear}-${String(startMonthNum).padStart(2, '0')}-01`;
+      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
+      
+      const attendanceResponse = await axios.get(
+        `${API_URL}/attendance/range`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          params: { 
+            startDate: startDate, 
+            endDate: endDate,
+            site: id
+          }
+        }
+      );
+      
+      if (!attendanceResponse.data.success) {
+        throw new Error("Failed to fetch attendance records");
+      }
+      
+      const attendanceRecords = attendanceResponse.data.data || [];
+      
+      if (attendanceRecords.length === 0) {
+        setDailyWages([]);
+        setFilteredDailyWages([]);
+        setWagesLoading(false);
+        showError("No attendance records found for this site in the last 3 months");
+        return;
+      }
+      
+      const processedRecords = attendanceRecords.map(record => {
+        let employeeName = 'Unknown';
+        let employeeId = '';
+        let employeeSalary = 0;
+        
+        if (record.employeeId) {
+          if (typeof record.employeeId === 'object') {
+            employeeName = record.employeeId.name || 'Unknown';
+            employeeId = record.employeeId._id || record.employeeId;
+            employeeSalary = record.employeeId.salary || 0;
+          } 
+          else if (typeof record.employeeId === 'string') {
+            employeeId = record.employeeId;
+          }
+        }
+        
+        return {
+          ...record,
+          employeeName: employeeName,
+          employeeIdDisplay: employeeId,
+          employeeSalary: employeeSalary,
+          siteName: record.siteName || record.site?.name || 'Not Assigned'
+        };
+      });
+      
+      setDailyWages(processedRecords);
+      setFilteredDailyWages(processedRecords);
+      
+    } catch (err) {
+      console.error("Failed to fetch daily wages:", err);
+      showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
       setDailyWages([]);
       setFilteredDailyWages([]);
+    } finally {
       setWagesLoading(false);
-      showError("No attendance records found for this site in the last 3 months");
-      return;
     }
-    
-    // Process records - employeeId is populated by backend
-    const processedRecords = attendanceRecords.map(record => {
-      // Get employee data from populated employeeId
-      let employeeName = 'Unknown';
-      let employeeId = '';
-      let employeeSalary = 0;
-      
-      if (record.employeeId) {
-        // If employeeId is populated (object with name)
-        if (typeof record.employeeId === 'object') {
-          employeeName = record.employeeId.name || 'Unknown';
-          employeeId = record.employeeId._id || record.employeeId;
-          employeeSalary = record.employeeId.salary || 0;
-        } 
-        // If employeeId is a string
-        else if (typeof record.employeeId === 'string') {
-          employeeId = record.employeeId;
-        }
-      }
-      
-      return {
-        ...record,
-        employeeName: employeeName,
-        employeeIdDisplay: employeeId,
-        employeeSalary: employeeSalary,
-        siteName: record.siteName || record.site?.name || 'Not Assigned'
-      };
-    });
-    
-    console.log("Processed records sample:", processedRecords[0]);
-    
-    setDailyWages(processedRecords);
-    setFilteredDailyWages(processedRecords);
-    
-  } catch (err) {
-    console.error("Failed to fetch daily wages:", err);
-    showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
-    setDailyWages([]);
-    setFilteredDailyWages([]);
-  } finally {
-    setWagesLoading(false);
-  }
-};
+  };
 
   const applyWagesFilter = () => {
     let filtered = [...dailyWages];
@@ -1036,38 +1068,24 @@ const fetchDailyWages = async () => {
     setFilteredDailyWages(dailyWages);
   };
 
-  // ─── END DAILY WAGES FUNCTIONS ──────────────────────────────
-
   // ─── BUSINESS CALCULATION ──────────────────────────────────
   const calculateBusiness = () => {
-    // Total Budget from site
     const totalBudget = site?.budget || 0;
-    
-    // Calculate total daily wages (sum of totalSalary from all attendance records)
     const totalWages = dailyWages.reduce((sum, record) => sum + (record.totalSalary || 0), 0);
-    
-    // Calculate total purchase orders
     const totalPurchaseOrders = purchaseOrders.reduce((sum, po) => {
       const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
       return sum + poTotal;
     }, 0);
     
-    // Sample transportation data - replace with API call
     const transportation = [];
     const totalTransportation = transportation.reduce((sum, item) => sum + (item.amount || 0), 0);
     
-    // Sample other expenses - replace with API call
     const otherExpensesItems = [];
     const otherExpenses = otherExpensesItems.reduce((sum, item) => sum + (item.amount || 0), 0);
     
-    // Total expenses
     const totalExpenses = totalWages + totalPurchaseOrders + totalTransportation + otherExpenses;
-    
-    // Profit/Loss
     const profitLoss = totalBudget - totalExpenses;
     const isProfit = profitLoss >= 0;
-    
-    // Calculate percentages
     const expensePercentage = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0;
     const profitPercentage = totalBudget > 0 ? (profitLoss / totalBudget) * 100 : 0;
     
@@ -1094,6 +1112,7 @@ const fetchDailyWages = async () => {
     setOpenBizSection(openBizSection === section ? null : section);
   };
 
+  // ─── FILE UPLOAD FUNCTION ──────────────────────────────────
   const handleFileUpload = async (e, type) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -1107,9 +1126,19 @@ const fetchDailyWages = async () => {
     };
 
     let successCount = 0;
-    for (const file of files) {
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const fd = new FormData();
       fd.append(type === "document" ? "document" : "image", file);
+      
+      if (type === "gallery" && galleryTitle) {
+        fd.append("title", galleryTitle);
+      }
+      if (type === "site-plan" && sitePlanTitle) {
+        fd.append("title", sitePlanTitle);
+      }
+      
       try {
         const r = await axios.post(endpointMap[type], fd, { 
           headers: { 
@@ -1120,9 +1149,14 @@ const fetchDailyWages = async () => {
         if (r.data.success) {
           successCount++;
           const uploadedData = r.data.data;
-          if (type === "gallery") setGalleryImages(p => [...p, uploadedData]);
-          else if (type === "site-plan") setSitePlanImages(p => [...p, uploadedData]);
-          else setDocuments(p => [...p, uploadedData]);
+          
+          if (type === "gallery") {
+            setGalleryImages(prev => [...prev, uploadedData]);
+          } else if (type === "site-plan") {
+            setSitePlanImages(prev => [...prev, uploadedData]);
+          } else {
+            setDocuments(prev => [...prev, uploadedData]);
+          }
         }
       } catch (err) {
         console.error(`Failed to upload ${type}:`, err);
@@ -1130,12 +1164,19 @@ const fetchDailyWages = async () => {
     }
     
     if (successCount > 0) {
+      if (type === "gallery") {
+        setGalleryTitle("");
+      } else if (type === "site-plan") {
+        setSitePlanTitle("");
+      }
       showSuccess(`${successCount} file(s) uploaded successfully!`);
     }
+    
     setUploading(false);
     e.target.value = "";
   };
 
+  // ─── DELETE FUNCTIONS ──────────────────────────────────────
   const handleDeleteImage = async (imageId, type) => {
     if (!window.confirm("Delete this image?")) return;
     setDeletingItem(imageId);
@@ -1147,8 +1188,8 @@ const fetchDailyWages = async () => {
       await axios.delete(endpoint, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (type === "gallery") setGalleryImages(p => p.filter(i => i._id !== imageId));
-      else setSitePlanImages(p => p.filter(i => i._id !== imageId));
+      if (type === "gallery") setGalleryImages(prev => prev.filter(i => i._id !== imageId));
+      else setSitePlanImages(prev => prev.filter(i => i._id !== imageId));
       showSuccess("Image deleted.");
     } catch { showError("Failed to delete image."); }
     finally { setDeletingItem(null); }
@@ -1162,7 +1203,7 @@ const fetchDailyWages = async () => {
       await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      setDocuments(p => p.filter(d => d._id !== documentId));
+      setDocuments(prev => prev.filter(d => d._id !== documentId));
       if (pdfSidebar.doc?._id === documentId) setPdfSidebar({ open: false, doc: null });
       showSuccess("Document deleted.");
     } catch { showError("Failed to delete document."); }
@@ -1204,6 +1245,31 @@ const fetchDailyWages = async () => {
     if (doc.url?.startsWith('http')) return doc.url;
     if (doc.url?.startsWith('/uploads')) return `${BASE_URL}${doc.url}`;
     return `${BASE_URL}${doc.url || ''}`;
+  };
+
+  const downloadImage = (url, title) => {
+    // Fetch the image as blob and download
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const imageUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = title || 'image';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(imageUrl);
+      })
+      .catch(err => {
+        // Fallback: direct download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = title || 'image';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   };
 
   const STATUS_CONFIG = {
@@ -1334,18 +1400,31 @@ const fetchDailyWages = async () => {
               {/* ── TAB 2: PROJECT GALLERY ── */}
               {activeTab === "gallery" && (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
                     <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Gallery</h6>
-                    <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                      <Input
+                        type="text"
+                        placeholder="Image title (optional)"
+                        value={galleryTitle}
+                        onChange={(e) => setGalleryTitle(e.target.value)}
+                        style={{ ...inputStyle, padding: "6px 10px", fontSize: "12px", minWidth: "200px" }}
+                      />
+                      <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
+                    </div>
                   </div>
                   {uploading && <div style={{ marginBottom: "10px" }}><Spinner size="sm" style={{ color: BRAND }} /></div>}
                   {galleryImages.length > 0 ? (
                     <Row className="g-3">
                       {galleryImages.map((img, idx) => (
                         <Col md="3" sm="6" key={img._id || idx}>
-                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
+                          <ImageCard 
+                            img={img} 
+                            idx={idx} 
+                            deletingItem={deletingItem}
                             onView={() => setImgSidebar({ open: true, images: galleryImages, index: idx, title: "Project Gallery" })}
                             onDelete={() => handleDeleteImage(img._id, "gallery")}
+                            onDownload={() => downloadImage(img.url, img.title || `gallery-${idx + 1}`)}
                           />
                         </Col>
                       ))}
@@ -1357,17 +1436,30 @@ const fetchDailyWages = async () => {
               {/* ── TAB 3: SITE PLANS ── */}
               {activeTab === "plans" && (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
                     <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Site Plans</h6>
-                    <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                      <Input
+                        type="text"
+                        placeholder="Plan title (optional)"
+                        value={sitePlanTitle}
+                        onChange={(e) => setSitePlanTitle(e.target.value)}
+                        style={{ ...inputStyle, padding: "6px 10px", fontSize: "12px", minWidth: "200px" }}
+                      />
+                      <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
+                    </div>
                   </div>
                   {sitePlanImages.length > 0 ? (
                     <Row className="g-3">
                       {sitePlanImages.map((img, idx) => (
                         <Col md="3" sm="6" key={img._id || idx}>
-                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
+                          <ImageCard 
+                            img={img} 
+                            idx={idx} 
+                            deletingItem={deletingItem}
                             onView={() => setImgSidebar({ open: true, images: sitePlanImages, index: idx, title: "Site Plans" })}
                             onDelete={() => handleDeleteImage(img._id, "site-plan")}
+                            onDownload={() => downloadImage(img.url, img.title || `plan-${idx + 1}`)}
                           />
                         </Col>
                       ))}
@@ -1481,7 +1573,6 @@ const fetchDailyWages = async () => {
                     Business Overview
                   </h6>
                   
-                  {/* Summary Cards */}
                   <div style={{ 
                     display: "grid", 
                     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
@@ -1532,10 +1623,8 @@ const fetchDailyWages = async () => {
                     </div>
                   </div>
 
-                  {/* Accordion Sections */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    
-                    {/* ── BUDGET SECTION ── */}
+                    {/* Budget Section */}
                     <PLAccordion 
                       title="Budget"
                       icon="wallet"
@@ -1568,113 +1657,110 @@ const fetchDailyWages = async () => {
                       </div>
                     </PLAccordion>
 
-                    {/* ── DAILY WAGES SECTION ── */}
-                 {/* ── DAILY WAGES SECTION ── */}
-<PLAccordion 
-  title="Daily Wages"
-  icon="users"
-  total={bizData.totalWages}
-  count={bizData.totalWageRecords}
-  isOpen={openBizSection === 'wages'}
-  onToggle={() => toggleBizSection('wages')}
-  color="#e65100"
->
-  {dailyWages.length > 0 ? (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
-            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Employee</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Daily Salary</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Overtime</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Total</th>
-            <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dailyWages.map((record, idx) => {
-            // Get employee name
-            let employeeName = 'Unknown';
-            let employeeId = 'N/A';
-            
-            if (record.employeeId) {
-              if (typeof record.employeeId === 'object' && record.employeeId.name) {
-                employeeName = record.employeeId.name;
-                employeeId = record.employeeId._id || record.employeeId;
-              } else if (typeof record.employeeId === 'string') {
-                employeeId = record.employeeId;
-              }
-            }
-            
-            // Use employeeName from processed data if available
-            if (record.employeeName) {
-              employeeName = record.employeeName;
-            }
-            
-            const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
-            
-            return (
-              <tr key={record._id || idx} style={{ borderBottom: idx < dailyWages.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                <td style={{ padding: "10px 10px", color: "#555" }}>
-                  {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
-                </td>
-                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
-                  {employeeName}
-                  <div style={{ fontSize: "11px", color: "#888" }}>
-                    ID: {empIdStr.substring(0, 8) || "N/A"}
-                  </div>
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                  {formatINR(record.dailySalary || 0)}
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
-                  {record.overtimeHours || 0}h
-                  {record.overtimeAmount > 0 && (
-                    <div style={{ fontSize: "11px", color: "#888" }}>
-                      {formatINR(record.overtimeAmount)}
-                    </div>
-                  )}
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#e65100" }}>
-                  {formatINR(record.totalSalary || 0)}
-                </td>
-              <td style={{ padding: "10px 10px", textAlign: "center" }}>
-  <span style={{
-    fontSize: "10px",
-    fontWeight: 600,
-    padding: "2px 10px",
-    borderRadius: "20px",
-    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
-    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
-  }}>
-    {capitalizeFirst(record.status || "Pending")}
-  </span>
-</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <EmptyState text="No wage records found." />
-  )}
-  <div style={{ 
-    marginTop: "12px", 
-    padding: "12px 14px", 
-    background: "#e6510010", 
-    borderRadius: "8px", 
-    border: "1px solid #e6510022",
-    display: "flex",
-    justifyContent: "space-between"
-  }}>
-    <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Wages</span>
-    <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(bizData.totalWages)}</span>
-  </div>
-</PLAccordion>
+                    {/* Daily Wages Section */}
+                    <PLAccordion 
+                      title="Daily Wages"
+                      icon="users"
+                      total={bizData.totalWages}
+                      count={bizData.totalWageRecords}
+                      isOpen={openBizSection === 'wages'}
+                      onToggle={() => toggleBizSection('wages')}
+                      color="#e65100"
+                    >
+                      {dailyWages.length > 0 ? (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                            <thead>
+                              <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                                <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
+                                <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Employee</th>
+                                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Daily Salary</th>
+                                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Overtime</th>
+                                <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Total</th>
+                                <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dailyWages.map((record, idx) => {
+                                let employeeName = 'Unknown';
+                                let employeeId = 'N/A';
+                                
+                                if (record.employeeId) {
+                                  if (typeof record.employeeId === 'object' && record.employeeId.name) {
+                                    employeeName = record.employeeId.name;
+                                    employeeId = record.employeeId._id || record.employeeId;
+                                  } else if (typeof record.employeeId === 'string') {
+                                    employeeId = record.employeeId;
+                                  }
+                                }
+                                
+                                if (record.employeeName) {
+                                  employeeName = record.employeeName;
+                                }
+                                
+                                const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
+                                
+                                return (
+                                  <tr key={record._id || idx} style={{ borderBottom: idx < dailyWages.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                                    <td style={{ padding: "10px 10px", color: "#555" }}>
+                                      {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
+                                    </td>
+                                    <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
+                                      {employeeName}
+                                      <div style={{ fontSize: "11px", color: "#888" }}>
+                                        ID: {empIdStr.substring(0, 8) || "N/A"}
+                                      </div>
+                                    </td>
+                                    <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                                      {formatINR(record.dailySalary || 0)}
+                                    </td>
+                                    <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
+                                      {record.overtimeHours || 0}h
+                                      {record.overtimeAmount > 0 && (
+                                        <div style={{ fontSize: "11px", color: "#888" }}>
+                                          {formatINR(record.overtimeAmount)}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#e65100" }}>
+                                      {formatINR(record.totalSalary || 0)}
+                                    </td>
+                                    <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                                      <span style={{
+                                        fontSize: "10px",
+                                        fontWeight: 600,
+                                        padding: "2px 10px",
+                                        borderRadius: "20px",
+                                        background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
+                                        color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
+                                      }}>
+                                        {capitalizeFirst(record.status || "Pending")}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <EmptyState text="No wage records found." />
+                      )}
+                      <div style={{ 
+                        marginTop: "12px", 
+                        padding: "12px 14px", 
+                        background: "#e6510010", 
+                        borderRadius: "8px", 
+                        border: "1px solid #e6510022",
+                        display: "flex",
+                        justifyContent: "space-between"
+                      }}>
+                        <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Wages</span>
+                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(bizData.totalWages)}</span>
+                      </div>
+                    </PLAccordion>
 
-                    {/* ── PURCHASE ORDERS SECTION ── */}
+                    {/* Purchase Orders Section */}
                     <PLAccordion 
                       title="Purchase Orders"
                       icon="shopping-cart"
@@ -1742,7 +1828,7 @@ const fetchDailyWages = async () => {
                       </div>
                     </PLAccordion>
 
-                    {/* ── TRANSPORTATION SECTION ── */}
+                    {/* Transportation Section */}
                     <PLAccordion 
                       title="Transportation"
                       icon="truck"
@@ -1807,7 +1893,7 @@ const fetchDailyWages = async () => {
                       </div>
                     </PLAccordion>
 
-                    {/* ── OTHER EXPENSES SECTION ── */}
+                    {/* Other Expenses Section */}
                     <PLAccordion 
                       title="Other Expenses"
                       icon="more-horizontal"
@@ -2025,14 +2111,64 @@ const UploadBtn = ({ id, label, accept, uploading, onChange }) => (
   </>
 );
 
-const ImageCard = ({ img, idx, deletingItem, onView, onDelete }) => (
-  <div style={{ position: "relative", borderRadius: "10px", overflow: "hidden", cursor: "pointer" }} onClick={onView}>
-    <img src={img.url} alt={`img-${idx + 1}`} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+const ImageCard = ({ img, idx, deletingItem, onView, onDelete, onDownload }) => (
+  <div style={{ position: "relative", borderRadius: "10px", overflow: "hidden", cursor: "pointer", background: "#f5f5f5" }} onClick={onView}>
+    <img src={img.url} alt={img.title || `img-${idx + 1}`} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+    
+    {/* Display title if exists */}
+    {img.title && (
+      <div style={{ 
+        position: "absolute", 
+        bottom: "40px", 
+        left: "0", 
+        right: "0", 
+        padding: "6px 10px", 
+        background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
+        color: "#fff", 
+        fontSize: "11px",
+        fontWeight: 500,
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+        whiteSpace: "nowrap"
+      }}>
+        {img.title}
+      </div>
+    )}
+    
     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)" }} />
-    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} disabled={deletingItem === img._id}
-      style={{ position: "absolute", top: "7px", right: "7px", background: "rgba(220,53,69,0.9)", border: "none", color: "#fff", borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontSize: "13px" }}>
-      {deletingItem === img._id ? <Spinner size="sm" /> : "✕"}
-    </button>
+    
+    {/* Action buttons */}
+    <div style={{ position: "absolute", top: "7px", right: "7px", display: "flex", gap: "5px" }}>
+      <button 
+        onClick={(e) => { e.stopPropagation(); onDownload(); }}
+        style={{ 
+          background: "rgba(75,86,148,0.9)", 
+          border: "none", 
+          color: "#fff", 
+          borderRadius: "6px", 
+          padding: "3px 8px", 
+          cursor: "pointer", 
+          fontSize: "13px" 
+        }}
+      >
+        <Icon name="download" size={12} />
+      </button>
+      <button 
+        onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+        disabled={deletingItem === img._id}
+        style={{ 
+          background: "rgba(220,53,69,0.9)", 
+          border: "none", 
+          color: "#fff", 
+          borderRadius: "6px", 
+          padding: "3px 8px", 
+          cursor: "pointer", 
+          fontSize: "13px" 
+        }}
+      >
+        {deletingItem === img._id ? <Spinner size="sm" /> : "✕"}
+      </button>
+    </div>
     <span style={{ position: "absolute", bottom: "6px", left: "8px", color: "#fff", fontSize: "11px", fontWeight: 500 }}>View</span>
   </div>
 );
