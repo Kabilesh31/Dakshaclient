@@ -166,6 +166,7 @@ const inputStyle = {
 };
 
 // ─── DAILY WAGES SALARY ACCORDION ────────────────────────────
+// ─── DAILY WAGES ACCORDION ────────────────────────────────────
 const DailyWagesAccordion = ({ wages }) => {
   const [openMonth, setOpenMonth] = useState(null);
   const toggle = (monthKey) => setOpenMonth((prev) => (prev === monthKey ? null : monthKey));
@@ -177,10 +178,19 @@ const DailyWagesAccordion = ({ wages }) => {
     const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
     
     if (!acc[monthKey]) {
-      acc[monthKey] = { monthName, monthKey, workers: [], totalAmount: 0 };
+      acc[monthKey] = { 
+        monthName, 
+        monthKey, 
+        workers: [], 
+        totalAmount: 0,
+        totalDays: 0,
+        totalOvertime: 0
+      };
     }
     acc[monthKey].workers.push(wage);
     acc[monthKey].totalAmount += wage.amount || 0;
+    acc[monthKey].totalDays += wage.daysWorked || 0;
+    acc[monthKey].totalOvertime += wage.overtimeHours || 0;
     return acc;
   }, {});
 
@@ -246,7 +256,7 @@ const DailyWagesAccordion = ({ wages }) => {
                     color: "#888",
                     marginTop: "2px",
                   }}>
-                    {monthData.workers.length} Workers • {daysInMonth} Days
+                    {monthData.workers.length} Workers • {monthData.totalDays} Total Days • {monthData.totalOvertime}h Overtime
                   </div>
                 </div>
 
@@ -277,7 +287,7 @@ const DailyWagesAccordion = ({ wages }) => {
               <div style={{
                 maxHeight: isOpen ? "800px" : "0",
                 overflow: "hidden",
-                transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
+                transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
               }}>
                 <div style={{ padding: "0 16px 16px" }}>
                   {/* Summary Stats */}
@@ -294,12 +304,16 @@ const DailyWagesAccordion = ({ wages }) => {
                       <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.workers.length}</div>
                     </div>
                     <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Amount</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{formatINR(monthData.totalAmount)}</div>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Days</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.totalDays}</div>
                     </div>
                     <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Working Days</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{daysInMonth}</div>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Overtime</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.totalOvertime}h</div>
+                    </div>
+                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
+                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Amount</div>
+                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{formatINR(monthData.totalAmount)}</div>
                     </div>
                   </div>
 
@@ -308,31 +322,47 @@ const DailyWagesAccordion = ({ wages }) => {
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                       <thead>
                         <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</th>
                           <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Worker Name</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Site</th>
                           <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Days Worked</th>
                           <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate/Day</th>
                           <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Overtime</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Salary</th>
                           <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {monthData.workers.map((wage, idx) => (
                           <tr key={wage._id || idx} style={{ borderBottom: idx < monthData.workers.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                            <td style={{ padding: "10px 10px", color: "#555" }}>
-                              {new Date(wage.workDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
-                            </td>
                             <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
                               {wage.workerName}
+                              <div style={{ fontSize: "11px", color: "#888" }}>
+                                ID: {wage.employeeId?.substring(0, 8) || "N/A"}
+                              </div>
+                            </td>
+                            <td style={{ padding: "10px 10px", color: "#555" }}>
+                              {wage.siteName || "N/A"}
                             </td>
                             <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                              {wage.daysWorked || 1}
+                              {wage.daysWorked || 0}
                             </td>
                             <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
                               {formatINR(wage.dailyRate || 0)}
                             </td>
-                            <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#1a1a2e" }}>
+                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
                               {formatINR(wage.amount || 0)}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
+                              {wage.overtimeHours || 0}h
+                              {wage.overtimeAmount > 0 && (
+                                <div style={{ fontSize: "11px", color: "#888" }}>
+                                  {formatINR(wage.overtimeAmount)}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 700, color: BRAND }}>
+                              {formatINR((wage.amount || 0) + (wage.overtimeAmount || 0))}
                             </td>
                             <td style={{ padding: "10px 10px", textAlign: "center" }}>
                               <span style={{
@@ -486,138 +516,6 @@ const MonthFilter = ({
   );
 };
 
-// ─── GOOGLE DRIVE STYLE DOCUMENT CARD ─────────────────────────
-const DocumentCard = ({ doc, isActive, deletingItem, onView, onDelete }) => {
-  const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-  const dateStr = doc.uploadedAt
-    ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-    : "";
-
-  return (
-    <div
-      style={{
-        background: "#fff",
-        border: `1px solid ${isActive ? BRAND + "55" : "#e2e8f0"}`,
-        borderRadius: "12px",
-        transition: "box-shadow 0.2s, transform 0.1s",
-        cursor: "default",
-        position: "relative",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.1)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.05)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 16px 16px",
-          background: "#fafcff",
-          borderTopLeftRadius: "12px",
-          borderTopRightRadius: "12px",
-        }}
-      >
-        <div
-          style={{
-            width: "64px",
-            height: "64px",
-            background: "#fef2f2",
-            borderRadius: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="file-pdf" style={{ color: "#dc3545", fontSize: "32px" }} />
-        </div>
-      </div>
-
-      <div style={{ padding: "12px 16px 16px", borderTop: "1px solid #f0f0f0" }}>
-        <div
-          style={{
-            fontWeight: 600,
-            fontSize: "14px",
-            color: "#1a1a2e",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            marginBottom: "8px",
-          }}
-          title={doc.originalName || doc.filename}
-        >
-          {doc.originalName || doc.filename}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: "11px",
-            color: "#94a3b8",
-            marginBottom: "12px",
-          }}
-        >
-          <span>{sizeKB} KB</span>
-          {dateStr && <span>{dateStr}</span>}
-        </div>
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            onClick={onView}
-            style={{
-              flex: 1,
-              background: BRAND + "10",
-              border: `1px solid ${BRAND}30`,
-              borderRadius: "8px",
-              padding: "7px 0",
-              fontSize: "12px",
-              fontWeight: 600,
-              color: BRAND,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "4px",
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = BRAND + "20")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = BRAND + "10")}
-          >
-            <Icon name="eye" size={12} /> View
-          </button>
-          <button
-            onClick={onDelete}
-            disabled={deletingItem === doc._id}
-            style={{
-              width: "38px",
-              background: "#fff",
-              border: "1px solid #e2e8f0",
-              borderRadius: "8px",
-              color: "#dc3545",
-              cursor: deletingItem === doc._id ? "not-allowed" : "pointer",
-              opacity: deletingItem === doc._id ? 0.6 : 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "border-color 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#dc3545")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-          >
-            {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" size={13} />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ─── PURCHASE ORDER ACCORDION ──────────────────────────────────
 const POAccordion = ({ orders }) => {
   const [openId, setOpenId] = useState(null);
@@ -679,7 +577,7 @@ const POAccordion = ({ orders }) => {
               <div style={{
                 maxHeight: isOpen ? "600px" : "0",
                 overflow: "hidden",
-                transition: "max-height 0.3s cubic-bezier(0.4,0,0.2,1)",
+                transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
               }}>
                 <div style={{ padding: "0 16px 16px" }}>
                   {items.length > 0 ? (
@@ -745,6 +643,59 @@ const POAccordion = ({ orders }) => {
   );
 };
 
+// ─── TAB COMPONENT ─────────────────────────────────────────────
+const Tabs = ({ tabs, activeTab, onTabChange }) => {
+  return (
+    <div style={{
+      display: "flex",
+      gap: "4px",
+      borderBottom: "2px solid #f0f0f0",
+      marginBottom: "24px",
+      overflowX: "auto",
+      paddingBottom: "0",
+      flexWrap: "nowrap",
+    }}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          style={{
+            padding: "10px 20px",
+            background: "transparent",
+            border: "none",
+            borderBottom: activeTab === tab.id ? `3px solid ${BRAND}` : "3px solid transparent",
+            color: activeTab === tab.id ? BRAND : "#6c757d",
+            fontWeight: activeTab === tab.id ? 700 : 500,
+            fontSize: "13px",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            transition: "all 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <Icon name={tab.icon} style={{ fontSize: "16px" }} />
+          {tab.label}
+          {tab.count !== undefined && tab.count > 0 && (
+            <span style={{
+              background: activeTab === tab.id ? BRAND : "#e9ecef",
+              color: activeTab === tab.id ? "#fff" : "#6c757d",
+              padding: "1px 8px",
+              borderRadius: "12px",
+              fontSize: "10px",
+              fontWeight: 600,
+              marginLeft: "4px"
+            }}>
+              {tab.count}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 // ─── MAIN COMPONENT ────────────────────────────────────────────
 const SiteDetail = () => {
   const { id } = useParams();
@@ -773,6 +724,9 @@ const SiteDetail = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [wagesLoading, setWagesLoading] = useState(false);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState("info");
 
   const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
@@ -817,30 +771,164 @@ const SiteDetail = () => {
   };
 
   // ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
-  const fetchDailyWages = async () => {
-    setWagesLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const token = localStorage.getItem("token");
-      // const response = await axios.get(`${API_URL}/projects/${id}/daily-wages`, {
-      //   headers: token ? { Authorization: `Bearer ${token}` } : {}
-      // });
-      // if (response.status === 200) {
-      //   setDailyWages(response.data.data || []);
-      //   setFilteredDailyWages(response.data.data || []);
-      // }
-
-      // Dummy data for daily wages
-      const dummyData = generateDummyDailyWages();
-      setDailyWages(dummyData);
-      setFilteredDailyWages(dummyData);
-    } catch (err) {
-      console.error("Failed to fetch daily wages", err);
-    } finally {
-      setWagesLoading(false);
+// ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
+const fetchDailyWages = async () => {
+  setWagesLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Get all employees for this site
+    const employeesResponse = await axios.get(`${API_URL}/employees`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      params: { site: id }
+    });
+    
+    if (!employeesResponse.data.success) {
+      throw new Error("Failed to fetch employees");
     }
-  };
+    
+    const employees = employeesResponse.data.data || [];
+    console.log("Employees for site:", employees);
+    
+    if (employees.length === 0) {
+      setDailyWages([]);
+      setFilteredDailyWages([]);
+      setWagesLoading(false);
+      showError("No employees found for this site");
+      return;
+    }
 
+    // Get all attendance records for this site's employees
+    const employeeIds = employees.map(emp => emp.id);
+    
+    // Get current date and fetch last 3 months
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    
+    const allWages = [];
+    
+    // Create a map of employee details for quick lookup
+    const employeeMap = {};
+    employees.forEach(emp => {
+      employeeMap[emp.id] = emp;
+    });
+    
+    for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+      let month = currentMonth - monthOffset;
+      let year = currentYear;
+      if (month <= 0) {
+        month = month + 12;
+        year = currentYear - 1;
+      }
+      
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+      
+      console.log(`Fetching attendance for ${year}-${String(month).padStart(2, '0')}`);
+      
+      // Fetch attendance for all employees in this date range
+      try {
+        // Use the range endpoint with employee IDs
+        const attendanceResponse = await axios.get(
+          `${API_URL}/attendance/range`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            params: { 
+              startDate: startDate, 
+              endDate: endDate,
+              site: id // Filter by site
+            }
+          }
+        );
+        
+        if (attendanceResponse.data.success) {
+          const attendanceRecords = attendanceResponse.data.data || [];
+          console.log(`Found ${attendanceRecords.length} attendance records for ${year}-${month}`);
+          
+          // Group attendance by employee
+          const groupedByEmployee = {};
+          
+          attendanceRecords.forEach(record => {
+            const empId = record.employeeId?._id || record.employeeId;
+            if (!empId) return;
+            
+            if (!groupedByEmployee[empId]) {
+              groupedByEmployee[empId] = {
+                records: [],
+                totalDays: 0,
+                totalSalary: 0,
+                totalOvertimeHours: 0,
+                totalOvertimeAmount: 0,
+                employee: employeeMap[empId] || null
+              };
+            }
+            
+            groupedByEmployee[empId].records.push(record);
+            groupedByEmployee[empId].totalDays += 1;
+            groupedByEmployee[empId].totalSalary += record.totalSalary || 0;
+            groupedByEmployee[empId].totalOvertimeHours += record.overtimeHours || 0;
+            groupedByEmployee[empId].totalOvertimeAmount += record.overtimeAmount || 0;
+          });
+          
+          // Create wage records from grouped data
+          Object.keys(groupedByEmployee).forEach(empId => {
+            const data = groupedByEmployee[empId];
+            const employee = data.employee;
+            
+            if (employee) {
+              // Get site name from first record or employee
+              let siteName = employee.siteName || 'Not Assigned';
+              if (data.records.length > 0 && data.records[0].siteName) {
+                siteName = data.records[0].siteName;
+              }
+              
+              // Get daily rate from employee salary or calculate from records
+              let dailyRate = employee.salary || 0;
+              if (dailyRate === 0 && data.records.length > 0) {
+                // Try to get daily rate from the first record
+                dailyRate = data.records[0].dailySalary || 0;
+              }
+              
+              allWages.push({
+                _id: `wage_${empId}_${year}_${month}`,
+                employeeId: empId,
+                workerName: employee.name || 'Unknown Worker',
+                dailyRate: dailyRate,
+                daysWorked: data.totalDays,
+                amount: data.totalSalary,
+                overtimeHours: data.totalOvertimeHours,
+                overtimeAmount: data.totalOvertimeAmount,
+                workDate: `${year}-${String(month).padStart(2, '0')}-01`,
+                status: "approved",
+                projectId: id,
+                siteName: siteName,
+                records: data.records
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to fetch attendance for ${year}-${month}:`, err);
+      }
+    }
+    
+    console.log("Daily wages data:", allWages);
+    setDailyWages(allWages);
+    setFilteredDailyWages(allWages);
+    
+    if (allWages.length === 0) {
+      showError("No attendance records found for this site in the last 3 months");
+    }
+  } catch (err) {
+    console.error("Failed to fetch daily wages:", err);
+    showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
+    setDailyWages([]);
+    setFilteredDailyWages([]);
+  } finally {
+    setWagesLoading(false);
+  }
+};
   const generateDummyDailyWages = () => {
     const workers = [
       { name: "Ramesh Kumar", rate: 600 },
@@ -855,14 +943,13 @@ const SiteDetail = () => {
 
     const wages = [];
     const statuses = ["approved", "pending", "approved", "approved", "pending"];
-    const months = [4, 5, 6]; // April, May, June
+    const months = [4, 5, 6];
     const year = 2026;
 
     months.forEach((month) => {
       const daysInMonth = new Date(year, month, 0).getDate();
-      // Each worker works 20-25 days in a month
       workers.forEach((worker, wIndex) => {
-        const daysWorked = Math.floor(Math.random() * 6) + 20; // 20-25 days
+        const daysWorked = Math.floor(Math.random() * 6) + 20;
         const amount = worker.rate * daysWorked;
         const workDate = new Date(year, month - 1, Math.floor(Math.random() * daysInMonth) + 1);
         
@@ -909,6 +996,36 @@ const SiteDetail = () => {
   };
 
   // ─── END DAILY WAGES FUNCTIONS ──────────────────────────────
+
+  // ─── PROFIT & LOSS CALCULATION ──────────────────────────────
+  const calculateProfitLoss = () => {
+    const totalBudget = site?.budget || 0;
+    
+    // Calculate total daily wages
+    const totalWages = dailyWages.reduce((sum, wage) => sum + (wage.amount || 0), 0);
+    
+    // Calculate total purchase orders
+    const totalPurchaseOrders = purchaseOrders.reduce((sum, po) => {
+      const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
+      return sum + poTotal;
+    }, 0);
+    
+    // Other expenses (can be extended)
+    const otherExpenses = 0;
+    
+    const totalExpenses = totalWages + totalPurchaseOrders + otherExpenses;
+    const profitLoss = totalBudget - totalExpenses;
+    
+    return {
+      totalBudget,
+      totalWages,
+      totalPurchaseOrders,
+      otherExpenses,
+      totalExpenses,
+      profitLoss,
+      isProfit: profitLoss >= 0
+    };
+  };
 
   const handleFileUpload = async (e, type) => {
     const files = Array.from(e.target.files);
@@ -1041,6 +1158,17 @@ const SiteDetail = () => {
     cancelled: { text: "Cancelled", bg: "#6c757d" },
   };
 
+  // Tab configuration
+  const tabs = [
+    { id: "info", label: "Info", icon: "info" },
+    { id: "gallery", label: "Project Gallery", icon: "image", count: galleryImages.length },
+    { id: "plans", label: "Site Plans", icon: "map", count: sitePlanImages.length },
+    { id: "documents", label: "Project Documents", icon: "file", count: documents.length },
+    { id: "purchase-orders", label: "Purchase Orders", icon: "shopping-cart", count: purchaseOrders.length },
+    { id: "daily-wages", label: "Daily Wages", icon: "users", count: filteredDailyWages.length },
+    { id: "profit-loss", label: "Profit & Loss", icon: "trending-up" },
+  ];
+
   if (loading) {
     return (
       <Content>
@@ -1054,6 +1182,7 @@ const SiteDetail = () => {
 
   if (!site) return null;
   const sc = STATUS_CONFIG[site.status] || STATUS_CONFIG.active;
+  const plData = calculateProfitLoss();
 
   return (
     <React.Fragment>
@@ -1089,175 +1218,290 @@ const SiteDetail = () => {
           </Alert>
         )}
 
-        {/* ── Main Card ── */}
+        {/* ── Tabs ── */}
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* ── Tab Content ── */}
         <Block>
           <div className="card card-bordered" style={{ borderRadius: "12px", overflow: "hidden" }}>
             <div className="card-inner" style={{ padding: "28px" }}>
 
-              {/* ── Hero ── */}
-              <Row className="g-4 mb-2">
-                <Col lg="5">
-                  <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden" }}>
-                    <img src={site.image} alt={site.name}
-                      style={{ width: "100%", height: "280px", objectFit: "cover", display: "block" }}
-                      onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"; }}
-                    />
-                    <span style={{ position: "absolute", top: "14px", right: "14px", background: sc.bg + "22", color: sc.bg, border: `1px solid ${sc.bg}55`, padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px" }}>{sc.text}</span>
-                  </div>
-                </Col>
-                <Col lg="7">
-                  <div style={{ paddingLeft: "8px" }}>
-                    <h4 style={{ fontWeight: 700, marginBottom: "6px" }}>{site.name}</h4>
-                    <p className="text-muted mb-1"><Icon name="map-pin" className="me-1" />{site.location}</p>
-                    <p className="text-muted mb-3" style={{ fontSize: "13px" }}><Icon name="hash" className="me-1" />Project ID: {site.projectId}</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginBottom: "16px" }}>
-                      <InfoBox label="Start Date" value={formatDate(site.startDate)} />
-                      <InfoBox label="Project Value" value={site.projectValue || "N/A"} />
-                      {site.budget > 0 && <InfoBox label="Budget" value={`₹${site.budget.toLocaleString()}`} />}
-                    </div>
-                    {site.description && (
-                      <div style={{ background: "#f8f9fa", borderRadius: "8px", padding: "12px 14px" }}>
-                        <p style={{ margin: 0, fontSize: "14px", color: "#555", lineHeight: 1.6 }}>{site.description}</p>
-                      </div>
-                    )}
-                  </div>
-                </Col>
-              </Row>
-
-              {/* ── Progress ── */}
-              {site.status === "active" && site.completion !== undefined && (
+              {/* ── TAB 1: INFORMATION ── */}
+              {activeTab === "info" && (
                 <>
-                  <SectionDivider title="Project Completion" />
-                  <div className="d-flex justify-content-between small mb-1">
-                    <span>Progress</span>
-                    <strong style={{ color: BRAND }}>{site.completion}%</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "#f0ece9", borderRadius: "10px", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${site.completion}%`, background: `linear-gradient(90deg, ${BRAND}, #a0674a)`, borderRadius: "10px" }} />
-                  </div>
+                  <Row className="g-4 mb-2">
+                    <Col lg="5">
+                      <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden" }}>
+                        <img src={site.image} alt={site.name}
+                          style={{ width: "100%", height: "280px", objectFit: "cover", display: "block" }}
+                          onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"; }}
+                        />
+                        <span style={{ position: "absolute", top: "14px", right: "14px", background: sc.bg + "22", color: sc.bg, border: `1px solid ${sc.bg}55`, padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px" }}>{sc.text}</span>
+                      </div>
+                    </Col>
+                    <Col lg="7">
+                      <div style={{ paddingLeft: "8px" }}>
+                        <h4 style={{ fontWeight: 700, marginBottom: "6px" }}>{site.name}</h4>
+                        <p className="text-muted mb-1"><Icon name="map-pin" className="me-1" />{site.location}</p>
+                        <p className="text-muted mb-3" style={{ fontSize: "13px" }}><Icon name="hash" className="me-1" />Project ID: {site.projectId}</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginBottom: "16px" }}>
+                          <InfoBox label="Start Date" value={formatDate(site.startDate)} />
+                          <InfoBox label="Project Value" value={site.projectValue || "N/A"} />
+                          {site.budget > 0 && <InfoBox label="Budget" value={`₹${site.budget.toLocaleString()}`} />}
+                        </div>
+                        {site.description && (
+                          <div style={{ background: "#f8f9fa", borderRadius: "8px", padding: "12px 14px" }}>
+                            <p style={{ margin: 0, fontSize: "14px", color: "#555", lineHeight: 1.6 }}>{site.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    </Col>
+                  </Row>
+
+                  {/* Progress */}
+                  {site.status === "active" && site.completion !== undefined && (
+                    <>
+                      <div style={{ margin: "32px 0 16px" }}>
+                        <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px", letterSpacing: "0.2px" }}>Project Completion</h6>
+                      </div>
+                      <div className="d-flex justify-content-between small mb-1">
+                        <span>Progress</span>
+                        <strong style={{ color: BRAND }}>{site.completion}%</strong>
+                      </div>
+                      <div style={{ height: "8px", background: "#f0ece9", borderRadius: "10px", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${site.completion}%`, background: `linear-gradient(90deg, ${BRAND}, #a0674a)`, borderRadius: "10px" }} />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
-              {/* ── Gallery ── */}
-              <SectionDivider title="Project Gallery">
-                <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
-              </SectionDivider>
-              {uploading && <div style={{ marginBottom: "10px" }}><Spinner size="sm" style={{ color: BRAND }} /></div>}
-              {galleryImages.length > 0 ? (
-                <Row className="g-3">
-                  {galleryImages.map((img, idx) => (
-                    <Col md="3" sm="6" key={img._id || idx}>
-                      <ImageCard img={img} idx={idx} deletingItem={deletingItem}
-                        onView={() => setImgSidebar({ open: true, images: galleryImages, index: idx, title: "Project Gallery" })}
-                        onDelete={() => handleDeleteImage(img._id, "gallery")}
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              ) : <EmptyState text="No gallery images uploaded yet." />}
+              {/* ── TAB 2: PROJECT GALLERY ── */}
+              {activeTab === "gallery" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Gallery</h6>
+                    <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
+                  </div>
+                  {uploading && <div style={{ marginBottom: "10px" }}><Spinner size="sm" style={{ color: BRAND }} /></div>}
+                  {galleryImages.length > 0 ? (
+                    <Row className="g-3">
+                      {galleryImages.map((img, idx) => (
+                        <Col md="3" sm="6" key={img._id || idx}>
+                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
+                            onView={() => setImgSidebar({ open: true, images: galleryImages, index: idx, title: "Project Gallery" })}
+                            onDelete={() => handleDeleteImage(img._id, "gallery")}
+                          />
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : <EmptyState text="No gallery images uploaded yet." />}
+                </>
+              )}
 
-              {/* ── Site Plans ── */}
-              <SectionDivider title="Site Plans">
-                <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
-              </SectionDivider>
-              {sitePlanImages.length > 0 ? (
-                <Row className="g-3">
-                  {sitePlanImages.map((img, idx) => (
-                    <Col md="3" sm="6" key={img._id || idx}>
-                      <ImageCard img={img} idx={idx} deletingItem={deletingItem}
-                        onView={() => setImgSidebar({ open: true, images: sitePlanImages, index: idx, title: "Site Plans" })}
-                        onDelete={() => handleDeleteImage(img._id, "site-plan")}
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              ) : <EmptyState text="No site plans uploaded yet." />}
+              {/* ── TAB 3: SITE PLANS ── */}
+              {activeTab === "plans" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Site Plans</h6>
+                    <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
+                  </div>
+                  {sitePlanImages.length > 0 ? (
+                    <Row className="g-3">
+                      {sitePlanImages.map((img, idx) => (
+                        <Col md="3" sm="6" key={img._id || idx}>
+                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
+                            onView={() => setImgSidebar({ open: true, images: sitePlanImages, index: idx, title: "Site Plans" })}
+                            onDelete={() => handleDeleteImage(img._id, "site-plan")}
+                          />
+                        </Col>
+                      ))}
+                    </Row>
+                  ) : <EmptyState text="No site plans uploaded yet." />}
+                </>
+              )}
 
-              {/* ── Documents ── */}
-              <SectionDivider title="Project Documents">
-                <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
-              </SectionDivider>
+              {/* ── TAB 4: PROJECT DOCUMENTS ── */}
+              {activeTab === "documents" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Documents</h6>
+                    <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
+                  </div>
+                  {documents.length > 0 ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
+                      {documents.map((doc) => {
+                        const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
+                        const dateStr = doc.uploadedAt
+                          ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                          : "";
 
-              {documents.length > 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
-                  {documents.map((doc) => {
-                    const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-                    const dateStr = doc.uploadedAt
-                      ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                      : "";
-
-                    return (
-                      <div
-                        key={doc._id}
-                        style={{
-                          background: "#f1f3f4",
-                          borderRadius: "14px",
-                          overflow: "hidden",
-                          transition: "all 0.2s ease",
-                          cursor: "pointer",
-                          border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
-                        }}
-                        onClick={() => setPdfSidebar({ open: true, doc })}
-                      >
-                        <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>
-                          <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                            <embed src={getPdfUrl(doc)} type="application/pdf" style={{ width: "100%", height: "100%", border: "none", overflow: "hidden", pointerEvents: "none" }} />
-                          </div>
-                          <div style={{ position: "absolute", top: "10px", left: "10px", width: "20px", height: "20px", borderRadius: "6px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.4px" }}>PDF</div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
-                            disabled={deletingItem === doc._id}
-                            style={{ position: "absolute", top: "10px", right: "10px", width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
+                        return (
+                          <div
+                            key={doc._id}
+                            style={{
+                              background: "#f1f3f4",
+                              borderRadius: "14px",
+                              overflow: "hidden",
+                              transition: "all 0.2s ease",
+                              cursor: "pointer",
+                              border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
+                            }}
+                            onClick={() => setPdfSidebar({ open: true, doc })}
                           >
-                            {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
-                          </button>
-                        </div>
-                        <div style={{ padding: "14px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                          <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
+                            <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>
+                              <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                                <embed src={getPdfUrl(doc)} type="application/pdf" style={{ width: "100%", height: "100%", border: "none", overflow: "hidden", pointerEvents: "none" }} />
+                              </div>
+                              <div style={{ position: "absolute", top: "10px", left: "10px", width: "20px", height: "20px", borderRadius: "6px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.4px" }}>PDF</div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
+                                disabled={deletingItem === doc._id}
+                                style={{ position: "absolute", top: "10px", right: "10px", width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
+                              >
+                                {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
+                              </button>
+                            </div>
+                            <div style={{ padding: "14px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                              <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.originalName || doc.filename}</div>
+                                <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
+                              </div>
+                            </div>
                           </div>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.originalName || doc.filename}</div>
-                            <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
-                          </div>
-                        </div>
+                        );
+                      })}
+                    </div>
+                  ) : <EmptyState text="No documents uploaded yet." />}
+                </>
+              )}
+
+              {/* ── TAB 5: PURCHASE ORDERS ── */}
+              {activeTab === "purchase-orders" && (
+                <>
+                  <h6 style={{ fontWeight: 700, margin: "0 0 16px 0", color: "#1a1a2e", fontSize: "15px" }}>Purchase Orders</h6>
+                  {purchaseOrders.length > 0 ? (
+                    <POAccordion orders={purchaseOrders} />
+                  ) : (
+                    <EmptyState text="No purchase orders found for this project." />
+                  )}
+                </>
+              )}
+
+              {/* ── TAB 6: DAILY WAGES ── */}
+              {activeTab === "daily-wages" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
+                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Daily Wages</h6>
+                    <MonthFilter
+                      selectedMonth={selectedMonth}
+                      selectedYear={selectedYear}
+                      onMonthChange={setSelectedMonth}
+                      onYearChange={setSelectedYear}
+                      onFilter={applyWagesFilter}
+                      onClear={clearWagesFilter}
+                    />
+                  </div>
+
+                  {wagesLoading ? (
+                    <div style={{ padding: "20px", textAlign: "center" }}>
+                      <Spinner style={{ color: BRAND }} />
+                      <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
+                    </div>
+                  ) : filteredDailyWages.length > 0 ? (
+                    <DailyWagesAccordion wages={filteredDailyWages} />
+                  ) : (
+                    <EmptyState text="No daily wages found for the selected period." />
+                  )}
+                </>
+              )}
+
+              {/* ── TAB 7: PROFIT & LOSS ── */}
+              {activeTab === "profit-loss" && (
+                <>
+                  <h6 style={{ fontWeight: 700, margin: "0 0 20px 0", color: "#1a1a2e", fontSize: "15px" }}>Profit & Loss Statement</h6>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+                    <div style={{ background: "#f8f9fa", padding: "20px", borderRadius: "12px", border: "1px solid #e9ecef" }}>
+                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Budget</div>
+                      <div style={{ fontSize: "24px", fontWeight: 700, color: BRAND, marginTop: "6px" }}>{formatINR(plData.totalBudget)}</div>
+                    </div>
+                    
+                    <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "1px solid #ffe0b2" }}>
+                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Total Expenses</div>
+                      <div style={{ fontSize: "24px", fontWeight: 700, color: "#e65100", marginTop: "6px" }}>{formatINR(plData.totalExpenses)}</div>
+                    </div>
+
+                    <div style={{ 
+                      background: plData.isProfit ? "#e8f5e9" : "#ffebee", 
+                      padding: "20px", 
+                      borderRadius: "12px", 
+                      border: `1px solid ${plData.isProfit ? "#c8e6c9" : "#ffcdd2"}` 
+                    }}>
+                      <div style={{ fontSize: "12px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        {plData.isProfit ? "Profit" : "Loss"}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <EmptyState text="No documents uploaded yet." />
-              )}
+                      <div style={{ 
+                        fontSize: "24px", 
+                        fontWeight: 700, 
+                        color: plData.isProfit ? "#2e7d32" : "#c62828", 
+                        marginTop: "6px" 
+                      }}>
+                        {formatINR(Math.abs(plData.profitLoss))}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* ── Purchase Orders ── */}
-              <SectionDivider title="Purchase Orders" />
-              {purchaseOrders.length > 0 ? (
-                <POAccordion orders={purchaseOrders} />
-              ) : (
-                <EmptyState text="No purchase orders found for this project." />
-              )}
+                  <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e9ecef", overflow: "hidden" }}>
+                    <div style={{ padding: "16px 20px", background: "#fafafa", borderBottom: "1px solid #e9ecef", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <Icon name="list" style={{ color: BRAND }} />
+                      <span style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>Expense Breakdown</span>
+                    </div>
+                    
+                    <div style={{ padding: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+                        <span style={{ color: "#555" }}>Daily Wages</span>
+                        <span style={{ fontWeight: 600 }}>{formatINR(plData.totalWages)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+                        <span style={{ color: "#555" }}>Purchase Orders</span>
+                        <span style={{ fontWeight: 600 }}>{formatINR(plData.totalPurchaseOrders)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+                        <span style={{ color: "#555" }}>Other Expenses</span>
+                        <span style={{ fontWeight: 600 }}>{formatINR(plData.otherExpenses)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0 0 0", borderTop: "2px solid #e9ecef", marginTop: "4px" }}>
+                        <span style={{ fontWeight: 700, color: "#1a1a2e" }}>Total Expenses</span>
+                        <span style={{ fontWeight: 700, fontSize: "18px", color: "#e65100" }}>{formatINR(plData.totalExpenses)}</span>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* ── DAILY WAGES ── */}
-              <SectionDivider title="Daily Wages">
-                <MonthFilter
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  onMonthChange={setSelectedMonth}
-                  onYearChange={setSelectedYear}
-                  onFilter={applyWagesFilter}
-                  onClear={clearWagesFilter}
-                />
-              </SectionDivider>
-
-              {wagesLoading ? (
-                <div style={{ padding: "20px", textAlign: "center" }}>
-                  <Spinner style={{ color: BRAND }} />
-                  <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
-                </div>
-              ) : filteredDailyWages.length > 0 ? (
-                <DailyWagesAccordion wages={filteredDailyWages} />
-              ) : (
-                <EmptyState text="No daily wages found for the selected period." />
+                  <div style={{ 
+                    marginTop: "20px",
+                    background: plData.isProfit ? BRAND : "#dc3545",
+                    borderRadius: "12px",
+                    padding: "20px 24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#fff" }}>
+                      <Icon name={plData.isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
+                      <div>
+                        <div style={{ fontSize: "14px", opacity: 0.9 }}>Overall {plData.isProfit ? "Profit" : "Loss"}</div>
+                        <div style={{ fontSize: "12px", opacity: 0.7 }}>{plData.isProfit ? "Project is on track" : "Review expenses"}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "28px", fontWeight: 700, color: "#fff" }}>
+                      {formatINR(Math.abs(plData.profitLoss))}
+                    </div>
+                  </div>
+                </>
               )}
 
             </div>
@@ -1367,13 +1611,6 @@ const InfoBox = ({ label, value }) => (
   <div>
     <div style={{ fontSize: "11px", color: "#999", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: "3px" }}>{label}</div>
     <div style={{ fontWeight: 600, color: "#1a1a2e", fontSize: "15px" }}>{value}</div>
-  </div>
-);
-
-const SectionDivider = ({ title, children }) => (
-  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "32px 0 16px" }}>
-    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px", letterSpacing: "0.2px" }}>{title}</h6>
-    {children}
   </div>
 );
 
