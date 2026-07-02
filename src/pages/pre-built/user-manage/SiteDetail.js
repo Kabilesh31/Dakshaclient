@@ -25,6 +25,17 @@ import {
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 
+// Import all tab components
+import InfoTab from "./InfoTab";
+import GalleryTab from "./GalleryTab";
+import PlansTab from "./PlansTab";
+import DocumentsTab from "./DocumentsTab";
+import PurchaseOrdersTab from "./PurchaseOrdersTab";
+import DailyWagesTab from "./DailyWagesTab";
+import BusinessTab from "./BusinessTab";
+import QuotationsTab from "./QuotationsTab";
+import ExpensesTab from "./ExpensesTab";
+
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
 const BASE_URL = `${process.env.REACT_APP_BACKENDURL}` || "http://localhost:5000";
 
@@ -61,17 +72,6 @@ const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false
       {children}
     </button>
   );
-};
-
-// ─── Capitalize First Letter ──────────────────────────────────
-const capitalizeFirst = (str) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-// ─── Format INR ──────────────────────────────────────────────
-const formatINR = (val) => {
-  if (!val && val !== 0) return "₹0";
-  return "₹" + Number(val).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 };
 
 // ─── Sidebar Viewer ────────────────────────────────────────────
@@ -170,622 +170,15 @@ const inputStyle = {
   color: "#1a1a2e", background: "#fdfcfc",
 };
 
-// ─── DAILY WAGES ACCORDION ────────────────────────────────────
-// ─── DAILY WAGES ACCORDION ────────────────────────────────────
-const DailyWagesAccordion = ({ wages }) => {
-  const [openMonth, setOpenMonth] = useState(null);
-  const toggle = (monthKey) => setOpenMonth((prev) => (prev === monthKey ? null : monthKey));
-
-  // Group by month
-  const groupedByMonth = wages.reduce((acc, wage) => {
-    const date = new Date(wage.date);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-    
-    if (!acc[monthKey]) {
-      acc[monthKey] = { 
-        monthName, 
-        monthKey, 
-        records: [], 
-        totalAmount: 0,
-        totalDays: 0,
-        totalOvertime: 0,
-        uniqueEmployees: new Set()
-      };
-    }
-    acc[monthKey].records.push(wage);
-    acc[monthKey].totalAmount += wage.totalSalary || 0;
-    acc[monthKey].totalDays += 1;
-    acc[monthKey].totalOvertime += wage.overtimeHours || 0;
-    
-    // Track unique employees
-    let empId = wage.employeeId;
-    if (empId && typeof empId === 'object') {
-      empId = empId._id || empId;
-    }
-    if (empId) {
-      acc[monthKey].uniqueEmployees.add(empId.toString());
-    }
-    return acc;
-  }, {});
-
-  const monthKeys = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a));
-
-  // Helper function to get employee name
-  const getEmployeeName = (record) => {
-    // If we have employeeName from processing
-    if (record.employeeName) return record.employeeName;
-    // If employeeId is populated
-    if (record.employeeId && typeof record.employeeId === 'object' && record.employeeId.name) {
-      return record.employeeId.name;
-    }
-    return 'Unknown';
-  };
-
-  // Helper function to get employee ID
-  const getEmployeeId = (record) => {
-    if (!record.employeeId) return 'N/A';
-    if (typeof record.employeeId === 'string') return record.employeeId;
-    if (typeof record.employeeId === 'object' && record.employeeId._id) {
-      return record.employeeId._id;
-    }
-    return 'N/A';
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {monthKeys.map((monthKey) => {
-          const monthData = groupedByMonth[monthKey];
-          const isOpen = openMonth === monthKey;
-
-          return (
-            <div key={monthKey}
-              style={{
-                background: "#fff",
-                border: `1px solid ${isOpen ? BRAND + "55" : "#eee"}`,
-                borderRadius: "12px",
-                overflow: "hidden",
-                transition: "border-color 0.2s",
-              }}
-            >
-              {/* Header */}
-              <div
-                onClick={() => toggle(monthKey)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "14px 16px",
-                  cursor: "pointer",
-                  userSelect: "none",
-                  background: isOpen ? BRAND + "06" : "#fff",
-                  transition: "background 0.18s",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "8px",
-                  background: BRAND + "15",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0
-                }}>
-                  <Icon name="calendar" style={{ color: BRAND, fontSize: "17px" }} />
-                </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>
-                    {monthData.monthName}
-                  </div>
-                  <div style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    marginTop: "2px",
-                  }}>
-                    {monthData.uniqueEmployees.size} Employees • {monthData.records.length} Records • {monthData.totalOvertime}h Overtime
-                  </div>
-                </div>
-
-                <span style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: BRAND,
-                  background: BRAND + "12",
-                  padding: "4px 12px",
-                  borderRadius: "20px",
-                  flexShrink: 0
-                }}>
-                  {formatINR(monthData.totalAmount)}
-                </span>
-
-                <span style={{
-                  color: "#aaa",
-                  fontSize: "18px",
-                  transition: "transform 0.25s",
-                  transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                  flexShrink: 0
-                }}>
-                  ▾
-                </span>
-              </div>
-
-              {/* Expanded Content - Daily Records */}
-              <div style={{
-                maxHeight: isOpen ? "1200px" : "0",
-                overflow: "hidden",
-                transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
-              }}>
-                <div style={{ padding: "0 16px 16px" }}>
-                  {/* Summary Stats */}
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                    gap: "12px",
-                    padding: "12px 0",
-                    borderBottom: "1px solid #f0f0f0",
-                    marginBottom: "12px"
-                  }}>
-                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Records</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.records.length}</div>
-                    </div>
-                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Employees</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.uniqueEmployees.size}</div>
-                    </div>
-                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Overtime</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{monthData.totalOvertime}h</div>
-                    </div>
-                    <div style={{ background: "#f8f9fa", padding: "10px", borderRadius: "8px", textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>Total Amount</div>
-                      <div style={{ fontSize: "18px", fontWeight: 700, color: BRAND }}>{formatINR(monthData.totalAmount)}</div>
-                    </div>
-                  </div>
-
-                  {/* Daily Records Table */}
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                      <thead>
-                        <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Employee</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Site</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Daily Salary</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Overtime</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Total</th>
-                          <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px" }}>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthData.records.map((record, idx) => {
-                          const employeeName = getEmployeeName(record);
-                          const employeeId = getEmployeeId(record);
-                          const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
-                          
-                          return (
-                            <tr key={record._id || idx} style={{ borderBottom: idx < monthData.records.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                              <td style={{ padding: "10px 10px", color: "#555" }}>
-                                {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
-                              </td>
-                              <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
-                                {employeeName}
-                                <div style={{ fontSize: "11px", color: "#888" }}>
-                                  ID: {empIdStr.substring(0, 8) || "N/A"}
-                                </div>
-                              </td>
-                              <td style={{ padding: "10px 10px", color: "#555" }}>
-                                {record.siteName || record.site?.name || "N/A"}
-                              </td>
-                              <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                                {formatINR(record.dailySalary || 0)}
-                              </td>
-                              <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
-                                {record.overtimeHours || 0}h
-                                {record.overtimeAmount > 0 && (
-                                  <div style={{ fontSize: "11px", color: "#888" }}>
-                                    {formatINR(record.overtimeAmount)}
-                                  </div>
-                                )}
-                              </td>
-                              <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 700, color: BRAND }}>
-                                {formatINR(record.totalSalary || 0)}
-                              </td>
-                             <td style={{ padding: "10px 10px", textAlign: "center" }}>
-  <span style={{
-    fontSize: "10px",
-    fontWeight: 600,
-    padding: "2px 10px",
-    borderRadius: "20px",
-    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
-    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
-  }}>
-    {capitalizeFirst(record.status || "Pending")}
-  </span>
-</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Grand Total */}
-      {monthKeys.length > 0 && (
-        <div style={{
-          marginTop: "16px",
-          background: BRAND,
-          borderRadius: "12px",
-          padding: "16px 20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            color: "rgba(255,255,255,0.85)",
-            fontSize: "14px",
-            fontWeight: 600
-          }}>
-            <Icon name="wallet" style={{ fontSize: "18px", color: "#fff" }} />
-            Total Daily Wages (All Months)
-          </div>
-          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>
-            {formatINR(Object.values(groupedByMonth).reduce((sum, m) => sum + m.totalAmount, 0))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── MONTH FILTER ──────────────────────────────────────────────
-const MonthFilter = ({ 
-  selectedMonth, 
-  onMonthChange,
-  selectedYear,
-  onYearChange,
-  onFilter, 
-  onClear 
-}) => {
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const years = [];
-  const currentYear = new Date().getFullYear();
-  for (let y = currentYear; y >= currentYear - 5; y--) {
-    years.push(y);
-  }
-
-  return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      flexWrap: "wrap"
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <span style={{ fontSize: "12px", color: "#555", fontWeight: 600 }}>Month:</span>
-        <select
-          value={selectedMonth}
-          onChange={(e) => onMonthChange(e.target.value)}
-          style={{
-            ...inputStyle,
-            padding: "6px 10px",
-            fontSize: "12px",
-            minWidth: "120px",
-            cursor: "pointer"
-          }}
-        >
-          <option value="">All Months</option>
-          {months.map((month, index) => (
-            <option key={month} value={String(index + 1).padStart(2, '0')}>
-              {month}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <span style={{ fontSize: "12px", color: "#555", fontWeight: 600 }}>Year:</span>
-        <select
-          value={selectedYear}
-          onChange={(e) => onYearChange(e.target.value)}
-          style={{
-            ...inputStyle,
-            padding: "6px 10px",
-            fontSize: "12px",
-            minWidth: "100px",
-            cursor: "pointer"
-          }}
-        >
-          <option value="">All Years</option>
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <BrandBtn size="sm" onClick={onFilter}>
-        <Icon name="filter" size={12} /> Apply Filter
-      </BrandBtn>
-
-      <button
-        onClick={onClear}
-        style={{
-          background: "transparent",
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-          padding: "6px 14px",
-          fontSize: "12px",
-          fontWeight: 600,
-          color: "#666",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px"
-        }}
-      >
-        <Icon name="refresh" size={12} /> Clear
-      </button>
-    </div>
-  );
-};
-
-// ─── PURCHASE ORDER ACCORDION ──────────────────────────────────
-const POAccordion = ({ orders }) => {
-  const [openId, setOpenId] = useState(null);
-
-  const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
-
-  const grandTotal = orders.reduce((sum, po) => {
-    const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
-    return sum + poTotal;
-  }, 0);
-
-  return (
-    <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {orders.map((po) => {
-          const isOpen = openId === po._id;
-          const items = po.items || [];
-          const poTotal = items.reduce((s, i) => s + (i.quantity * i.unitPrice || i.amount || 0), 0);
-          const badge = STATUS_BADGE[po.status?.toLowerCase()] || STATUS_BADGE.pending;
-
-          return (
-            <div key={po._id}
-              style={{
-                background: "#fff",
-                border: `1px solid ${isOpen ? BRAND + "55" : "#eee"}`,
-                borderRadius: "12px", overflow: "hidden",
-                transition: "border-color 0.2s",
-              }}
-            >
-              <div
-                onClick={() => toggle(po._id)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "12px",
-                  padding: "14px 16px", cursor: "pointer", userSelect: "none",
-                  background: isOpen ? BRAND + "06" : "#fff",
-                  transition: "background 0.18s",
-                }}
-              >
-                <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: BRAND + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Icon name="file-text" style={{ color: BRAND, fontSize: "17px" }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>{po.poNumber || po._id}</div>
-                  <div style={{ fontSize: "12px", color: "#888", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {po.vendor || po.supplierName || "Vendor"}
-                  </div>
-                </div>
-               <span style={{ 
-  fontSize: "11px", 
-  fontWeight: 600, 
-  padding: "3px 10px", 
-  borderRadius: "20px", 
-  background: badge.bg, 
-  color: badge.color, 
-  flexShrink: 0 
-}}>
-  {badge.label}
-</span>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: BRAND, background: BRAND + "12", padding: "4px 12px", borderRadius: "20px", flexShrink: 0 }}>
-                  {formatINR(poTotal)}
-                </span>
-                <span style={{ color: "#aaa", fontSize: "18px", transition: "transform 0.25s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
-                  ▾
-                </span>
-              </div>
-
-              <div style={{
-                maxHeight: isOpen ? "600px" : "0",
-                overflow: "hidden",
-                transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
-              }}>
-                <div style={{ padding: "0 16px 16px" }}>
-                  {items.length > 0 ? (
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", tableLayout: "fixed" }}>
-                      <colgroup>
-                        <col style={{ width: "40%" }} />
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "20%" }} />
-                      </colgroup>
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid #f0f0f0" }}>
-                          {["Item", "Qty", "Unit Price", "Amount"].map((h, i) => (
-                            <th key={h} style={{ padding: "6px 8px 10px", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: i > 0 ? "right" : "left" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.map((item, idx) => {
-                          const amount = item.quantity * item.unitPrice || item.amount || 0;
-                          return (
-                            <tr key={item._id || idx} style={{ borderBottom: idx < items.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                              <td style={{ padding: "10px 8px", verticalAlign: "top" }}>
-                                <div style={{ fontWeight: 600, color: "#1a1a2e", fontSize: "13px" }}>{item.name || item.itemName}</div>
-                                {item.category && (
-                                  <span style={{ fontSize: "11px", color: "#888", background: "#f5f5f5", padding: "2px 8px", borderRadius: "20px", display: "inline-block", marginTop: "3px" }}>
-                                    {item.category}
-                                  </span>
-                                )}
-                              </td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>{item.quantity} {item.unit || ""}</td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", color: "#555", verticalAlign: "top" }}>{formatINR(item.rate || 0)}</td>
-                              <td style={{ padding: "10px 8px", textAlign: "right", fontWeight: 600, color: "#1a1a2e", verticalAlign: "top" }}>{formatINR(amount)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div style={{ padding: "16px", background: "#fafafa", borderRadius: "8px", textAlign: "center", color: "#bbb", fontSize: "13px" }}>
-                      No items found for this order.
-                    </div>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", padding: "12px 14px", background: BRAND + "10", borderRadius: "8px", border: `1px solid ${BRAND}22` }}>
-                    <div style={{ fontSize: "13px", color: BRAND, fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Icon name="calculator" /> Order Total</div>
-                    <div style={{ fontSize: "17px", fontWeight: 700, color: BRAND }}>{formatINR(poTotal)}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {orders.length > 0 && (
-        <div style={{ marginTop: "16px", background: BRAND, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "rgba(255,255,255,0.85)", fontSize: "14px", fontWeight: 600 }}>
-            <Icon name="report-money" style={{ fontSize: "18px", color: "#fff" }} /> Total Purchase Order Value
-          </div>
-          <div style={{ fontSize: "22px", fontWeight: 700, color: "#fff" }}>{formatINR(grandTotal)}</div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── PROFIT & LOSS ACCORDION ────────────────────────────────────
-const PLAccordion = ({ 
-  title, 
-  icon, 
-  total, 
-  count, 
-  isOpen, 
-  onToggle, 
-  children, 
-  color 
-}) => {
-  return (
-    <div style={{
-      background: "#fff",
-      border: `1px solid ${isOpen ? color + "55" : "#eee"}`,
-      borderRadius: "12px",
-      overflow: "hidden",
-      transition: "border-color 0.2s",
-    }}>
-      <div
-        onClick={onToggle}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "14px 16px",
-          cursor: "pointer",
-          userSelect: "none",
-          background: isOpen ? color + "06" : "#fff",
-          transition: "background 0.18s",
-        }}
-      >
-        <div style={{
-          width: "36px",
-          height: "36px",
-          borderRadius: "8px",
-          background: color + "15",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0
-        }}>
-          <Icon name={icon} style={{ color: color, fontSize: "17px" }} />
-        </div>
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: "14px", color: "#1a1a2e" }}>
-            {title}
-          </div>
-          <div style={{
-            fontSize: "12px",
-            color: "#888",
-            marginTop: "2px",
-          }}>
-            {count} {count === 1 ? 'record' : 'records'}
-          </div>
-        </div>
-
-        <span style={{
-          fontSize: "13px",
-          fontWeight: 600,
-          color: color,
-          background: color + "12",
-          padding: "4px 12px",
-          borderRadius: "20px",
-          flexShrink: 0
-        }}>
-          {formatINR(total)}
-        </span>
-
-        <span style={{
-          color: "#aaa",
-          fontSize: "18px",
-          transition: "transform 0.25s",
-          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-          flexShrink: 0
-        }}>
-          ▾
-        </span>
-      </div>
-
-      <div style={{
-        maxHeight: isOpen ? "600px" : "0",
-        overflow: "hidden",
-        transition: "maxHeight 0.3s cubic-bezier(0.4,0,0.2,1)",
-      }}>
-        <div style={{ padding: "0 16px 16px" }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ─── TAB COMPONENT ─────────────────────────────────────────────
 const Tabs = ({ tabs, activeTab, onTabChange }) => {
   return (
     <div style={{
       display: "flex",
-      gap: "4px",
       borderBottom: "2px solid #f0f0f0",
       marginBottom: "24px",
       overflowX: "auto",
-      paddingBottom: "0",
+      paddingBottom: "0px",
       flexWrap: "nowrap",
     }}>
       {tabs.map((tab) => (
@@ -793,7 +186,7 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           style={{
-            padding: "10px 20px",
+            padding: "10px 10px",
             background: "transparent",
             border: "none",
             outline: "none",
@@ -847,7 +240,6 @@ const SiteDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [editedSite, setEditedSite] = useState({});
-  const [staffInput, setStaffInput] = useState("");
   const [formErrors, setFormErrors] = useState({});
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -863,9 +255,6 @@ const SiteDetail = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [wagesLoading, setWagesLoading] = useState(false);
-
-  // Business Accordion State
-  const [openBizSection, setOpenBizSection] = useState('budget');
 
   // Tab state
   const [activeTab, setActiveTab] = useState("info");
@@ -912,103 +301,88 @@ const SiteDetail = () => {
     }
   };
 
-  // ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
-// ─── DAILY WAGES FUNCTIONS ──────────────────────────────────
-const fetchDailyWages = async () => {
-  setWagesLoading(true);
-  try {
-    const token = localStorage.getItem("token");
-    
-    // Get today's date
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-    
-    // Calculate date range for the last 3 months
-    const startMonth = currentMonth - 2;
-    let startYear = currentYear;
-    let startMonthNum = startMonth;
-    if (startMonth <= 0) {
-      startMonthNum = startMonth + 12;
-      startYear = currentYear - 1;
-    }
-    
-    const startDate = `${startYear}-${String(startMonthNum).padStart(2, '0')}-01`;
-    const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
-    
-    console.log(`Fetching attendance from ${startDate} to ${endDate} for site ${id}`);
-    
-    // Fetch all attendance records for this site
-    const attendanceResponse = await axios.get(
-      `${API_URL}/attendance/range`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        params: { 
-          startDate: startDate, 
-          endDate: endDate,
-          site: id // Filter by site
-        }
+  const fetchDailyWages = async () => {
+    setWagesLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1;
+      
+      const startMonth = currentMonth - 2;
+      let startYear = currentYear;
+      let startMonthNum = startMonth;
+      if (startMonth <= 0) {
+        startMonthNum = startMonth + 12;
+        startYear = currentYear - 1;
       }
-    );
-    
-    if (!attendanceResponse.data.success) {
-      throw new Error("Failed to fetch attendance records");
-    }
-    
-    const attendanceRecords = attendanceResponse.data.data || [];
-    console.log(`Found ${attendanceRecords.length} attendance records`);
-    
-    if (attendanceRecords.length === 0) {
+      
+      const startDate = `${startYear}-${String(startMonthNum).padStart(2, '0')}-01`;
+      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
+      
+      const attendanceResponse = await axios.get(
+        `${API_URL}/attendance/range`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          params: { 
+            startDate: startDate, 
+            endDate: endDate,
+            site: id
+          }
+        }
+      );
+      
+      if (!attendanceResponse.data.success) {
+        throw new Error("Failed to fetch attendance records");
+      }
+      
+      const attendanceRecords = attendanceResponse.data.data || [];
+      
+      if (attendanceRecords.length === 0) {
+        setDailyWages([]);
+        setFilteredDailyWages([]);
+        setWagesLoading(false);
+        showError("No attendance records found for this site in the last 3 months");
+        return;
+      }
+      
+      const processedRecords = attendanceRecords.map(record => {
+        let employeeName = 'Unknown';
+        let employeeId = '';
+        let employeeSalary = 0;
+        
+        if (record.employeeId) {
+          if (typeof record.employeeId === 'object') {
+            employeeName = record.employeeId.name || 'Unknown';
+            employeeId = record.employeeId._id || record.employeeId;
+            employeeSalary = record.employeeId.salary || 0;
+          } else if (typeof record.employeeId === 'string') {
+            employeeId = record.employeeId;
+          }
+        }
+        
+        return {
+          ...record,
+          employeeName: employeeName,
+          employeeIdDisplay: employeeId,
+          employeeSalary: employeeSalary,
+          siteName: record.siteName || record.site?.name || 'Not Assigned'
+        };
+      });
+      
+      setDailyWages(processedRecords);
+      setFilteredDailyWages(processedRecords);
+      
+    } catch (err) {
+      console.error("Failed to fetch daily wages:", err);
+      showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
       setDailyWages([]);
       setFilteredDailyWages([]);
+    } finally {
       setWagesLoading(false);
-      showError("No attendance records found for this site in the last 3 months");
-      return;
     }
-    
-    // Process records - employeeId is populated by backend
-    const processedRecords = attendanceRecords.map(record => {
-      // Get employee data from populated employeeId
-      let employeeName = 'Unknown';
-      let employeeId = '';
-      let employeeSalary = 0;
-      
-      if (record.employeeId) {
-        // If employeeId is populated (object with name)
-        if (typeof record.employeeId === 'object') {
-          employeeName = record.employeeId.name || 'Unknown';
-          employeeId = record.employeeId._id || record.employeeId;
-          employeeSalary = record.employeeId.salary || 0;
-        } 
-        // If employeeId is a string
-        else if (typeof record.employeeId === 'string') {
-          employeeId = record.employeeId;
-        }
-      }
-      
-      return {
-        ...record,
-        employeeName: employeeName,
-        employeeIdDisplay: employeeId,
-        employeeSalary: employeeSalary,
-        siteName: record.siteName || record.site?.name || 'Not Assigned'
-      };
-    });
-    
-    console.log("Processed records sample:", processedRecords[0]);
-    
-    setDailyWages(processedRecords);
-    setFilteredDailyWages(processedRecords);
-    
-  } catch (err) {
-    console.error("Failed to fetch daily wages:", err);
-    showError("Failed to fetch daily wages data: " + (err.response?.data?.message || err.message));
-    setDailyWages([]);
-    setFilteredDailyWages([]);
-  } finally {
-    setWagesLoading(false);
-  }
-};
+  };
 
   const applyWagesFilter = () => {
     let filtered = [...dailyWages];
@@ -1036,38 +410,25 @@ const fetchDailyWages = async () => {
     setFilteredDailyWages(dailyWages);
   };
 
-  // ─── END DAILY WAGES FUNCTIONS ──────────────────────────────
-
   // ─── BUSINESS CALCULATION ──────────────────────────────────
   const calculateBusiness = () => {
-    // Total Budget from site
     const totalBudget = site?.budget || 0;
-    
-    // Calculate total daily wages (sum of totalSalary from all attendance records)
     const totalWages = dailyWages.reduce((sum, record) => sum + (record.totalSalary || 0), 0);
     
-    // Calculate total purchase orders
     const totalPurchaseOrders = purchaseOrders.reduce((sum, po) => {
       const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
       return sum + poTotal;
     }, 0);
     
-    // Sample transportation data - replace with API call
     const transportation = [];
     const totalTransportation = transportation.reduce((sum, item) => sum + (item.amount || 0), 0);
     
-    // Sample other expenses - replace with API call
     const otherExpensesItems = [];
     const otherExpenses = otherExpensesItems.reduce((sum, item) => sum + (item.amount || 0), 0);
     
-    // Total expenses
     const totalExpenses = totalWages + totalPurchaseOrders + totalTransportation + otherExpenses;
-    
-    // Profit/Loss
     const profitLoss = totalBudget - totalExpenses;
     const isProfit = profitLoss >= 0;
-    
-    // Calculate percentages
     const expensePercentage = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0;
     const profitPercentage = totalBudget > 0 ? (profitLoss / totalBudget) * 100 : 0;
     
@@ -1088,10 +449,6 @@ const fetchDailyWages = async () => {
       expensePercentage,
       profitPercentage,
     };
-  };
-
-  const toggleBizSection = (section) => {
-    setOpenBizSection(openBizSection === section ? null : section);
   };
 
   const handleFileUpload = async (e, type) => {
@@ -1218,10 +575,12 @@ const fetchDailyWages = async () => {
     { id: "info", label: "Info", icon: "info" },
     { id: "gallery", label: "Project Gallery", icon: "image", count: galleryImages.length },
     { id: "plans", label: "Site Plans", icon: "map", count: sitePlanImages.length },
-    { id: "documents", label: "Project Documents", icon: "file", count: documents.length },
+    { id: "documents", label: "Documents", icon: "file", count: documents.length },
     { id: "purchase-orders", label: "Purchase Orders", icon: "shopping-cart", count: purchaseOrders.length },
     { id: "daily-wages", label: "Daily Wages", icon: "users", count: filteredDailyWages.length },
     { id: "business", label: "Business", icon: "trending-up" },
+    { id: "quotations", label: "Quotations", icon: "trending-up" },
+    { id: "expenses", label: "Expenses", icon: "trending-up" },
   ];
 
   if (loading) {
@@ -1283,619 +642,81 @@ const fetchDailyWages = async () => {
 
               {/* ── TAB 1: INFORMATION ── */}
               {activeTab === "info" && (
-                <>
-                  <Row className="g-4 mb-2">
-                    <Col lg="5">
-                      <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden" }}>
-                        <img src={site.image} alt={site.name}
-                          style={{ width: "100%", height: "280px", objectFit: "cover", display: "block" }}
-                          onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"; }}
-                        />
-                        <span style={{ position: "absolute", top: "14px", right: "14px", background: sc.bg + "22", color: sc.bg, border: `1px solid ${sc.bg}55`, padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px" }}>{sc.text}</span>
-                      </div>
-                    </Col>
-                    <Col lg="7">
-                      <div style={{ paddingLeft: "8px" }}>
-                        <h4 style={{ fontWeight: 700, marginBottom: "6px" }}>{site.name}</h4>
-                        <p className="text-muted mb-1"><Icon name="map-pin" className="me-1" />{site.location}</p>
-                        <p className="text-muted mb-3" style={{ fontSize: "13px" }}><Icon name="hash" className="me-1" />Project ID: {site.projectId}</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginBottom: "16px" }}>
-                          <InfoBox label="Start Date" value={formatDate(site.startDate)} />
-                          <InfoBox label="Project Value" value={site.projectValue || "N/A"} />
-                          {site.budget > 0 && <InfoBox label="Budget" value={`₹${site.budget.toLocaleString()}`} />}
-                        </div>
-                        {site.description && (
-                          <div style={{ background: "#f8f9fa", borderRadius: "8px", padding: "12px 14px" }}>
-                            <p style={{ margin: 0, fontSize: "14px", color: "#555", lineHeight: 1.6 }}>{site.description}</p>
-                          </div>
-                        )}
-                      </div>
-                    </Col>
-                  </Row>
-
-                  {/* Progress */}
-                  {site.status === "active" && site.completion !== undefined && (
-                    <>
-                      <div style={{ margin: "32px 0 16px" }}>
-                        <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px", letterSpacing: "0.2px" }}>Project Completion</h6>
-                      </div>
-                      <div className="d-flex justify-content-between small mb-1">
-                        <span>Progress</span>
-                        <strong style={{ color: BRAND }}>{site.completion}%</strong>
-                      </div>
-                      <div style={{ height: "8px", background: "#f0ece9", borderRadius: "10px", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${site.completion}%`, background: `linear-gradient(90deg, ${BRAND}, #a0674a)`, borderRadius: "10px" }} />
-                      </div>
-                    </>
-                  )}
-                </>
+                <InfoTab site={site} />
               )}
 
               {/* ── TAB 2: PROJECT GALLERY ── */}
               {activeTab === "gallery" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Gallery</h6>
-                    <UploadBtn id="galleryUpload" label="Upload Images" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "gallery")} />
-                  </div>
-                  {uploading && <div style={{ marginBottom: "10px" }}><Spinner size="sm" style={{ color: BRAND }} /></div>}
-                  {galleryImages.length > 0 ? (
-                    <Row className="g-3">
-                      {galleryImages.map((img, idx) => (
-                        <Col md="3" sm="6" key={img._id || idx}>
-                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
-                            onView={() => setImgSidebar({ open: true, images: galleryImages, index: idx, title: "Project Gallery" })}
-                            onDelete={() => handleDeleteImage(img._id, "gallery")}
-                          />
-                        </Col>
-                      ))}
-                    </Row>
-                  ) : <EmptyState text="No gallery images uploaded yet." />}
-                </>
+                <GalleryTab 
+                  images={galleryImages}
+                  uploading={uploading}
+                  deletingItem={deletingItem}
+                  onUpload={(e) => handleFileUpload(e, "gallery")}
+                  onView={(index) => setImgSidebar({ open: true, images: galleryImages, index, title: "Project Gallery" })}
+                  onDelete={(imageId) => handleDeleteImage(imageId, "gallery")}
+                />
               )}
 
               {/* ── TAB 3: SITE PLANS ── */}
               {activeTab === "plans" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Site Plans</h6>
-                    <UploadBtn id="planUpload" label="Upload Plans" accept="image/*" uploading={uploading} onChange={(e) => handleFileUpload(e, "site-plan")} />
-                  </div>
-                  {sitePlanImages.length > 0 ? (
-                    <Row className="g-3">
-                      {sitePlanImages.map((img, idx) => (
-                        <Col md="3" sm="6" key={img._id || idx}>
-                          <ImageCard img={img} idx={idx} deletingItem={deletingItem}
-                            onView={() => setImgSidebar({ open: true, images: sitePlanImages, index: idx, title: "Site Plans" })}
-                            onDelete={() => handleDeleteImage(img._id, "site-plan")}
-                          />
-                        </Col>
-                      ))}
-                    </Row>
-                  ) : <EmptyState text="No site plans uploaded yet." />}
-                </>
+                <PlansTab 
+                  images={sitePlanImages}
+                  uploading={uploading}
+                  deletingItem={deletingItem}
+                  onUpload={(e) => handleFileUpload(e, "site-plan")}
+                  onView={(index) => setImgSidebar({ open: true, images: sitePlanImages, index, title: "Site Plans" })}
+                  onDelete={(imageId) => handleDeleteImage(imageId, "site-plan")}
+                />
               )}
 
               {/* ── TAB 4: PROJECT DOCUMENTS ── */}
               {activeTab === "documents" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Documents</h6>
-                    <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
-                  </div>
-                  {documents.length > 0 ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
-                      {documents.map((doc) => {
-                        const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-                        const dateStr = doc.uploadedAt
-                          ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                          : "";
-
-                        return (
-                          <div
-                            key={doc._id}
-                            style={{
-                              background: "#f1f3f4",
-                              borderRadius: "14px",
-                              overflow: "hidden",
-                              transition: "all 0.2s ease",
-                              cursor: "pointer",
-                              border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
-                            }}
-                            onClick={() => setPdfSidebar({ open: true, doc })}
-                          >
-                            <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>
-                              <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                                <embed src={getPdfUrl(doc)} type="application/pdf" style={{ width: "100%", height: "100%", border: "none", overflow: "hidden", pointerEvents: "none" }} />
-                              </div>
-                              <div style={{ position: "absolute", top: "10px", left: "10px", width: "20px", height: "20px", borderRadius: "6px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.4px" }}>PDF</div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
-                                disabled={deletingItem === doc._id}
-                                style={{ position: "absolute", top: "10px", right: "10px", width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
-                              >
-                                {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
-                              </button>
-                            </div>
-                            <div style={{ padding: "14px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                              <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.originalName || doc.filename}</div>
-                                <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : <EmptyState text="No documents uploaded yet." />}
-                </>
+                <DocumentsTab 
+                  documents={documents}
+                  uploading={uploading}
+                  deletingItem={deletingItem}
+                  onUpload={(e) => handleFileUpload(e, "document")}
+                  onView={(doc) => setPdfSidebar({ open: true, doc })}
+                  onDelete={(docId) => handleDeleteDocument(docId)}
+                  getPdfUrl={getPdfUrl}
+                />
               )}
 
               {/* ── TAB 5: PURCHASE ORDERS ── */}
               {activeTab === "purchase-orders" && (
-                <>
-                  <h6 style={{ fontWeight: 700, margin: "0 0 16px 0", color: "#1a1a2e", fontSize: "15px" }}>Purchase Orders</h6>
-                  {purchaseOrders.length > 0 ? (
-                    <POAccordion orders={purchaseOrders} />
-                  ) : (
-                    <EmptyState text="No purchase orders found for this project." />
-                  )}
-                </>
+                <PurchaseOrdersTab orders={purchaseOrders} />
               )}
 
               {/* ── TAB 6: DAILY WAGES ── */}
               {activeTab === "daily-wages" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Daily Wages</h6>
-                    <MonthFilter
-                      selectedMonth={selectedMonth}
-                      selectedYear={selectedYear}
-                      onMonthChange={setSelectedMonth}
-                      onYearChange={setSelectedYear}
-                      onFilter={applyWagesFilter}
-                      onClear={clearWagesFilter}
-                    />
-                  </div>
-
-                  {wagesLoading ? (
-                    <div style={{ padding: "20px", textAlign: "center" }}>
-                      <Spinner style={{ color: BRAND }} />
-                      <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
-                    </div>
-                  ) : filteredDailyWages.length > 0 ? (
-                    <DailyWagesAccordion wages={filteredDailyWages} />
-                  ) : (
-                    <EmptyState text="No daily wages found for the selected period." />
-                  )}
-                </>
+                <DailyWagesTab 
+                  wages={filteredDailyWages}
+                  loading={wagesLoading}
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                  onFilter={applyWagesFilter}
+                  onClear={clearWagesFilter}
+                />
               )}
 
               {/* ── TAB 7: BUSINESS ── */}
               {activeTab === "business" && (
-                <>
-                  <h6 style={{ fontWeight: 700, margin: "0 0 20px 0", color: "#1a1a2e", fontSize: "15px" }}>
-                    Business Overview
-                  </h6>
-                  
-                  {/* Summary Cards */}
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
-                    gap: "16px", 
-                    marginBottom: "24px" 
-                  }}>
-                    <div style={{ background: "#f8f9fa", padding: "20px", borderRadius: "12px", border: "1px solid #e9ecef" }}>
-                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Total Budget
-                      </div>
-                      <div style={{ fontSize: "22px", fontWeight: 700, color: BRAND, marginTop: "6px" }}>
-                        {formatINR(bizData.totalBudget)}
-                      </div>
-                    </div>
-                    
-                    <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "1px solid #ffe0b2" }}>
-                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Total Expenses
-                      </div>
-                      <div style={{ fontSize: "22px", fontWeight: 700, color: "#e65100", marginTop: "6px" }}>
-                        {formatINR(bizData.totalExpenses)}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-                        {bizData.expensePercentage.toFixed(1)}% of budget
-                      </div>
-                    </div>
-
-                    <div style={{ 
-                      background: bizData.isProfit ? "#e8f5e9" : "#ffebee", 
-                      padding: "20px", 
-                      borderRadius: "12px", 
-                      border: `1px solid ${bizData.isProfit ? "#c8e6c9" : "#ffcdd2"}` 
-                    }}>
-                      <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        {bizData.isProfit ? "Net Profit" : "Net Loss"}
-                      </div>
-                      <div style={{ 
-                        fontSize: "24px", 
-                        fontWeight: 700, 
-                        color: bizData.isProfit ? "#2e7d32" : "#c62828", 
-                        marginTop: "6px" 
-                      }}>
-                        {formatINR(Math.abs(bizData.profitLoss))}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-                        {bizData.isProfit ? "✅ Profitable" : "⚠️ Review expenses"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Accordion Sections */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    
-                    {/* ── BUDGET SECTION ── */}
-                    <PLAccordion 
-                      title="Budget"
-                      icon="wallet"
-                      total={bizData.totalBudget}
-                      count={1}
-                      isOpen={openBizSection === 'budget'}
-                      onToggle={() => toggleBizSection('budget')}
-                      color={BRAND}
-                    >
-                      <div style={{ padding: "12px 0" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-                          <span style={{ color: "#555" }}>Total Project Budget</span>
-                          <span style={{ fontWeight: 700, color: BRAND, fontSize: "16px" }}>{formatINR(bizData.totalBudget)}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", marginTop: "8px" }}>
-                          <span style={{ color: "#555" }}>Budget Utilization</span>
-                          <span style={{ fontWeight: 600, color: bizData.expensePercentage > 90 ? "#dc3545" : "#f59e0b" }}>
-                            {bizData.expensePercentage.toFixed(1)}%
-                          </span>
-                        </div>
-                        <div style={{ height: "8px", background: "#f0f0f0", borderRadius: "4px", marginTop: "8px", overflow: "hidden" }}>
-                          <div style={{ 
-                            height: "100%", 
-                            width: `${Math.min(bizData.expensePercentage, 100)}%`, 
-                            background: bizData.expensePercentage > 90 ? "#dc3545" : bizData.expensePercentage > 70 ? "#f59e0b" : BRAND,
-                            borderRadius: "4px",
-                            transition: "width 0.5s ease"
-                          }} />
-                        </div>
-                      </div>
-                    </PLAccordion>
-
-                    {/* ── DAILY WAGES SECTION ── */}
-                 {/* ── DAILY WAGES SECTION ── */}
-<PLAccordion 
-  title="Daily Wages"
-  icon="users"
-  total={bizData.totalWages}
-  count={bizData.totalWageRecords}
-  isOpen={openBizSection === 'wages'}
-  onToggle={() => toggleBizSection('wages')}
-  color="#e65100"
->
-  {dailyWages.length > 0 ? (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
-            <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Employee</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Daily Salary</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Overtime</th>
-            <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Total</th>
-            <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dailyWages.map((record, idx) => {
-            // Get employee name
-            let employeeName = 'Unknown';
-            let employeeId = 'N/A';
-            
-            if (record.employeeId) {
-              if (typeof record.employeeId === 'object' && record.employeeId.name) {
-                employeeName = record.employeeId.name;
-                employeeId = record.employeeId._id || record.employeeId;
-              } else if (typeof record.employeeId === 'string') {
-                employeeId = record.employeeId;
-              }
-            }
-            
-            // Use employeeName from processed data if available
-            if (record.employeeName) {
-              employeeName = record.employeeName;
-            }
-            
-            const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
-            
-            return (
-              <tr key={record._id || idx} style={{ borderBottom: idx < dailyWages.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                <td style={{ padding: "10px 10px", color: "#555" }}>
-                  {record.date ? new Date(record.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "N/A"}
-                </td>
-                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
-                  {employeeName}
-                  <div style={{ fontSize: "11px", color: "#888" }}>
-                    ID: {empIdStr.substring(0, 8) || "N/A"}
-                  </div>
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                  {formatINR(record.dailySalary || 0)}
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", color: "#e65100" }}>
-                  {record.overtimeHours || 0}h
-                  {record.overtimeAmount > 0 && (
-                    <div style={{ fontSize: "11px", color: "#888" }}>
-                      {formatINR(record.overtimeAmount)}
-                    </div>
-                  )}
-                </td>
-                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#e65100" }}>
-                  {formatINR(record.totalSalary || 0)}
-                </td>
-              <td style={{ padding: "10px 10px", textAlign: "center" }}>
-  <span style={{
-    fontSize: "10px",
-    fontWeight: 600,
-    padding: "2px 10px",
-    borderRadius: "20px",
-    background: record.status === "present" ? "#eaf3de" : record.status === "late" ? "#faeeda" : "#fcebeb",
-    color: record.status === "present" ? "#3b6d11" : record.status === "late" ? "#854f0b" : "#a32d2d",
-  }}>
-    {capitalizeFirst(record.status || "Pending")}
-  </span>
-</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <EmptyState text="No wage records found." />
-  )}
-  <div style={{ 
-    marginTop: "12px", 
-    padding: "12px 14px", 
-    background: "#e6510010", 
-    borderRadius: "8px", 
-    border: "1px solid #e6510022",
-    display: "flex",
-    justifyContent: "space-between"
-  }}>
-    <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Wages</span>
-    <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(bizData.totalWages)}</span>
-  </div>
-</PLAccordion>
-
-                    {/* ── PURCHASE ORDERS SECTION ── */}
-                    <PLAccordion 
-                      title="Purchase Orders"
-                      icon="shopping-cart"
-                      total={bizData.totalPurchaseOrders}
-                      count={bizData.totalPurchaseOrdersCount}
-                      isOpen={openBizSection === 'purchase-orders'}
-                      onToggle={() => toggleBizSection('purchase-orders')}
-                      color="#dc3545"
-                    >
-                      {purchaseOrders.length > 0 ? (
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                          <thead>
-                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>PO #</th>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
-                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Items</th>
-                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                              <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {purchaseOrders.map((po, idx) => {
-                              const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
-                              return (
-                                <tr key={po._id || idx} style={{ borderBottom: idx < purchaseOrders.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                                  <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{po.poNumber || po._id}</td>
-                                  <td style={{ padding: "10px 10px", color: "#555" }}>{po.vendor || po.supplierName || "N/A"}</td>
-                                  <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                                    {po.items?.length || 0}
-                                  </td>
-                                  <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#dc3545" }}>
-                                    {formatINR(poTotal)}
-                                  </td>
-                                  <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                                    <span style={{
-                                      fontSize: "10px",
-                                      fontWeight: 600,
-                                      padding: "2px 10px",
-                                      borderRadius: "20px",
-                                      background: po.status === "approved" ? "#eaf3de" : po.status === "pending" ? "#faeeda" : "#fcebeb",
-                                      color: po.status === "approved" ? "#3b6d11" : po.status === "pending" ? "#854f0b" : "#a32d2d",
-                                    }}>
-                                      {po.status || "Pending"}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <EmptyState text="No purchase orders found." />
-                      )}
-                      <div style={{ 
-                        marginTop: "12px", 
-                        padding: "12px 14px", 
-                        background: "#dc354510", 
-                        borderRadius: "8px", 
-                        border: "1px solid #dc354522",
-                        display: "flex",
-                        justifyContent: "space-between"
-                      }}>
-                        <span style={{ fontSize: "13px", color: "#dc3545", fontWeight: 600 }}>Total Purchase Orders</span>
-                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#dc3545" }}>{formatINR(bizData.totalPurchaseOrders)}</span>
-                      </div>
-                    </PLAccordion>
-
-                    {/* ── TRANSPORTATION SECTION ── */}
-                    <PLAccordion 
-                      title="Transportation"
-                      icon="truck"
-                      total={bizData.totalTransportation}
-                      count={bizData.transportation.length}
-                      isOpen={openBizSection === 'transportation'}
-                      onToggle={() => toggleBizSection('transportation')}
-                      color="#f59e0b"
-                    >
-                      {bizData.transportation.length > 0 ? (
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                          <thead>
-                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vehicle</th>
-                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
-                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                              <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {bizData.transportation.map((item, idx) => (
-                              <tr key={item._id || idx} style={{ borderBottom: idx < bizData.transportation.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.vendorName || "N/A"}</td>
-                                <td style={{ padding: "10px 10px", color: "#555" }}>{item.vehicleNumber || item.vehicleType || "N/A"}</td>
-                                <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                                  {item.date ? new Date(item.date).toLocaleDateString("en-IN") : "N/A"}
-                                </td>
-                                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#f59e0b" }}>
-                                  {formatINR(item.amount || 0)}
-                                </td>
-                                <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                                  <span style={{
-                                    fontSize: "10px",
-                                    fontWeight: 600,
-                                    padding: "2px 10px",
-                                    borderRadius: "20px",
-                                    background: item.status === "paid" ? "#eaf3de" : item.status === "pending" ? "#faeeda" : "#fcebeb",
-                                    color: item.status === "paid" ? "#3b6d11" : item.status === "pending" ? "#854f0b" : "#a32d2d",
-                                  }}>
-                                    {item.status || "Pending"}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <EmptyState text="No transportation records found." />
-                      )}
-                      <div style={{ 
-                        marginTop: "12px", 
-                        padding: "12px 14px", 
-                        background: "#f59e0b10", 
-                        borderRadius: "8px", 
-                        border: "1px solid #f59e0b22",
-                        display: "flex",
-                        justifyContent: "space-between"
-                      }}>
-                        <span style={{ fontSize: "13px", color: "#f59e0b", fontWeight: 600 }}>Total Transportation</span>
-                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#f59e0b" }}>{formatINR(bizData.totalTransportation)}</span>
-                      </div>
-                    </PLAccordion>
-
-                    {/* ── OTHER EXPENSES SECTION ── */}
-                    <PLAccordion 
-                      title="Other Expenses"
-                      icon="more-horizontal"
-                      total={bizData.otherExpenses}
-                      count={bizData.otherExpensesItems.length}
-                      isOpen={openBizSection === 'other-expenses'}
-                      onToggle={() => toggleBizSection('other-expenses')}
-                      color="#6c757d"
-                    >
-                      {bizData.otherExpensesItems.length > 0 ? (
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                          <thead>
-                            <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Category</th>
-                              <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Description</th>
-                              <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {bizData.otherExpensesItems.map((item, idx) => (
-                              <tr key={item._id || idx} style={{ borderBottom: idx < bizData.otherExpensesItems.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                                <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.category || "Misc"}</td>
-                                <td style={{ padding: "10px 10px", color: "#555" }}>{item.description || "N/A"}</td>
-                                <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#6c757d" }}>
-                                  {formatINR(item.amount || 0)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <EmptyState text="No other expenses recorded." />
-                      )}
-                      <div style={{ 
-                        marginTop: "12px", 
-                        padding: "12px 14px", 
-                        background: "#6c757d10", 
-                        borderRadius: "8px", 
-                        border: "1px solid #6c757d22",
-                        display: "flex",
-                        justifyContent: "space-between"
-                      }}>
-                        <span style={{ fontSize: "13px", color: "#6c757d", fontWeight: 600 }}>Total Other Expenses</span>
-                        <span style={{ fontSize: "17px", fontWeight: 700, color: "#6c757d" }}>{formatINR(bizData.otherExpenses)}</span>
-                      </div>
-                    </PLAccordion>
-
-                  </div>
-
-                  {/* Overall Summary */}
-                  <div style={{ 
-                    marginTop: "24px",
-                    background: bizData.isProfit ? BRAND : "#dc3545",
-                    borderRadius: "12px",
-                    padding: "20px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: "12px"
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#fff" }}>
-                      <Icon name={bizData.isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
-                      <div>
-                        <div style={{ fontSize: "14px", opacity: 0.9, fontWeight: 600 }}>
-                          Overall {bizData.isProfit ? "Profit" : "Loss"}
-                        </div>
-                        <div style={{ fontSize: "12px", opacity: 0.7 }}>
-                          {bizData.isProfit 
-                            ? `${bizData.profitPercentage.toFixed(1)}% profit margin` 
-                            : `${Math.abs(bizData.profitPercentage).toFixed(1)}% loss`}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ 
-                      fontSize: "28px", 
-                      fontWeight: 700, 
-                      color: "#fff",
-                      background: "rgba(255,255,255,0.15)",
-                      padding: "4px 20px",
-                      borderRadius: "8px"
-                    }}>
-                      {formatINR(Math.abs(bizData.profitLoss))}
-                    </div>
-                  </div>
-                </>
+                <BusinessTab 
+                  businessData={bizData}
+                  purchaseOrders={purchaseOrders}
+                  dailyWages={dailyWages}
+                />
               )}
-
+              {activeTab === "quotations" && (
+                <QuotationsTab
+                 
+                />
+              )}
+              {activeTab === "expenses" && (
+                <ExpensesTab />
+              )}
             </div>
           </div>
         </Block>
@@ -1997,50 +818,5 @@ const fetchDailyWages = async () => {
     </React.Fragment>
   );
 };
-
-// ─── HELPER COMPONENTS ────────────────────────────────────────
-const InfoBox = ({ label, value }) => (
-  <div>
-    <div style={{ fontSize: "11px", color: "#999", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: "3px" }}>{label}</div>
-    <div style={{ fontWeight: 600, color: "#1a1a2e", fontSize: "15px" }}>{value}</div>
-  </div>
-);
-
-const UploadBtn = ({ id, label, accept, uploading, onChange }) => (
-  <>
-    <button
-      onClick={() => document.getElementById(id).click()}
-      disabled={uploading}
-      style={{
-        background: BRAND, color: "#fff", border: "none",
-        padding: "6px 14px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-        cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1,
-        display: "flex", alignItems: "center", gap: "6px",
-      }}
-    >
-      {uploading ? <Spinner size="sm" style={{ color: "#fff" }} /> : <Icon name="upload" />}
-      {uploading ? "Uploading..." : label}
-    </button>
-    <input id={id} type="file" accept={accept} multiple style={{ display: "none" }} onChange={onChange} disabled={uploading} />
-  </>
-);
-
-const ImageCard = ({ img, idx, deletingItem, onView, onDelete }) => (
-  <div style={{ position: "relative", borderRadius: "10px", overflow: "hidden", cursor: "pointer" }} onClick={onView}>
-    <img src={img.url} alt={`img-${idx + 1}`} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)" }} />
-    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} disabled={deletingItem === img._id}
-      style={{ position: "absolute", top: "7px", right: "7px", background: "rgba(220,53,69,0.9)", border: "none", color: "#fff", borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontSize: "13px" }}>
-      {deletingItem === img._id ? <Spinner size="sm" /> : "✕"}
-    </button>
-    <span style={{ position: "absolute", bottom: "6px", left: "8px", color: "#fff", fontSize: "11px", fontWeight: 500 }}>View</span>
-  </div>
-);
-
-const EmptyState = ({ text }) => (
-  <div style={{ padding: "24px", background: "#fafafa", borderRadius: "10px", border: "1px dashed #ddd", textAlign: "center", color: "#aaa", fontSize: "14px" }}>
-    {text}
-  </div>
-);
 
 export default SiteDetail;
