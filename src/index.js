@@ -9,6 +9,7 @@ import { ToastContainer } from "react-toastify";
 const Error404Modern = lazy(() => import("./pages/error/404-modern"));
 import { Provider } from 'react-redux';
 import { store } from './store';
+import './index.css';
 
 ReactDOM.render(
   <React.Fragment>
