@@ -25,6 +25,17 @@ import {
 import Content from "../../../layout/content/Content";
 import Head from "../../../layout/head/Head";
 
+// Import all tab components
+import InfoTab from "./InfoTab";
+import GalleryTab from "./GalleryTab";
+import PlansTab from "./PlansTab";
+import DocumentsTab from "./DocumentsTab";
+import PurchaseOrdersTab from "./PurchaseOrdersTab";
+import DailyWagesTab from "./DailyWagesTab";
+import BusinessTab from "./BusinessTab";
+import QuotationsTab from "./QuotationsTab";
+import ExpensesTab from "./ExpensesTab";
+
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
 const BASE_URL = `${process.env.REACT_APP_BACKENDURL}` || "http://localhost:5000";
 
@@ -61,17 +72,6 @@ const BrandBtn = ({ children, onClick, disabled, outline = false, danger = false
       {children}
     </button>
   );
-};
-
-// ─── Capitalize First Letter ──────────────────────────────────
-const capitalizeFirst = (str) => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-// ─── Format INR ──────────────────────────────────────────────
-const formatINR = (val) => {
-  if (!val && val !== 0) return "₹0";
-  return "₹" + Number(val).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 };
 
 // ─── Sidebar Viewer ────────────────────────────────────────────
@@ -823,11 +823,10 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => {
   return (
     <div style={{
       display: "flex",
-      gap: "4px",
       borderBottom: "2px solid #f0f0f0",
       marginBottom: "24px",
       overflowX: "auto",
-      paddingBottom: "0",
+      paddingBottom: "0px",
       flexWrap: "nowrap",
     }}>
       {tabs.map((tab) => (
@@ -835,7 +834,7 @@ const Tabs = ({ tabs, activeTab, onTabChange }) => {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           style={{
-            padding: "10px 20px",
+            padding: "10px 10px",
             background: "transparent",
             border: "none",
             outline: "none",
@@ -908,9 +907,6 @@ const SiteDetail = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [wagesLoading, setWagesLoading] = useState(false);
-
-  // Business Accordion State
-  const [openBizSection, setOpenBizSection] = useState('budget');
 
   // Tab state
   const [activeTab, setActiveTab] = useState("info");
@@ -1284,10 +1280,12 @@ const SiteDetail = () => {
     { id: "info", label: "Info", icon: "info" },
     { id: "gallery", label: "Project Gallery", icon: "image", count: galleryImages.length },
     { id: "plans", label: "Site Plans", icon: "map", count: sitePlanImages.length },
-    { id: "documents", label: "Project Documents", icon: "file", count: documents.length },
+    { id: "documents", label: "Documents", icon: "file", count: documents.length },
     { id: "purchase-orders", label: "Purchase Orders", icon: "shopping-cart", count: purchaseOrders.length },
     { id: "daily-wages", label: "Daily Wages", icon: "users", count: filteredDailyWages.length },
     { id: "business", label: "Business", icon: "trending-up" },
+    { id: "quotations", label: "Quotations", icon: "trending-up" },
+    { id: "expenses", label: "Expenses", icon: "trending-up" },
   ];
 
   if (loading) {
@@ -1349,52 +1347,7 @@ const SiteDetail = () => {
 
               {/* ── TAB 1: INFORMATION ── */}
               {activeTab === "info" && (
-                <>
-                  <Row className="g-4 mb-2">
-                    <Col lg="5">
-                      <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden" }}>
-                        <img src={site.image} alt={site.name}
-                          style={{ width: "100%", height: "280px", objectFit: "cover", display: "block" }}
-                          onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"; }}
-                        />
-                        <span style={{ position: "absolute", top: "14px", right: "14px", background: sc.bg + "22", color: sc.bg, border: `1px solid ${sc.bg}55`, padding: "4px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.3px" }}>{sc.text}</span>
-                      </div>
-                    </Col>
-                    <Col lg="7">
-                      <div style={{ paddingLeft: "8px" }}>
-                        <h4 style={{ fontWeight: 700, marginBottom: "6px" }}>{site.name}</h4>
-                        <p className="text-muted mb-1"><Icon name="map-pin" className="me-1" />{site.location}</p>
-                        <p className="text-muted mb-3" style={{ fontSize: "13px" }}><Icon name="hash" className="me-1" />Project ID: {site.projectId}</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 24px", marginBottom: "16px" }}>
-                          <InfoBox label="Start Date" value={formatDate(site.startDate)} />
-                          <InfoBox label="Project Value" value={site.projectValue || "N/A"} />
-                          {site.budget > 0 && <InfoBox label="Budget" value={`₹${site.budget.toLocaleString()}`} />}
-                        </div>
-                        {site.description && (
-                          <div style={{ background: "#f8f9fa", borderRadius: "8px", padding: "12px 14px" }}>
-                            <p style={{ margin: 0, fontSize: "14px", color: "#555", lineHeight: 1.6 }}>{site.description}</p>
-                          </div>
-                        )}
-                      </div>
-                    </Col>
-                  </Row>
-
-                  {/* Progress */}
-                  {site.status === "active" && site.completion !== undefined && (
-                    <>
-                      <div style={{ margin: "32px 0 16px" }}>
-                        <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px", letterSpacing: "0.2px" }}>Project Completion</h6>
-                      </div>
-                      <div className="d-flex justify-content-between small mb-1">
-                        <span>Progress</span>
-                        <strong style={{ color: BRAND }}>{site.completion}%</strong>
-                      </div>
-                      <div style={{ height: "8px", background: "#f0ece9", borderRadius: "10px", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${site.completion}%`, background: `linear-gradient(90deg, ${BRAND}, #a0674a)`, borderRadius: "10px" }} />
-                      </div>
-                    </>
-                  )}
-                </>
+                <InfoTab site={site} />
               )}
 
               {/* ── TAB 2: PROJECT GALLERY ── */}
@@ -1470,100 +1423,34 @@ const SiteDetail = () => {
 
               {/* ── TAB 4: PROJECT DOCUMENTS ── */}
               {activeTab === "documents" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Project Documents</h6>
-                    <UploadBtn id="docUpload" label="Upload PDFs" accept=".pdf" uploading={uploading} onChange={(e) => handleFileUpload(e, "document")} />
-                  </div>
-                  {documents.length > 0 ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "18px" }}>
-                      {documents.map((doc) => {
-                        const sizeKB = doc.size ? (doc.size / 1024).toFixed(1) : "—";
-                        const dateStr = doc.uploadedAt
-                          ? new Date(doc.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
-                          : "";
-
-                        return (
-                          <div
-                            key={doc._id}
-                            style={{
-                              background: "#f1f3f4",
-                              borderRadius: "14px",
-                              overflow: "hidden",
-                              transition: "all 0.2s ease",
-                              cursor: "pointer",
-                              border: pdfSidebar.doc?._id === doc._id ? `2px solid ${BRAND}` : "2px solid transparent",
-                            }}
-                            onClick={() => setPdfSidebar({ open: true, doc })}
-                          >
-                            <div style={{ height: "170px", background: "#dfe3e8", position: "relative", overflow: "hidden" }}>
-                              <div style={{ width: "100%", height: "100%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                                <embed src={getPdfUrl(doc)} type="application/pdf" style={{ width: "100%", height: "100%", border: "none", overflow: "hidden", pointerEvents: "none" }} />
-                              </div>
-                              <div style={{ position: "absolute", top: "10px", left: "10px", width: "20px", height: "20px", borderRadius: "6px", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "9px", fontWeight: 700, letterSpacing: "0.4px" }}>PDF</div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc._id); }}
-                                disabled={deletingItem === doc._id}
-                                style={{ position: "absolute", top: "10px", right: "10px", width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px" }}
-                              >
-                                {deletingItem === doc._id ? <Spinner size="sm" /> : <Icon name="trash" />}
-                              </button>
-                            </div>
-                            <div style={{ padding: "14px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                              <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#ea4335", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Icon name="file-pdf" style={{ color: "#fff", fontSize: "16px" }} />
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: "14px", fontWeight: 600, color: "#202124", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.originalName || doc.filename}</div>
-                                <div style={{ fontSize: "12px", color: "#5f6368", marginTop: "3px" }}>{sizeKB} KB • {dateStr}</div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : <EmptyState text="No documents uploaded yet." />}
-                </>
+                <DocumentsTab 
+                  documents={documents}
+                  uploading={uploading}
+                  deletingItem={deletingItem}
+                  onUpload={(e) => handleFileUpload(e, "document")}
+                  onView={(doc) => setPdfSidebar({ open: true, doc })}
+                  onDelete={(docId) => handleDeleteDocument(docId)}
+                  getPdfUrl={getPdfUrl}
+                />
               )}
 
               {/* ── TAB 5: PURCHASE ORDERS ── */}
               {activeTab === "purchase-orders" && (
-                <>
-                  <h6 style={{ fontWeight: 700, margin: "0 0 16px 0", color: "#1a1a2e", fontSize: "15px" }}>Purchase Orders</h6>
-                  {purchaseOrders.length > 0 ? (
-                    <POAccordion orders={purchaseOrders} />
-                  ) : (
-                    <EmptyState text="No purchase orders found for this project." />
-                  )}
-                </>
+                <PurchaseOrdersTab orders={purchaseOrders} />
               )}
 
               {/* ── TAB 6: DAILY WAGES ── */}
               {activeTab === "daily-wages" && (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-                    <h6 style={{ fontWeight: 700, margin: 0, color: "#1a1a2e", fontSize: "15px" }}>Daily Wages</h6>
-                    <MonthFilter
-                      selectedMonth={selectedMonth}
-                      selectedYear={selectedYear}
-                      onMonthChange={setSelectedMonth}
-                      onYearChange={setSelectedYear}
-                      onFilter={applyWagesFilter}
-                      onClear={clearWagesFilter}
-                    />
-                  </div>
-
-                  {wagesLoading ? (
-                    <div style={{ padding: "20px", textAlign: "center" }}>
-                      <Spinner style={{ color: BRAND }} />
-                      <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
-                    </div>
-                  ) : filteredDailyWages.length > 0 ? (
-                    <DailyWagesAccordion wages={filteredDailyWages} />
-                  ) : (
-                    <EmptyState text="No daily wages found for the selected period." />
-                  )}
-                </>
+                <DailyWagesTab 
+                  wages={filteredDailyWages}
+                  loading={wagesLoading}
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                  onFilter={applyWagesFilter}
+                  onClear={clearWagesFilter}
+                />
               )}
 
               {/* ── TAB 7: BUSINESS ── */}
@@ -1981,7 +1868,6 @@ const SiteDetail = () => {
                   </div>
                 </>
               )}
-
             </div>
           </div>
         </Block>
