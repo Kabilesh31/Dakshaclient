@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
 import axios from "axios";
 import {
   UncontrolledDropdown,
@@ -28,13 +29,16 @@ import {
   DataTableRow,
   DataTableItem,
   PaginationComponent,
+  RSelect,
 } from "../../../components/Component";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api`;
+const BRAND = "#4B5694";
 
 const StaffAttendance = () => {
+  const history = useHistory();
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +48,11 @@ const StaffAttendance = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSortState] = useState("asc");
   const [attendanceData, setAttendanceData] = useState({});
+  const [sites, setSites] = useState([]);
+
+  // Filter states - using objects for RSelect
+  const [filterSite, setFilterSite] = useState(null);
+  const [filterRole, setFilterRole] = useState(null);
 
   // Modal states
   const [checkInModal, setCheckInModal] = useState(false);
@@ -51,7 +60,6 @@ const StaffAttendance = () => {
   const [selectedEmployeeForAction, setSelectedEmployeeForAction] = useState(null);
   const [selectedSite, setSelectedSite] = useState("");
   const [selectedSiteName, setSelectedSiteName] = useState("");
-  const [sites, setSites] = useState([]);
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkOutLoading, setCheckOutLoading] = useState(false);
 
@@ -66,19 +74,53 @@ const StaffAttendance = () => {
 
   const currentDate = new Date().toISOString().split('T')[0];
 
+  // Get unique roles from employees
+  const uniqueRoles = [...new Set(employees.map(emp => emp.role).filter(Boolean))];
+
+  // Get unique sites from employees AND projects
+  const getUniqueSites = () => {
+    // Get sites from employees
+    const employeeSites = employees
+      .map(emp => emp.site)
+      .filter(Boolean);
+    
+    // Get sites from projects
+    const projectSites = sites
+      .map(site => site.name)
+      .filter(Boolean);
+    
+    // Combine and get unique values
+    const allSites = [...new Set([...employeeSites, ...projectSites])];
+    return allSites.sort();
+  };
+
+  const uniqueSites = getUniqueSites();
+
+  // Options for RSelect
+  const siteOptions = [
+    { value: "", label: "All Sites" },
+    ...uniqueSites.map(site => ({
+      value: site,
+      label: site
+    }))
+  ];
+
+  const roleOptions = [
+    { value: "", label: "All Roles" },
+    ...uniqueRoles.map(role => ({
+      value: role,
+      label: role
+    }))
+  ];
+
   useEffect(() => {
     fetchEmployees();
     fetchSites();
   }, []);
 
   useEffect(() => {
-    const filtered = employees.filter(emp =>
-      emp.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      emp.phone?.includes(searchText) ||
-      emp.role?.toLowerCase().includes(searchText.toLowerCase())
-    );
-    setFilteredEmployees(filtered);
-  }, [searchText, employees]);
+    applyFilters();
+  }, [searchText, employees, filterSite, filterRole, sites]);
 
   useEffect(() => {
     if (selectedEmployeeForAction) {
@@ -124,7 +166,6 @@ const StaffAttendance = () => {
       });
       if (response.data.success) {
         setSites(response.data.data);
-        console.log("Sites fetched:", response.data.data);
       }
     } catch (error) {
       console.error("Error fetching sites:", error);
@@ -152,19 +193,47 @@ const StaffAttendance = () => {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...employees];
+
+    // Search filter
+    if (searchText) {
+      filtered = filtered.filter(emp =>
+        emp.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        emp.phone?.includes(searchText) ||
+        emp.role?.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    // Site filter - compare with employee's site string
+    if (filterSite?.value) {
+      filtered = filtered.filter(emp => emp.site === filterSite.value);
+    }
+
+    // Role filter
+    if (filterRole?.value) {
+      filtered = filtered.filter(emp => emp.role === filterRole.value);
+    }
+
+    setFilteredEmployees(filtered);
+  };
+
+  const handleEmployeeClick = (employee) => {
+    history.push(`/staff-attendance/${employee.id}`);
+  };
+
   const handleCheckIn = async () => {
     if (!selectedEmployeeForAction) return;
     if (!selectedSite) {
       toast.warning("Please select a site");
       return;
     }
-console.log(`${API_URL}/attendance/checkin`);
+
     setCheckInLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
       const createdBy = localStorage.getItem("userId") || "admin";
       
-      // Prepare the data
       const checkInData = {
         employeeId: selectedEmployeeForAction.id,
         date: currentDate,
@@ -173,21 +242,9 @@ console.log(`${API_URL}/attendance/checkin`);
         createdBy: createdBy,
       };
 
-      // Log the complete data being sent
-      console.log("=== SENDING CHECK-IN DATA ===");
-      console.log("Employee ID:", selectedEmployeeForAction.id);
-      console.log("Date:", currentDate);
-      console.log("Site ID:", selectedSite);
-      console.log("Site Name:", selectedSiteName);
-      console.log("Created By:", createdBy);
-      console.log("Full Payload:", JSON.stringify(checkInData, null, 2));
-      console.log("==============================");
-
       const response = await axios.post(`${API_URL}/attendance/checkin`, checkInData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      console.log("Check-In Response:", response.data);
 
       if (response.data.success) {
         toast.success(`${selectedEmployeeForAction.name} checked in successfully!`);
@@ -205,7 +262,6 @@ console.log(`${API_URL}/attendance/checkin`);
       }
     } catch (error) {
       console.error("Check-in error:", error);
-      console.error("Error response:", error.response?.data);
       toast.error(error.response?.data?.message || "Failed to check in");
     } finally {
       setCheckInLoading(false);
@@ -228,15 +284,6 @@ console.log(`${API_URL}/attendance/checkin`);
         notes: notes,
         createdBy: localStorage.getItem("userId") || "admin",
       };
-
-      console.log("=== SENDING CHECK-OUT DATA ===");
-      console.log("Employee ID:", selectedEmployeeForAction.id);
-      console.log("Date:", currentDate);
-      console.log("Daily Salary:", dailySalary);
-      console.log("Overtime Hours:", overtimeHours);
-      console.log("Overtime Rate:", overtimeRate);
-      console.log("Full Payload:", JSON.stringify(checkOutData, null, 2));
-      console.log("==============================");
 
       const response = await axios.post(`${API_URL}/attendance/checkout`, checkOutData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -318,52 +365,106 @@ console.log(`${API_URL}/attendance/checkin`);
       const site = sites.find(s => s._id === siteId);
       const name = site ? site.name : "";
       setSelectedSiteName(name);
-      console.log("Selected Site ID:", siteId);
-      console.log("Selected Site Name:", name);
-      console.log("Full Site Object:", site);
     } else {
       setSelectedSiteName("");
     }
   };
 
-const getStatusBadge = (employeeId) => {
-  const todayAtt = attendanceData[employeeId]?.[currentDate];
+  const clearFilters = () => {
+    setFilterSite(null);
+    setFilterRole(null);
+    setSearchText("");
+    setOnSearch(false);
+    setCurrentPage(1);
+  };
 
-  if (todayAtt?.checkOutTime) {
+  const getStatusBadge = (employeeId) => {
+    const todayAtt = attendanceData[employeeId]?.[currentDate];
+
+    if (todayAtt?.checkOutTime) {
+      return (
+        <span
+          className="badge bg-danger text-white"
+          style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
+        >
+          Checked Out
+        </span>
+      );
+    }
+
+    if (todayAtt?.checkInTime) {
+      return (
+        <span
+          className="badge bg-warning text-white"
+          style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
+        >
+          Working
+        </span>
+      );
+    }
+
     return (
       <span
-        className="badge bg-danger text-white"
+        className="badge bg-success text-white"
         style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
       >
-        Checked Out
+        Not Checked In
       </span>
     );
-  }
+  };
 
-  if (todayAtt?.checkInTime) {
-    return (
-      <span
-        className="badge bg-warning text-white"
-        style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
-      >
-        Working
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className="badge bg-success text-white"
-      style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
-    >
-      Not Checked In
-    </span>
-  );
-};
+  // Custom styles for RSelect
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '38px',
+      borderColor: '#e8e4e0',
+      '&:hover': {
+        borderColor: '#e8e4e0',
+      },
+      boxShadow: 'none',
+      cursor: 'pointer',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused ? '#f0f0f0' : 'transparent',
+      color: '#333',
+      cursor: 'pointer',
+      '&:hover': {
+        backgroundColor: '#f0f0f0',
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 999,
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: '#6c757d',
+    }),
+  };
 
   const indexOfLastItem = currentPage * itemPerPage;
   const indexOfFirstItem = indexOfLastItem - itemPerPage;
   const currentItems = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Show loading spinner centered on the page
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        minHeight: "100vh",
+        gap: "12px",
+        backgroundColor: "#f8f9fa"
+      }}>
+        <Spinner style={{ color: BRAND, width: "40px", height: "40px" }} />
+        <p style={{ color: "#666", fontSize: "14px", margin: 0 }}>Loading employees...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "20px" }}>
@@ -384,7 +485,46 @@ const getStatusBadge = (employeeId) => {
         <DataTable className="card-stretch">
           <div className="card-inner position-relative card-tools-toggle">
             <div className="card-title-group">
-              <div className="card-tools"></div>
+              <div className="card-tools">
+                {/* Filters - using RSelect like Suppliers page */}
+                {!onSearch && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <div style={{ minWidth: "150px" }}>
+                      <RSelect
+                        options={siteOptions}
+                        value={filterSite}
+                        onChange={(opt) => setFilterSite(opt)}
+                        placeholder="All Sites"
+                        isClearable={false}
+                        styles={selectStyles}
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+
+                    <div style={{ minWidth: "150px" }}>
+                      <RSelect
+                        options={roleOptions}
+                        value={filterRole}
+                        onChange={(opt) => setFilterRole(opt)}
+                        placeholder="All Roles"
+                        isClearable={false}
+                        styles={selectStyles}
+                        classNamePrefix="react-select"
+                      />
+                    </div>
+
+                    {(filterSite?.value || filterRole?.value || searchText) && (
+                      <Button 
+                        color="link" 
+                        onClick={clearFilters}
+                        style={{ color: BRAND, textDecoration: 'none', padding: '4px 8px' }}
+                      >
+                        Clear Filters
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="card-tools mr-n1">
                 <ul className="btn-toolbar gx-1">
                   <li>
@@ -468,98 +608,100 @@ const getStatusBadge = (employeeId) => {
           </div>
 
           <DataTableBody compact>
-  <DataTableHead>
-    <DataTableRow><span className="sub-text fw-bold">S.No</span></DataTableRow>
-    <DataTableRow><span className="sub-text fw-bold">Name</span></DataTableRow>
-    <DataTableRow><span className="sub-text fw-bold">Role</span></DataTableRow>
-    <DataTableRow><span className="sub-text fw-bold">Site</span></DataTableRow>
-    <DataTableRow><span className="sub-text fw-bold">Daily Wage</span></DataTableRow>
-    <DataTableRow><span className="sub-text fw-bold">Today's Status</span></DataTableRow>
-    <DataTableRow style={{ textAlign: "right" }}><span className="sub-text ml-5 fw-bold">Actions</span></DataTableRow>
-  </DataTableHead>
+            <DataTableHead>
+              <DataTableRow><span className="sub-text fw-bold">S.No</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Name</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Role</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Site</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Daily Wage</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Today's Status</span></DataTableRow>
+              <DataTableRow><span className="sub-text fw-bold">Actions</span></DataTableRow>
+            </DataTableHead>
 
-  { (
-    currentItems.map((emp, index) => (
-      <DataTableItem key={emp.id}>
-        <DataTableRow>{index + 1 + (currentPage - 1) * itemPerPage}</DataTableRow>
-        <DataTableRow>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: "26px",
-                height: "26px",
-                borderRadius: "50%",
-                background: "#644634",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: "bold",
-                fontSize: "10px",
-                
-              }}
-            >
-              {emp.name?.charAt(0).toUpperCase()}
-            </div>
-           <span className="fw-bold">{emp.name}</span>
-          </div>
-        </DataTableRow>
-        <DataTableRow>
-          <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px" }} className="fw-bold">
-            {emp.role || "N/A"}
-          </span>
-        </DataTableRow>
-        <DataTableRow>
-          {attendanceData[emp.id]?.[currentDate]?.siteName || emp.site || "Not Assigned"}
-        </DataTableRow>
-        <DataTableRow>₹{emp.salary || 0}</DataTableRow>
-        <DataTableRow>{getStatusBadge(emp.id)}</DataTableRow>
-        <DataTableRow style={{ textAlign: "right" }}>
-          <div style={{ display: "flex", gap: "6px",  }}>
-            <button
-              onClick={() => openCheckInModal(emp)}
-              disabled={!!attendanceData[emp.id]?.[currentDate]?.checkInTime}
-              style={{
-                padding: "4px 12px",
-                background: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "#6c757d" : "#28a745",
-                border: "none",
-                borderRadius: "6px",
-                color: "#fff",
-                fontSize: "12px",
-                cursor: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "not-allowed" : "pointer",
-                opacity: attendanceData[emp.id]?.[currentDate]?.checkInTime ? 0.6 : 1,
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <Icon name="log-in" size={12} /> Check In
-            </button>
-            <button
-              onClick={() => openCheckOutModal(emp)}
-              disabled={!attendanceData[emp.id]?.[currentDate]?.checkInTime || !!attendanceData[emp.id]?.[currentDate]?.checkOutTime}
-              style={{
-                padding: "4px 12px",
-                background: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "#6c757d" : "#dc3545",
-                border: "none",
-                borderRadius: "6px",
-                color: "#fff",
-                fontSize: "12px",
-                cursor: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "not-allowed" : "pointer",
-                opacity: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? 0.6 : 1,
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
-            >
-              <Icon name="log-out" size={12} /> Check Out
-            </button>
-          </div>
-        </DataTableRow>
-      </DataTableItem>
-    ))
-  )}
-</DataTableBody>
+            {currentItems.map((emp, index) => (
+              <DataTableItem key={emp.id}>
+                <DataTableRow>{index + 1 + (currentPage - 1) * itemPerPage}</DataTableRow>
+                <DataTableRow>
+                  <div 
+                    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                    onClick={() => handleEmployeeClick(emp)}
+                  >
+                    <div
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "50%",
+                        background: "#644634",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: "bold",
+                        fontSize: "10px",
+                      }}
+                    >
+                      {emp.name?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="fw-bold" style={{ color: BRAND, cursor: "pointer" }}>
+                      {emp.name}
+                    </span>
+                  </div>
+                </DataTableRow>
+                <DataTableRow>
+                  <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px" }} className="fw-bold">
+                    {emp.role || "N/A"}
+                  </span>
+                </DataTableRow>
+                <DataTableRow>
+                  {attendanceData[emp.id]?.[currentDate]?.siteName || emp.site || "Not Assigned"}
+                </DataTableRow>
+                <DataTableRow>₹{emp.salary || 0}</DataTableRow>
+                <DataTableRow>{getStatusBadge(emp.id)}</DataTableRow>
+                <DataTableRow>
+                  <div style={{ display: "flex", gap: "6px", justifyContent: "flex-start" }}>
+                    <button
+                      onClick={() => openCheckInModal(emp)}
+                      disabled={!!attendanceData[emp.id]?.[currentDate]?.checkInTime}
+                      style={{
+                        padding: "4px 12px",
+                        background: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "#6c757d" : "#28a745",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "#fff",
+                        fontSize: "12px",
+                        cursor: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "not-allowed" : "pointer",
+                        opacity: attendanceData[emp.id]?.[currentDate]?.checkInTime ? 0.6 : 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Icon name="log-in" size={12} /> Check In
+                    </button>
+                    <button
+                      onClick={() => openCheckOutModal(emp)}
+                      disabled={!attendanceData[emp.id]?.[currentDate]?.checkInTime || !!attendanceData[emp.id]?.[currentDate]?.checkOutTime}
+                      style={{
+                        padding: "4px 12px",
+                        background: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "#6c757d" : "#dc3545",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "#fff",
+                        fontSize: "12px",
+                        cursor: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "not-allowed" : "pointer",
+                        opacity: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? 0.6 : 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Icon name="log-out" size={12} /> Check Out
+                    </button>
+                  </div>
+                </DataTableRow>
+              </DataTableItem>
+            ))}
+          </DataTableBody>
 
           <div className="card-inner">
             {filteredEmployees.length > 0 ? (
