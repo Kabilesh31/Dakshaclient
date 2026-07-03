@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '../../../components/Component';
+import { Spinner } from 'reactstrap';
+import axios from 'axios';
 
-const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
-  const [openBizSection, setOpenBizSection] = useState('budget');
+const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
+
+const BusinessTab = ({ projectId }) => {
+  const [openBizSection, setOpenBizSection] = useState('quotation');
+  const [loading, setLoading] = useState(false);
+  const [quotations, setQuotations] = useState([]);
+  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [dailyWages, setDailyWages] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [wagesLoading, setWagesLoading] = useState(false);
+  const [error, setError] = useState(null);
   const BRAND = "#4B5694";
 
   const toggleBizSection = (section) => {
@@ -32,6 +44,174 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
       {text}
     </div>
   );
+
+  // Fetch all data
+  useEffect(() => {
+    if (projectId) {
+      fetchAllData();
+    }
+  }, [projectId]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      
+      console.log("Fetching business data for project:", projectId);
+      
+      // Fetch quotations from invoices endpoint
+      try {
+        const quotationResponse = await axios.get(`${API_URL}/invoices/project/${projectId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        console.log("Quotations response:", quotationResponse.data);
+        if (quotationResponse.data.success) {
+          setQuotations(quotationResponse.data.data || []);
+          if (quotationResponse.data.data && quotationResponse.data.data.length > 0) {
+            setSelectedQuotation(quotationResponse.data.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching quotations:", err);
+      }
+
+      // Fetch purchase orders
+      try {
+        const poResponse = await axios.get(`${API_URL}/purchase-orders/byProjectId/${projectId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        console.log("Purchase Orders response:", poResponse.data);
+        if (poResponse.data.success) {
+          setPurchaseOrders(poResponse.data.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching purchase orders:", err);
+      }
+
+      // Fetch expenses
+      try {
+        const expenseResponse = await axios.get(`${API_URL}/expenses/project/${projectId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        console.log("Expenses response:", expenseResponse.data);
+        if (expenseResponse.data.success) {
+          setExpenses(expenseResponse.data.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching expenses:", err);
+      }
+
+      // Fetch daily wages using getBySite endpoint
+      await fetchDailyWagesBySite();
+
+    } catch (error) {
+      console.error("Error fetching business data:", error);
+      setError("Failed to load business data. Please check console for details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch daily wages by site ID using the getBySite endpoint
+  const fetchDailyWagesBySite = async () => {
+    setWagesLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      console.log(`Fetching daily wages for site: ${projectId}`);
+      
+      // Use the getBySite endpoint: GET /api/attendance/site/:id
+      const response = await axios.get(`${API_URL}/attendance/site/${projectId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      
+      console.log("Daily wages response:", response.data);
+      
+      if (response.data && response.data.data) {
+        const records = response.data.data || [];
+        
+        // Process records to get employee names
+        const processedRecords = await Promise.all(records.map(async (record) => {
+          let employeeName = 'Unknown';
+          let employeeId = '';
+          
+          // Try to get employee name from employeeId field
+          if (record.employeeId) {
+            if (typeof record.employeeId === 'object' && record.employeeId.name) {
+              employeeName = record.employeeId.name;
+              employeeId = record.employeeId._id || record.employeeId;
+            } else if (typeof record.employeeId === 'string') {
+              employeeId = record.employeeId;
+              // Try to fetch employee details if only ID is available
+              try {
+                const employeeRes = await axios.get(`${API_URL}/employees/${record.employeeId}`, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                if (employeeRes.data.success) {
+                  employeeName = employeeRes.data.data.name || 'Unknown';
+                }
+              } catch (err) {
+                console.error(`Failed to fetch employee ${record.employeeId}:`, err);
+              }
+            }
+          }
+          
+          return {
+            ...record,
+            employeeName: employeeName,
+            employeeIdDisplay: employeeId,
+            siteName: record.siteName || record.site?.name || 'Not Assigned'
+          };
+        }));
+        
+        setDailyWages(processedRecords);
+        console.log(`Processed ${processedRecords.length} daily wage records`);
+      } else {
+        console.log("No daily wages data found");
+        setDailyWages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching daily wages:", error);
+      // Don't set error here - just log it and continue with empty data
+      setDailyWages([]);
+    } finally {
+      setWagesLoading(false);
+    }
+  };
+
+  // Calculate totals - use safe fallbacks
+  const quotationTotal = selectedQuotation?.price || 0;
+  const quotationItems = selectedQuotation ? [{
+    description: selectedQuotation.fileName || 'Quotation',
+    quantity: 1,
+    rate: selectedQuotation.price || 0,
+    amount: selectedQuotation.price || 0
+  }] : [];
+
+  // Calculate total daily wages
+  const totalDailyWages = dailyWages.reduce((sum, record) => sum + (record.totalSalary || 0), 0);
+  const totalDailyWageCount = dailyWages.length;
+  
+  // Calculate total purchase orders
+  const totalPurchaseOrders = purchaseOrders.reduce((sum, po) => {
+    const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
+    return sum + poTotal;
+  }, 0);
+  const totalPurchaseOrderCount = purchaseOrders.length;
+  
+  // Calculate total expenses
+  const totalExpenses = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const totalExpenseCount = expenses.length;
+  
+  // Total all expenses (Daily Wages + Purchase Orders + Expenses)
+  const totalAllExpenses = totalDailyWages + totalPurchaseOrders + totalExpenses;
+  
+  // Profit/Loss = Quotation - (Daily Wages + Purchase Orders + Expenses)
+  const profitLoss = quotationTotal - totalAllExpenses;
+  const isProfit = profitLoss >= 0;
+  const expensePercentage = quotationTotal > 0 ? (totalAllExpenses / quotationTotal) * 100 : 0;
+  const profitPercentage = quotationTotal > 0 ? (profitLoss / quotationTotal) * 100 : 0;
 
   const PLAccordion = ({ 
     title, 
@@ -126,7 +306,37 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
     );
   };
 
-  const bizData = businessData;
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
+        <Spinner style={{ color: BRAND, width: "40px", height: "40px" }} />
+        <p style={{ marginLeft: "12px", color: "#888" }}>Loading business data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px", color: "#dc3545" }}>
+        <Icon name="alert-circle" style={{ fontSize: "48px", marginBottom: "16px" }} />
+        <p>{error}</p>
+        <button 
+          onClick={() => fetchAllData()}
+          style={{
+            padding: "8px 20px",
+            background: BRAND,
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            marginTop: "12px"
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -138,6 +348,47 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
       }}>
         Business Overview
       </h6>
+
+      {/* Quotation Selector */}
+      <div style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: "12px", 
+        marginBottom: "20px",
+        flexWrap: "wrap",
+        padding: "12px 16px",
+        background: "#f8f9fa",
+        borderRadius: "8px",
+        border: "1px solid #eee"
+      }}>
+        <span style={{ fontSize: "12px", color: "#555", fontWeight: 600 }}>Select Quotation:</span>
+        {quotations.length > 0 ? (
+          <select
+            value={selectedQuotation?._id || ""}
+            onChange={(e) => {
+              const selected = quotations.find(q => q._id === e.target.value);
+              setSelectedQuotation(selected);
+            }}
+            style={{
+              padding: "6px 12px",
+              fontSize: "13px",
+              border: "1.5px solid #e8e4e0",
+              borderRadius: "8px",
+              minWidth: "250px",
+              cursor: "pointer",
+              background: "#fff",
+            }}
+          >
+            {quotations.map((q) => (
+              <option key={q._id} value={q._id}>
+                {q.fileName || q._id} - {formatINR(q.price)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span style={{ color: "#888", fontSize: "13px" }}>No quotations found for this project</span>
+        )}
+      </div>
       
       {/* Summary Cards */}
       <div style={{ 
@@ -148,11 +399,16 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
       }}>
         <div style={{ background: "#f8f9fa", padding: "20px", borderRadius: "12px", border: "1px solid #e9ecef" }}>
           <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Total Budget
+            Quotation Value
           </div>
           <div style={{ fontSize: "22px", fontWeight: 700, color: BRAND, marginTop: "6px" }}>
-            {formatINR(bizData.totalBudget)}
+            {formatINR(quotationTotal)}
           </div>
+          {selectedQuotation && (
+            <div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>
+              {selectedQuotation.fileName}
+            </div>
+          )}
         </div>
         
         <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "1px solid #ffe0b2" }}>
@@ -160,32 +416,32 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
             Total Expenses
           </div>
           <div style={{ fontSize: "22px", fontWeight: 700, color: "#e65100", marginTop: "6px" }}>
-            {formatINR(bizData.totalExpenses)}
+            {formatINR(totalAllExpenses)}
           </div>
           <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-            {bizData.expensePercentage.toFixed(1)}% of budget
+            {expensePercentage.toFixed(1)}% of quotation
           </div>
         </div>
 
         <div style={{ 
-          background: bizData.isProfit ? "#e8f5e9" : "#ffebee", 
+          background: isProfit ? "#e8f5e9" : "#ffebee", 
           padding: "20px", 
           borderRadius: "12px", 
-          border: `1px solid ${bizData.isProfit ? "#c8e6c9" : "#ffcdd2"}` 
+          border: `1px solid ${isProfit ? "#c8e6c9" : "#ffcdd2"}` 
         }}>
           <div style={{ fontSize: "11px", color: "#888", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            {bizData.isProfit ? "Net Profit" : "Net Loss"}
+            {isProfit ? "Net Profit" : "Net Loss"}
           </div>
           <div style={{ 
             fontSize: "24px", 
             fontWeight: 700, 
-            color: bizData.isProfit ? "#2e7d32" : "#c62828", 
+            color: isProfit ? "#2e7d32" : "#c62828", 
             marginTop: "6px" 
           }}>
-            {formatINR(Math.abs(bizData.profitLoss))}
+            {formatINR(Math.abs(profitLoss))}
           </div>
           <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
-            {bizData.isProfit ? "✅ Profitable" : "⚠️ Review expenses"}
+            {isProfit ? "✅ Profitable" : "⚠️ Review expenses"}
           </div>
         </div>
       </div>
@@ -193,50 +449,95 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
       {/* Accordion Sections */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         
-        {/* Budget Section */}
+        {/* Quotation Section */}
         <PLAccordion 
-          title="Budget"
-          icon="wallet"
-          total={bizData.totalBudget}
-          count={1}
-          isOpen={openBizSection === 'budget'}
-          onToggle={() => toggleBizSection('budget')}
+          title="Quotation Details"
+          icon="file-text"
+          total={quotationTotal}
+          count={quotations.length}
+          isOpen={openBizSection === 'quotation'}
+          onToggle={() => toggleBizSection('quotation')}
           color={BRAND}
         >
-          <div style={{ padding: "12px 0" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
-              <span style={{ color: "#555" }}>Total Project Budget</span>
-              <span style={{ fontWeight: 700, color: BRAND, fontSize: "16px" }}>{formatINR(bizData.totalBudget)}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", marginTop: "8px" }}>
-              <span style={{ color: "#555" }}>Budget Utilization</span>
-              <span style={{ fontWeight: 600, color: bizData.expensePercentage > 90 ? "#dc3545" : "#f59e0b" }}>
-                {bizData.expensePercentage.toFixed(1)}%
-              </span>
-            </div>
-            <div style={{ height: "8px", background: "#f0f0f0", borderRadius: "4px", marginTop: "8px", overflow: "hidden" }}>
+          {selectedQuotation ? (
+            <div style={{ padding: "12px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                <span style={{ color: "#555" }}>File Name</span>
+                <span style={{ fontWeight: 600, color: BRAND }}>{selectedQuotation.fileName || "N/A"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                <span style={{ color: "#555" }}>Price</span>
+                <span style={{ fontWeight: 600, color: BRAND }}>{formatINR(selectedQuotation.price)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                <span style={{ color: "#555" }}>Uploaded Date</span>
+                <span style={{ fontWeight: 600 }}>
+                  {selectedQuotation.uploadedAt ? new Date(selectedQuotation.uploadedAt).toLocaleDateString("en-IN") : "N/A"}
+                </span>
+              </div>
+              
+              {quotationItems.length > 0 && (
+                <>
+                  <div style={{ marginTop: "12px", padding: "8px 0", borderTop: "1px solid #f0f0f0" }}>
+                    <div style={{ fontWeight: 600, fontSize: "13px", color: "#555", marginBottom: "8px" }}>Items</div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                          <th style={{ padding: "6px 8px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa" }}>Description</th>
+                          <th style={{ padding: "6px 8px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa" }}>Qty</th>
+                          <th style={{ padding: "6px 8px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa" }}>Rate</th>
+                          <th style={{ padding: "6px 8px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa" }}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {quotationItems.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: idx < quotationItems.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                            <td style={{ padding: "6px 8px", color: "#555" }}>{item.description || item.name}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "#555" }}>{item.quantity || 1}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", color: "#555" }}>{formatINR(item.rate || 0)}</td>
+                            <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: BRAND }}>
+                              {formatINR(item.amount || 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
               <div style={{ 
-                height: "100%", 
-                width: `${Math.min(bizData.expensePercentage, 100)}%`, 
-                background: bizData.expensePercentage > 90 ? "#dc3545" : bizData.expensePercentage > 70 ? "#f59e0b" : BRAND,
-                borderRadius: "4px",
-                transition: "width 0.5s ease"
-              }} />
+                marginTop: "12px", 
+                padding: "12px 14px", 
+                background: BRAND + "10", 
+                borderRadius: "8px", 
+                border: `1px solid ${BRAND}22`,
+                display: "flex",
+                justifyContent: "space-between"
+              }}>
+                <span style={{ fontSize: "13px", color: BRAND, fontWeight: 600 }}>Total Quotation Value</span>
+                <span style={{ fontSize: "17px", fontWeight: 700, color: BRAND }}>{formatINR(quotationTotal)}</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <EmptyState text="No quotation selected or available." />
+          )}
         </PLAccordion>
 
         {/* Daily Wages Section */}
         <PLAccordion 
           title="Daily Wages"
           icon="users"
-          total={bizData.totalWages}
-          count={bizData.totalWageRecords}
+          total={totalDailyWages}
+          count={totalDailyWageCount}
           isOpen={openBizSection === 'wages'}
           onToggle={() => toggleBizSection('wages')}
           color="#e65100"
         >
-          {dailyWages.length > 0 ? (
+          {wagesLoading ? (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <Spinner style={{ color: BRAND }} />
+            </div>
+          ) : dailyWages.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                 <thead>
@@ -251,21 +552,8 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
                 </thead>
                 <tbody>
                   {dailyWages.map((record, idx) => {
-                    let employeeName = 'Unknown';
-                    let employeeId = 'N/A';
-                    
-                    if (record.employeeId) {
-                      if (typeof record.employeeId === 'object' && record.employeeId.name) {
-                        employeeName = record.employeeId.name;
-                        employeeId = record.employeeId._id || record.employeeId;
-                      } else if (typeof record.employeeId === 'string') {
-                        employeeId = record.employeeId;
-                      }
-                    }
-                    
-                    if (record.employeeName) {
-                      employeeName = record.employeeName;
-                    }
+                    let employeeName = record.employeeName || 'Unknown';
+                    let employeeId = record.employeeIdDisplay || record.employeeId || 'N/A';
                     
                     const empIdStr = typeof employeeId === 'string' ? employeeId : employeeId?.toString() || 'N/A';
                     
@@ -324,8 +612,8 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
             display: "flex",
             justifyContent: "space-between"
           }}>
-            <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Wages</span>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(bizData.totalWages)}</span>
+            <span style={{ fontSize: "13px", color: "#e65100", fontWeight: 600 }}>Total Daily Wages</span>
+            <span style={{ fontSize: "17px", fontWeight: 700, color: "#e65100" }}>{formatINR(totalDailyWages)}</span>
           </div>
         </PLAccordion>
 
@@ -333,53 +621,55 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
         <PLAccordion 
           title="Purchase Orders"
           icon="shopping-cart"
-          total={bizData.totalPurchaseOrders}
-          count={bizData.totalPurchaseOrdersCount}
+          total={totalPurchaseOrders}
+          count={totalPurchaseOrderCount}
           isOpen={openBizSection === 'purchase-orders'}
           onToggle={() => toggleBizSection('purchase-orders')}
           color="#dc3545"
         >
           {purchaseOrders.length > 0 ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>PO #</th>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Items</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseOrders.map((po, idx) => {
-                  const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
-                  return (
-                    <tr key={po._id || idx} style={{ borderBottom: idx < purchaseOrders.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                      <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{po.poNumber || po._id}</td>
-                      <td style={{ padding: "10px 10px", color: "#555" }}>{po.vendor || po.supplierName || "N/A"}</td>
-                      <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                        {po.items?.length || 0}
-                      </td>
-                      <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#dc3545" }}>
-                        {formatINR(poTotal)}
-                      </td>
-                      <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                        <span style={{
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          padding: "2px 10px",
-                          borderRadius: "20px",
-                          background: po.status === "approved" ? "#eaf3de" : po.status === "pending" ? "#faeeda" : "#fcebeb",
-                          color: po.status === "approved" ? "#3b6d11" : po.status === "pending" ? "#854f0b" : "#a32d2d",
-                        }}>
-                          {po.status || "Pending"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>PO #</th>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Items</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
+                    <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchaseOrders.map((po, idx) => {
+                    const poTotal = (po.items || []).reduce((s, item) => s + (item.quantity * item.unitPrice || item.amount || 0), 0);
+                    return (
+                      <tr key={po._id || idx} style={{ borderBottom: idx < purchaseOrders.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                        <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{po.poNumber || po._id}</td>
+                        <td style={{ padding: "10px 10px", color: "#555" }}>{po.vendor || po.supplierName || "N/A"}</td>
+                        <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
+                          {po.items?.length || 0}
+                        </td>
+                        <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#dc3545" }}>
+                          {formatINR(poTotal)}
+                        </td>
+                        <td style={{ padding: "10px 10px", textAlign: "center" }}>
+                          <span style={{
+                            fontSize: "10px",
+                            fontWeight: 600,
+                            padding: "2px 10px",
+                            borderRadius: "20px",
+                            background: po.status === "approved" ? "#eaf3de" : po.status === "pending" ? "#faeeda" : "#fcebeb",
+                            color: po.status === "approved" ? "#3b6d11" : po.status === "pending" ? "#854f0b" : "#a32d2d",
+                          }}>
+                            {po.status || "Pending"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <EmptyState text="No purchase orders found." />
           )}
@@ -393,60 +683,54 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
             justifyContent: "space-between"
           }}>
             <span style={{ fontSize: "13px", color: "#dc3545", fontWeight: 600 }}>Total Purchase Orders</span>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: "#dc3545" }}>{formatINR(bizData.totalPurchaseOrders)}</span>
+            <span style={{ fontSize: "17px", fontWeight: 700, color: "#dc3545" }}>{formatINR(totalPurchaseOrders)}</span>
           </div>
         </PLAccordion>
 
-        {/* Transportation Section */}
+        {/* Expenses Section */}
         <PLAccordion 
-          title="Transportation"
-          icon="truck"
-          total={bizData.totalTransportation}
-          count={bizData.transportation.length}
-          isOpen={openBizSection === 'transportation'}
-          onToggle={() => toggleBizSection('transportation')}
+          title="Other Expenses"
+          icon="credit-card"
+          total={totalExpenses}
+          count={totalExpenseCount}
+          isOpen={openBizSection === 'expenses'}
+          onToggle={() => toggleBizSection('expenses')}
           color="#f59e0b"
         >
-          {bizData.transportation.length > 0 ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vendor</th>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Vehicle</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                  <th style={{ padding: "8px 10px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bizData.transportation.map((item, idx) => (
-                  <tr key={item._id || idx} style={{ borderBottom: idx < bizData.transportation.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                    <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.vendorName || "N/A"}</td>
-                    <td style={{ padding: "10px 10px", color: "#555" }}>{item.vehicleNumber || item.vehicleType || "N/A"}</td>
-                    <td style={{ padding: "10px 10px", textAlign: "right", color: "#555" }}>
-                      {item.date ? new Date(item.date).toLocaleDateString("en-IN") : "N/A"}
-                    </td>
-                    <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#f59e0b" }}>
-                      {formatINR(item.amount || 0)}
-                    </td>
-                    <td style={{ padding: "10px 10px", textAlign: "center" }}>
-                      <span style={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                        background: item.status === "paid" ? "#eaf3de" : item.status === "pending" ? "#faeeda" : "#fcebeb",
-                        color: item.status === "paid" ? "#3b6d11" : item.status === "pending" ? "#854f0b" : "#a32d2d",
-                      }}>
-                        {item.status || "Pending"}
-                      </span>
-                    </td>
+          {expenses.length > 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Date</th>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Description</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {expenses.map((expense, idx) => (
+                    <tr key={expense._id || idx} style={{ borderBottom: idx < expenses.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                      <td style={{ padding: "10px 10px", color: "#555" }}>
+                        {expense.date ? new Date(expense.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A"}
+                      </td>
+                      <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>
+                        {expense.description || "N/A"}
+                        {expense.notes && (
+                          <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                            {expense.notes}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#f59e0b" }}>
+                        {formatINR(expense.amount || 0)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
-            <EmptyState text="No transportation records found." />
+            <EmptyState text="No other expenses recorded." />
           )}
           <div style={{ 
             marginTop: "12px", 
@@ -457,56 +741,60 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
             display: "flex",
             justifyContent: "space-between"
           }}>
-            <span style={{ fontSize: "13px", color: "#f59e0b", fontWeight: 600 }}>Total Transportation</span>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: "#f59e0b" }}>{formatINR(bizData.totalTransportation)}</span>
+            <span style={{ fontSize: "13px", color: "#f59e0b", fontWeight: 600 }}>Total Other Expenses</span>
+            <span style={{ fontSize: "17px", fontWeight: 700, color: "#f59e0b" }}>{formatINR(totalExpenses)}</span>
           </div>
         </PLAccordion>
 
-        {/* Other Expenses Section */}
+        {/* Summary Section */}
         <PLAccordion 
-          title="Other Expenses"
-          icon="more-horizontal"
-          total={bizData.otherExpenses}
-          count={bizData.otherExpensesItems.length}
-          isOpen={openBizSection === 'other-expenses'}
-          onToggle={() => toggleBizSection('other-expenses')}
+          title="Expense Summary"
+          icon="calculator"
+          total={totalAllExpenses}
+          count={4}
+          isOpen={openBizSection === 'summary'}
+          onToggle={() => toggleBizSection('summary')}
           color="#6c757d"
         >
-          {bizData.otherExpensesItems.length > 0 ? (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-              <thead>
-                <tr style={{ borderBottom: "2px solid #f0f0f0" }}>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Category</th>
-                  <th style={{ padding: "8px 10px", textAlign: "left", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Description</th>
-                  <th style={{ padding: "8px 10px", textAlign: "right", fontSize: "11px", fontWeight: 600, color: "#aaa", textTransform: "uppercase" }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bizData.otherExpensesItems.map((item, idx) => (
-                  <tr key={item._id || idx} style={{ borderBottom: idx < bizData.otherExpensesItems.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                    <td style={{ padding: "10px 10px", fontWeight: 500, color: "#1a1a2e" }}>{item.category || "Misc"}</td>
-                    <td style={{ padding: "10px 10px", color: "#555" }}>{item.description || "N/A"}</td>
-                    <td style={{ padding: "10px 10px", textAlign: "right", fontWeight: 600, color: "#6c757d" }}>
-                      {formatINR(item.amount || 0)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <EmptyState text="No other expenses recorded." />
-          )}
-          <div style={{ 
-            marginTop: "12px", 
-            padding: "12px 14px", 
-            background: "#6c757d10", 
-            borderRadius: "8px", 
-            border: "1px solid #6c757d22",
-            display: "flex",
-            justifyContent: "space-between"
-          }}>
-            <span style={{ fontSize: "13px", color: "#6c757d", fontWeight: 600 }}>Total Other Expenses</span>
-            <span style={{ fontSize: "17px", fontWeight: 700, color: "#6c757d" }}>{formatINR(bizData.otherExpenses)}</span>
+          <div style={{ padding: "12px 0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+              <span style={{ color: "#555" }}>Quotation Value</span>
+              <span style={{ fontWeight: 600, color: BRAND }}>{formatINR(quotationTotal)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+              <span style={{ color: "#555" }}>Total Expenses</span>
+              <span style={{ fontWeight: 600, color: "#e65100" }}>{formatINR(totalAllExpenses)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+              <span style={{ color: "#555" }}>Expense Breakdown:</span>
+              <span style={{ fontSize: "12px", color: "#888" }}></span>
+            </div>
+            <div style={{ paddingLeft: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "12px" }}>
+                <span style={{ color: "#888" }}>• Daily Wages</span>
+                <span style={{ fontWeight: 500 }}>{formatINR(totalDailyWages)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "12px" }}>
+                <span style={{ color: "#888" }}>• Purchase Orders</span>
+                <span style={{ fontWeight: 500 }}>{formatINR(totalPurchaseOrders)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "12px" }}>
+                <span style={{ color: "#888" }}>• Other Expenses</span>
+                <span style={{ fontWeight: 500 }}>{formatINR(totalExpenses)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "12px", borderTop: "1px dashed #f0f0f0", marginTop: "4px", paddingTop: "4px" }}>
+                <span style={{ fontWeight: 600, color: "#555" }}>Total All Expenses</span>
+                <span style={{ fontWeight: 700, color: "#e65100" }}>{formatINR(totalAllExpenses)}</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", marginTop: "8px", borderTop: "2px solid #f0f0f0" }}>
+              <span style={{ fontWeight: 600, color: isProfit ? "#2e7d32" : "#c62828" }}>
+                {isProfit ? "Net Profit" : "Net Loss"}
+              </span>
+              <span style={{ fontSize: "18px", fontWeight: 700, color: isProfit ? "#2e7d32" : "#c62828" }}>
+                {formatINR(Math.abs(profitLoss))}
+              </span>
+            </div>
           </div>
         </PLAccordion>
       </div>
@@ -514,7 +802,7 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
       {/* Overall Summary */}
       <div style={{ 
         marginTop: "24px",
-        background: bizData.isProfit ? BRAND : "#dc3545",
+        background: isProfit ? BRAND : "#dc3545",
         borderRadius: "12px",
         padding: "20px 24px",
         display: "flex",
@@ -524,15 +812,15 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
         gap: "12px"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#fff" }}>
-          <Icon name={bizData.isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
+          <Icon name={isProfit ? "trending-up" : "trending-down"} style={{ fontSize: "24px" }} />
           <div>
             <div style={{ fontSize: "14px", opacity: 0.9, fontWeight: 600 }}>
-              Overall {bizData.isProfit ? "Profit" : "Loss"}
+              Overall {isProfit ? "Profit" : "Loss"}
             </div>
             <div style={{ fontSize: "12px", opacity: 0.7 }}>
-              {bizData.isProfit 
-                ? `${bizData.profitPercentage.toFixed(1)}% profit margin` 
-                : `${Math.abs(bizData.profitPercentage).toFixed(1)}% loss`}
+              {isProfit 
+                ? `${profitPercentage.toFixed(1)}% profit margin` 
+                : `${Math.abs(profitPercentage).toFixed(1)}% loss`}
             </div>
           </div>
         </div>
@@ -544,7 +832,7 @@ const BusinessTab = ({ businessData, purchaseOrders, dailyWages }) => {
           padding: "4px 20px",
           borderRadius: "8px"
         }}>
-          {formatINR(Math.abs(bizData.profitLoss))}
+          {formatINR(Math.abs(profitLoss))}
         </div>
       </div>
     </>
