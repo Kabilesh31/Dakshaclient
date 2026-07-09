@@ -1,6 +1,7 @@
-import React from 'react';
-import { Row, Col, Icon} from '../../../components/Component';
-import { Spinner } from 'reactstrap';
+import React, { useState } from 'react';
+import { Row, Col, Icon } from '../../../components/Component';
+import { Spinner, Input } from 'reactstrap';
+
 const PlansTab = ({ 
   images, 
   uploading, 
@@ -9,6 +10,8 @@ const PlansTab = ({
   onView, 
   onDelete 
 }) => {
+  const [planTitle, setPlanTitle] = useState("");
+
   const EmptyState = ({ text }) => (
     <div style={{ 
       padding: "24px", 
@@ -28,13 +31,14 @@ const PlansTab = ({
       position: "relative", 
       borderRadius: "10px", 
       overflow: "hidden", 
-      cursor: "pointer" 
+      cursor: "pointer",
+      background: "#f5f5f5"
     }} 
     onClick={onView}
     >
       <img 
         src={img.url} 
-        alt={`plan-${idx + 1}`} 
+        alt={img.title || `plan-${idx + 1}`} 
         style={{ 
           width: "100%", 
           height: "140px", 
@@ -42,11 +46,33 @@ const PlansTab = ({
           display: "block" 
         }} 
       />
+      
+      {/* Display title if exists */}
+      {img.title && (
+        <div style={{ 
+          position: "absolute", 
+          bottom: "40px", 
+          left: "0", 
+          right: "0", 
+          padding: "6px 10px", 
+          background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)",
+          color: "#fff", 
+          fontSize: "11px",
+          fontWeight: 500,
+          textOverflow: "ellipsis",
+          overflow: "hidden",
+          whiteSpace: "nowrap"
+        }}>
+          {img.title}
+        </div>
+      )}
+      
       <div style={{ 
         position: "absolute", 
         inset: 0, 
         background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)" 
       }} />
+      
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
@@ -110,11 +136,24 @@ const PlansTab = ({
         accept={accept} 
         multiple 
         style={{ display: "none" }} 
-        onChange={onChange} 
+        onChange={(e) => {
+          // Pass the title to the parent component
+          onUpload(e, planTitle);
+        }} 
         disabled={uploading} 
       />
     </>
   );
+
+  const inputStyle = {
+    borderRadius: "8px", 
+    border: "1.5px solid #e8e4e0",
+    fontSize: "13px", 
+    padding: "6px 10px",
+    color: "#1a1a2e", 
+    background: "#fdfcfc",
+    minWidth: "180px"
+  };
 
   return (
     <>
@@ -122,7 +161,9 @@ const PlansTab = ({
         display: "flex", 
         alignItems: "center", 
         justifyContent: "space-between", 
-        marginBottom: "16px" 
+        marginBottom: "16px",
+        flexWrap: "wrap",
+        gap: "12px"
       }}>
         <h6 style={{ 
           fontWeight: 700, 
@@ -132,14 +173,33 @@ const PlansTab = ({
         }}>
           Site Plans
         </h6>
-        <UploadBtn 
-          id="planUpload" 
-          label="Upload Plans" 
-          accept="image/*" 
-          uploading={uploading} 
-          onChange={onUpload} 
-        />
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "10px",
+          flexWrap: "wrap"
+        }}>
+          <Input
+            type="text"
+            placeholder="Plan title (optional)"
+            value={planTitle}
+            onChange={(e) => setPlanTitle(e.target.value)}
+            style={inputStyle}
+          />
+          <UploadBtn 
+            id="planUpload" 
+            label="Upload Plans" 
+            accept="image/*" 
+            uploading={uploading} 
+            onChange={onUpload} 
+          />
+        </div>
       </div>
+      {uploading && (
+        <div style={{ marginBottom: "10px" }}>
+          <Spinner size="sm" style={{ color: "#4B5694" }} />
+        </div>
+      )}
       {images.length > 0 ? (
         <Row className="g-3">
           {images.map((img, idx) => (

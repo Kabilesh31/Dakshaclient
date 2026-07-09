@@ -112,28 +112,80 @@ const ImageSidebar = ({ isOpen, onClose, images, startIndex = 0, title }) => {
   const prev = () => setCurrent((c) => (c - 1 + images.length) % images.length);
   const next = () => setCurrent((c) => (c + 1) % images.length);
   const img = images[current];
+  
+  const downloadImage = () => {
+    if (img?.url) {
+      fetch(img.url)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = img.title || `image-${current + 1}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+          const link = document.createElement('a');
+          link.href = img.url;
+          link.download = img.title || `image-${current + 1}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+    }
+  };
+
   return (
     <SidebarViewer isOpen={isOpen} onClose={onClose} title={title || `Image ${current + 1} of ${images.length}`}>
       <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#111" }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
-          {img && <img src={img.url} alt={`View ${current + 1}`} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
+          {img && <img src={img.url} alt={img.title || `View ${current + 1}`} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />}
           {images.length > 1 && (
             <>
               <button onClick={prev} style={navBtnStyle("left")}>‹</button>
               <button onClick={next} style={navBtnStyle("right")}>›</button>
             </>
           )}
+          <button 
+            onClick={downloadImage}
+            style={{
+              position: "absolute",
+              bottom: "20px",
+              right: "20px",
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: "8px",
+              cursor: "pointer",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.35)"}
+            onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
+          >
+            <Icon name="download" size={16} /> Download
+          </button>
         </div>
         {images.length > 1 && (
           <div style={{ display: "flex", gap: "8px", padding: "12px 16px", overflowX: "auto", background: "#1a1a1a", flexShrink: 0 }}>
             {images.map((im, idx) => (
-              <img key={im._id || idx} src={im.url} alt={`Thumb ${idx + 1}`} onClick={() => setCurrent(idx)}
+              <img key={im._id || idx} src={im.url} alt={im.title || `Thumb ${idx + 1}`} onClick={() => setCurrent(idx)}
                 style={{ width: "60px", height: "45px", objectFit: "cover", borderRadius: "5px", cursor: "pointer", flexShrink: 0, transition: "opacity 0.2s", border: idx === current ? "2px solid #fff" : "2px solid transparent", opacity: idx === current ? 1 : 0.55 }}
               />
             ))}
           </div>
         )}
         <div style={{ textAlign: "center", padding: "8px", color: "#aaa", fontSize: "13px", background: "#111", flexShrink: 0 }}>
+          {img?.title && <span style={{ marginRight: "16px" }}>📷 {img.title}</span>}
           {current + 1} / {images.length}
         </div>
       </div>
@@ -451,7 +503,8 @@ const SiteDetail = () => {
     };
   };
 
-  const handleFileUpload = async (e, type) => {
+  // ─── FILE UPLOAD FUNCTION WITH TITLE SUPPORT ──────────────────
+  const handleFileUpload = async (e, type, title = "") => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setUploading(true);
@@ -467,6 +520,12 @@ const SiteDetail = () => {
     for (const file of files) {
       const fd = new FormData();
       fd.append(type === "document" ? "document" : "image", file);
+      
+      // Add title for gallery and site-plan
+      if ((type === "gallery" || type === "site-plan") && title) {
+        fd.append("title", title);
+      }
+      
       try {
         const r = await axios.post(endpointMap[type], fd, { 
           headers: { 
@@ -477,9 +536,13 @@ const SiteDetail = () => {
         if (r.data.success) {
           successCount++;
           const uploadedData = r.data.data;
-          if (type === "gallery") setGalleryImages(p => [...p, uploadedData]);
-          else if (type === "site-plan") setSitePlanImages(p => [...p, uploadedData]);
-          else setDocuments(p => [...p, uploadedData]);
+          if (type === "gallery") {
+            setGalleryImages(prev => [...prev, uploadedData]);
+          } else if (type === "site-plan") {
+            setSitePlanImages(prev => [...prev, uploadedData]);
+          } else {
+            setDocuments(prev => [...prev, uploadedData]);
+          }
         }
       } catch (err) {
         console.error(`Failed to upload ${type}:`, err);
@@ -504,8 +567,8 @@ const SiteDetail = () => {
       await axios.delete(endpoint, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      if (type === "gallery") setGalleryImages(p => p.filter(i => i._id !== imageId));
-      else setSitePlanImages(p => p.filter(i => i._id !== imageId));
+      if (type === "gallery") setGalleryImages(prev => prev.filter(i => i._id !== imageId));
+      else setSitePlanImages(prev => prev.filter(i => i._id !== imageId));
       showSuccess("Image deleted.");
     } catch { showError("Failed to delete image."); }
     finally { setDeletingItem(null); }
@@ -519,7 +582,7 @@ const SiteDetail = () => {
       await axios.delete(`${API_URL}/projects/${id}/document/${documentId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      setDocuments(p => p.filter(d => d._id !== documentId));
+      setDocuments(prev => prev.filter(d => d._id !== documentId));
       if (pdfSidebar.doc?._id === documentId) setPdfSidebar({ open: false, doc: null });
       showSuccess("Document deleted.");
     } catch { showError("Failed to delete document."); }
@@ -651,7 +714,7 @@ const SiteDetail = () => {
                   images={galleryImages}
                   uploading={uploading}
                   deletingItem={deletingItem}
-                  onUpload={(e) => handleFileUpload(e, "gallery")}
+                  onUpload={(e, title) => handleFileUpload(e, "gallery", title)}
                   onView={(index) => setImgSidebar({ open: true, images: galleryImages, index, title: "Project Gallery" })}
                   onDelete={(imageId) => handleDeleteImage(imageId, "gallery")}
                 />
@@ -663,7 +726,7 @@ const SiteDetail = () => {
                   images={sitePlanImages}
                   uploading={uploading}
                   deletingItem={deletingItem}
-                  onUpload={(e) => handleFileUpload(e, "site-plan")}
+                  onUpload={(e, title) => handleFileUpload(e, "site-plan", title)}
                   onView={(index) => setImgSidebar({ open: true, images: sitePlanImages, index, title: "Site Plans" })}
                   onDelete={(imageId) => handleDeleteImage(imageId, "site-plan")}
                 />
@@ -688,31 +751,29 @@ const SiteDetail = () => {
               )}
 
               {/* ── TAB 6: DAILY WAGES ── */}
-              {activeTab === "daily-wages" && (
-                <DailyWagesTab 
-                  wages={filteredDailyWages}
-                  loading={wagesLoading}
-                  selectedMonth={selectedMonth}
-                  selectedYear={selectedYear}
-                  onMonthChange={setSelectedMonth}
-                  onYearChange={setSelectedYear}
-                  onFilter={applyWagesFilter}
-                  onClear={clearWagesFilter}
-                />
-              )}
+             {/* ── TAB 6: DAILY WAGES ── */}
+{activeTab === "daily-wages" && (
+  <DailyWagesTab 
+    projectId={id}
+    wages={filteredDailyWages}
+    loading={wagesLoading}
+    selectedMonth={selectedMonth}
+    selectedYear={selectedYear}
+    onMonthChange={setSelectedMonth}
+    onYearChange={setSelectedYear}
+    onFilter={applyWagesFilter}
+    onClear={clearWagesFilter}
+  />
+)}
 
               {/* ── TAB 7: BUSINESS ── */}
-              {activeTab === "business" && (
-                <BusinessTab 
-                  businessData={bizData}
-                  purchaseOrders={purchaseOrders}
-                  dailyWages={dailyWages}
-                />
-              )}
+             {activeTab === "business" && (
+  <BusinessTab 
+    projectId={id}
+  />
+)}
               {activeTab === "quotations" && (
-                <QuotationsTab
-                 
-                />
+                <QuotationsTab />
               )}
               {activeTab === "expenses" && (
                 <ExpensesTab />

@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '../../../components/Component';
 import { Spinner } from 'reactstrap';
+import axios from 'axios';
+
+const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
+
 const DailyWagesTab = ({ 
-  wages, 
-  loading, 
-  selectedMonth, 
-  selectedYear, 
-  onMonthChange, 
-  onYearChange, 
-  onFilter, 
-  onClear 
+  projectId,
+  wages: propWages,
+  loading: propLoading,
+  selectedMonth: propSelectedMonth,
+  selectedYear: propSelectedYear,
+  onMonthChange: propOnMonthChange,
+  onYearChange: propOnYearChange,
+  onFilter: propOnFilter,
+  onClear: propOnClear
 }) => {
   const [openMonth, setOpenMonth] = useState(null);
+  const [localWages, setLocalWages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(propSelectedMonth || "");
+  const [selectedYear, setSelectedYear] = useState(propSelectedYear || "");
+  const [filteredWages, setFilteredWages] = useState([]);
   const BRAND = "#4B5694";
 
   const toggle = (monthKey) => setOpenMonth((prev) => (prev === monthKey ? null : monthKey));
@@ -26,8 +36,107 @@ const DailyWagesTab = ({
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
+  // Fetch daily wages by site ID
+  const fetchDailyWagesBySite = async () => {
+    if (!projectId) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      console.log(`Fetching daily wages for site: ${projectId}`);
+      
+      // Use the getBySite endpoint: GET /api/attendance/site/:id
+      const response = await axios.get(`${API_URL}/attendance/site/${projectId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      
+      console.log("Daily wages response:", response.data);
+      
+      if (response.data && response.data.data) {
+        const records = response.data.data || [];
+        
+        // Process records to get employee names
+        const processedRecords = await Promise.all(records.map(async (record) => {
+          let employeeName = 'Unknown';
+          let employeeId = '';
+          
+          // Try to get employee name from employeeId field
+          if (record.employeeId) {
+            if (typeof record.employeeId === 'object' && record.employeeId.name) {
+              employeeName = record.employeeId.name;
+              employeeId = record.employeeId._id || record.employeeId;
+            } else if (typeof record.employeeId === 'string') {
+              employeeId = record.employeeId;
+              // Try to fetch employee details if only ID is available
+              try {
+                const employeeRes = await axios.get(`${API_URL}/employees/${record.employeeId}`, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                if (employeeRes.data.success) {
+                  employeeName = employeeRes.data.data.name || 'Unknown';
+                }
+              } catch (err) {
+                console.error(`Failed to fetch employee ${record.employeeId}:`, err);
+              }
+            }
+          }
+          
+          return {
+            ...record,
+            employeeName: employeeName,
+            employeeIdDisplay: employeeId,
+            siteName: record.siteName || record.site?.name || 'Not Assigned'
+          };
+        }));
+        
+        setLocalWages(processedRecords);
+        setFilteredWages(processedRecords);
+        console.log(`Processed ${processedRecords.length} daily wage records`);
+      } else {
+        console.log("No daily wages data found");
+        setLocalWages([]);
+        setFilteredWages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching daily wages:", error);
+      setLocalWages([]);
+      setFilteredWages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch data when projectId changes
+  useEffect(() => {
+    if (projectId) {
+      fetchDailyWagesBySite();
+    }
+  }, [projectId]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...localWages];
+    
+    if (selectedMonth) {
+      filtered = filtered.filter(record => {
+        const date = new Date(record.date);
+        return String(date.getMonth() + 1).padStart(2, '0') === selectedMonth;
+      });
+    }
+    
+    if (selectedYear) {
+      filtered = filtered.filter(record => {
+        const date = new Date(record.date);
+        return date.getFullYear() === parseInt(selectedYear);
+      });
+    }
+    
+    setFilteredWages(filtered);
+  }, [localWages, selectedMonth, selectedYear]);
+
   // Group by month
-  const groupedByMonth = wages.reduce((acc, wage) => {
+  const groupedByMonth = filteredWages.reduce((acc, wage) => {
     const date = new Date(wage.date);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -443,6 +552,34 @@ const DailyWagesTab = ({
     );
   };
 
+  // Use prop functions or local functions
+  const handleMonthChange = (value) => {
+    setSelectedMonth(value);
+    if (propOnMonthChange) propOnMonthChange(value);
+  };
+
+  const handleYearChange = (value) => {
+    setSelectedYear(value);
+    if (propOnYearChange) propOnYearChange(value);
+  };
+
+  const handleFilter = () => {
+    if (propOnFilter) propOnFilter();
+  };
+
+  const handleClear = () => {
+    setSelectedMonth("");
+    setSelectedYear("");
+    if (propOnClear) propOnClear();
+  };
+
+  // Determine if we should use props or local state
+  const useProps = propWages !== undefined;
+  const displayWages = useProps ? propWages : filteredWages;
+  const displayLoading = useProps ? propLoading : loading;
+  const displaySelectedMonth = useProps ? propSelectedMonth : selectedMonth;
+  const displaySelectedYear = useProps ? propSelectedYear : selectedYear;
+
   return (
     <>
       <div style={{ 
@@ -462,22 +599,22 @@ const DailyWagesTab = ({
           Daily Wages
         </h6>
         <MonthFilter
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onMonthChange={onMonthChange}
-          onYearChange={onYearChange}
-          onFilter={onFilter}
-          onClear={onClear}
+          selectedMonth={displaySelectedMonth}
+          selectedYear={displaySelectedYear}
+          onMonthChange={handleMonthChange}
+          onYearChange={handleYearChange}
+          onFilter={handleFilter}
+          onClear={handleClear}
         />
       </div>
 
-      {loading ? (
+      {displayLoading ? (
         <div style={{ padding: "20px", textAlign: "center" }}>
           <Spinner style={{ color: BRAND }} />
           <p style={{ color: "#aaa", fontSize: "13px", marginTop: "10px" }}>Loading daily wages...</p>
         </div>
-      ) : wages.length > 0 ? (
-        <DailyWagesAccordion wages={wages} />
+      ) : displayWages.length > 0 ? (
+        <DailyWagesAccordion wages={displayWages} />
       ) : (
         <EmptyState text="No daily wages found for the selected period." />
       )}
