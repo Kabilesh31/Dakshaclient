@@ -35,6 +35,7 @@ import DailyWagesTab from "./DailyWagesTab";
 import BusinessTab from "./BusinessTab";
 import QuotationsTab from "./QuotationsTab";
 import ExpensesTab from "./ExpensesTab";
+import WorkOrderTab from "./WorkOrderTab";
 
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api` || "http://localhost:5000/api";
 const BASE_URL = `${process.env.REACT_APP_BACKENDURL}` || "http://localhost:5000";
@@ -222,60 +223,166 @@ const inputStyle = {
   color: "#1a1a2e", background: "#fdfcfc",
 };
 
-// ─── TAB COMPONENT ─────────────────────────────────────────────
-const Tabs = ({ tabs, activeTab, onTabChange }) => {
+// ─── NEW: Accordion Category Component ────────────────────────
+const AccordionCategory = ({ 
+  category, 
+  isOpen, 
+  onToggle, 
+  tabs, 
+  activeTab, 
+  onTabChange,
+  icon 
+}) => {
   return (
-    <div style={{
-      display: "flex",
-      borderBottom: "2px solid #f0f0f0",
-      marginBottom: "24px",
-      overflowX: "auto",
-      paddingBottom: "0px",
-      flexWrap: "nowrap",
+    <div style={{ 
+      marginBottom: "16px",
+      border: "1px solid #e9ecef",
+      borderRadius: "12px",
+      overflow: "hidden",
+      boxShadow: isOpen ? "0 4px 12px rgba(0,0,0,0.05)" : "none",
+      transition: "all 0.3s ease"
     }}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          style={{
-            padding: "10px 10px",
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            boxShadow: "none",
-            borderRadius: 0,
-            borderBottom:
-              activeTab === tab.id
-                ? `3px solid ${BRAND}`
-                : "3px solid transparent",
-            color: activeTab === tab.id ? BRAND : "#6c757d",
-            fontWeight: activeTab === tab.id ? 700 : 500,
-            fontSize: "13px",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            transition: "all 0.2s ease",
+      {/* Accordion Header */}
+      <div 
+        onClick={onToggle}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 20px",
+          background: isOpen ? BRAND : "#f8f9fa",
+          color: isOpen ? "#fff" : "#1a1a2e",
+          cursor: "pointer",
+          transition: "all 0.25s ease",
+          userSelect: "none"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{
+            width: "32px",
+            height: "32px",
+            background: isOpen ? "rgba(255,255,255,0.2)" : BRAND + "15",
+            borderRadius: "8px",
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <Icon name={tab.icon} style={{ fontSize: "16px" }} />
-          {tab.label}
-          {tab.count !== undefined && tab.count > 0 && (
-            <span style={{
-              background: activeTab === tab.id ? BRAND : "#e9ecef",
-              color: activeTab === tab.id ? "#fff" : "#6c757d",
-              padding: "1px 8px",
-              borderRadius: "12px",
-              fontSize: "10px",
-              fontWeight: 600,
-              marginLeft: "4px"
+            justifyContent: "center",
+            color: isOpen ? "#fff" : BRAND
+          }}>
+            <Icon name={icon} style={{ fontSize: "18px" }} />
+          </div>
+          <div>
+            <div style={{ 
+              fontWeight: 700, 
+              fontSize: "15px",
+              color: isOpen ? "#fff" : "inherit"
             }}>
-              {tab.count}
+              {category.label}
+            </div>
+            <div style={{ 
+              fontSize: "12px", 
+              color: isOpen ? "rgba(255,255,255,0.8)" : "#aaa",
+              marginTop: "2px"
+            }}>
+              {category.description}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {category.count > 0 && (
+            <span style={{
+              background: isOpen ? "rgba(255,255,255,0.2)" : "#e9ecef",
+              color: isOpen ? "#fff" : "#6c757d",
+              padding: "2px 10px",
+              borderRadius: "12px",
+              fontSize: "11px",
+              fontWeight: 600
+            }}>
+              {category.count}
             </span>
           )}
-        </button>
-      ))}
+          <Icon 
+            name={isOpen ? "chevron-up" : "chevron-down"} 
+            style={{ 
+              fontSize: "16px",
+              transition: "transform 0.3s ease",
+              color: isOpen ? "#fff" : "#6c757d"
+            }} 
+          />
+        </div>
+      </div>
+
+      {/* Accordion Body */}
+      <div style={{
+        maxHeight: isOpen ? "2000px" : "0",
+        overflow: "hidden",
+        transition: "max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        background: "#fff"
+      }}>
+        <div style={{ padding: "20px" }}>
+          {/* Tabs */}
+          <div style={{
+            display: "flex",
+            borderBottom: "2px solid #f0f0f0",
+            marginBottom: "24px",
+            overflowX: "auto",
+            paddingBottom: "0px",
+            flexWrap: "nowrap",
+          }}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                style={{
+                  padding: "10px 16px",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  boxShadow: "none",
+                  borderRadius: 0,
+                  borderBottom:
+                    activeTab === tab.id
+                      ? `3px solid ${BRAND}`
+                      : "3px solid transparent",
+                  color: activeTab === tab.id ? BRAND : "#6c757d",
+                  fontWeight: activeTab === tab.id ? 700 : 500,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Icon name={tab.icon} style={{ fontSize: "16px" }} />
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span style={{
+                    background: activeTab === tab.id ? BRAND : "#e9ecef",
+                    color: activeTab === tab.id ? "#fff" : "#6c757d",
+                    padding: "1px 8px",
+                    borderRadius: "12px",
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    marginLeft: "4px"
+                  }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <div>
+            {tabs.map((tab) => (
+              <div key={tab.id} style={{ display: activeTab === tab.id ? "block" : "none" }}>
+                {tab.content}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -308,8 +415,15 @@ const SiteDetail = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [wagesLoading, setWagesLoading] = useState(false);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState("info");
+  // NEW: Accordion and Tab states
+  const [openCategories, setOpenCategories] = useState({
+    project: true,  // Project Details open by default
+    financial: false // Financial & Operations closed by default
+  });
+  const [activeTabs, setActiveTabs] = useState({
+    project: "info",
+    financial: "purchase-orders"
+  });
 
   const [pdfSidebar, setPdfSidebar] = useState({ open: false, doc: null });
   const [imgSidebar, setImgSidebar] = useState({ open: false, images: [], index: 0, title: "" });
@@ -521,7 +635,6 @@ const SiteDetail = () => {
       const fd = new FormData();
       fd.append(type === "document" ? "document" : "image", file);
       
-      // Add title for gallery and site-plan
       if ((type === "gallery" || type === "site-plan") && title) {
         fd.append("title", title);
       }
@@ -633,18 +746,147 @@ const SiteDetail = () => {
     cancelled: { text: "Cancelled", bg: "#6c757d" },
   };
 
-  // Tab configuration
-  const tabs = [
-    { id: "info", label: "Info", icon: "info" },
-    { id: "gallery", label: "Project Gallery", icon: "image", count: galleryImages.length },
-    { id: "plans", label: "Site Plans", icon: "map", count: sitePlanImages.length },
-    { id: "documents", label: "Documents", icon: "file", count: documents.length },
-    { id: "purchase-orders", label: "Purchase Orders", icon: "shopping-cart", count: purchaseOrders.length },
-    { id: "daily-wages", label: "Daily Wages", icon: "users", count: filteredDailyWages.length },
-    { id: "business", label: "Business", icon: "trending-up" },
-    { id: "quotations", label: "Quotations", icon: "trending-up" },
-    { id: "expenses", label: "Expenses", icon: "trending-up" },
-  ];
+  // NEW: Category configuration
+  const categories = {
+    project: {
+      id: "project",
+      label: "Project Details",
+      description: "View and manage project information, gallery, plans, and documents",
+      icon: "folder",
+      count: galleryImages.length + sitePlanImages.length + documents.length,
+      tabs: [
+        { 
+          id: "info", 
+          label: "Information", 
+          icon: "info",
+          content: <InfoTab site={site} />
+        },
+        { 
+          id: "gallery", 
+          label: "Project Gallery", 
+          icon: "image",
+          count: galleryImages.length,
+          content: (
+            <GalleryTab 
+              images={galleryImages}
+              uploading={uploading}
+              deletingItem={deletingItem}
+              onUpload={(e, title) => handleFileUpload(e, "gallery", title)}
+              onView={(index) => setImgSidebar({ open: true, images: galleryImages, index, title: "Project Gallery" })}
+              onDelete={(imageId) => handleDeleteImage(imageId, "gallery")}
+            />
+          )
+        },
+        { 
+          id: "plans", 
+          label: "Site Plans", 
+          icon: "map",
+          count: sitePlanImages.length,
+          content: (
+            <PlansTab 
+              images={sitePlanImages}
+              uploading={uploading}
+              deletingItem={deletingItem}
+              onUpload={(e, title) => handleFileUpload(e, "site-plan", title)}
+              onView={(index) => setImgSidebar({ open: true, images: sitePlanImages, index, title: "Site Plans" })}
+              onDelete={(imageId) => handleDeleteImage(imageId, "site-plan")}
+            />
+          )
+        },
+        { 
+          id: "documents", 
+          label: "Documents", 
+          icon: "file",
+          count: documents.length,
+          content: (
+            <DocumentsTab 
+              documents={documents}
+              uploading={uploading}
+              deletingItem={deletingItem}
+              onUpload={(e) => handleFileUpload(e, "document")}
+              onView={(doc) => setPdfSidebar({ open: true, doc })}
+              onDelete={(docId) => handleDeleteDocument(docId)}
+              getPdfUrl={getPdfUrl}
+            />
+          )
+        }
+      ]
+    },
+    
+    financial: {
+      id: "financial",
+      label: "Financial & Operations",
+      description: "Manage purchase orders, wages, business overview, and more",
+      icon: "cash",
+      count: purchaseOrders.length + filteredDailyWages.length,
+      tabs: [
+        { 
+          id: "purchase-orders", 
+          label: "Purchase Orders", 
+          icon: "shopping-cart",
+          count: purchaseOrders.length,
+          content: <PurchaseOrdersTab orders={purchaseOrders} />
+        },
+        { 
+          id: "daily-wages", 
+          label: "Daily Wages", 
+          icon: "users",
+          count: filteredDailyWages.length,
+          content: (
+            <DailyWagesTab 
+              projectId={id}
+              wages={filteredDailyWages}
+              loading={wagesLoading}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onMonthChange={setSelectedMonth}
+              onYearChange={setSelectedYear}
+              onFilter={applyWagesFilter}
+              onClear={clearWagesFilter}
+            />
+          )
+        },
+        { 
+          id: "business", 
+          label: "Business Overview", 
+          icon: "trending-up",
+          content: <BusinessTab projectId={id} />
+        },
+        { 
+          id: "quotations", 
+          label: "Quotations", 
+          icon: "file-text",
+          content: <QuotationsTab />
+        },
+        { 
+          id: "expenses", 
+          label: "Expenses", 
+          icon: "credit-card",
+          content: <ExpensesTab />
+        },
+        { 
+          id: "workOrder", 
+          label: "Work Orders", 
+          icon: "clipboard",
+          content: <WorkOrderTab projectId={id} projectName={site?.name} />
+        }
+      ]
+    }
+  };
+
+  const toggleCategory = (categoryId) => {
+    setOpenCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
+  const handleTabChange = (categoryId, tabId) => {
+    setActiveTabs(prev => ({
+      ...prev,
+      [categoryId]: tabId
+    }));
+  };
 
   if (loading) {
     return (
@@ -684,100 +926,39 @@ const SiteDetail = () => {
         </BlockHead>
 
         {/* ── Alerts ── */}
-        {error && (
-          <Alert color="danger" className="mb-3 d-flex align-items-center justify-content-between">
-            <span>{error}</span><Button close onClick={() => setError(null)} />
-          </Alert>
-        )}
         {successMessage && (
           <Alert color="success" className="mb-3 d-flex align-items-center justify-content-between">
             <span>{successMessage}</span><Button close onClick={() => setSuccessMessage(null)} />
           </Alert>
         )}
 
-        {/* ── Tabs ── */}
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-
-        {/* ── Tab Content ── */}
+        {/* ── NEW: Accordion Categories ── */}
         <Block>
           <div className="card card-bordered" style={{ borderRadius: "12px", overflow: "hidden" }}>
             <div className="card-inner" style={{ padding: "28px" }}>
+              
+              {/* Project Details Accordion */}
+              <AccordionCategory
+                category={categories.project}
+                isOpen={openCategories.project}
+                onToggle={() => toggleCategory("project")}
+                tabs={categories.project.tabs}
+                activeTab={activeTabs.project}
+                onTabChange={(tabId) => handleTabChange("project", tabId)}
+                icon="folder"
+              />
 
-              {/* ── TAB 1: INFORMATION ── */}
-              {activeTab === "info" && (
-                <InfoTab site={site} />
-              )}
+              {/* Financial & Operations Accordion */}
+              <AccordionCategory
+                category={categories.financial}
+                isOpen={openCategories.financial}
+                onToggle={() => toggleCategory("financial")}
+                tabs={categories.financial.tabs}
+                activeTab={activeTabs.financial}
+                onTabChange={(tabId) => handleTabChange("financial", tabId)}
+                icon="file-text"
+              />
 
-              {/* ── TAB 2: PROJECT GALLERY ── */}
-              {activeTab === "gallery" && (
-                <GalleryTab 
-                  images={galleryImages}
-                  uploading={uploading}
-                  deletingItem={deletingItem}
-                  onUpload={(e, title) => handleFileUpload(e, "gallery", title)}
-                  onView={(index) => setImgSidebar({ open: true, images: galleryImages, index, title: "Project Gallery" })}
-                  onDelete={(imageId) => handleDeleteImage(imageId, "gallery")}
-                />
-              )}
-
-              {/* ── TAB 3: SITE PLANS ── */}
-              {activeTab === "plans" && (
-                <PlansTab 
-                  images={sitePlanImages}
-                  uploading={uploading}
-                  deletingItem={deletingItem}
-                  onUpload={(e, title) => handleFileUpload(e, "site-plan", title)}
-                  onView={(index) => setImgSidebar({ open: true, images: sitePlanImages, index, title: "Site Plans" })}
-                  onDelete={(imageId) => handleDeleteImage(imageId, "site-plan")}
-                />
-              )}
-
-              {/* ── TAB 4: PROJECT DOCUMENTS ── */}
-              {activeTab === "documents" && (
-                <DocumentsTab 
-                  documents={documents}
-                  uploading={uploading}
-                  deletingItem={deletingItem}
-                  onUpload={(e) => handleFileUpload(e, "document")}
-                  onView={(doc) => setPdfSidebar({ open: true, doc })}
-                  onDelete={(docId) => handleDeleteDocument(docId)}
-                  getPdfUrl={getPdfUrl}
-                />
-              )}
-
-              {/* ── TAB 5: PURCHASE ORDERS ── */}
-              {activeTab === "purchase-orders" && (
-                <PurchaseOrdersTab orders={purchaseOrders} />
-              )}
-
-              {/* ── TAB 6: DAILY WAGES ── */}
-             {/* ── TAB 6: DAILY WAGES ── */}
-{activeTab === "daily-wages" && (
-  <DailyWagesTab 
-    projectId={id}
-    wages={filteredDailyWages}
-    loading={wagesLoading}
-    selectedMonth={selectedMonth}
-    selectedYear={selectedYear}
-    onMonthChange={setSelectedMonth}
-    onYearChange={setSelectedYear}
-    onFilter={applyWagesFilter}
-    onClear={clearWagesFilter}
-  />
-)}
-
-              {/* ── TAB 7: BUSINESS ── */}
-             {activeTab === "business" && (
-  <BusinessTab 
-    projectId={id}
-  />
-)}
-              {activeTab === "quotations" && (
-                <QuotationsTab />
-              )}
-              {activeTab === "expenses" && (
-                <ExpensesTab />
-              )}
             </div>
           </div>
         </Block>

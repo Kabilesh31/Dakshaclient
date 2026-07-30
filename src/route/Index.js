@@ -306,14 +306,14 @@ const Pages = () => {
           )}
         ></Route>
          <Route
-  exact
-  path={`${process.env.PUBLIC_URL}/SiteManagement/site/:id`}
-  render={(props) => (
-    <UserContextProvider>
-      <SiteDetail {...props} />
-    </UserContextProvider>
-  )}
-/>
+          exact
+          path={`${process.env.PUBLIC_URL}/SiteManagement/site/:id`}
+          render={(props) => (
+            <UserContextProvider>
+              <SiteDetail {...props} />
+            </UserContextProvider>
+          )}
+        />
 
 
         <Route //Context Api added
@@ -394,14 +394,14 @@ const Pages = () => {
           )}
         ></Route>
         <Route //Context Api added
-  exact
-  path={`${process.env.PUBLIC_URL}/Buying/:id`}
-  render={() => (
-    <UserContextProvider>
-      <BuyingDetails />
-    </UserContextProvider>
-  )}
-/>
+        exact
+        path={`${process.env.PUBLIC_URL}/Buying/:id`}
+        render={() => (
+          <UserContextProvider>
+            <BuyingDetails />
+          </UserContextProvider>
+        )}
+      />
          <Route //Context Api added
           exact
           path={`${process.env.PUBLIC_URL}/Material-request`}
@@ -477,6 +477,7 @@ const Pages = () => {
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/vehicle/:id`} component={VehicleDetails}></Route>
         <Route exact path={`${process.env.PUBLIC_URL}/staff/:id`} component={StaffDetails}></Route>
+       
         <Route exact path={`${process.env.PUBLIC_URL}/customer/:id`} component={CustomerDetails}></Route>
         
         <Route // context api added
