@@ -21,7 +21,7 @@ import Success from "./pages/auth/Success";
 import InvoicePrint from "./pages/pre-built/invoice/InvoicePrint";
 import BillInvoice from "./pages/pre-built/invoice/BillInvoice";
 import KochaiPrint from "./pages/pre-built/invoice/KochaiPrint";
-
+import PrintInvoice from "./pages/pre-built/user-manage/PrintInvoice"
 const App = () => {
   return (
     <Switch>
@@ -41,7 +41,7 @@ const App = () => {
       <Route exact path={`${process.env.PUBLIC_URL}/invoice-print`} component={InvoicePrint}></Route>
       <Route exact path={`${process.env.PUBLIC_URL}/billPrint`} component={BillInvoice}></Route>
       <Route exact path={`${process.env.PUBLIC_URL}/printInvoice`} component={KochaiPrint}></Route>
-
+      <Route exact path={`${process.env.PUBLIC_URL}/print-invoice`} component={PrintInvoice}></Route>
       {/*Error Pages*/}
       <Route exact path={`${process.env.PUBLIC_URL}/errors/404-classic`} component={Error404Classic}></Route>
       <Route exact path={`${process.env.PUBLIC_URL}/errors/504-modern`} component={Error504Modern}></Route>
