@@ -213,7 +213,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered" size="lg">
+    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered " size="lg">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -324,7 +324,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                         onClick={() => setUseNewGroup(true)}
                         disabled={loading}
                       >
-                        + New
+                        +
                       </Button>
                     </div>
                   ) : (
@@ -471,7 +471,7 @@ const SupplierFormModal = ({ isOpen, mode, initialData, onClose, onSave, existin
                         backgroundColor: "#4B5694",
                         borderColor: "#800000",
                         color: "#fff",
-                        padding: "6px 20px",
+                        padding: "8px 20px",
                       }}
                       size="md"
                       type="submit"
@@ -511,8 +511,8 @@ const Suppliers = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [onSearch, setOnSearch] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("All");   // string value
-  const [groupFilter, setGroupFilter] = useState("All");     // string value
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [groupFilter, setGroupFilter] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -527,7 +527,6 @@ const Suppliers = () => {
     return [...new Set(groups)].sort();
   }, [suppliers]);
 
-  // Options for group filter dropdown (including "All")
   const groupFilterOptions = useMemo(() => {
     return [
       { value: "All", label: "All Groups" },
@@ -535,7 +534,6 @@ const Suppliers = () => {
     ];
   }, [availableGroups]);
 
-  // Selected option objects for RSelect
   const selectedStatusFilter = statusFilterOptions.find(opt => opt.value === statusFilter);
   const selectedGroupFilter = groupFilterOptions.find(opt => opt.value === groupFilter);
 
@@ -679,8 +677,6 @@ const Suppliers = () => {
     setCurrentPage(1);
   };
 
-  const statusColor = (status) => (status === "Enabled" ? "success" : "danger");
-
   const handleNameClick = (supplier) => {
     history.push(`/Suppliers/${supplier._id}`, { supplier });
   };
@@ -690,7 +686,6 @@ const Suppliers = () => {
   const currentSuppliers = suppliers.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(suppliers.length / itemPerPage);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, groupFilter]);
@@ -711,7 +706,6 @@ const Suppliers = () => {
                   className="btn-icon"
                   style={{
                     backgroundColor: "#4B5694",
-                   
                     color: "#fff",
                   }}
                   onClick={handleAdd}
@@ -843,9 +837,9 @@ const Suppliers = () => {
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: "#2563eb",
+                                  color: "#4a568c",
                                   cursor: "pointer",
-                                  fontWeight: 600,
+                                  fontWeight: 500,
                                   padding: 0,
                                   fontSize: "inherit",
                                 }}
@@ -855,13 +849,10 @@ const Suppliers = () => {
                             </td>
                             <td className="px-4 py-2 text-center">
                               <span
-                                className={`badge bg-${statusColor(supplier.status)}`}
                                 style={{
-                                  padding: "6px 12px",
-                                  borderRadius: "12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  color: "white",
+                                  color: supplier.status === "Enabled" ? "#10b981" : "#ef4444",
+                                  fontWeight: "600",
+                                  fontSize: "13px"
                                 }}
                               >
                                 {supplier.status}

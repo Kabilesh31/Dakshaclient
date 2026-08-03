@@ -36,6 +36,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api`;
 const BRAND = "#4B5694";
+const AVATAR_COLOR = "#4d598e";
 
 const StaffAttendance = () => {
   const history = useHistory();
@@ -171,6 +172,10 @@ const StaffAttendance = () => {
       console.error("Error fetching sites:", error);
     }
   };
+const siteOptionsForModal = sites.map(site => ({
+  value: site._id,
+  label: `${site.name}${site.location ? ` - ${site.location}` : ''}`
+}));
 
   const fetchEmployeeAttendance = async (employeeId) => {
     try {
@@ -378,39 +383,39 @@ const StaffAttendance = () => {
     setCurrentPage(1);
   };
 
-  const getStatusBadge = (employeeId) => {
+  // Status as text with colors (no badges)
+  const getStatusText = (employeeId) => {
     const todayAtt = attendanceData[employeeId]?.[currentDate];
 
     if (todayAtt?.checkOutTime) {
-      return (
-        <span
-          className="badge bg-danger text-white"
-          style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
-        >
-          Checked Out
-        </span>
-      );
+      return {
+        text: "Checked Out",
+        color: "#ef4444"
+      };
     }
 
     if (todayAtt?.checkInTime) {
-      return (
-        <span
-          className="badge bg-warning text-white"
-          style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
-        >
-          Working
-        </span>
-      );
+      return {
+        text: "Working",
+        color: "#f59e0b"
+      };
     }
 
-    return (
-      <span
-        className="badge bg-success text-white"
-        style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "12px" }}
-      >
-        Not Checked In
-      </span>
-    );
+    return {
+      text: "Not Checked In",
+      color: "#10b981"
+    };
+  };
+
+  // Helper function to get initials
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map(word => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   // Custom styles for RSelect
@@ -618,89 +623,106 @@ const StaffAttendance = () => {
               <DataTableRow><span className="sub-text fw-bold">Actions</span></DataTableRow>
             </DataTableHead>
 
-            {currentItems.map((emp, index) => (
-              <DataTableItem key={emp.id}>
-                <DataTableRow>{index + 1 + (currentPage - 1) * itemPerPage}</DataTableRow>
-                <DataTableRow>
-                  <div 
-                    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
-                    onClick={() => handleEmployeeClick(emp)}
-                  >
-                    <div
-                      style={{
-                        width: "26px",
-                        height: "26px",
-                        borderRadius: "50%",
-                        background: "#644634",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "bold",
-                        fontSize: "10px",
-                      }}
+            {currentItems.map((emp, index) => {
+              const status = getStatusText(emp.id);
+              const todayAtt = attendanceData[emp.id]?.[currentDate];
+              const isCheckedIn = !!todayAtt?.checkInTime;
+              const isCheckedOut = !!todayAtt?.checkOutTime;
+              
+              return (
+                <DataTableItem key={emp.id}>
+                  <DataTableRow>{index + 1 + (currentPage - 1) * itemPerPage}</DataTableRow>
+                  <DataTableRow>
+                    <div 
+                      style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                      onClick={() => handleEmployeeClick(emp)}
                     >
-                      {emp.name?.charAt(0).toUpperCase()}
+                      <div
+                        style={{
+                          width: "26px",
+                          height: "26px",
+                          borderRadius: "50%",
+                          background: AVATAR_COLOR,
+                          color: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "bold",
+                          fontSize: "10px",
+                        }}
+                      >
+                        {getInitials(emp.name)}
+                      </div>
+                      <span className="fw-bold" style={{ color: BRAND, cursor: "pointer" }}>
+                        {emp.name}
+                      </span>
                     </div>
-                    <span className="fw-bold" style={{ color: BRAND, cursor: "pointer" }}>
-                      {emp.name}
+                  </DataTableRow>
+                  <DataTableRow>
+                    <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px" }} className="fw-bold">
+                      {emp.role || "N/A"}
                     </span>
-                  </div>
-                </DataTableRow>
-                <DataTableRow>
-                  <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px" }} className="fw-bold">
-                    {emp.role || "N/A"}
-                  </span>
-                </DataTableRow>
-                <DataTableRow>
-                  {attendanceData[emp.id]?.[currentDate]?.siteName || emp.site || "Not Assigned"}
-                </DataTableRow>
-                <DataTableRow>₹{emp.salary || 0}</DataTableRow>
-                <DataTableRow>{getStatusBadge(emp.id)}</DataTableRow>
-                <DataTableRow>
-                  <div style={{ display: "flex", gap: "6px", justifyContent: "flex-start" }}>
-                    <button
-                      onClick={() => openCheckInModal(emp)}
-                      disabled={!!attendanceData[emp.id]?.[currentDate]?.checkInTime}
+                  </DataTableRow>
+                  <DataTableRow>
+                    {attendanceData[emp.id]?.[currentDate]?.siteName || emp.site || "Not Assigned"}
+                  </DataTableRow>
+                  <DataTableRow>₹{emp.salary || 0}</DataTableRow>
+                  <DataTableRow>
+                    <span
                       style={{
-                        padding: "4px 12px",
-                        background: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "#6c757d" : "#28a745",
-                        border: "none",
-                        borderRadius: "6px",
-                        color: "#fff",
-                        fontSize: "12px",
-                        cursor: attendanceData[emp.id]?.[currentDate]?.checkInTime ? "not-allowed" : "pointer",
-                        opacity: attendanceData[emp.id]?.[currentDate]?.checkInTime ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
+                        color: status.color,
+                        fontWeight: 600,
+                        fontSize: "13px"
                       }}
                     >
-                      <Icon name="log-in" size={12} /> Check In
-                    </button>
-                    <button
-                      onClick={() => openCheckOutModal(emp)}
-                      disabled={!attendanceData[emp.id]?.[currentDate]?.checkInTime || !!attendanceData[emp.id]?.[currentDate]?.checkOutTime}
-                      style={{
-                        padding: "4px 12px",
-                        background: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "#6c757d" : "#dc3545",
-                        border: "none",
-                        borderRadius: "6px",
-                        color: "#fff",
-                        fontSize: "12px",
-                        cursor: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? "not-allowed" : "pointer",
-                        opacity: !attendanceData[emp.id]?.[currentDate]?.checkInTime || attendanceData[emp.id]?.[currentDate]?.checkOutTime ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                      }}
-                    >
-                      <Icon name="log-out" size={12} /> Check Out
-                    </button>
-                  </div>
-                </DataTableRow>
-              </DataTableItem>
-            ))}
+                      {status.text}
+                    </span>
+                  </DataTableRow>
+                  <DataTableRow>
+                    <div style={{ display: "flex", gap: "6px", justifyContent: "flex-start" }}>
+                      <button
+                        onClick={() => openCheckInModal(emp)}
+                        disabled={isCheckedIn}
+                        style={{
+                          padding: "4px 12px",
+                          background: isCheckedIn ? "#6c757d" : "#10b981",
+                          border: "none",
+                          borderRadius: "6px",
+                          color: "#fff",
+                          fontSize: "12px",
+                          cursor: isCheckedIn ? "not-allowed" : "pointer",
+                          opacity: isCheckedIn ? 0.6 : 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <Icon name="log-in" size={12} /> Check In
+                      </button>
+                      <button
+                        onClick={() => openCheckOutModal(emp)}
+                        disabled={!isCheckedIn || isCheckedOut}
+                        style={{
+                          padding: "4px 12px",
+                          background: !isCheckedIn || isCheckedOut ? "#6c757d" : "#ef4444",
+                          border: "none",
+                          borderRadius: "6px",
+                          color: "#fff",
+                          fontSize: "12px",
+                          cursor: !isCheckedIn || isCheckedOut ? "not-allowed" : "pointer",
+                          opacity: !isCheckedIn || isCheckedOut ? 0.6 : 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <Icon name="log-out" size={12} /> Check Out
+                      </button>
+                    </div>
+                  </DataTableRow>
+                </DataTableItem>
+              );
+            })}
           </DataTableBody>
 
           <div className="card-inner">
@@ -720,74 +742,90 @@ const StaffAttendance = () => {
 
       {/* Check-In Modal */}
       <Modal 
-        isOpen={checkInModal} 
-        toggle={() => setCheckInModal(false)} 
-        centered
-        style={{ maxHeight: "90vh" }}
-      >
-        <ModalHeader toggle={() => setCheckInModal(false)}>
-          <div>
-            <h5 style={{ fontWeight: 600, margin: 0 }}>Check In</h5>
-            <p style={{ fontSize: "13px", color: "#666", margin: "4px 0 0" }}>
-              {selectedEmployeeForAction?.name} - {selectedEmployeeForAction?.role}
-            </p>
-          </div>
-        </ModalHeader>
-        <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
-          <FormGroup>
-            <Label for="siteSelect">Select Site *</Label>
-            <Input
-              type="select"
-              id="siteSelect"
-              value={selectedSite}
-              onChange={handleSiteChange}
-              style={{ borderRadius: "8px" }}
-            >
-              <option value="">Select a site...</option>
-              {sites.map((site) => (
-                <option key={site._id} value={site._id}>
-                  {site.name} - {site.location || ""}
-                </option>
-              ))}
-            </Input>
-          </FormGroup>
+  isOpen={checkInModal} 
+  toggle={() => setCheckInModal(false)} 
+  centered
+  style={{ maxHeight: "90vh" }}
+>
+  <ModalHeader toggle={() => setCheckInModal(false)}>
+    <div>
+      <h5 style={{ fontWeight: 600, margin: 0 }}>Check In</h5>
+      <p style={{ fontSize: "13px", color: "#666", margin: "4px 0 0" }}>
+        {selectedEmployeeForAction?.name} - {selectedEmployeeForAction?.role}
+      </p>
+    </div>
+  </ModalHeader>
+  <ModalBody style={{ maxHeight: "60vh", overflowY: "auto" }}>
+    <FormGroup>
+      <Label for="siteSelect">Select Site *</Label>
+      <RSelect
+        options={siteOptionsForModal}
+        value={siteOptionsForModal.find(opt => opt.value === selectedSite) || null}
+        onChange={(opt) => {
+          if (opt) {
+            setSelectedSite(opt.value);
+            const site = sites.find(s => s._id === opt.value);
+            setSelectedSiteName(site ? site.name : "");
+          } else {
+            setSelectedSite("");
+            setSelectedSiteName("");
+          }
+        }}
+        placeholder="Select a site..."
+        isClearable={true}
+        styles={{
+          ...selectStyles,
+          control: (base) => ({
+            ...base,
+            minHeight: '38px',
+            borderColor: selectedSite ? '#10b981' : '#e8e4e0',
+            '&:hover': {
+              borderColor: selectedSite ? '#10b981' : '#e8e4e0',
+            },
+            boxShadow: selectedSite ? '0 0 0 1px #10b981' : 'none',
+            cursor: 'pointer',
+            borderRadius: '8px',
+          }),
+        }}
+        classNamePrefix="react-select"
+      />
+    </FormGroup>
 
-          <div style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", marginTop: "10px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-              <span style={{ color: "#666" }}>Date:</span>
-              <span style={{ fontWeight: 600 }}>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px" }}>
-              <span style={{ color: "#666" }}>Time:</span>
-              <span style={{ fontWeight: 600 }}>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px" }}>
-              <span style={{ color: "#666" }}>Daily Wage:</span>
-              <span style={{ fontWeight: 600, color: "#644634" }}>₹{selectedEmployeeForAction?.salary || 0}</span>
-            </div>
-            {selectedSiteName && (
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px", paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
-                <span style={{ color: "#666" }}>Selected Site:</span>
-                <span style={{ fontWeight: 600, color: "#28a745" }}>{selectedSiteName}</span>
-              </div>
-            )}
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onClick={() => setCheckInModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            color="success"
-            onClick={handleCheckIn}
-            disabled={checkInLoading || !selectedSite}
-            style={{ background: "#28a745", borderColor: "#28a745" }}
-          >
-            {checkInLoading ? <Spinner size="sm" /> : "Check In"}
-          </Button>
-        </ModalFooter>
-      </Modal>
-
+    <div style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", marginTop: "10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+        <span style={{ color: "#666" }}>Date:</span>
+        <span style={{ fontWeight: 600 }}>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px" }}>
+        <span style={{ color: "#666" }}>Time:</span>
+        <span style={{ fontWeight: 600 }}>{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px" }}>
+        <span style={{ color: "#666" }}>Daily Wage:</span>
+        <span style={{ fontWeight: 600, color: "#644634" }}>₹{selectedEmployeeForAction?.salary || 0}</span>
+      </div>
+      {selectedSiteName && (
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginTop: "4px", paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
+          <span style={{ color: "#666" }}>Selected Site:</span>
+          <span style={{ fontWeight: 600, color: "#10b981" }}>{selectedSiteName}</span>
+        </div>
+      )}
+    </div>
+  </ModalBody>
+  <ModalFooter>
+    <Button color="secondary" onClick={() => setCheckInModal(false)}>
+      Cancel
+    </Button>
+    <Button
+      color="success"
+      onClick={handleCheckIn}
+      disabled={checkInLoading || !selectedSite}
+      style={{ background: "#10b981", borderColor: "#10b981" }}
+    >
+      {checkInLoading ? <Spinner size="sm" /> : "Check In"}
+    </Button>
+  </ModalFooter>
+</Modal>
       {/* Check-Out Modal */}
       <Modal 
         isOpen={checkOutModal} 
@@ -928,7 +966,7 @@ const StaffAttendance = () => {
             color="danger"
             onClick={handleCheckOut}
             disabled={checkOutLoading || !dailySalary}
-            style={{ background: "#dc3545", borderColor: "#dc3545" }}
+            style={{ background: "#ef4444", borderColor: "#ef4444" }}
           >
             {checkOutLoading ? <Spinner size="sm" /> : "Confirm Check Out"}
           </Button>

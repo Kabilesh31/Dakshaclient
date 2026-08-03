@@ -27,8 +27,10 @@ import {
   DataTableRow,
   DataTableItem,
   Button,
+  RSelect,
 } from "../../../components/Component";
 import axios from "axios";
+import { Padding } from "@mui/icons-material";
 
 const API_URL = `${process.env.REACT_APP_BACKENDURL}/api`;
 
@@ -60,18 +62,79 @@ const S = {
     padding: "6px 20px",
   },
   quoteLink: { cursor: "pointer", color: "#3b82f6", fontWeight: 500 },
-  badge: (status) => ({
-    padding: "4px 10px",
-    color: "white",
-    borderRadius: "14px",
-    background:
+  // Status text styles - removed badge, using text only
+  statusText: (status) => ({
+    fontWeight: 600,
+    fontSize: "13px",
+    color:
       status === "Approved"
-        ? "#28a745"
+        ? "#10b981"
         : status === "Sent"
-        ? "#ffc107"
+        ? "#f59e0b"
         : status === "Draft"
-        ? "#dc3545"
-        : "#6c757d",
+        ? "#6b7280"
+        : status === "Rejected"
+        ? "#ef4444"
+        : "#6b7280",
+  }),
+};
+
+// Status options for RSelect
+const statusOptions = [
+  { value: "Draft", label: "Draft" },
+  { value: "Sent", label: "Sent" },
+  { value: "Approved", label: "Approved" },
+  { value: "Rejected", label: "Rejected" },
+];
+
+// Custom styles for RSelect
+const selectStyles = {
+  control: (base) => ({
+    ...base,
+    minHeight: '38px',
+    borderColor: '#e8e4e0',
+    '&:hover': {
+      borderColor: '#e8e4e0',
+    },
+    boxShadow: 'none',
+    cursor: 'pointer',
+    borderRadius: '6px',
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? '#4B5694' : state.isFocused ? '#f0f0f0' : 'transparent',
+    color: state.isSelected ? '#fff' : '#333',
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: state.isSelected ? '#4B5694' : '#f0f0f0',
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 999,
+    marginTop: '4px',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  }),
+  menuList: (base) => ({
+    ...base,
+    maxHeight: '200px',
+    borderRadius: '6px',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#6c757d',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: '#1a1a2e',
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: '#6c757d',
+    '&:hover': {
+      color: '#1a1a2e',
+    },
   }),
 };
 
@@ -88,227 +151,237 @@ const QuotationForm = ({
   saveQuotation,
   onFormCancel,
   isEditMode,
-}) => (
-  <div className="mt-4">
-    {/* Customer Details */}
-    {/* <h6 className="mb-3">Customer Details</h6> */}
-    <div className="row gy-3 mb-4">
-      {[
-        { label: "Client Name *", field: "name", type: "text", placeholder: "Enter client name", col: "col-md-6" },
-        { label: "Contact Person *", field: "contactPerson", type: "text", placeholder: "Contact person", col: "col-md-6" },
-        { label: "Phone *", field: "phone", type: "tel", placeholder: "Phone number", col: "col-md-6" },
-        { label: "Alternate Phone", field: "altPhone", type: "tel", placeholder: "Alternate phone", col: "col-md-6" },
-        { label: "Email", field: "email", type: "email", placeholder: "Email address", col: "col-md-6" },
-        { label: "GST Number", field: "gst", type: "text", placeholder: "GSTIN", col: "col-md-6" },
-      ].map(({ label, field, type, placeholder, col }) => (
-        <div className={col} key={field}>
+}) => {
+  // Find selected status object for RSelect
+  const selectedStatus = statusOptions.find(opt => opt.value === formData.status);
+
+  // Handle status change
+  const handleStatusChange = (option) => {
+    if (option) {
+      setFormData((p) => ({ ...p, status: option.value }));
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      {/* Customer Details */}
+      <div className="row gy-3 mb-4">
+        {[
+          { label: "Client Name *", field: "name", type: "text", placeholder: "Enter client name", col: "col-md-6" },
+          { label: "Contact Person *", field: "contactPerson", type: "text", placeholder: "Contact person", col: "col-md-6" },
+          { label: "Phone *", field: "phone", type: "tel", placeholder: "Phone number", col: "col-md-6" },
+          { label: "Alternate Phone", field: "altPhone", type: "tel", placeholder: "Alternate phone", col: "col-md-6" },
+          { label: "Email", field: "email", type: "email", placeholder: "Email address", col: "col-md-6" },
+          { label: "GST Number", field: "gst", type: "text", placeholder: "GSTIN", col: "col-md-6" },
+        ].map(({ label, field, type, placeholder, col }) => (
+          <div className={col} key={field}>
+            <FormGroup>
+              <label className="form-label">{label}</label>
+              <input
+                className="form-control"
+                type={type}
+                value={formData.client[field]}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, client: { ...p.client, [field]: e.target.value } }))
+                }
+                placeholder={placeholder}
+              />
+            </FormGroup>
+          </div>
+        ))}
+        <div className="col-12">
           <FormGroup>
-            <label className="form-label">{label}</label>
-            <input
+            <label className="form-label">Address</label>
+            <textarea
               className="form-control"
-              type={type}
-              value={formData.client[field]}
+              rows="2"
+              value={formData.client.address}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, client: { ...p.client, [field]: e.target.value } }))
+                setFormData((p) => ({ ...p, client: { ...p.client, address: e.target.value } }))
               }
-              placeholder={placeholder}
+              placeholder="Complete address"
             />
           </FormGroup>
         </div>
-      ))}
-      <div className="col-12">
-        <FormGroup>
-          <label className="form-label">Address</label>
-          <textarea
-            className="form-control"
-            rows="2"
-            value={formData.client.address}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, client: { ...p.client, address: e.target.value } }))
-            }
-            placeholder="Complete address"
-          />
-        </FormGroup>
       </div>
-    </div>
 
-    {/* Item Entry - Boxed Section with Labels */}
-    <h6 className="mb-2 mt-2">Items</h6>
-    <div
-      className="item-entry-box"
-      style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: "12px",
-        padding: "1rem",
-        background: "#fafcff",
-        marginBottom: "1.5rem",
-      }}
-    >
-      <div className="row g-3 align-items-end">
-        <div className="col-md-5">
-          <label className="form-label">Item Name</label>
-          <input
-            className="form-control"
-            type="text"
-            value={newItem.name}
-            onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
-            placeholder="e.g., Cement, Steel, Labour"
-          />
-        </div>
-        <div className="col-md-3">
-          <label className="form-label">Price (₹)</label>
-          <input
-            className="form-control"
-            type="number"
-            value={newItem.price}
-            onChange={(e) => setNewItem((p) => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
-            placeholder="Price per unit"
-          />
-        </div>
-        <div className="col-md-2">
-          <label className="form-label">Quantity</label>
-          <input
-            className="form-control"
-            type="number"
-            value={newItem.quantity}
-            onChange={(e) => setNewItem((p) => ({ ...p, quantity: parseInt(e.target.value) || 1 }))}
-            placeholder="Qty"
-          />
-        </div>
-        <div className="col-md-2">
-          <Button color="primary" onClick={handleAddItem} block style={{ marginTop: "0" }}>
-            <Icon name="plus" /> Add
-          </Button>
+      {/* Item Entry - Boxed Section with Labels */}
+      <h6 className="mb-2 mt-2">Items</h6>
+      <div
+        className="item-entry-box"
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          padding: "1rem",
+          background: "#fafcff",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div className="row g-3 align-items-end">
+          <div className="col-md-5">
+            <label className="form-label">Item Name</label>
+            <input
+              className="form-control"
+              type="text"
+              value={newItem.name}
+              onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
+              placeholder="e.g., Cement, Steel, Labour"
+            />
+          </div>
+          <div className="col-md-3">
+            <label className="form-label">Price (₹)</label>
+            <input
+              className="form-control"
+              type="number"
+              value={newItem.price}
+              onChange={(e) => setNewItem((p) => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+              placeholder="Price per unit"
+            />
+          </div>
+          <div className="col-md-2">
+            <label className="form-label">Quantity</label>
+            <input
+              className="form-control"
+              type="number"
+              value={newItem.quantity}
+              onChange={(e) => setNewItem((p) => ({ ...p, quantity: parseInt(e.target.value) || 1 }))}
+              placeholder="Qty"
+            />
+          </div>
+          <div className="col-md-2">
+            <Button color="primary" onClick={handleAddItem} block style={{ Padding: "-2" }}>
+               Add
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Existing Item List */}
-    {formData.lineItems.length > 0 && (
-      <div className="table-responsive mb-4">
-        <table className="table table-bordered table-sm">
-          <thead>
-            <tr>
-              <th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {formData.lineItems.map((item, idx) => (
-              <tr key={item.id}>
-                <td>{idx + 1}</td>
-                <td>{item.name}</td>
-                <td>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={item.price}
-                    onChange={(e) => updateLineItemPrice(item.id, parseFloat(e.target.value) || 0)}
-                    style={{ width: "100px" }}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItemQuantity(item.id, parseInt(e.target.value) || 1)}
-                    style={{ width: "80px" }}
-                  />
-                </td>
-                <td>₹{(item.price * item.quantity).toLocaleString()}</td>
-                <td>
-                  <Button color="danger" size="sm" onClick={() => removeLineItem(item.id)}>
-                    <Icon name="trash" />
-                  </Button>
-                </td>
+      {/* Existing Item List - Fixed the conditional rendering */}
+      {formData.lineItems.length > 0 && (
+        <div className="table-responsive mb-4">
+          <table className="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-
-    {/* Discount, Status, Notes */}
-    <div className="row gy-3 mb-4">
-      <div className="col-md-6">
-        <FormGroup>
-          <label className="form-label">Discount (₹)</label>
-          <input
-            className="form-control"
-            type="number"
-            value={formData.discount}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, discount: parseFloat(e.target.value) || 0 }))
-            }
-          />
-        </FormGroup>
-      </div>
-      <div className="col-md-6">
-        <FormGroup>
-          <label className="form-label">Status</label>
-          <select
-            className="form-control"
-            value={formData.status}
-            onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
-          >
-            <option value="Draft">Draft</option>
-            <option value="Sent">Sent</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-        </FormGroup>
-      </div>
-      <div className="col-12">
-        <FormGroup>
-          <label className="form-label">Notes</label>
-          <textarea
-            className="form-control"
-            rows="2"
-            value={formData.notes}
-            onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
-            placeholder="Additional notes..."
-          />
-        </FormGroup>
-      </div>
-    </div>
-
-    {/* Totals Box */}
-    <div style={S.totalsBox}>
-      <div className="d-flex justify-content-between mb-1">
-        <span>Subtotal:</span>
-        <span>₹{formData.subtotal?.toLocaleString() || 0}</span>
-      </div>
-      {formData.discount > 0 && (
-        <div className="d-flex justify-content-between mb-1 text-danger">
-          <span>Discount:</span>
-          <span>- ₹{formData.discount.toLocaleString()}</span>
+            </thead>
+            <tbody>
+              {formData.lineItems.map((item, idx) => (
+                <tr key={item.id}>
+                  <td>{idx + 1}</td>
+                  <td>{item.name}</td>
+                  <td>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm"
+                      value={item.price}
+                      onChange={(e) => updateLineItemPrice(item.id, parseFloat(e.target.value) || 0)}
+                      style={{ width: "100px" }}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm"
+                      value={item.quantity}
+                      onChange={(e) => updateLineItemQuantity(item.id, parseInt(e.target.value) || 1)}
+                      style={{ width: "80px" }}
+                    />
+                  </td>
+                  <td>₹{(item.price * item.quantity).toLocaleString()}</td>
+                  <td>
+                    <Button color="danger" size="sm" onClick={() => removeLineItem(item.id)}>
+                      <Icon name="trash" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-      <div className="d-flex justify-content-between pt-2 border-top">
-        <strong>Grand Total:</strong>
-        <strong style={S.grandTotalValue}>₹{formData.totalAfterDiscount?.toLocaleString() || 0}</strong>
-      </div>
-    </div>
 
-    {/* Action Buttons */}
-    <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2 mt-4">
-      <li>
-        <Button style={S.saveBtn} size="md" onClick={saveQuotation}>
-          {isEditMode ? "Update Quotation" : "Add Quotation"}
-        </Button>
-      </li>
-      <li>
-        <a
-          href="#cancel"
-          onClick={(ev) => { ev.preventDefault(); onFormCancel(); }}
-          className="link link-light"
-        >
-          Cancel
-        </a>
-      </li>
-    </ul>
-  </div>
-);
+      {/* Discount, Status, Notes */}
+      <div className="row gy-3 mb-4">
+        <div className="col-md-6">
+          <FormGroup>
+            <label className="form-label">Discount (₹)</label>
+            <input
+              className="form-control"
+              type="number"
+              value={formData.discount}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, discount: parseFloat(e.target.value) || 0 }))
+              }
+            />
+          </FormGroup>
+        </div>
+        <div className="col-md-6">
+          <FormGroup>
+            <label className="form-label">Status</label>
+            <RSelect
+              options={statusOptions}
+              value={selectedStatus}
+              onChange={handleStatusChange}
+              placeholder="Select Status"
+              isClearable={false}
+              classNamePrefix="react-select"
+              styles={selectStyles}
+            />
+          </FormGroup>
+        </div>
+        <div className="col-12">
+          <FormGroup>
+            <label className="form-label">Notes</label>
+            <textarea
+              className="form-control"
+              rows="2"
+              value={formData.notes}
+              onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
+              placeholder="Additional notes..."
+            />
+          </FormGroup>
+        </div>
+      </div>
+
+      {/* Totals Box */}
+      <div style={S.totalsBox}>
+        <div className="d-flex justify-content-between mb-1">
+          <span>Subtotal:</span>
+          <span>₹{formData.subtotal?.toLocaleString() || 0}</span>
+        </div>
+        {formData.discount > 0 && (
+          <div className="d-flex justify-content-between mb-1 text-danger">
+            <span>Discount:</span>
+            <span>- ₹{formData.discount.toLocaleString()}</span>
+          </div>
+        )}
+        <div className="d-flex justify-content-between pt-2 border-top">
+          <strong>Grand Total:</strong>
+          <strong style={S.grandTotalValue}>₹{formData.totalAfterDiscount?.toLocaleString() || 0}</strong>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2 mt-6">
+        <li className="mt-2">
+          <Button style={S.saveBtn}  size="md" onClick={saveQuotation}>
+            {isEditMode ? "Update Quotation" : "Add Quotation"}
+          </Button>
+        </li>
+        <li className="mt-2">
+          <a
+            href="#cancel"
+            onClick={(ev) => { ev.preventDefault(); onFormCancel(); }}
+            className="link link-light"
+          >
+            Cancel
+          </a>
+        </li>
+      </ul>
+    </div>
+  );
+};
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 const Quotation = () => {
@@ -692,14 +765,12 @@ const Quotation = () => {
               {currentItems.length > 0
                 ? currentItems.map((quote, index) => (
                     <DataTableItem key={quote._id}>
-                   
                       <DataTableRow className="nk-tb-col-check" />
-                       <DataTableRow size="md">
+                      <DataTableRow size="md">
                         <span>{index + 1}</span>
                       </DataTableRow>
                       <DataTableRow>
                         <div className="user-card">
-                          {/* <UserAvatar text={getInitials(quote.client.name)} className="sm" /> */}
                           <div className="user-info">
                             <span className="tb-lead">{quote.client.name}</span>
                             <span className="tb-sub">{quote.client.contactPerson}</span>
@@ -723,7 +794,9 @@ const Quotation = () => {
                         <span>₹{quote.totalAfterDiscount?.toLocaleString()}</span>
                       </DataTableRow>
                       <DataTableRow>
-                        <span style={S.badge(quote.status)}>{quote.status}</span>
+                        <span style={S.statusText(quote.status)}>
+                          {quote.status}
+                        </span>
                       </DataTableRow>
                       <DataTableRow className="nk-tb-col-tools">
                         <ul className="nk-tb-actions gx-1">
@@ -824,7 +897,9 @@ const Quotation = () => {
                     <p>
                       Date: {new Date(selectedQuotation.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
                     </p>
-                    <span style={S.badge(selectedQuotation.status)}>{selectedQuotation.status}</span>
+                    <span style={S.statusText(selectedQuotation.status)}>
+                      {selectedQuotation.status}
+                    </span>
                   </div>
                 </div>
 

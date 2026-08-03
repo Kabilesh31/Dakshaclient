@@ -17,30 +17,37 @@ const Sidebar = ({ fixed, theme, className, sidebarToggle, mobileView, ...props 
   const handleMouseEnter = () => setMouseEnter(true);
   const handleMouseLeave = () => setMouseEnter(false);
 
-const classes = classNames({
-  "nk-sidebar": true,
-  "custom-sidebar": true, // 👈 add this
-  "nk-sidebar-fixed": fixed,
-  "is-compact": collapseSidebar,
-  "has-hover": collapseSidebar && mouseEnter,
-  [`is-light`]: theme === "white",
-  [`is-${theme}`]: theme !== "white" && theme !== "light",
-  [`${className}`]: className,
-});
+  const classes = classNames({
+    "nk-sidebar": true,
+    "custom-sidebar": true,
+    "nk-sidebar-fixed": fixed,
+    "is-compact": collapseSidebar,
+    "has-hover": collapseSidebar && mouseEnter,
+    [`is-light`]: theme === "white",
+    [`is-${theme}`]: theme !== "white" && theme !== "light",
+    [`${className}`]: className,
+  });
+
   return (
     <div className={classes}>
       <div className="nk-sidebar-element nk-sidebar-head">
         <div className="nk-menu-trigger">
-          <Toggle className="nk-nav-toggle nk-quick-nav-icon d-xl-none mr-n2" icon="arrow-left" click={sidebarToggle} />
-          <Toggle
-            className={`nk-nav-compact nk-quick-nav-icon d-none d-xl-inline-flex ${
-              collapseSidebar ? "compact-active" : ""
-            }`}
-            click={toggleCollapse}
-            icon="menu"
+          {/* Always visible toggle for mobile */}
+          <Toggle 
+            className="nk-nav-toggle nk-quick-nav-icon d-xl-none mr-n2" 
+            icon="arrow-left" 
+            click={sidebarToggle} 
           />
+          {/* Always visible toggle for desktop */}
+         <Toggle
+  className={`nk-nav-compact nk-quick-nav-icon d-none d-xl-inline-flex always-visible-menu ${
+    collapseSidebar ? "compact-active" : ""
+  }`}
+  click={toggleCollapse}
+  icon="menu"
+/>
         </div>
-        <div className="nk-sidebar-brand">
+        <div className="nk-sidebar-brand ml-1">
           <Logo />
         </div>
       </div>
@@ -52,4 +59,5 @@ const classes = classNames({
     </div>
   );
 };
+
 export default Sidebar;

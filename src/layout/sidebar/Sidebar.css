@@ -3,7 +3,8 @@
   background: #000000 !important; /* Black background for the whole sidebar */
   border: none !important; /* Remove any border */
   border-right: none !important; /* Remove right border if any */
-  box-shadow: none !important; /* Remove any shadow that might look like a border */
+  box-shadow: none !important;
+ 
 }
 
 /* Make the header (logo area) white */
@@ -18,6 +19,8 @@
 .nk-sidebar-content {
   background: linear-gradient(135deg, #293b75 0%, #4f5a8f 50%, #39435e 100%) !important;
   border: none !important; /* Remove any border */
+  /* Optional: Add some spacing between menu items */
+   /* Optional: Add some padding */
 }
 
 /* Remove border from the entire sidebar element */
@@ -62,4 +65,38 @@
 
 .nk-sidebar-brand .logo-icon {
   color: #000000 !important;
+}
+/* Always keep desktop menu button visible */
+/* Always show the menu button without changing its position */
+.always-visible-menu,
+.nk-sidebar .always-visible-menu,
+.nk-sidebar.is-compact .always-visible-menu,
+.nk-sidebar.has-hover .always-visible-menu {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Icon color */
+.always-visible-menu .icon,
+.always-visible-menu em {
+  color: #747171 !important;
+}
+/* Default icon color */
+.always-visible-menu em,
+.always-visible-menu .icon {
+  color: #5e5b5b !important;
+}
+
+/* Hover background */
+.always-visible-menu:hover {
+  background-color: #f3f4f6 !important; /* Change to your preferred color */
+  border-radius: 4px;
+}
+
+/* Hover icon color */
+.always-visible-menu:hover em,
+.always-visible-menu:hover .icon {
+  color: #da8823 !important; /* Orange */
 }

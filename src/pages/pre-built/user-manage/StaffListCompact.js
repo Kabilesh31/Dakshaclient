@@ -384,6 +384,17 @@ const StaffListCompact = () => {
     saveAs(blob, "Staff_List.xlsx");
   };
 
+  // Helper function to get initials
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map(word => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   /* ================= UI ================= */
   return (
     <React.Fragment>
@@ -597,16 +608,36 @@ const StaffListCompact = () => {
                 <DataTableItem key={item._id}>
                   <DataTableRow>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <img
-                        src={item.img ? item.img : "/default-avatar.png"}
-                        alt="profile"
-                        style={{
-                          width: "30px",
-                          height: "30px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
+                      {item.img ? (
+                        <img
+                          src={item.img}
+                          alt="profile"
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "50%",
+                            background: "#4f5a8f",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {getInitials(item.name)}
+                        </div>
+                      )}
                     </div>
                   </DataTableRow>
 
@@ -627,18 +658,19 @@ const StaffListCompact = () => {
                   <DataTableRow>{item.type?.charAt(0).toUpperCase() + item.type?.slice(1)}</DataTableRow>
                   <DataTableRow>{item.staffCode || "--"}</DataTableRow>
                   <DataTableRow>
-                    <span className={`tb-status text-${item.staffStatus === "active" ? "success" : "danger"}`}>
+                    <span
+                      style={{
+                        color: item.staffStatus === "active" ? "#10b981" : "#ef4444",
+                        fontWeight: "600",
+                        fontSize: "13px"
+                      }}
+                    >
                       {item.staffStatus.charAt(0).toUpperCase() + item.staffStatus.slice(1)}
                     </span>
                   </DataTableRow>
 
                   <DataTableRow className="nk-tb-col-tools">
                     <ul className="nk-tb-actions gx-1">
-                      {/* <li>
-                        <Button size="sm" className="btn-icon" onClick={() => onEditClick(item)}>
-                          <Icon name="edit-alt-fill" />
-                        </Button>
-                      </li> */}
                       <li>
                         <UncontrolledDropdown>
                           <DropdownToggle tag="a" className="btn btn-icon btn-trigger mr-5">
@@ -732,8 +764,38 @@ const StaffListCompact = () => {
         </Block>
       </Content>
 
-      <Modal isOpen={modalAdd} toggle={() => setModalAdd(false)} className="modal-dialog-centered" size="lg">
-        <ModalBody>
+      {/* ================= ADD STAFF MODAL - Increased size, hidden scrollbar, centered ================= */}
+      <Modal 
+        isOpen={modalAdd} 
+        toggle={() => setModalAdd(false)} 
+        className="modal-dialog-centered" 
+        size="xl"
+      >
+        <ModalBody
+          style={{
+            padding: "2rem",
+            maxHeight: "85vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+          className="hide-scrollbar"
+        >
+          <style>{`
+            .hide-scrollbar::-webkit-scrollbar {
+              display: none;
+            }
+            .hide-scrollbar {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+            .modal-dialog-centered {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: calc(100% - 1rem);
+            }
+          `}</style>
           <a
             href="#cancel"
             onClick={(ev) => {
@@ -864,7 +926,7 @@ const StaffListCompact = () => {
                     className="form-control"
                     value={formData.dutyStatus}
                     onChange={(e) => setFormData({ ...formData, dutyStatus: e.target.value })}
-                    disabled // 👈 This makes it disabled
+                    disabled
                   >
                     <option value="active">active</option>
                     <option value="inactive">inactive</option>
@@ -906,29 +968,6 @@ const StaffListCompact = () => {
                 </FormGroup>
               </Col>
 
-              {/* Documents Upload */}
-              {/* <Col md="12">
-                <FormGroup>
-                  <label className="form-label">Documents</label>
-                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-                    {({ getRootProps, getInputProps }) => (
-                      <div {...getRootProps()} className="dropzone mt-2">
-                        <input {...getInputProps()} />
-                        {formData.documents.length > 0 ? (
-                          <ul>
-                            {formData.documents.map((f, idx) => (
-                              <li key={idx}>{f.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>Drag & drop files or click to select</p>
-                        )}
-                      </div>
-                    )}
-                  </Dropzone>
-                </FormGroup>
-              </Col> */}
-
               <Col md="12">
                 <Button color="primary" type="submit" disabled={addLoading}>
                   {addLoading ? (
@@ -946,9 +985,38 @@ const StaffListCompact = () => {
         </ModalBody>
       </Modal>
 
-      {/* ================= EDIT STAFF MODAL ================= */}
-      <Modal isOpen={modalEdit} toggle={() => setModalEdit(false)} className="modal-dialog-centered" size="lg">
-        <ModalBody>
+      {/* ================= EDIT STAFF MODAL - Increased size, hidden scrollbar, centered ================= */}
+      <Modal 
+        isOpen={modalEdit} 
+        toggle={() => setModalEdit(false)} 
+        className="modal-dialog-centered" 
+        size="xl"
+      >
+        <ModalBody
+          style={{
+            padding: "2rem",
+            maxHeight: "95vh",
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+          className="hide-scrollbar"
+        >
+          <style>{`
+            .hide-scrollbar::-webkit-scrollbar {
+              display: none;
+            }
+            .hide-scrollbar {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+            .modal-dialog-centered {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: calc(100% - 1rem);
+            }
+          `}</style>
           <a
             href="#cancel"
             onClick={(ev) => {
@@ -1034,7 +1102,7 @@ const StaffListCompact = () => {
                     className="form-control"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    disabled={formData.dutyStatus === "active"} // 🔥 Important line
+                    disabled={formData.dutyStatus === "active"}
                     required
                   >
                     <option value="">Select Type</option>
@@ -1135,29 +1203,6 @@ const StaffListCompact = () => {
                   </Dropzone>
                 </FormGroup>
               </Col>
-
-              {/* Documents Upload */}
-              {/* <Col md="12">
-                <FormGroup>
-                  <label className="form-label">Documents</label>
-                  <Dropzone multiple onDrop={(files) => setFormData({ ...formData, documents: files })}>
-                    {({ getRootProps, getInputProps }) => (
-                      <div {...getRootProps()} className="dropzone mt-2">
-                        <input {...getInputProps()} />
-                        {formData.documents.length > 0 ? (
-                          <ul>
-                            {formData.documents.map((f, idx) => (
-                              <li key={idx}>{f.name}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p>Drag & drop files or click to select</p>
-                        )}
-                      </div>
-                    )}
-                  </Dropzone>
-                </FormGroup>
-              </Col> */}
 
               <Col md="12">
                 <Button color="primary" type="submit" disabled={editLoading}>

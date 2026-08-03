@@ -316,44 +316,16 @@ const StaffAttendanceDetails = () => {
     });
   };
 
-  const getStatusBadge = (status) => {
-    const commonStyle = {
-      padding: "4px 12px",
-      borderRadius: "20px",
-      fontSize: "11px",
-      color: "#fff",
-      fontWeight: 500,
+  // Status as text with colors (no badges)
+  const getStatusText = (status) => {
+    const statusMap = {
+      present: { text: "Present", color: "#10b981" },
+      late: { text: "Late", color: "#f59e0b" },
+      absent: { text: "Absent", color: "#ef4444" },
     };
 
-    switch (status) {
-      case "present":
-        return (
-          <span className="badge bg-success" style={commonStyle}>
-            Present
-          </span>
-        );
-
-      case "late":
-        return (
-          <span className="badge bg-warning" style={commonStyle}>
-            Late
-          </span>
-        );
-
-      case "absent":
-        return (
-          <span className="badge bg-danger" style={commonStyle}>
-            Absent
-          </span>
-        );
-
-      default:
-        return (
-          <span className="badge bg-secondary" style={commonStyle}>
-            N/A
-          </span>
-        );
-    }
+    const defaultStatus = { text: "N/A", color: "#6b7280" };
+    return statusMap[status] || defaultStatus;
   };
 
   const goBack = () => {
@@ -703,40 +675,51 @@ const StaffAttendanceDetails = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {attendanceRecords.map((record, idx) => (
-                      <tr key={record._id || idx} style={{ borderBottom: idx < attendanceRecords.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                        <td style={{ padding: "12px 16px", color: "#555", textAlign: "center" }}>
-                          {idx + 1}
-                        </td>
-                        <td style={{ padding: "12px 16px", color: "#555" }}>
-                          {formatDate(record.date)}
-                        </td>
-                        <td style={{ padding: "12px 16px", color: "#555" }}>
-                          {record.siteName || record.site?.name || "N/A"}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
-                          {formatTime(record.checkInTime)}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
-                          {formatTime(record.checkOutTime)}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
-                          ₹{record.dailySalary || 0}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "right", color: "#e65100" }}>
-                          {record.overtimeHours || 0}h
-                          {record.overtimeAmount > 0 && (
-                            <div style={{ fontSize: "11px", color: "#888" }}>₹{record.overtimeAmount}</div>
-                          )}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 600, color: BRAND }}>
-                          ₹{record.totalSalary || 0}
-                        </td>
-                        <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                          {getStatusBadge(record.status)}
-                        </td>
-                      </tr>
-                    ))}
+                    {attendanceRecords.map((record, idx) => {
+                      const status = getStatusText(record.status);
+                      return (
+                        <tr key={record._id || idx} style={{ borderBottom: idx < attendanceRecords.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                          <td style={{ padding: "12px 16px", color: "#555", textAlign: "center" }}>
+                            {idx + 1}
+                          </td>
+                          <td style={{ padding: "12px 16px", color: "#555" }}>
+                            {formatDate(record.date)}
+                          </td>
+                          <td style={{ padding: "12px 16px", color: "#555" }}>
+                            {record.siteName || record.site?.name || "N/A"}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
+                            {formatTime(record.checkInTime)}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
+                            {formatTime(record.checkOutTime)}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", color: "#555" }}>
+                            ₹{record.dailySalary || 0}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", color: "#e65100" }}>
+                            {record.overtimeHours || 0}h
+                            {record.overtimeAmount > 0 && (
+                              <div style={{ fontSize: "11px", color: "#888" }}>₹{record.overtimeAmount}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 600, color: BRAND }}>
+                            ₹{record.totalSalary || 0}
+                          </td>
+                          <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                            <span
+                              style={{
+                                color: status.color,
+                                fontWeight: 600,
+                                fontSize: "13px"
+                              }}
+                            >
+                              {status.text}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
