@@ -198,7 +198,7 @@ const ItemFormModal = ({ isOpen, mode, initialData, onClose, onSave, loading }) 
   };
 
   return (
-    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered" size="xl">
+    <Modal isOpen={isOpen} toggle={handleClose} className="modal-dialog-centered mr-2" size="xl">
       <ModalBody
         style={{
           overflowY: "auto",
@@ -595,14 +595,6 @@ const Buying = () => {
     setCurrentPage(1);
   };
 
-  const statusColor = (status) => {
-    if (status === "Enabled") return "success";
-    if (status === "Disabled") return "danger";
-    if (status === 0) return "success";
-    if (status === 1) return "danger";
-    return "secondary";
-  };
-
   const getStatus = (item) => {
     if (item.status) return item.status;
     if (item.disabled === 0) return "Enabled";
@@ -748,80 +740,81 @@ const Buying = () => {
                     </thead>
                     <tbody>
                       {items.length > 0 ? (
-                        items.map((item, idx) => (
-                          <tr
-                            key={item._id || item.id}
-                            style={{
-                              borderTop: "1px solid #e0e0e0",
-                              borderBottom: "1px solid #e0e0e0",
-                            }}
-                          >
-                            <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
-                            <td className="px-4 py-2 text-start fw-semibold">
-                              <button
-                                onClick={() => handleNameClick(item)}
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  color: "#2563eb",
-                                  cursor: "pointer",
-                                  fontWeight: 600,
-                                  padding: 0,
-                                  fontSize: "inherit",
-                                }}
-                              >
-                                {item.name || item.item_name}
-                              </button>
-                            </td>
-                            <td className="px-4 py-2 text-center">
-                              <span
-                                className={`badge bg-${statusColor(getStatus(item))}`}
-                                style={{
-                                  padding: "6px 12px",
-                                  borderRadius: "12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  color: "white",
-                                }}
-                              >
-                                {getStatus(item)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2 text-start">
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  padding: "4px 10px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  backgroundColor: "#e0f2fe",
-                                  color: "#0369a1",
-                                  borderRadius: "20px",
-                                }}
-                              >
-                                {item.item_group}
-                              </span>
-                            </td>
-                            <td className="px-4 py-2 text-start">
-                              <code>{item.itemCode || item.item_code}</code>
-                            </td>
-                            <td className="px-4 py-2 text-center">
-                              <UncontrolledDropdown>
-                                <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
-                                  <Icon name="more-h" />
-                                </DropdownToggle>
-                                <DropdownMenu right>
-                                  <DropdownItem onClick={() => handleEdit(item)}>
-                                    <Icon name="edit" /> Edit
-                                  </DropdownItem>
-                                  <DropdownItem onClick={() => handleDeleteClick(item._id || item.id)}>
-                                    <Icon name="trash" /> Delete
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              </UncontrolledDropdown>
-                            </td>
-                          </tr>
-                        ))
+                        items.map((item, idx) => {
+                          const status = getStatus(item);
+                          const isEnabled = status === "Enabled";
+                          return (
+                            <tr
+                              key={item._id || item.id}
+                              style={{
+                                borderTop: "1px solid #e0e0e0",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              <td className="px-3 py-2 text-center">{indexOfFirst + idx + 1}</td>
+                              <td className="px-4 py-2 text-start fw-semibold">
+                                <button
+                                  onClick={() => handleNameClick(item)}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#4e598e",
+                                    cursor: "pointer",
+                                    fontWeight: 600,
+                                    padding: 0,
+                                    fontSize: "inherit",
+                                  }}
+                                >
+                                  {item.name || item.item_name}
+                                </button>
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <span
+                                  style={{
+                                    color: isEnabled ? "#10b981" : "#ef4444",
+                                    fontWeight: "600",
+                                    fontSize: "13px"
+                                  }}
+                                >
+                                  {status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-start">
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "4px 10px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    backgroundColor: "#e0f2fe",
+                                    color: "#0369a1",
+                                    borderRadius: "20px",
+                                  }}
+                                >
+                                  {item.item_group}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-start">
+                                <code>{item.itemCode || item.item_code}</code>
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <UncontrolledDropdown>
+                                  <DropdownToggle tag="a" className="btn btn-icon btn-trigger">
+                                    <Icon name="more-h" />
+                                  </DropdownToggle>
+                                  <DropdownMenu right>
+                                    <DropdownItem onClick={() => handleEdit(item)}>
+                                      <Icon name="edit" /> Edit
+                                    </DropdownItem>
+                                    <DropdownItem onClick={() => handleDeleteClick(item._id || item.id)}>
+                                      <Icon name="trash" /> Delete
+                                    </DropdownItem>
+                                  </DropdownMenu>
+                                </UncontrolledDropdown>
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
                           <td colSpan="6" className="text-center py-4">

@@ -12,6 +12,7 @@ import {
   Button,
   PreviewCard,
   Icon,
+  RSelect,
 } from "../../../components/Component";
 import {
   TabContent,
@@ -23,9 +24,10 @@ import {
   Label,
   Input,
   FormText,
-  CustomInput, // Use CustomInput for switches
+  CustomInput,
 } from "reactstrap";
 import "./settings.css";
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -75,8 +77,119 @@ const Settings = () => {
     deleteAccountRequest: false,
   });
 
+  // Options for RSelect
+  const languageOptions = [
+    { value: "english", label: "English" },
+    { value: "hindi", label: "Hindi" },
+    { value: "tamil", label: "Tamil" },
+    { value: "telugu", label: "Telugu" },
+    { value: "kannada", label: "Kannada" },
+    { value: "malayalam", label: "Malayalam" },
+  ];
+
+  const timezoneOptions = [
+    { value: "asia/kolkata", label: "Asia/Kolkata (IST)" },
+    { value: "asia/dubai", label: "Asia/Dubai (GST)" },
+    { value: "america/new_york", label: "America/New York (EST)" },
+    { value: "europe/london", label: "Europe/London (GMT)" },
+  ];
+
+  const sessionTimeoutOptions = [
+    { value: "15", label: "15 minutes" },
+    { value: "30", label: "30 minutes" },
+    { value: "60", label: "1 hour" },
+    { value: "120", label: "2 hours" },
+  ];
+
+  const fontSizeOptions = [
+    { value: "small", label: "Small" },
+    { value: "medium", label: "Medium" },
+    { value: "large", label: "Large" },
+  ];
+
+  // Selected values for RSelect
+  const selectedLanguage = languageOptions.find(opt => opt.value === profile.language);
+  const selectedTimezone = timezoneOptions.find(opt => opt.value === profile.timezone);
+  const selectedSessionTimeout = sessionTimeoutOptions.find(opt => opt.value === security.sessionTimeout);
+  const selectedFontSize = fontSizeOptions.find(opt => opt.value === appearance.fontSize);
+
+  // Custom styles for RSelect
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: '38px',
+      borderColor: '#e8e4e0',
+      '&:hover': {
+        borderColor: '#e8e4e0',
+      },
+      boxShadow: 'none',
+      cursor: 'pointer',
+      borderRadius: '6px',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected ? '#4B5694' : state.isFocused ? '#f0f0f0' : 'transparent',
+      color: state.isSelected ? '#fff' : '#333',
+      cursor: 'pointer',
+      '&:hover': {
+        backgroundColor: state.isSelected ? '#4B5694' : '#f0f0f0',
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 999,
+      marginTop: '4px',
+      borderRadius: '6px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    }),
+    menuList: (base) => ({
+      ...base,
+      maxHeight: '200px',
+      borderRadius: '6px',
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: '#6c757d',
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: '#1a1a2e',
+    }),
+    dropdownIndicator: (base) => ({
+      ...base,
+      color: '#6c757d',
+      '&:hover': {
+        color: '#1a1a2e',
+      },
+    }),
+  };
+
   const handleProfileChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
+  };
+
+  const handleLanguageChange = (option) => {
+    if (option) {
+      setProfile({ ...profile, language: option.value });
+    }
+  };
+
+  const handleTimezoneChange = (option) => {
+    if (option) {
+      setProfile({ ...profile, timezone: option.value });
+    }
+  };
+
+  const handleSessionTimeoutChange = (option) => {
+    if (option) {
+      setSecurity({ ...security, sessionTimeout: option.value });
+    }
+  };
+
+  const handleFontSizeChange = (option) => {
+    if (option) {
+      setAppearance({ ...appearance, fontSize: option.value });
+    }
   };
 
   const handleNotificationToggle = (key) => {
@@ -121,45 +234,6 @@ const Settings = () => {
 
         <Block>
           <Row className="g-gs">
-            {/* <Col xl="2" lg="2">
-              <PreviewCard className="settings-nav-card">
-                <div className="card-body p-0">
-                  {/* <Nav tabs className="nav-tabs-mb-icon flex-column nav-tabs-vertical"> */}
-                    {/* <NavItem>
-                      <NavLink className={activeTab === "profile" ? "active" : ""} onClick={() => setActiveTab("profile")}>
-                        <Icon name="user" />
-                        <span>Profile</span>
-                      </NavLink>
-                    </NavItem> */}
-                    {/* <NavItem>
-                      <NavLink className={activeTab === "notifications" ? "active" : ""} onClick={() => setActiveTab("notifications")}>
-                        <Icon name="bell" />
-                        <span>Notifications</span>
-                      </NavLink>
-                    </NavItem> */}
-                    {/* <NavItem>
-                      <NavLink className={activeTab === "security" ? "active" : ""} onClick={() => setActiveTab("security")}>
-                        <Icon name="shield" />
-                        <span>Password</span>
-                      </NavLink>
-                    </NavItem> */}
-                    {/* <NavItem>
-                      <NavLink className={activeTab === "appearance" ? "active" : ""} onClick={() => setActiveTab("appearance")}>
-                        <Icon name="monitor" />
-                        <span>Appearance</span>
-                      </NavLink>
-                    </NavItem> */}
-                        {/* <NavItem>
-                        <NavLink className={activeTab === "privacy" ? "active" : ""} onClick={() => setActiveTab("privacy")}>
-                            <Icon name="lock" />
-                            <span>Privacy & Data</span>
-                        </NavLink>
-                        </NavItem> */}
-                  {/* </Nav> */}
-                {/* </div>
-              </PreviewCard>
-            </Col> */} 
-
             <Col xl="11" lg="12">
               <PreviewCard className="settings-content-card">
                 <div className="card-body">
@@ -201,28 +275,44 @@ const Settings = () => {
                               <FormText color="muted">Role cannot be changed. Contact support for role changes.</FormText>
                             </FormGroup>
                           </Col>
-                          
+                          {/* <Col md="6">
+                            <FormGroup>
+                              <Label>Language</Label>
+                              <RSelect
+                                options={languageOptions}
+                                value={selectedLanguage}
+                                onChange={handleLanguageChange}
+                                placeholder="Select Language"
+                                isClearable={false}
+                                styles={selectStyles}
+                                classNamePrefix="react-select"
+                              />
+                            </FormGroup>
+                          </Col> */}
                           <Col md="6">
                             <FormGroup>
                               <Label>Time Zone</Label>
-                              <Input type="select" name="timezone" value={profile.timezone} onChange={handleProfileChange}>
-                                <option value="asia/kolkata">Asia/Kolkata (IST)</option>
-                                <option value="asia/dubai">Asia/Dubai (GST)</option>
-                                <option value="america/new_york">America/New York (EST)</option>
-                                <option value="europe/london">Europe/London (GMT)</option>
-                              </Input>
+                              <RSelect
+                                options={timezoneOptions}
+                                value={selectedTimezone}
+                                onChange={handleTimezoneChange}
+                                placeholder="Select Time Zone"
+                                isClearable={false}
+                                styles={selectStyles}
+                                classNamePrefix="react-select"
+                              />
                             </FormGroup>
                           </Col>
                         </Row>
                         <div className="settings-actions mt-4 ">
                           <Button style={{
-    backgroundColor: "#4B5694",
-    borderColor: "#800000",
-   marginRight: "0.5rem",
-    color: "#fff",
-    padding: "8px 20px"
-  }} onClick={handleSaveSettings}>Save</Button>
-                          <Button color="secondary" outline className="ms-2">Cancel</Button>
+                            backgroundColor: "#4B5694",
+                            borderColor: "#800000",
+                            marginRight: "0.5rem",
+                            color: "#fff",
+                            padding: "8px 20px"
+                          }} onClick={handleSaveSettings}>Save</Button>
+                          {/* <Button color="secondary" outline className="ms-2">Cancel</Button> */}
                         </div>
                       </div>
                     </TabPane>
@@ -279,12 +369,17 @@ const Settings = () => {
                           <div className="py-3 border-bottom">
                             <h6 className="mb-1">Session Timeout</h6>
                             <p className="text-soft small mb-0">Automatically log out after inactivity</p>
-                            <Input type="select" value={security.sessionTimeout} onChange={(e) => setSecurity({ ...security, sessionTimeout: e.target.value })} style={{ width: "auto", marginTop: "8px" }}>
-                              <option value="15">15 minutes</option>
-                              <option value="30">30 minutes</option>
-                              <option value="60">1 hour</option>
-                              <option value="120">2 hours</option>
-                            </Input>
+                            <div style={{ width: "200px", marginTop: "8px" }}>
+                              <RSelect
+                                options={sessionTimeoutOptions}
+                                value={selectedSessionTimeout}
+                                onChange={handleSessionTimeoutChange}
+                                placeholder="Select Timeout"
+                                isClearable={false}
+                                styles={selectStyles}
+                                classNamePrefix="react-select"
+                              />
+                            </div>
                           </div>
                           <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
                             <div>
@@ -338,11 +433,17 @@ const Settings = () => {
                           </div>
                           <div className="py-3">
                             <h6 className="mb-2">Font Size</h6>
-                            <Input type="select" name="fontSize" value={appearance.fontSize} onChange={handleAppearanceChange} style={{ width: "200px" }}>
-                              <option value="small">Small</option>
-                              <option value="medium">Medium</option>
-                              <option value="large">Large</option>
-                            </Input>
+                            <div style={{ width: "200px" }}>
+                              <RSelect
+                                options={fontSizeOptions}
+                                value={selectedFontSize}
+                                onChange={handleFontSizeChange}
+                                placeholder="Select Font Size"
+                                isClearable={false}
+                                styles={selectStyles}
+                                classNamePrefix="react-select"
+                              />
+                            </div>
                           </div>
                         </div>
                         <div className="settings-actions mt-4">

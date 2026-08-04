@@ -12,6 +12,7 @@ import {
   Button,
   Icon,
   BlockBetween,
+  RSelect,
 } from "../../../components/Component";
 import {
   Modal,
@@ -223,6 +224,57 @@ const inputStyle = {
   color: "#1a1a2e", background: "#fdfcfc",
 };
 
+// Custom RSelect styles
+const selectStyles = {
+  control: (base) => ({
+    ...base,
+    minHeight: '38px',
+    borderColor: '#e8e4e0',
+    '&:hover': {
+      borderColor: '#e8e4e0',
+    },
+    boxShadow: 'none',
+    cursor: 'pointer',
+    borderRadius: '6px',
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? BRAND : state.isFocused ? '#f0f0f0' : 'transparent',
+    color: state.isSelected ? '#fff' : '#333',
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: state.isSelected ? BRAND : '#f0f0f0',
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 999,
+    marginTop: '4px',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  }),
+  menuList: (base) => ({
+    ...base,
+    maxHeight: '200px',
+    borderRadius: '6px',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#6c757d',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: '#1a1a2e',
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: '#6c757d',
+    '&:hover': {
+      color: '#1a1a2e',
+    },
+  }),
+};
+
 // ─── NEW: Accordion Category Component ────────────────────────
 const AccordionCategory = ({ 
   category, 
@@ -315,7 +367,7 @@ const AccordionCategory = ({
       <div style={{
         maxHeight: isOpen ? "2000px" : "0",
         overflow: "hidden",
-        transition: "max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "maxHeight 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         background: "#fff"
       }}>
         <div style={{ padding: "20px" }}>
@@ -978,8 +1030,11 @@ const SiteDetail = () => {
         images={imgSidebar.images} startIndex={imgSidebar.index} title={imgSidebar.title} />
 
       {/* ── Edit Modal ── */}
-      <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} size="lg" centered>
-        <ModalHeader toggle={() => { setEditModal(false); setFormErrors({}); }} style={{ borderBottom: "none", padding: "24px 28px 0" }}>
+      <Modal isOpen={editModal} toggle={() => { setEditModal(false); setFormErrors({}); }} className="mr-5" size="xl" centered>
+        <ModalHeader 
+          toggle={() => { setEditModal(false); setFormErrors({}); }} 
+          style={{ borderBottom: "none", padding: "24px 28px 0" }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ width: "36px", height: "36px", background: BRAND + "18", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Icon name="edit" style={{ color: BRAND, fontSize: "18px" }} />
@@ -991,7 +1046,17 @@ const SiteDetail = () => {
           </div>
         </ModalHeader>
 
-        <ModalBody style={{ padding: "16px 28px 28px", maxHeight: "78vh", overflowY: "auto" }}>
+        <ModalBody style={{ padding: "16px 28px 28px", maxHeight: "78vh", overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          <style>{`
+            .modal-body::-webkit-scrollbar {
+              display: none;
+            }
+            .modal-body {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+          `}</style>
+          
           <SectionLabel icon="info" label="Basic Information" />
           <Row>
             <Col md="6">
@@ -1052,7 +1117,7 @@ const SiteDetail = () => {
               Cancel
             </button>
             <BrandBtn onClick={handleEditSite} disabled={savingEdit}>
-              {savingEdit ? <><Spinner size="sm" /> Saving…</> : <><Icon name="check" /> Save Changes</>}
+              {savingEdit ? <><Spinner size="sm" /> Saving…</> : <> Save Changes</>}
             </BrandBtn>
           </div>
         </ModalBody>

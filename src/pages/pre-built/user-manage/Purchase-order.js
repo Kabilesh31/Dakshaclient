@@ -1,4 +1,4 @@
-// PurchaseOrderPage.js - Status badge aligned with MaterialRequestDetails theme
+// PurchaseOrderPage.js - Status as text with colors
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Content from "../../../layout/content/Content";
@@ -32,80 +32,36 @@ import "react-toastify/dist/ReactToastify.css";
 // API base URL
 const API_BASE_URL = `${process.env.REACT_APP_BACKENDURL}/api`
 
-// Status Badge 
-const StatusBadge = ({ status }) => {
-  const getStyles = () => {
+// Status Text Component (No badge, just colored text)
+const StatusText = ({ status }) => {
+  const getColor = () => {
     switch (status) {
       case "Ordered":
-        return {
-          background: "#EAF3DE",
-          color: "#27500A",
-          border: "0.5px solid #C0DD97",
-          dotColor: "#639922",
-        };
+        return "#10b981";
       case "Partially Ordered":
-        return {
-          background: "#E6F1FB",
-          color: "#0C447C",
-          border: "0.5px solid #85B7EB",
-          dotColor: "#378ADD",
-        };
+        return "#3b82f6";
       case "Completed":
-        return {
-          background: "#D1FAE5",
-          color: "#065F46",
-          border: "0.5px solid #A7F3D0",
-          dotColor: "#10B981",
-        };
+        return "#059669";
       case "Cancelled":
-        return {
-          background: "#FEE2E2",
-          color: "#991B1B",
-          border: "0.5px solid #FECACA",
-          dotColor: "#EF4444",
-        };
+        return "#ef4444";
       case "To Receive and Bill":
-        return {
-          background: "green",
-          color: "White",
-          border: "0.5px solid #C0DD97",
-          dotColor: "#639922",
-        };
+        return "#8b5cf6";
       case "Pending":
       default:
-        return {
-          background: "#FAEEDA",
-          color: "#633806",
-          border: "0.5px solid #FAC775",
-          dotColor: "#BA7517",
-        };
+        return "#f59e0b";
     }
   };
-  const { background, color, border, dotColor } = getStyles();
+  
+  const color = getColor();
+  
   return (
     <span
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 12,
-        fontWeight: 500,
-        padding: "4px 12px",
-        borderRadius: 99,
-        background,
-        color,
-        border,
+        color: color,
+        fontWeight: 600,
+        fontSize: "13px"
       }}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: dotColor,
-          display: "inline-block",
-        }}
-      />
       {status}
     </span>
   );
@@ -1162,7 +1118,7 @@ const PurchaseOrderPage = () => {
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: "#2563eb",
+                                  color: "#4e598e",
                                   cursor: "pointer",
                                   fontWeight: 500,
                                   fontSize: "0.88rem",
@@ -1178,7 +1134,7 @@ const PurchaseOrderPage = () => {
                               </button>
                             </td>
 
-                            {/* Status */}
+                            {/* Status - Now using StatusText instead of StatusBadge */}
                             <td
                               style={{
                                 padding: "14px 20px",
@@ -1193,7 +1149,7 @@ const PurchaseOrderPage = () => {
                                   justifyContent: "center",
                                 }}
                               >
-                                <StatusBadge status={order.status} />
+                                <StatusText status={order.status} />
                               </div>
                             </td>
 
@@ -1602,7 +1558,9 @@ const PurchaseOrderPage = () => {
                   <tr key={mr._id} style={{ borderBottom: idx < materialRequests.length - 1 ? "0.5px solid #f3f4f6" : "none" }}>
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}><code style={{ background: "#f9fafb", border: "0.5px solid #e5e7eb", borderRadius: 4, padding: "2px 7px", fontFamily: "monospace", fontSize: 11, color: "#6b7280" }}>{mr._id}</code></td>
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle", wordBreak: "break-word", whiteSpace: "normal" }}>{mr.title}</td>
-                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}><StatusBadge status={mr.status} /></td>
+                    <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}>
+                      <StatusText status={mr.status} />
+                    </td>
                     <td style={{ padding: "13px 14px", color: "#111827", borderBottom: "0.5px solid #f3f4f6", verticalAlign: "middle" }}>
                       <button 
                         style={{ 

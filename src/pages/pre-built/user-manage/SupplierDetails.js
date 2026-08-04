@@ -89,7 +89,18 @@ const Pill = ({ variant = "neutral", style = {}, children }) => (
 
 const StatusDot = ({ enabled }) => (
   <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 500, color: "#111827" }}>
-    <span style={{ width: 6, height: 6, borderRadius: "50%", background: enabled ? "#639922" : "#E24B4A", display: "inline-block" }} />
+    <span style={{ width: 6, height: 6, borderRadius: "50%", background: enabled ? "#10b981" : "#ef4444", display: "inline-block" }} />
+    {enabled ? "Enabled" : "Disabled"}
+  </span>
+);
+
+// Status text component (no badge/pill)
+const StatusText = ({ enabled }) => (
+  <span style={{
+    color: enabled ? "#10b981" : "#ef4444",
+    fontWeight: 600,
+    fontSize: "13px"
+  }}>
     {enabled ? "Enabled" : "Disabled"}
   </span>
 );
@@ -203,7 +214,9 @@ const SupplierDetails = () => {
           <div style={S.metricsGrid}>
             <div style={S.metric}>
               <div style={S.metricLbl}>Status</div>
-              <div style={S.metricVal}><StatusDot enabled={isEnabled} /></div>
+              <div style={S.metricVal}>
+                <StatusText enabled={isEnabled} />
+              </div>
             </div>
             <div style={S.metric}>
               <div style={S.metricLbl}>Supplier group</div>
@@ -271,7 +284,7 @@ const SupplierDetails = () => {
                   <div>
                     <div style={S.fLbl}>Status</div>
                     <div style={S.fVal}>
-                      <Pill variant={isEnabled ? "green" : "red"}>{status}</Pill>
+                      <StatusText enabled={isEnabled} />
                     </div>
                   </div>
                   <div>

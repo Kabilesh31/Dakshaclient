@@ -17,6 +17,7 @@ import {
   Button,
   Icon,
   BlockBetween,
+  RSelect,
 } from "../../../components/Component";
 import {
   Input,
@@ -59,6 +60,65 @@ const STATUS_CONFIG = {
   onhold:    { text: "On Hold",   bg: "#f59e0b", dot: "#d97706" },
   cancelled: { text: "Cancelled", bg: "#6c757d", dot: "#565e64" },
 };
+
+// Custom RSelect styles
+const selectStyles = {
+  control: (base) => ({
+    ...base,
+    minHeight: '38px',
+    borderColor: '#e8e4e0',
+    '&:hover': {
+      borderColor: '#e8e4e0',
+    },
+    boxShadow: 'none',
+    cursor: 'pointer',
+    borderRadius: '6px',
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? BRAND : state.isFocused ? '#f0f0f0' : 'transparent',
+    color: state.isSelected ? '#fff' : '#333',
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: state.isSelected ? BRAND : '#f0f0f0',
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 999,
+    marginTop: '4px',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  }),
+  menuList: (base) => ({
+    ...base,
+    maxHeight: '200px',
+    borderRadius: '6px',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#6c757d',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: '#1a1a2e',
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    color: '#6c757d',
+    '&:hover': {
+      color: '#1a1a2e',
+    },
+  }),
+};
+
+// Status options for RSelect
+const statusOptions = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Completed" },
+  { value: "onhold", label: "On Hold" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 /* ── Brand button ── */
 const BrandBtn = ({ children, onClick, disabled, size = "md", outline = false, style = {} }) => {
@@ -203,10 +263,11 @@ const EMPTY_SITE = {
   staffAssigned: [], 
   description: "", 
   projectValue: "", 
-  image: null, // Changed from "" to null to track if image is selected
-  imagePreview: "", // Separate state for preview
+  image: null,
+  imagePreview: "",
   completion: 0, 
-  budget: 0 
+  budget: 0,
+  status: "active"
 };
 
 const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
@@ -216,7 +277,10 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
-  const [imageFile, setImageFile] = useState(null); // Store the actual file
+  const [imageFile, setImageFile] = useState(null);
+
+  // Status selection for RSelect
+  const selectedStatus = statusOptions.find(opt => opt.value === form.status);
 
   const reset = () => { 
     setForm(EMPTY_SITE); 
@@ -243,6 +307,12 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
     }
   };
 
+  const handleStatusChange = (option) => {
+    if (option) {
+      set("status", option.value);
+    }
+  };
+
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -257,17 +327,14 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
       return;
     }
 
-    // Store the file for later upload
     setImageFile(file);
     
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result);
     };
     reader.readAsDataURL(file);
     
-    // Set image in form to trigger validation if needed
     set("image", file.name);
   };
 
@@ -285,7 +352,6 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
     setSubmitting(true);
     
     try {
-      // Create FormData for multipart/form-data upload
       const formData = new FormData();
       formData.append('name', form.name.trim());
       formData.append('location', form.location.trim());
@@ -294,9 +360,9 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
       formData.append('projectValue', form.projectValue || "");
       formData.append('completion', form.completion || 0);
       formData.append('budget', form.budget || 0);
+      formData.append('status', form.status || "active");
       formData.append('staffAssigned', JSON.stringify([]));
       
-      // Append image if selected
       if (imageFile) {
         formData.append('image', imageFile);
       }
@@ -312,7 +378,6 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
       if (response.data.success) {
         await onAdd(response.data.data);
         close();
-        // Show success message in parent component
         window.dispatchEvent(new CustomEvent('projectAdded', { detail: { message: 'Project added successfully!' } }));
       } else {
         throw new Error(response.data.message || "Failed to add project");
@@ -350,185 +415,233 @@ const AddSiteModal = ({ isOpen, onClose, onAdd }) => {
   );
 
   return (
-    <Modal isOpen={isOpen} toggle={close} size="lg" centered>
-      <ModalHeader
-        toggle={close}
-        style={{ borderBottom: "none", padding: "24px 28px 0" }}
+    <Modal isOpen={isOpen} toggle={close} size="xl" className="mr-5" centered>
+      <ModalBody
+        style={{
+          padding: "2rem",
+          maxHeight: "85vh",
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hide-scrollbar"
       >
-        <div>
-          <div style={{ fontWeight: 700, fontSize: "17px", color: "#1a1a2e" }}>Add New Project Site</div>
-          <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>Fill in the project details below</div>
-        </div>
-      </ModalHeader>
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
+        
+        <a
+          href="#cancel"
+          onClick={(ev) => {
+            ev.preventDefault();
+            close();
+          }}
+          className="close"
+        >
+          <Icon name="cross-sm" />
+        </a>
+        
+        <div className="p-2">
+          <h5 className="title">Add New Project Site</h5>
+          <p className="text-muted" style={{ fontSize: "13px" }}>Fill in the project details below</p>
+          
+          <div className="mt-4">
+            <SectionLabel icon="info" label="Basic Information" />
+            <Row>
+              <Col md="6">
+                <FieldGroup label="Site Name *" error={errors.name}>
+                  <Input 
+                    placeholder="e.g. Block B Tower" 
+                    value={form.name} 
+                    onChange={e => set("name", e.target.value)} 
+                    invalid={!!errors.name} 
+                    style={inputStyle} 
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Location *" error={errors.location}>
+                  <Input 
+                    placeholder="City, State" 
+                    value={form.location} 
+                    onChange={e => set("location", e.target.value)} 
+                    invalid={!!errors.location} 
+                    style={inputStyle} 
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Start Date *" error={errors.startDate}>
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={handleDateChange}
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="DD-MM-YYYY"
+                    customInput={<CustomDateInput />}
+                    wrapperClassName="w-100"
+                    popperPlacement="bottom-start"
+                  />
+                  <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "4px" }}>
+                    Select date in DD-MM-YYYY format
+                  </small>
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Status">
+                  <RSelect
+                    options={statusOptions}
+                    value={selectedStatus}
+                    onChange={handleStatusChange}
+                    placeholder="Select Status"
+                    isClearable={false}
+                    styles={selectStyles}
+                    classNamePrefix="react-select"
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Project Value (₹)">
+                  <Input 
+                    placeholder="e.g. ₹15 Crore" 
+                    value={form.projectValue} 
+                    onChange={e => set("projectValue", e.target.value)} 
+                    style={inputStyle} 
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Budget (₹)">
+                  <Input 
+                    type="number" 
+                    placeholder="Numeric amount" 
+                    value={form.budget || ""} 
+                    onChange={e => set("budget", Number(e.target.value))} 
+                    style={inputStyle} 
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="6">
+                <FieldGroup label="Completion (%)">
+                  <Input 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    placeholder="0–100" 
+                    value={form.completion || ""} 
+                    onChange={e => set("completion", Number(e.target.value))} 
+                    style={inputStyle} 
+                  />
+                </FieldGroup>
+              </Col>
+              <Col md="12">
+                <FieldGroup label="Description">
+                  <Input 
+                    type="textarea" 
+                    rows="3" 
+                    placeholder="Brief description of the project…" 
+                    value={form.description} 
+                    onChange={e => set("description", e.target.value)} 
+                    style={{ ...inputStyle, resize: "none" }} 
+                  />
+                </FieldGroup>
+              </Col>
+            </Row>
 
-      <ModalBody style={{ padding: "20px 28px 28px", maxHeight: "78vh", overflowY: "auto" }}>
-
-        {/* ── Section: Basic Info ── */}
-        <SectionLabel icon="info" label="Basic Information" />
-        <Row>
-          <Col md="6">
-            <FieldGroup label="Site Name *" error={errors.name}>
-              <Input 
-                placeholder="e.g. Block B Tower" 
-                value={form.name} 
-                onChange={e => set("name", e.target.value)} 
-                invalid={!!errors.name} 
-                style={inputStyle} 
-              />
-            </FieldGroup>
-          </Col>
-          <Col md="6">
-            <FieldGroup label="Location *" error={errors.location}>
-              <Input 
-                placeholder="City, State" 
-                value={form.location} 
-                onChange={e => set("location", e.target.value)} 
-                invalid={!!errors.location} 
-                style={inputStyle} 
-              />
-            </FieldGroup>
-          </Col>
-          <Col md="6">
-            <FieldGroup label="Start Date *" error={errors.startDate}>
-              <DatePicker
-                selected={selectedDate}
-                onChange={handleDateChange}
-                dateFormat="dd-MM-yyyy"
-                placeholderText="DD-MM-YYYY"
-                customInput={<CustomDateInput />}
-                wrapperClassName="w-100"
-                popperPlacement="bottom-start"
-              />
-              <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "4px" }}>
-                Select date in DD-MM-YYYY format
+            {/* ── Section: Cover Image Upload ── */}
+            <SectionLabel icon="image" label="Cover Image" />
+            <FieldGroup label="Upload Image (JPG, PNG, GIF up to 5MB)">
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <label style={{
+                  background: BRAND + "10",
+                  border: `1.5px dashed ${BRAND}40`,
+                  borderRadius: "8px",
+                  padding: "10px 20px",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "13px",
+                  color: BRAND,
+                  fontWeight: 500,
+                }}>
+                  <Icon name="upload" />
+                  {uploadingImage ? "Uploading..." : imageFile ? "Change Image" : "Choose Image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    disabled={uploadingImage || submitting}
+                    style={{ display: "none" }}
+                  />
+                </label>
+                {uploadingImage && <Spinner size="sm" style={{ color: BRAND }} />}
+                {imageFile && (
+                  <span style={{ fontSize: "12px", color: "#888" }}>
+                    {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+                  </span>
+                )}
+              </div>
+              <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "6px" }}>
+                Upload a project cover image (will be stored in Cloudinary)
               </small>
             </FieldGroup>
-          </Col>
-          <Col md="6">
-            <FieldGroup label="Project Value (₹)">
-              <Input 
-                placeholder="e.g. ₹15 Crore" 
-                value={form.projectValue} 
-                onChange={e => set("projectValue", e.target.value)} 
-                style={inputStyle} 
-              />
-            </FieldGroup>
-          </Col>
-          <Col md="6">
-            <FieldGroup label="Budget (₹)">
-              <Input 
-                type="number" 
-                placeholder="Numeric amount" 
-                value={form.budget || ""} 
-                onChange={e => set("budget", Number(e.target.value))} 
-                style={inputStyle} 
-              />
-            </FieldGroup>
-          </Col>
-          <Col md="6">
-            <FieldGroup label="Completion (%)">
-              <Input 
-                type="number" 
-                min="0" 
-                max="100" 
-                placeholder="0–100" 
-                value={form.completion || ""} 
-                onChange={e => set("completion", Number(e.target.value))} 
-                style={inputStyle} 
-              />
-            </FieldGroup>
-          </Col>
-          <Col md="12">
-            <FieldGroup label="Description">
-              <Input 
-                type="textarea" 
-                rows="3" 
-                placeholder="Brief description of the project…" 
-                value={form.description} 
-                onChange={e => set("description", e.target.value)} 
-                style={{ ...inputStyle, resize: "none" }} 
-              />
-            </FieldGroup>
-          </Col>
-        </Row>
-
-        {/* ── Section: Cover Image Upload ── */}
-        <SectionLabel icon="image" label="Cover Image" />
-        <FieldGroup label="Upload Image (JPG, PNG, GIF up to 5MB)">
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-            <label style={{
-              background: BRAND + "10",
-              border: `1.5px dashed ${BRAND}40`,
-              borderRadius: "8px",
-              padding: "10px 20px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "13px",
-              color: BRAND,
-              fontWeight: 500,
-            }}>
-              <Icon name="upload" />
-              {uploadingImage ? "Uploading..." : imageFile ? "Change Image" : "Choose Image"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                disabled={uploadingImage || submitting}
-                style={{ display: "none" }}
-              />
-            </label>
-            {uploadingImage && <Spinner size="sm" style={{ color: BRAND }} />}
-            {imageFile && (
-              <span style={{ fontSize: "12px", color: "#888" }}>
-                {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
-              </span>
+            
+            {imagePreview && (
+              <div style={{ marginBottom: "16px" }}>
+                <img 
+                  src={imagePreview} 
+                  alt="preview" 
+                  style={{ 
+                    height: "90px", 
+                    borderRadius: "8px", 
+                    objectFit: "cover", 
+                    border: "1px solid #eee",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                  }} 
+                />
+              </div>
             )}
-          </div>
-          <small style={{ color: "#aaa", fontSize: "11px", display: "block", marginTop: "6px" }}>
-            Upload a project cover image (will be stored in Cloudinary)
-          </small>
-        </FieldGroup>
-        
-        {imagePreview && (
-          <div style={{ marginBottom: "16px" }}>
-            <img 
-              src={imagePreview} 
-              alt="preview" 
-              style={{ 
-                height: "90px", 
-                borderRadius: "8px", 
-                objectFit: "cover", 
-                border: "1px solid #eee",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-              }} 
-            />
-          </div>
-        )}
-      </ModalBody>
 
-      {/* ── Footer ── */}
-      <div style={{
-        display: "flex", justifyContent: "flex-end", gap: "10px",
-        padding: "20px 28px 28px",
-        borderTop: "1px solid #f0f0f0",
-      }}>
-        <button
-          onClick={close}
-          disabled={submitting}
-          style={{
-            background: "#f5f5f5", color: "#555", border: "1.5px solid #e0e0e0",
-            padding: "9px 22px", borderRadius: "8px", fontWeight: 600, fontSize: "13px", cursor: submitting ? "not-allowed" : "pointer",
-            opacity: submitting ? 0.6 : 1,
-          }}
-        >
-          Cancel
-        </button>
-        <BrandBtn onClick={submit} disabled={submitting || uploadingImage} size="md">
-          {submitting ? <><Spinner size="sm" /> Adding…</> : <><Icon name="plus" /> Add Site</>}
-        </BrandBtn>
-      </div>
+            {/* ── Footer ── */}
+            <ul className="align-center flex-wrap flex-sm-nowrap gx-4 gy-2 mt-4">
+              <li>
+                <Button 
+                  className="btn-icon"
+                  style={{
+                    backgroundColor: "#4B5694",
+                    borderColor: "#800000",
+                    color: "#fff",
+                    padding: "6px 20px"
+                  }} 
+                  size="md" 
+                  onClick={submit}
+                  disabled={submitting || uploadingImage}
+                >
+                  {submitting ? <><Spinner size="sm" /> Adding…</> : <> Add Site</>}
+                </Button>
+              </li>
+              <li>
+                <a
+                  href="#cancel"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    close();
+                  }}
+                  className="link link-light"
+                >
+                  Cancel
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </ModalBody>
     </Modal>
   );
 };
@@ -622,8 +735,6 @@ const SiteManagement = () => {
   };
 
   const handleAdd = async (siteData) => {
-    // The project is already created in the modal with the image
-    // Just refresh the list
     await fetchProjects();
     return Promise.resolve();
   };
@@ -678,18 +789,16 @@ const SiteManagement = () => {
               </BlockDes>
             </BlockHeadContent>
             <BlockHeadContent>
-            
-               <Button
-                                      className="btn-icon"
-                                      style={{
-                                        backgroundColor: "#4B5694",
-                                        
-                                        color: "#fff"
-                                      }}
-                                      onClick={() => setAddModal(true)} 
-                                    >
-                                      <Icon name="plus" />
-                                    </Button>
+              <Button
+                className="btn-icon"
+                style={{
+                  backgroundColor: "#4B5694",
+                  color: "#fff"
+                }}
+                onClick={() => setAddModal(true)} 
+              >
+                <Icon name="plus" />
+              </Button>
             </BlockHeadContent>
           </BlockBetween>
         </BlockHead>

@@ -89,13 +89,6 @@ const Homepage = () => {
   const [showStaffDetails, setShowStaffDetails] = useState(false);
   const [showSitesDetails, setShowSitesDetails] = useState(false);
 
-   const getStatusBadge = (qty) => {
-    if (qty === 0) return <span className="badge bg-danger">Out of Stock</span>;
-    if (qty < 10) return <span className="badge bg-warning text-dark">Low Stock</span>;
-    return <span className="badge bg-success">In Stock</span>;
-  };
-
-
   return (
     <React.Fragment>
       <Head title="Dashboard | Staff & Sites Overview" />
@@ -274,77 +267,72 @@ const Homepage = () => {
         <Block>
           <Row className="g-gs">
             {/* Pie Chart: Staff Status Distribution */}
-          <Col xl="6" lg="6">
-  <PreviewCard className="chart-card h-100" style={{ borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
-    
-    {/* Header */}
-    <div
-      className="card-head chart-header"
-      style={{
-        padding: "12px 16px",
-        borderBottom: "1px solid #f1f1f1",
-      }}
-    >
-      <h6
-        style={{
-          fontSize: "14px",
-          margin: 0,
-          fontWeight: "600",
-          color: "#1e293b",
-        }}
-      >
-        Staff Status Distribution
-      </h6>
-    </div>
+            <Col xl="6" lg="6">
+              <PreviewCard className="chart-card h-100" style={{ borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}>
+                <div
+                  className="card-head chart-header"
+                  style={{
+                    padding: "12px 16px",
+                    borderBottom: "1px solid #f1f1f1",
+                  }}
+                >
+                  <h6
+                    style={{
+                      fontSize: "14px",
+                      margin: 0,
+                      fontWeight: "600",
+                      color: "#1e293b",
+                    }}
+                  >
+                    Staff Status Distribution
+                  </h6>
+                </div>
 
-    {/* Body */}
-    <div className="card-body" style={{ padding: "12px" }}>
-      <ResponsiveContainer width="100%" height={260}>
-        <PieChart>
-          <Pie
-            data={staffStatusData}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}     // 🔥 makes it donut
-            outerRadius={90}
-            paddingAngle={3}
-            dataKey="value"
-          >
-            {staffStatusData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
+                <div className="card-body" style={{ padding: "12px" }}>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={staffStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {staffStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
 
-          <Tooltip
-            formatter={(value) => [`${value} staff`, "Count"]}
-            contentStyle={{
-              borderRadius: "8px",
-              border: "none",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
-          />
+                      <Tooltip
+                        formatter={(value) => [`${value} staff`, "Count"]}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+                        }}
+                      />
 
-          <Legend
-            verticalAlign="bottom"
-            iconType="circle"
-            wrapperStyle={{ fontSize: "12px" }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+                      <Legend
+                        verticalAlign="bottom"
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: "12px" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
 
-      {/* Footer text */}
-      <div className="text-center mt-2">
-        <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
-          Active staff:{" "}
-          <strong>
-            {Math.round((activeStaff / totalStaff) * 100)}%
-          </strong>
-        </p>
-      </div>
-    </div>
-
-  </PreviewCard>
-</Col>
+                  <div className="text-center mt-2">
+                    <p style={{ fontSize: "12px", color: "#64748b", margin: 0 }}>
+                      Active staff:{" "}
+                      <strong>
+                        {Math.round((activeStaff / totalStaff) * 100)}%
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+              </PreviewCard>
+            </Col>
 
             {/* Bar Chart: Sites Status Distribution */}
             <Col xl="6" lg="6">
@@ -365,7 +353,7 @@ const Homepage = () => {
                       color: "#1a2b3c",
                     }}
                   >
-                     Sites Status Overview
+                    Sites Status Overview
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1.5rem" }}>
@@ -411,7 +399,7 @@ const Homepage = () => {
                       color: "#1a2b3c",
                     }}
                   >
-                     Staff Distribution Across Top Sites
+                    Staff Distribution Across Top Sites
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1.5rem" }}>
@@ -461,7 +449,7 @@ const Homepage = () => {
                   }}
                 >
                   <h6 className="card-title" style={{ margin: 0, fontWeight: "600" }}>
-                     Recent Sites
+                    Recent Sites
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1rem" }}>
@@ -481,10 +469,11 @@ const Homepage = () => {
                             <td>{site.name}</td>
                             <td>{site.location}</td>
                             <td>
-                              <span
-                                className={`badge ${site.status === "active" ? "bg-success" : "bg-danger"}`}
-                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
-                              >
+                              <span style={{ 
+                                color: site.status === "active" ? "#10b981" : "#ef4444",
+                                fontWeight: "600",
+                                fontSize: "13px"
+                              }}>
                                 {site.status === "active" ? "Active" : "Inactive"}
                               </span>
                             </td>
@@ -508,7 +497,7 @@ const Homepage = () => {
                   }}
                 >
                   <h6 className="card-title" style={{ margin: 0, fontWeight: "600" }}>
-                     Staff Highlights
+                    Staff Highlights
                   </h6>
                 </div>
                 <div className="card-body" style={{ padding: "1rem" }}>
@@ -528,10 +517,11 @@ const Homepage = () => {
                             <td>{staff.name}</td>
                             <td>{staff.role}</td>
                             <td>
-                              <span
-                                className={`badge ${staff.status === "active" ? "bg-success" : "bg-danger"}`}
-                                style={{ padding: "5px 10px", color: "white", borderRadius: "14px" }}
-                              >
+                              <span style={{ 
+                                color: staff.status === "active" ? "#10b981" : "#ef4444",
+                                fontWeight: "600",
+                                fontSize: "13px"
+                              }}>
                                 {staff.status === "active" ? "Active" : "Inactive"}
                               </span>
                             </td>

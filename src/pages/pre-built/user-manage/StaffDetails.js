@@ -49,7 +49,6 @@ const StaffDetails = ({ match }) => {
     }
   }, [data]);
 
-  // fetch users list
   const fetchStaffData = async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -76,10 +75,8 @@ const StaffDetails = ({ match }) => {
       if (err.response) {
         if (err.response.status === 401) {
           console.log(err.response.data?.message || "Session expired. Please login again");
-
           localStorage.removeItem("accessToken");
           localStorage.removeItem("sessionToken");
-
           window.location.href = "/login";
         }
       } else {
@@ -121,14 +118,24 @@ const StaffDetails = ({ match }) => {
     setAddNoteText("");
   };
 
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map(word => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <React.Fragment>
-      <Head title="User Details - Regular"></Head>
+      <Head title="Staff Details"></Head>
       {user && (
         <Content>
           <BlockHeadContent>
-            <Button
-              style={{ position: "absolute", top: "60px", right: "60px", zIndex: "20" }}
+            {/* <Button
+              style={{ position: "absolute", top: "42px", right: "60px", zIndex: "20" }}
               color="light"
               outline
               className="bg-white d-none d-sm-inline-flex"
@@ -136,7 +143,7 @@ const StaffDetails = ({ match }) => {
             >
               <Icon name="arrow-left"></Icon>
               <span>Back</span>
-            </Button>
+            </Button> */}
             <a
               href="#back"
               onClick={(ev) => {
@@ -150,319 +157,271 @@ const StaffDetails = ({ match }) => {
           </BlockHeadContent>
 
           <Block>
-            <Card className="">
+            <Card className="shadow-sm border-0">
               <div className="card-aside-wrap" id="user-detail-block">
                 <div className="card-content">
                   <Row className="g-gs">
+                    {/* Left Column - Profile Card */}
                     <Col lg="3">
-                      <PreviewCard>
-                        <div
-                          style={{
-                            minHeight: "280px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {/* Profile Image */}
-                          {user.img ? (
-                            <img
-                              style={{
-                                height: "250px",
-                                width: "250px",
-                                borderRadius: "50%",
-                                objectFit: "cover",
-                              }}
-                              src={user.img}
-                              alt={user.name}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                height: "250px",
-                                width: "250px",
-                                borderRadius: "50%",
-                                backgroundColor: "#ddd",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                color: "#999",
-                                fontSize: "1rem",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Image Not Available
+                      <div className="staff-profile-card">
+                        {/* Profile Image Section */}
+                        <div className="staff-profile-image-wrapper">
+                          <div className="staff-profile-image-container">
+                            {user.img ? (
+                              <img
+                                className="staff-profile-image"
+                                src={user.img}
+                                alt={user.name}
+                              />
+                            ) : (
+                              <div className="staff-profile-avatar">
+                                <span>{getInitials(user.name)}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className={`staff-status-badge ${user.staffStatus === "active" ? "status-active" : "status-inactive"}`}>
+                            {user.staffStatus || "Not Available"}
+                          </div>
+                        </div>
+
+                        {/* Staff Name & Designation */}
+                        <div className="staff-name-section">
+                          <h3 className="staff-name">{user.name || "Not Available"}</h3>
+                          <p className="staff-designation">{user.designation || "Not Available"}</p>
+                          <span className="staff-code">#{user.staffCode || "N/A"}</span>
+                        </div>
+
+                        {/* Staff Details */}
+                        <div className="staff-info-grid">
+                          <div className="staff-info-item">
+                            <Icon name="mail" className="staff-info-icon" />
+                            <div>
+                              <span className="staff-info-label">Email</span>
+                              <p className="staff-info-value">{user.email || "Not Available"}</p>
+                            </div>
+                          </div>
+                          <div className="staff-info-item">
+                            <Icon name="user" className="staff-info-icon" />
+                            <div>
+                              <span className="staff-info-label">Staff Type</span>
+                              <p className="staff-info-value">{user.type || "Not Available"}</p>
+                            </div>
+                          </div>
+                          <div className="staff-info-item">
+                            <Icon name="calendar" className="staff-info-icon" />
+                            <div>
+                              <span className="staff-info-label">Joined On</span>
+                              <p className="staff-info-value">
+                                {user.createdAt
+                                  ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    })
+                                  : "Not Available"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+
+                    {/* Right Column - Tab Content (Single Column) */}
+                    <Col lg="9">
+                      <div className="staff-details-container">
+                        {/* Tabs Navigation */}
+                        <div className="staff-tabs-navigation">
+                          <ul className="staff-tabs-list">
+                            <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "1" ? "active" : ""}`}
+                                href="#personal"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("1");
+                                }}
+                              >
+                                <Icon name="user-circle"></Icon>
+                                <span>Personal</span>
+                              </a>
+                            </li>
+                            <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "2" ? "active" : ""}`}
+                                href="#bank"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("2");
+                                }}
+                              >
+                                <Icon name="building"></Icon>
+                                <span>Bank Details</span>
+                              </a>
+                            </li>
+                            <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "3" ? "active" : ""}`}
+                                href="#documents"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("3");
+                                }}
+                              >
+                                <Icon name="file"></Icon>
+                                <span>Documents</span>
+                              </a>
+                            </li>
+                            <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "4" ? "active" : ""}`}
+                                href="#payroll"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("4");
+                                }}
+                              >
+                                <Icon name="dollar-sign"></Icon>
+                                <span>Payroll</span>
+                              </a>
+                            </li>
+                            {/* <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "5" ? "active" : ""}`}
+                                href="#education"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("5");
+                                }}
+                              >
+                                <Icon name="book"></Icon>
+                                <span>Education</span>
+                              </a>
+                            </li> */}
+                            {/* <li>
+                              <a
+                                className={`staff-tab-item ${activeTab === "6" ? "active" : ""}`}
+                                href="#family"
+                                onClick={(ev) => {
+                                  ev.preventDefault();
+                                  tabtoggle("6");
+                                }}
+                              >
+                                <Icon name="users"></Icon>
+                                <span>Family</span>
+                              </a>
+                            </li> */}
+                          </ul>
+                        </div>
+
+                        {/* Tab Content - Single Column */}
+                        <div className="staff-tab-content">
+                          {/* Personal Information Tab */}
+                          {activeTab === "1" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Personal Information</h5>
+                              <div className="staff-details-single-column">
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Full Name</span>
+                                  <span className="staff-detail-value">{user.name || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Staff Code</span>
+                                  <span className="staff-detail-value">{user.staffCode || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Staff Type</span>
+                                  <span className="staff-detail-value">{user.type || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Email Address</span>
+                                  <span className="staff-detail-value">{user.email || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Designation</span>
+                                  <span className="staff-detail-value">{user.designation || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Department</span>
+                                  <span className="staff-detail-value">{user.department || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Created On</span>
+                                  <span className="staff-detail-value">
+                                    {user.createdAt
+                                      ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+                                          day: "numeric",
+                                          month: "long",
+                                          year: "numeric",
+                                        })
+                                      : "Not Available"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Bank Details Tab */}
+                          {activeTab === "2" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Bank Details</h5>
+                              <div className="staff-details-single-column">
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Bank Name</span>
+                                  <span className="staff-detail-value">{user.bankName || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Branch</span>
+                                  <span className="staff-detail-value">{user.branch || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Account Number</span>
+                                  <span className="staff-detail-value">{user.accountNo || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">IFSC Code</span>
+                                  <span className="staff-detail-value">{user.ifsc || "Not Available"}</span>
+                                </div>
+                                <div className="staff-detail-row">
+                                  <span className="staff-detail-label">Account Type</span>
+                                  <span className="staff-detail-value">Savings</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Documents Tab */}
+                          {activeTab === "3" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Documents</h5>
+                              <FilesStaff />
+                            </div>
+                          )}
+
+                          {/* Payroll Tab */}
+                          {activeTab === "4" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Payroll Information</h5>
+                              <PayRollFiles />
+                            </div>
+                          )}
+
+                          {/* Education Tab */}
+                          {activeTab === "5" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Education Details</h5>
+                              <EducationDetails user={user} />
+                            </div>
+                          )}
+
+                          {/* Family Tab */}
+                          {activeTab === "6" && (
+                            <div className="staff-tab-panel">
+                              <h5 className="staff-tab-title">Family Details</h5>
+                              <FamilyDetails user={user} />
                             </div>
                           )}
                         </div>
-
-                        {/* Staff Code */}
-                        <div className="profile-ud wider mt-0">
-                          <span className="profile-ud-label">Staff Name</span>
-                          <span className="profile-ud-value">{user.name || "Not Available"}</span>
-                        </div>
-
-                        {/* Staff Type */}
-                        <div className="profile-ud wider">
-                          <span className="profile-ud-label">Staff Type</span>
-                          <span className="profile-ud-value">{user.type || "Not Available"}</span>
-                        </div>
-
-                        {/* Status */}
-                        <div className="profile-ud wider">
-                          <span className="profile-ud-label">Status</span>
-                          <span
-                            className={`profile-ud-value text-${user.staffStatus === "active" ? "success" : "danger"} margin-bottom-20`}
-                          >
-                            {user.staffStatus
-                              ? user.staffStatus.charAt(0).toUpperCase() + user.staffStatus.slice(1)
-                              : "Not Available"}
-                          </span>
-                        </div>
-
-                        {/* Created Date */}
-                        {/* <div className="profile-ud wider">
-    <span className="profile-ud-label">Joined On</span>
-    <span className="profile-ud-value">
-      {user.createdAt
-        ? new Date(user.createdAt).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
-        : "Not Available"}
-    </span>
-  </div> */}
-                      </PreviewCard>
-                    </Col>
-
-                    <Col lg="9">
-                      <div className="mt-4">
-                        <BlockTitle tag="h3" page>
-                          <strong className="text-primary small">{user.name}</strong>
-                        </BlockTitle>
-                        <h5 style={{ color: "#798BFF", fontSize: "1rem" }}>
-                          <span>{user.designation}</span>
-                        </h5>
-
-                        {/* <BlockDes className="text-soft">
-                      <ul className="list-inline">
-                        <li>
-                          User ID: <span className="text-base">UD003054</span>
-                        </li>
-                        <li>
-                          Last Login: <span className="text-base">{user.lastLogin} 01:02 PM</span>
-                        </li>
-                      </ul>
-                    </BlockDes> */}
                       </div>
-
-                      <div style={{ marginTop: "20px" }}>
-                        <ul className="nav nav-tabs nav-tabs-mb-icon nav-tabs-card">
-                          <li className="nav-item">
-                            <a
-                              className={`nav-link ${activeTab === "1" && "active"}`}
-                              href="#personal"
-                              onClick={(ev) => {
-                                ev.preventDefault();
-                                tabtoggle("1");
-                              }}
-                            >
-                              <Icon name="user-circle"></Icon>
-                              <span>Personal</span>
-                            </a>
-                          </li>
-
-                          <li className="nav-item">
-                            <a
-                              className={`nav-link ${activeTab === "3" && "active"}`}
-                              href="#transactions"
-                              onClick={(ev) => {
-                                ev.preventDefault();
-                                tabtoggle("3");
-                              }}
-                            >
-                              <Icon name="file"></Icon>
-                              <span>Documents</span>
-                            </a>
-                          </li>
-
-                          {/* <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "4" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("4")
-                        }}
-                      >
-                        <Icon name="calendar-fill"></Icon>
-                        <span>Attendance</span>
-                      </a>
-                    </li>
-
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "5" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("5")
-                        }}
-                      >
-                        <Icon name="location"></Icon>
-                        <span>Location</span>
-                      </a>
-                    </li>
-
-
-                    <li className="nav-item">
-                      <a
-                         className={`nav-link ${activeTab === "6" &&  "active"}`}
-                        href="#transactions"
-                        onClick={(ev) => {
-                          ev.preventDefault();
-                          tabtoggle("6")
-                        }}
-                      >
-                        <Icon name="todo"></Icon>
-                        <span>Activity History</span>
-                      </a>
-                    </li> */}
-                        </ul>
-                      </div>
-
-                      {activeTab === "1" && (
-                        <div className="p-4">
-                          <Block>
-                            <BlockHead>
-                              <BlockTitle className="mt-1" tag="h5">
-                                Personal Information
-                              </BlockTitle>
-                            </BlockHead>
-
-                            <div className="profile-ud-list mt-2">
-                              <div className="profile-ud-item">
-                                <span className="profile-ud-label">Full Name</span>
-                                <span className="profile-ud-value">{user.name || "Not Available"}</span>
-                              </div>
-
-                              <div className="profile-ud-item">
-                                <span className="profile-ud-label">Staff Code</span>
-                                <span className="profile-ud-value">{user.staffCode || "Not Available"}</span>
-                              </div>
-
-                              <div className="profile-ud-item">
-                                <span className="profile-ud-label">Staff Type</span>
-                                <span className="profile-ud-value">{user.type || "Not Available"}</span>
-                              </div>
-
-                              <div className="profile-ud-item">
-                                <span className="profile-ud-label">Email Address</span>
-                                <span className="profile-ud-value">{user.email || "Not Available"}</span>
-                              </div>
-
-                              {/* <div className="profile-ud-item">
-          <span className="profile-ud-label">Status</span>
-          <span
-            className={`profile-ud-value text-${
-              user.staffStatus === "active" ? "success" : "danger"
-            }`}
-          >
-            {user.staffStatus || "Not Available"}
-          </span>
-        </div> */}
-
-                              <div className="profile-ud-item">
-                                <span className="profile-ud-label">Created On</span>
-                                <span className="profile-ud-value">
-                                  {user.createdAt
-                                    ? new Date(user.createdAt).toLocaleDateString("en-IN", {
-                                        day: "numeric",
-                                        month: "long",
-                                        year: "numeric",
-                                      })
-                                    : "Not Available"}
-                                </span>
-                              </div>
-                            </div>
-                          </Block>
-                        </div>
-                      )}
-
-                      {activeTab === "5" && <EducationDetails user={user} />}
-
-                      {activeTab === "6" && <FamilyDetails user={user} />}
-
-                      {activeTab === "2" && (
-                        <div className="p-4">
-                          <Block>
-                            <BlockHead>
-                              <BlockTitle className="mt-1" tag="h5">
-                                Bank Details
-                              </BlockTitle>
-                            </BlockHead>
-                            <div className="profile-ud-list mt-2">
-                              <div className="profile-ud-item">
-                                <div className="profile-ud wider">
-                                  <span className="profile-ud-label">Bank Name</span>
-                                  <span className="profile-ud-value">{user.bankName || "Not Available"}</span>
-                                </div>
-                              </div>
-
-                              <div className="profile-ud-item"></div>
-
-                              <div className="profile-ud-item">
-                                <div className="profile-ud wider">
-                                  <span className="profile-ud-label">Branch</span>
-                                  <span className="profile-ud-value">{user.branch || "Not Available"}</span>
-                                </div>
-                              </div>
-
-                              <div className="profile-ud-item"></div>
-                              <div className="profile-ud-item">
-                                <div className="profile-ud wider">
-                                  <span className="profile-ud-label">Account No</span>
-                                  <span className="profile-ud-value">{user.accountNo || "Not Available"}</span>
-                                </div>
-                              </div>
-
-                              <div className="profile-ud-item"></div>
-
-                              <div className="profile-ud-item">
-                                <div className="profile-ud wider">
-                                  <span className="profile-ud-label">IFSC Code</span>
-                                  <span className="profile-ud-value">{user.ifsc || "Not Available"}</span>
-                                </div>
-                              </div>
-
-                              <div className="profile-ud-item"></div>
-                              <div className="profile-ud-item">
-                                <div className="profile-ud wider">
-                                  <span className="profile-ud-label">Account Type</span>
-                                  <span className="profile-ud-value">Savings</span>
-                                </div>
-                              </div>
-                            </div>
-                          </Block>
-                        </div>
-                      )}
-
-                      {activeTab === "3" && (
-                        <div className="p-4">
-                          <Block>
-                            <FilesStaff />
-                          </Block>
-                        </div>
-                      )}
-
-                      {activeTab === "4" && (
-                        <div className="p-4">
-                          <Block>
-                            <PayRollFiles />
-                          </Block>
-                        </div>
-                      )}
                     </Col>
                   </Row>
                 </div>
@@ -474,4 +433,5 @@ const StaffDetails = ({ match }) => {
     </React.Fragment>
   );
 };
+
 export default StaffDetails;

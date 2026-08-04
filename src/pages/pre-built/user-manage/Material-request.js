@@ -445,32 +445,13 @@ const MaterialRequestPage = () => {
     return title.length <= maxLength ? title : title.slice(0, maxLength) + "...";
   };
 
-  const getStatusBadge = (status) => {
-    let backgroundColor = "", borderColor = "";
+  const getStatusColor = (status) => {
     switch (status) {
-      case "Pending": backgroundColor = "#f59e0f"; borderColor = "#d97706"; break;
-      case "Ordered": backgroundColor = "#10b981"; borderColor = "#059669"; break;
-      case "Partially Ordered": backgroundColor = "#3b82f6"; borderColor = "#2563eb"; break;
-      default: backgroundColor = "#6b7280"; borderColor = "#4b5563";
+      case "Pending": return "#f59e0f";
+      case "Ordered": return "#10b981";
+      case "Partially Ordered": return "#3b82f6";
+      default: return "#6b7280";
     }
-    return (
-      <span
-        style={{
-          backgroundColor,
-          border: `1px solid ${borderColor}`,
-          color: "#ffffff",
-          padding: "4px 12px",
-          borderRadius: "20px",
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          whiteSpace: "nowrap",
-          display: "inline-block",
-          lineHeight: "1.5",
-        }}
-      >
-        {status}
-      </span>
-    );
   };
 
   const goToDetails = (request) => {
@@ -692,7 +673,6 @@ const MaterialRequestPage = () => {
                 className="btn-icon"
                 style={{
                   backgroundColor: "#4B5694",
-                  
                   color: "#fff"
                 }}
                 onClick={openAddModal}
@@ -851,7 +831,7 @@ const MaterialRequestPage = () => {
                                 style={{
                                   background: "none",
                                   border: "none",
-                                  color: "#2563eb",
+                                  color: "#4a568c",
                                   cursor: "pointer",
                                   fontWeight: 500,
                                   textAlign: "left",
@@ -868,7 +848,17 @@ const MaterialRequestPage = () => {
                             <td style={{ padding: "14px 16px", color: "#374151", fontSize: "0.85rem" }}>
                               {sliceTitle(req.project || "N/A", 20)}
                             </td>
-                            <td style={{ padding: "8px 12px" }}>{getStatusBadge(req.status)}</td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <span
+                                style={{
+                                  color: getStatusColor(req.status),
+                                  fontWeight: "600",
+                                  fontSize: "13px"
+                                }}
+                              >
+                                {req.status}
+                              </span>
+                            </td>
                             <td style={{ padding: "14px 16px", color: "#374151", fontWeight: 500 }}>{req.purpose}</td>
                             <td style={{ padding: "14px 16px", color: "#374151", fontSize: "0.85rem" }}>
                               {formatDateToDDMMYYYY(req.requiredBy)}
