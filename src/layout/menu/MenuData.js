@@ -76,28 +76,32 @@ const menu = [
   //   link: "/sales",
   // },
   
-  //  {
-  //   icon: "bar-chart",
-  //   text: "Reports",
-  //   active: false,
-  //   subMenu: [
+   {
+    icon: "bar-chart",
+    text: "Reports",
+    active: false,
+    subMenu: [
    
-  //     {
-  //       icon: "user-list",
-  //       text: "Staffs",
-  //       link: "/staff-report", 
-  //     },
-  //     {
-  //       icon: "truck",
-  //       text: "Suppliers",
-  //       link: "/suppliers-report", // new page (we will create later)
-  //     },{
-  //       icon: "user-list",
-  //       text: "Project",
-  //       link: "/project-report", // new page (we will create later)
-  //     }
-  //   ],
-  // },
+      {
+        icon: "user-list",
+        text: "Staffs",
+        link: "/staff-report", 
+      },
+      {
+        icon: "truck",
+        text: "Suppliers",
+        link: "/suppliers-report", // new page (we will create later)
+      },{
+        icon: "user-list",
+        text: "Project",
+        link: "/project-report", // new page (we will create later)
+      },{
+        icon: "user-list",
+        text: "Work Order",
+        link: "/workOrder-report", // new page (we will create later)
+      }
+    ],
+  },
 
   {
     icon: "calendar-check",

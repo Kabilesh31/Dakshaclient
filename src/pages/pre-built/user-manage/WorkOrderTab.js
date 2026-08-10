@@ -92,13 +92,11 @@ const WorkOrderPage = ({ projectId, projectName }) => {
     }
 
     if (editingGoodsIndex !== null) {
-      // Update existing goods
       const updatedGoods = [...formData.goods];
       updatedGoods[editingGoodsIndex] = { ...currentGoods };
       setFormData(prev => ({ ...prev, goods: updatedGoods }));
       setEditingGoodsIndex(null);
     } else {
-      // Add new goods
       setFormData(prev => ({
         ...prev,
         goods: [...prev.goods, { ...currentGoods }]
