@@ -99,6 +99,10 @@ const menu = [
         icon: "user-list",
         text: "Work Order",
         link: "/workOrder-report", // new page (we will create later)
+      },{
+        icon: "user-list",
+        text: "Salary Report",
+        link: "/salary-report", // new page (we will create later)
       }
     ],
   },
