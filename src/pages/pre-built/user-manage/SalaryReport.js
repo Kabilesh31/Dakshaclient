@@ -1,19 +1,17 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 
 // ---------------------------------------------------------------------------
-// Dummy data — shaped like "SREE DAKSHA PROPERTY DEVELOPERS" weekly wage
-// sheets. SR-69 below mirrors the sample sheet photo exactly (dates, per-day
-// units, totals, wage rate and payout all reconcile to the printed totals).
+// Updated with real site names and South Indian employee names
 // ---------------------------------------------------------------------------
 const COMPANY_NAME = "SREE DAKSHA PROPERTY DEVELOPERS (INDIA) PVT LTD.,";
 
 const SALARY_REPORTS = [
   {
     id: "sr-69",
-    project: "NMR",
+    project: "Koundampalayam Site",
     team: "69",
-    raBill: "RA BILL:69",
+    raBill: "BILL:69",
     periodFrom: "2026-07-16",
     periodTo: "2026-07-22",
     foodAmount: 400,
@@ -36,35 +34,67 @@ const SALARY_REPORTS = [
   },
   {
     id: "sr-70",
-    project: "NMR",
+    project: "Peelamedu Site",
     team: "70",
-    raBill: "RA BILL:70",
+    raBill: "BILL:70",
     periodFrom: "2026-07-23",
     periodTo: "2026-07-29",
     foodAmount: 350,
     dates: ["23.07.26", "24.07.26", "25.07.26", "26.07.26", "27.07.26", "28.07.26", "29.07.26"],
     workers: [
-      { name: "MINAJ", rate: 1100, days: [1.5, 1.5, 1.5, 0, 1.625, 1.5, 1.375] },
-      { name: "INFAN", rate: 1200, days: [1.375, 1.5, 1.625, 0, 1.5, 1.5, 1.5] },
-      { name: "ASRAF", rate: 700, days: [1.5, 1.375, 1.625, 0, 1.5, 1.375, 1.5] },
-      { name: "JAVED", rate: 850, days: [1.5, 1.5, 1.625, 0, 1.5, 1.5, 1.375] },
-      { name: "SERAJ", rate: 750, days: [1.5, 1.5, 1.625, 0, 1.5, 1.5, 1.5] },
+      { name: "RAJESH KUMAR", rate: 1100, days: [1.5, 1.5, 1.5, 0, 1.625, 1.5, 1.375] },
+      { name: "SURESH BABU", rate: 1200, days: [1.375, 1.5, 1.625, 0, 1.5, 1.5, 1.5] },
+      { name: "MURALI KRISHNAN", rate: 700, days: [1.5, 1.375, 1.625, 0, 1.5, 1.375, 1.5] },
+      { name: "KARTHIKEYAN", rate: 850, days: [1.5, 1.5, 1.625, 0, 1.5, 1.5, 1.375] },
+      { name: "SIVAKUMAR", rate: 750, days: [1.5, 1.5, 1.625, 0, 1.5, 1.5, 1.5] },
     ],
   },
   {
     id: "sr-68",
-    project: "AROUSH",
+    project: "Saravanampatti Site",
     team: "12",
-    raBill: "RA BILL:68",
+    raBill: "BILL:68",
     periodFrom: "2026-07-09",
     periodTo: "2026-07-15",
     foodAmount: 300,
     dates: ["09.07.26", "10.07.26", "11.07.26", "12.07.26", "13.07.26", "14.07.26", "15.07.26"],
     workers: [
-      { name: "MOKTHAR", rate: 650, days: [1.5, 1.375, 1.5, 0, 1.625, 1.5, 1.375] },
-      { name: "NOVSAD", rate: 900, days: [1.5, 1.375, 1.5, 0, 1.625, 1.5, 1.375] },
-      { name: "SHAHID", rate: 600, days: [1.375, 1.375, 1.5, 0, 1.5, 1.375, 1.5] },
-      { name: "SAMIR", rate: 850, days: [1.5, 1.375, 1.625, 0, 1.5, 1.5, 1.375] },
+      { name: "GOPALAKRISHNAN", rate: 650, days: [1.5, 1.375, 1.5, 0, 1.625, 1.5, 1.375] },
+      { name: "VASANTH KUMAR", rate: 900, days: [1.5, 1.375, 1.5, 0, 1.625, 1.5, 1.375] },
+      { name: "RAGHAVAN", rate: 600, days: [1.375, 1.375, 1.5, 0, 1.5, 1.375, 1.5] },
+      { name: "BALAJI", rate: 850, days: [1.5, 1.375, 1.625, 0, 1.5, 1.5, 1.375] },
+    ],
+  },
+  {
+    id: "sr-71",
+    project: "Gandhipuram Site",
+    team: "45",
+    raBill: "BILL:71",
+    periodFrom: "2026-07-30",
+    periodTo: "2026-08-05",
+    foodAmount: 500,
+    dates: ["30.07.26", "31.07.26", "01.08.26", "02.08.26", "03.08.26", "04.08.26", "05.08.26"],
+    workers: [
+      { name: "SUNDAR RAJAN", rate: 1000, days: [1.5, 1.5, 1.625, 0, 1.5, 1.5, 1.375] },
+      { name: "RAMASAMY", rate: 950, days: [1.375, 1.5, 1.625, 0, 1.5, 1.375, 1.5] },
+      { name: "PERUMAL", rate: 800, days: [1.5, 1.375, 1.5, 0, 1.5, 1.5, 1.375] },
+      { name: "CHINNASAMY", rate: 750, days: [1.5, 1.5, 1.625, 0, 1.5, 1.375, 1.5] },
+      { name: "MURUGAN", rate: 700, days: [1.375, 1.375, 1.5, 0, 1.5, 1.5, 1.375] },
+    ],
+  },
+  {
+    id: "sr-72",
+    project: "Koundampalayam Site",
+    team: "89",
+    raBill: "BILL:72",
+    periodFrom: "2026-08-06",
+    periodTo: "2026-08-12",
+    foodAmount: 450,
+    dates: ["06.08.26", "07.08.26", "08.08.26", "09.08.26", "10.08.26", "11.08.26", "12.08.26"],
+    workers: [
+      { name: "RAMESH", rate: 900, days: [1.5, 1.625, 1.5, 0, 1.5, 1.375, 1.5] },
+      { name: "SURESH", rate: 850, days: [1.375, 1.5, 1.625, 0, 1.5, 1.5, 1.375] },
+      { name: "MAHESH", rate: 800, days: [1.5, 1.375, 1.5, 0, 1.625, 1.5, 1.5] },
     ],
   },
 ];
@@ -74,7 +104,6 @@ const inr = (n) =>
     ? ""
     : Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Comma-grouped, no forced decimals — e.g. 1512.5 -> "1,512.5", 1375 -> "1,375".
 const fmtAmt = (n) =>
   n == null ? "" : Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
@@ -113,6 +142,7 @@ const SalaryReport = () => {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const printRef = useRef();
 
   const reports = useMemo(() => SALARY_REPORTS.map(withTotals), []);
 
@@ -124,8 +154,6 @@ const SalaryReport = () => {
   const [selectedProject, setSelectedProject] = useState(reports[0]?.project || "");
   const [selectedId, setSelectedId] = useState(reports[0]?.id || null);
 
-  // Work orders (RA bills) that belong to the chosen project, further
-  // narrowed by search text and the period date filter.
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return reports
@@ -152,7 +180,7 @@ const SalaryReport = () => {
 
   const handleProjectChange = (project) => {
     setSelectedProject(project);
-    setSelectedId(null); // let `selected` fall back to the first work order in the new project
+    setSelectedId(null);
   };
 
   const clearDateFilter = () => {
@@ -160,7 +188,9 @@ const SalaryReport = () => {
     setDateTo("");
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleExportExcel = () => {
     if (!selected) return;
@@ -193,32 +223,79 @@ const SalaryReport = () => {
     <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "'Inter', system-ui, sans-serif" }}>
       <style>{`
         @media print {
-          @page { size: landscape; margin: 10mm; }
-          body * { visibility: hidden; }
-          .print-area, .print-area * { visibility: visible; }
-          .print-area { position: absolute; top: 0; left: 0; width: 100%; margin: 0; box-shadow: none !important; border: none !important; }
-          .no-print { display: none !important; }
+          @page { 
+            size: landscape; 
+            margin: 10mm;
+          }
+          body * { 
+            visibility: hidden !important;
+          }
+          .print-area, .print-area * { 
+            visibility: visible !important;
+          }
+          .print-area { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            margin: 0 !important; 
+            box-shadow: none !important; 
+            border: none !important;
+            background: white !important;
+            padding: 20px !important;
+          }
+          .no-print { 
+            display: none !important; 
+          }
+          .sr-scroll {
+            overflow: visible !important;
+          }
         }
-        .sr-row { transition: background-color 0.12s ease; cursor: pointer; }
-        .sr-row:hover { background-color: #eef2ff; }
-        .sr-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
-        .sr-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .sr-row { 
+          transition: background-color 0.12s ease; 
+          cursor: pointer; 
+        }
+        .sr-row:hover { 
+          background-color: #eef2ff; 
+        }
+        .sr-scroll::-webkit-scrollbar { 
+          height: 6px; 
+          width: 6px; 
+        }
+        .sr-scroll::-webkit-scrollbar-thumb { 
+          background: #cbd5e1; 
+          border-radius: 4px; 
+        }
+        /* Fix for date picker closing issue */
+        input[type="date"] {
+          position: relative;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+        }
+        .date-picker-wrapper {
+          position: relative;
+          display: inline-block;
+          width: 100%;
+        }
       `}</style>
 
       {/* Header */}
       <div className="no-print" style={{
         padding: "24px 20px 0 20px",
-        marginTop : "60px",
+        marginTop: "60px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        flexWrap: "wrap",
+        gap: 12,
       }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#111827" }}>Salary Report</h2>
           <p style={{ margin: "4px 0 0", fontSize: 14, color: "#6b7280" }}>Weekly attendance and wages by team</p>
         </div>
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <button
             onClick={handleExportExcel}
             disabled={!selected}
@@ -303,25 +380,39 @@ const SalaryReport = () => {
 
             <div style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", marginBottom: 6 }}>Filter by period</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 0, boxSizing: "border-box", padding: "7px 8px", borderRadius: 8,
-                  border: "1px solid #d1d5db", fontSize: 12.5, outline: "none", color: "#374151",
-                }}
-              />
+              <div className="date-picker-wrapper" style={{ flex: 1 }}>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setDateFrom(e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  style={{
+                    width: "100%", boxSizing: "border-box", padding: "7px 8px", borderRadius: 8,
+                    border: "1px solid #d1d5db", fontSize: 12.5, outline: "none", color: "#374151",
+                  }}
+                />
+              </div>
               <span style={{ fontSize: 12, color: "#9ca3af" }}>to</span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 0, boxSizing: "border-box", padding: "7px 8px", borderRadius: 8,
-                  border: "1px solid #d1d5db", fontSize: 12.5, outline: "none", color: "#374151",
-                }}
-              />
+              <div className="date-picker-wrapper" style={{ flex: 1 }}>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setDateTo(e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  style={{
+                    width: "100%", boxSizing: "border-box", padding: "7px 8px", borderRadius: 8,
+                    border: "1px solid #d1d5db", fontSize: 12.5, outline: "none", color: "#374151",
+                  }}
+                />
+              </div>
             </div>
 
             {(dateFrom || dateTo) && (
@@ -377,6 +468,7 @@ const SalaryReport = () => {
         {/* Right Panel — Selected report / print area */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
+            ref={printRef}
             className="print-area sr-scroll"
             style={{
               background: "#ffffff",
@@ -398,8 +490,8 @@ const SalaryReport = () => {
                 <div style={{ borderBottom: "2px solid #111827", paddingBottom: 10, marginBottom: 4 }}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>{COMPANY_NAME}</div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12.5, color: "#374151", flexWrap: "wrap", gap: 8 }}>
-                    <span><strong>PROJECT:</strong> {selected.project} &nbsp; <strong>TEAM:</strong> {selected.team}</span>
-                    <span><strong>{selected.raBill}</strong></span>
+                    <span><strong>PROJECT:</strong> {selected.project} &nbsp;</span>
+                    {/* <span><strong>{selected.raBill}</strong></span> */}
                     <span>
                       <strong>PERIOD:</strong> ({selected.dates[0]} TO {selected.dates[selected.dates.length - 1]})
                     </span>
@@ -473,18 +565,24 @@ const SalaryReport = () => {
                 </div>
 
                 {/* Signatures */}
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 50 }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151" }}>
+                {/* <div style={{ display: "flex", justifyContent: "space-between", marginTop: 50, padding: "0 20px" }}>
+                  <div style={{ textAlign: "center", flex: 1 }}>
+                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151", margin: "0 auto" }}>
                       Prepared By
                     </div>
-                  </div>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151" }}>
-                      Authorised Signatory
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+                      (HR Department)
                     </div>
                   </div>
-                </div>
+                  <div style={{ textAlign: "center", flex: 1 }}>
+                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151", margin: "0 auto" }}>
+                      Authorised Signatory
+                    </div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
+                      (Management)
+                    </div>
+                  </div>
+                </div> */}
               </div>
             )}
           </div>
