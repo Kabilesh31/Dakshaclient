@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 // Bill BILL-07 below mirrors the sample bill photo exactly.
 // ---------------------------------------------------------------------------
 const COMPANY_NAME = "SREE DAKSHA INDUSTRIES";
+const ALL_SITES_KEY = "__ALL_SITES__";
 
 const WORK_ORDERS = [
   {
@@ -14,15 +15,15 @@ const WORK_ORDERS = [
     date: "2026-01-15",
     factoryExpenses: 35537.5,
     items: [
-      { sno: 1, siteName: "MAICE-2", workOrderNo: "258", invoiceNo: "F-049", description: "Window gril - Maice officeroom", kgs: 149.95, sft: null, rate: 30, amount: 4498.5 },
-      { sno: 2, siteName: "LEIA", workOrderNo: "262", invoiceNo: "F-050", description: "Ladder - 12 feet", kgs: 43.9, sft: null, rate: 30, amount: 1317.0 },
-      { sno: 3, siteName: "ILLARIA", workOrderNo: "235", invoiceNo: "F-051", description: "Dressing L-angle", kgs: 46.6, sft: null, rate: 30, amount: 1398.0 },
-      { sno: 4, siteName: "ILLARIA", workOrderNo: "235", invoiceNo: "F-051", description: "Labour for dressing L angle fixing", kgs: null, sft: 1550.0, rate: 1, amount: 1550.0 },
-      { sno: 5, siteName: "AROUSH", workOrderNo: "257", invoiceNo: "F-052", description: "Garden chair - rework alteration, 4 chairs", kgs: 28.5, sft: null, rate: 35, amount: 997.5 },
-      { sno: 6, siteName: "AROUSH", workOrderNo: "257", invoiceNo: "F-052", description: "Labour for garden chair rework", kgs: null, sft: 5300.0, rate: 1, amount: 5300.0 },
-      { sno: 7, siteName: "CALLIAS", workOrderNo: "271", invoiceNo: "F-053", description: "Swing leg", kgs: 111.95, sft: null, rate: 35, amount: 3918.25 },
-      { sno: 8, siteName: "CALLIAS", workOrderNo: "271", invoiceNo: "F-053", description: "Sea saw leg", kgs: 63.35, sft: null, rate: 35, amount: 2217.25 },
-      { sno: 9, siteName: "NEFELI-AP", workOrderNo: "193, 194", invoiceNo: "F-054", description: "Window gril - 3rd, 4th floor", kgs: 1657.9, sft: null, rate: 30, amount: 49737.0 },
+      { sno: 1, date: "2026-01-10", siteName: "Kavundampalayam", workOrderNo: "258", invoiceNo: "F-049", description: "Window gril - Maice officeroom", kgs: 149.95, sft: null, rate: 30, amount: 4498.5 },
+      { sno: 2, date: "2026-01-11", siteName: "Thondamuthur", workOrderNo: "262", invoiceNo: "F-050", description: "Ladder - 12 feet", kgs: 43.9, sft: null, rate: 30, amount: 1317.0 },
+      { sno: 3, date: "2026-01-12", siteName: "Sulur", workOrderNo: "235", invoiceNo: "F-051", description: "Dressing L-angle", kgs: 46.6, sft: null, rate: 30, amount: 1398.0 },
+      { sno: 4, date: "2026-01-12", siteName: "Sulur", workOrderNo: "235", invoiceNo: "F-051", description: "Labour for dressing L angle fixing", kgs: null, sft: 1550.0, rate: 1, amount: 1550.0 },
+      { sno: 5, date: "2026-01-13", siteName: "Thudiyalur", workOrderNo: "257", invoiceNo: "F-052", description: "Garden chair - rework alteration, 4 chairs", kgs: 28.5, sft: null, rate: 35, amount: 997.5 },
+      { sno: 6, date: "2026-01-13", siteName: "Thudiyalur", workOrderNo: "257", invoiceNo: "F-052", description: "Labour for garden chair rework", kgs: null, sft: 5300.0, rate: 1, amount: 5300.0 },
+      { sno: 7, date: "2026-01-14", siteName: "Annur", workOrderNo: "271", invoiceNo: "F-053", description: "Swing leg", kgs: 111.95, sft: null, rate: 35, amount: 3918.25 },
+      { sno: 8, date: "2026-01-14", siteName: "Annur", workOrderNo: "271", invoiceNo: "F-053", description: "Sea saw leg", kgs: 63.35, sft: null, rate: 35, amount: 2217.25 },
+      { sno: 9, date: "2026-01-15", siteName: "Saravanampatti", workOrderNo: "193, 194", invoiceNo: "F-054", description: "Window gril - 3rd, 4th floor", kgs: 1657.9, sft: null, rate: 30, amount: 49737.0 },
     ],
   },
   {
@@ -31,10 +32,10 @@ const WORK_ORDERS = [
     date: "2025-12-20",
     factoryExpenses: 21400.0,
     items: [
-      { sno: 1, siteName: "HARBOUR VIEW", workOrderNo: "241", invoiceNo: "F-041", description: "Balcony railing fabrication", kgs: 210.4, sft: null, rate: 30, amount: 6312.0 },
-      { sno: 2, siteName: "HARBOUR VIEW", workOrderNo: "241", invoiceNo: "F-041", description: "Labour for railing fixing", kgs: null, sft: 2100.0, rate: 1, amount: 2100.0 },
-      { sno: 3, siteName: "PALM GROVE", workOrderNo: "248", invoiceNo: "F-042", description: "Main gate fabrication", kgs: 340.75, sft: null, rate: 32, amount: 10904.0 },
-      { sno: 4, siteName: "PALM GROVE", workOrderNo: "248", invoiceNo: "F-043", description: "Staircase handrail", kgs: 96.5, sft: null, rate: 30, amount: 2895.0 },
+      { sno: 1, date: "2025-12-16", siteName: "Keeranatham", workOrderNo: "241", invoiceNo: "F-041", description: "Balcony railing fabrication", kgs: 210.4, sft: null, rate: 30, amount: 6312.0 },
+      { sno: 2, date: "2025-12-17", siteName: "Keeranatham", workOrderNo: "241", invoiceNo: "F-041", description: "Labour for railing fixing", kgs: null, sft: 2100.0, rate: 1, amount: 2100.0 },
+      { sno: 3, date: "2025-12-18", siteName: "Balu Garden", workOrderNo: "248", invoiceNo: "F-042", description: "Main gate fabrication", kgs: 340.75, sft: null, rate: 32, amount: 10904.0 },
+      { sno: 4, date: "2025-12-20", siteName: "Balu Garden", workOrderNo: "248", invoiceNo: "F-043", description: "Staircase handrail", kgs: 96.5, sft: null, rate: 30, amount: 2895.0 },
     ],
   },
   {
@@ -43,9 +44,9 @@ const WORK_ORDERS = [
     date: "2025-11-28",
     factoryExpenses: 18250.0,
     items: [
-      { sno: 1, siteName: "SUNRISE APT", workOrderNo: "219", invoiceNo: "F-033", description: "Window grill, ground floor", kgs: 420.6, sft: null, rate: 30, amount: 12618.0 },
-      { sno: 2, siteName: "SUNRISE APT", workOrderNo: "219", invoiceNo: "F-034", description: "Labour for grill fixing", kgs: null, sft: 3800.0, rate: 1, amount: 3800.0 },
-      { sno: 3, siteName: "MEADOW COURT", workOrderNo: "224", invoiceNo: "F-035", description: "Compound fence gate", kgs: 118.4, sft: null, rate: 32, amount: 3788.8 },
+      { sno: 1, date: "2025-11-24", siteName: "Vasanth Promotors", workOrderNo: "219", invoiceNo: "F-033", description: "Window grill, ground floor", kgs: 420.6, sft: null, rate: 30, amount: 12618.0 },
+      { sno: 2, date: "2025-11-25", siteName: "Vasanth Promotors", workOrderNo: "219", invoiceNo: "F-034", description: "Labour for grill fixing", kgs: null, sft: 3800.0, rate: 1, amount: 3800.0 },
+      { sno: 3, date: "2025-11-28", siteName: "Star Town", workOrderNo: "224", invoiceNo: "F-035", description: "Compound fence gate", kgs: 118.4, sft: null, rate: 32, amount: 3788.8 },
     ],
   },
   {
@@ -54,10 +55,10 @@ const WORK_ORDERS = [
     date: "2026-02-10",
     factoryExpenses: 27600.0,
     items: [
-      { sno: 1, siteName: "MAICE-2", workOrderNo: "265", invoiceNo: "F-055", description: "Terrace pergola frame", kgs: 560.2, sft: null, rate: 30, amount: 16806.0 },
-      { sno: 2, siteName: "AROUSH", workOrderNo: "259", invoiceNo: "F-056", description: "Garden bench fabrication, 2 units", kgs: 74.3, sft: null, rate: 35, amount: 2600.5 },
-      { sno: 3, siteName: "CALLIAS", workOrderNo: "276", invoiceNo: "F-057", description: "Swing set fabrication", kgs: 189.6, sft: null, rate: 35, amount: 6636.0 },
-      { sno: 4, siteName: "CALLIAS", workOrderNo: "276", invoiceNo: "F-057", description: "Labour for swing set fixing", kgs: null, sft: 1150.0, rate: 1, amount: 1150.0 },
+      { sno: 1, date: "2026-02-05", siteName: "Kavundampalayam", workOrderNo: "265", invoiceNo: "F-055", description: "Terrace pergola frame", kgs: 560.2, sft: null, rate: 30, amount: 16806.0 },
+      { sno: 2, date: "2026-02-06", siteName: "Sulur", workOrderNo: "259", invoiceNo: "F-056", description: "Garden bench fabrication, 2 units", kgs: 74.3, sft: null, rate: 35, amount: 2600.5 },
+      { sno: 3, date: "2026-02-08", siteName: "Thudiyalur", workOrderNo: "276", invoiceNo: "F-057", description: "Swing set fabrication", kgs: 189.6, sft: null, rate: 35, amount: 6636.0 },
+      { sno: 4, date: "2026-02-08", siteName: "Thudiyalur", workOrderNo: "276", invoiceNo: "F-057", description: "Labour for swing set fixing", kgs: null, sft: 1150.0, rate: 1, amount: 1150.0 },
     ],
   },
 ];
@@ -65,7 +66,7 @@ const WORK_ORDERS = [
 // Flatten every bill's items into one list, carrying the parent bill's
 // billNo/date along with each row — this is what site filtering runs over.
 const ALL_ITEMS = WORK_ORDERS.flatMap((wo) =>
-  wo.items.map((it) => ({ ...it, billNo: wo.billNo, billDate: wo.date }))
+  wo.items.map((it) => ({ ...it, billNo: wo.billNo, itemDate: it.date || wo.date }))
 );
 
 const inr = (n) =>
@@ -95,18 +96,20 @@ const WorkOrderReportPage = () => {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
   // Refs for date inputs
   const dateFromRef = useRef(null);
   const dateToRef = useRef(null);
 
   // Items that survive the date filter, used to build the site list and
   // (once a site is picked) the right-hand table.
+  const isDateFiltered = Boolean(dateFrom || dateTo);
+
   const dateFilteredItems = useMemo(
     () =>
       ALL_ITEMS.filter((it) => {
-        const matchesFrom = !dateFrom || it.billDate >= dateFrom;
-        const matchesTo = !dateTo || it.billDate <= dateTo;
+        const matchesFrom = !dateFrom || it.itemDate >= dateFrom;
+        const matchesTo = !dateTo || it.itemDate <= dateTo;
         return matchesFrom && matchesTo;
       }),
     [dateFrom, dateTo]
@@ -115,11 +118,11 @@ const WorkOrderReportPage = () => {
   const sites = useMemo(() => {
     const map = new Map();
     dateFilteredItems.forEach((it) => {
-      if (!map.has(it.siteName)) map.set(it.siteName, { name: it.siteName, count: 0, amount: 0, lastDate: it.billDate });
+      if (!map.has(it.siteName)) map.set(it.siteName, { name: it.siteName, count: 0, amount: 0, lastDate: it.itemDate });
       const entry = map.get(it.siteName);
       entry.count += 1;
       entry.amount += it.amount;
-      if (it.billDate > entry.lastDate) entry.lastDate = it.billDate;
+      if (it.itemDate > entry.lastDate) entry.lastDate = it.itemDate;
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [dateFilteredItems]);
@@ -130,22 +133,34 @@ const WorkOrderReportPage = () => {
     return sites.filter((s) => s.name.toLowerCase().includes(q));
   }, [sites, search]);
 
-  const [selectedSite, setSelectedSite] = useState(null);
+  // "All Sites" is a pinned, mixed-workorders view — every site's rows,
+  // filtered by date but not narrowed to one site. It's the default view
+  // whenever a date range is applied, but the user can pick it any time.
+  const [selectedSite, setSelectedSite] = useState(ALL_SITES_KEY);
 
-  // Keep selection valid as filters change: default to the first available
-  // site, and fall back gracefully if the current selection drops out.
+  // Keep selection valid as filters change: stay on "All Sites" or the
+  // chosen site, falling back gracefully if that site drops out of range.
   const activeSite = useMemo(() => {
+    if (selectedSite === ALL_SITES_KEY) return ALL_SITES_KEY;
     if (selectedSite && sites.some((s) => s.name === selectedSite)) return selectedSite;
     return sites[0]?.name || null;
   }, [selectedSite, sites]);
 
-  const siteItems = useMemo(
-    () =>
-      activeSite
-        ? dateFilteredItems.filter((it) => it.siteName === activeSite).sort((a, b) => (a.billDate < b.billDate ? -1 : 1))
-        : [],
-    [dateFilteredItems, activeSite]
-  );
+  // A date filter always searches across every site — mixed results with
+  // the Site Name column shown — even if a single site was previously picked.
+  const isAllSites = activeSite === ALL_SITES_KEY || isDateFiltered;
+
+  const siteItems = useMemo(() => {
+    const items = isAllSites
+      ? dateFilteredItems
+      : activeSite
+      ? dateFilteredItems.filter((it) => it.siteName === activeSite)
+      : [];
+    return [...items].sort((a, b) => {
+      if (a.itemDate !== b.itemDate) return a.itemDate < b.itemDate ? -1 : 1;
+      return a.siteName.localeCompare(b.siteName);
+    });
+  }, [dateFilteredItems, activeSite, isAllSites]);
 
   const totalAmount = useMemo(() => siteItems.reduce((sum, it) => sum + it.amount, 0), [siteItems]);
 
@@ -159,6 +174,8 @@ const WorkOrderReportPage = () => {
   const handleExportExcel = () => {
     const rows = siteItems.map((it, i) => ({
       "S.No": i + 1,
+      Date: it.itemDate.split("-").reverse().join("-"),
+      ...(isAllSites ? { "Site Name": it.siteName } : {}),
       "Bill No": it.billNo,
       "Work Order No": it.workOrderNo,
       "Invoice No": it.invoiceNo,
@@ -172,18 +189,22 @@ const WorkOrderReportPage = () => {
     rows.push({ "Description of Work": "Total amount", Amount: totalAmount });
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [
-      { wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 36 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 14 },
-    ];
+    ws["!cols"] = isAllSites
+      ? [{ wch: 6 }, { wch: 11 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 36 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 14 }]
+      : [{ wch: 6 }, { wch: 11 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 36 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 14 }];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, activeSite || "Site");
-    XLSX.writeFile(wb, `${(activeSite || "site").replace(/\s+/g, "_")}_work_order_report.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, isAllSites ? "All Sites" : activeSite);
+    XLSX.writeFile(wb, `${isAllSites ? "all_sites" : activeSite.replace(/\s+/g, "_")}_work_order_report.xlsx`);
   };
 
   // Handle date input focus to prevent issues
   const handleDateFocus = (e) => {
     e.target.showPicker && e.target.showPicker();
   };
+
+  const tableHeaders = isAllSites
+    ? ["S.No", "Date", "Site Name", "Work Order No", "Invoice No", "Description of Work", "Kgs", "Sft", "Rate", "Amount"]
+    : ["S.No", "Date","Work Order No", "Invoice No", "Description of Work", "Kgs", "Sft", "Rate", "Amount"];
 
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -221,9 +242,8 @@ const WorkOrderReportPage = () => {
       `}</style>
 
       {/* Header with Title and Buttons */}
-      <div className="no-print" style={{ 
-        // borderBottom: "1px solid #e5e7eb", 
-        marginTop: "70px", 
+      <div className="no-print" style={{
+        marginTop: "70px",
         padding: "24px 20px 0px 20px",
         display: "flex",
         justifyContent: "space-between",
@@ -233,27 +253,27 @@ const WorkOrderReportPage = () => {
           <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#111827" }}>Work Order Report</h2>
           <p style={{ margin: "4px 0 0", fontSize: 14, color: "#6b7280" }}>View overall work order reports</p>
         </div>
-        
-        <div style={{ 
-          display: "flex", 
-          gap: 12, 
+
+        <div style={{
+          display: "flex",
+          gap: 12,
           alignItems: "center"
         }}>
           <button
             onClick={handleExportExcel}
             disabled={!activeSite}
             style={{
-              display: "flex", 
-              alignItems: "center", 
-              gap: 8, 
-              padding: "10px 20px", 
-              fontSize: 13, 
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              fontSize: 13,
               fontWeight: 600,
-              borderRadius: 8, 
-              border: "1px solid #d1d5db", 
-              background: "#ffffff", 
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              background: "#ffffff",
               color: "#374151",
-              cursor: activeSite ? "pointer" : "not-allowed", 
+              cursor: activeSite ? "pointer" : "not-allowed",
               opacity: activeSite ? 1 : 0.5,
               transition: "all 0.2s ease",
               boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
@@ -282,17 +302,17 @@ const WorkOrderReportPage = () => {
             onClick={handlePrint}
             disabled={!activeSite}
             style={{
-              display: "flex", 
-              alignItems: "center", 
-              gap: 8, 
-              padding: "10px 20px", 
-              fontSize: 13, 
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              fontSize: 13,
               fontWeight: 600,
-              borderRadius: 8, 
-              border: "none", 
-              background: "#4338ca", 
+              borderRadius: 8,
+              border: "none",
+              background: "#4338ca",
               color: "#ffffff",
-              cursor: activeSite ? "pointer" : "not-allowed", 
+              cursor: activeSite ? "pointer" : "not-allowed",
               opacity: activeSite ? 1 : 0.5,
               transition: "all 0.2s ease",
               boxShadow: "0 1px 3px rgba(67, 56, 202, 0.3)"
@@ -321,13 +341,13 @@ const WorkOrderReportPage = () => {
           </button>
         </div>
       </div>
-        
+
       <div style={{ display: "flex", gap: 20, padding: 24, maxWidth: 1400, margin: "0 auto", alignItems: "flex-start" }}>
         {/* Left Panel — Site select */}
         <div
           className="no-print"
           style={{
-            width: 320,
+            width: 300,
             flexShrink: 0,
             background: "#ffffff",
             borderRadius: 12,
@@ -365,7 +385,6 @@ const WorkOrderReportPage = () => {
                   onFocus={handleDateFocus}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Force the date picker to open
                     if (e.target.showPicker) {
                       e.target.showPicker();
                     }
@@ -439,22 +458,47 @@ const WorkOrderReportPage = () => {
             </div>
           </div>
 
-          <div className="wo-scroll" style={{ maxHeight: 500, overflowY: "auto" }}>
+          {/* Pinned "All Sites" — every site's work orders mixed together within the date range */}
+          <div
+            className="site-row"
+            onClick={() => setSelectedSite(ALL_SITES_KEY)}
+            style={{
+              padding: "14px 16px",
+              borderBottom: "2px solid #e5e7eb",
+              background: isAllSites ? "#eef2ff" : "#fafafa",
+              borderLeft: isAllSites ? "3px solid #4338ca" : "3px solid transparent",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>All Sites</span>
+              <span style={{ fontSize: 11, color: "#9ca3af" }}>mixed</span>
+            </div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+              {dateFilteredItems.length} item{dateFilteredItems.length !== 1 ? "s" : ""} across {sites.length} site{sites.length !== 1 ? "s" : ""}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#4338ca", marginTop: 6 }}>
+              &#8377; {inr(dateFilteredItems.reduce((s, it) => s + it.amount, 0))}
+            </div>
+          </div>
+
+          <div className="wo-scroll" style={{ maxHeight: 460, overflowY: "auto" }}>
             {filteredSites.length === 0 && (
               <div style={{ padding: 20, fontSize: 13, color: "#9ca3af", textAlign: "center" }}>No matching sites</div>
             )}
             {filteredSites.map((site) => {
-              const active = site.name === activeSite;
+              const active = !isAllSites && site.name === activeSite;
               return (
                 <div
                   key={site.name}
                   className="site-row"
                   onClick={() => setSelectedSite(site.name)}
+                  title={isDateFiltered ? "Clear the date filter to view this site on its own" : undefined}
                   style={{
                     padding: "14px 16px",
                     borderBottom: "1px solid #f1f5f9",
                     background: active ? "#eef2ff" : "transparent",
                     borderLeft: active ? "3px solid #4338ca" : "3px solid transparent",
+                    opacity: isDateFiltered ? 0.55 : 1,
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -473,7 +517,7 @@ const WorkOrderReportPage = () => {
           </div>
         </div>
 
-        {/* Right Panel — Selected site detail / print area */}
+        {/* Right Panel — Selected site (or All Sites) detail / print area */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             className="print-area"
@@ -488,7 +532,7 @@ const WorkOrderReportPage = () => {
           >
             {!activeSite ? (
               <div style={{ textAlign: "center", color: "#9ca3af", fontSize: 14, padding: "60px 0" }}>
-                No site data for the selected filters.
+                No work order data for the selected filters.
               </div>
             ) : (
               <>
@@ -497,7 +541,14 @@ const WorkOrderReportPage = () => {
                   <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: 0.5, color: "#111827" }}>{COMPANY_NAME}</div>
                   <div style={{ fontSize: 13, color: "#6b7280", marginTop: 2 }}>Work Order Report</div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginTop: 8 }}>
-                    Site: {activeSite}
+                    {isAllSites ? "All Sites" : `Site: ${activeSite}`}
+                    {(dateFrom || dateTo) && (
+                      <span style={{ fontWeight: 500, color: "#6b7280" }}>
+                        {"  ("}
+                        {dateFrom || "start"} to {dateTo || "today"}
+                        {")"}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -505,13 +556,13 @@ const WorkOrderReportPage = () => {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#f9fafb" }}>
-                      {["S.No", "Bill No", "Work Order No", "Invoice No", "Description of Work", "Kgs", "Sft", "Rate", "Amount"].map((h, i) => (
+                      {tableHeaders.map((h, i) => (
                         <th
                           key={h}
                           style={{
                             border: "1px solid #d1d5db",
                             padding: "8px 10px",
-                            textAlign: i >= 5 ? "right" : "left",
+                            textAlign: i >= tableHeaders.length - 4 ? "right" : "left",
                             fontWeight: 700,
                             color: "#111827",
                             whiteSpace: "nowrap",
@@ -524,9 +575,11 @@ const WorkOrderReportPage = () => {
                   </thead>
                   <tbody>
                     {siteItems.map((it, idx) => (
-                      <tr key={`${it.billNo}-${it.sno}`}>
+                      <tr key={`${it.billNo}-${it.siteName}-${it.sno}`}>
                         <td style={cellStyle}>{idx + 1}</td>
-                        <td style={cellStyle}>{it.billNo}</td>
+                        <td style={cellStyle}>{it.itemDate.split("-").reverse().join("-")}</td>
+                        {isAllSites && <td style={cellStyle}>{it.siteName}</td>}
+                        {/* <td style={cellStyle}>{it.billNo}</td> */}
                         <td style={cellStyle}>{it.workOrderNo}</td>
                         <td style={cellStyle}>{it.invoiceNo}</td>
                         <td style={cellStyle}>{it.description}</td>
@@ -536,6 +589,13 @@ const WorkOrderReportPage = () => {
                         <td style={{ ...cellStyle, textAlign: "right", fontWeight: 600 }}>{inr(it.amount)}</td>
                       </tr>
                     ))}
+                    {siteItems.length === 0 && (
+                      <tr>
+                        <td colSpan={tableHeaders.length} style={{ ...cellStyle, textAlign: "center", color: "#9ca3af", padding: "24px 10px" }}>
+                          No work orders in this date range.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
 
@@ -556,9 +616,9 @@ const WorkOrderReportPage = () => {
                 {/* Signatures */}
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 60 }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151" }}>
+                    {/* <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151" }}>
                       Fabricator
-                    </div>
+                    </div> */}
                   </div>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151" }}>
