@@ -140,6 +140,7 @@ import ProjectReportPage from "../pages/pre-built/user-manage/Project-report";
 import SuppliersReportPage from "../pages/pre-built/user-manage/Suppliers-report";
 import StaffAttendanceDetails from "../pages/pre-built/user-manage/StaffAttendanceDetails"; 
 import WorkOrderReportPage from "../pages/pre-built/user-manage/WorkOrderReport";
+import SalaryReport from "../pages/pre-built/user-manage/SalaryReport";
 
 const Pages = () => {
   useLayoutEffect(() => {
@@ -361,6 +362,15 @@ const Pages = () => {
           render={() => (
             <UserContextProvider>
               <WorkOrderReportPage />
+            </UserContextProvider>
+          )}
+        ></Route>
+         <Route //Context Api added
+          exact
+          path={`${process.env.PUBLIC_URL}/salary-report`}
+          render={() => (
+            <UserContextProvider>
+              <SalaryReport />
             </UserContextProvider>
           )}
         ></Route>

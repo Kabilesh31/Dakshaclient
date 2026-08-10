@@ -40,12 +40,12 @@ const Sidebar = ({ fixed, theme, className, sidebarToggle, mobileView, ...props 
           />
           {/* Always visible toggle for desktop */}
          <Toggle
-  className={`nk-nav-compact nk-quick-nav-icon d-none d-xl-inline-flex always-visible-menu ${
-    collapseSidebar ? "compact-active" : ""
-  }`}
-  click={toggleCollapse}
-  icon="menu"
-/>
+          className={`nk-nav-compact nk-quick-nav-icon d-none d-xl-inline-flex always-visible-menu ${
+            collapseSidebar ? "compact-active" : ""
+          }`}
+          click={toggleCollapse}
+          icon="menu"
+        />
         </div>
         <div className="nk-sidebar-brand ml-1">
           <Logo />
