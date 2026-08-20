@@ -225,7 +225,7 @@ const SalaryReport = () => {
         @media print {
           @page { 
             size: landscape; 
-            margin: 10mm;
+            margin: 8mm;
           }
           body * { 
             visibility: hidden !important;
@@ -242,13 +242,47 @@ const SalaryReport = () => {
             box-shadow: none !important; 
             border: none !important;
             background: white !important;
-            padding: 20px !important;
+            padding: 15px !important;
+            overflow: visible !important;
+            transform: scale(0.85);
+            transform-origin: top left;
+          }
+          .print-area table {
+            width: 100% !important;
+            font-size: 9px !important;
+          }
+          .print-area table td,
+          .print-area table th {
+            padding: 3px 4px !important;
+            font-size: 9px !important;
+          }
+          .print-area .header-text {
+            font-size: 13px !important;
+          }
+          .print-area .sub-header {
+            font-size: 10px !important;
+          }
+          .print-area .words-text {
+            font-size: 9px !important;
           }
           .no-print { 
             display: none !important; 
           }
           .sr-scroll {
             overflow: visible !important;
+          }
+          .print-container {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          /* Ensure all columns are visible */
+          .print-area table {
+            table-layout: auto !important;
+            white-space: nowrap !important;
+          }
+          .print-area th,
+          .print-area td {
+            word-break: keep-all !important;
           }
         }
         .sr-row { 
@@ -330,7 +364,7 @@ const SalaryReport = () => {
               <path d="M18 17H6" />
               <rect x="2" y="9" width="20" height="14" rx="2" ry="2" />
             </svg>
-            Print
+            Print / PDF
           </button>
         </div>
       </div>
@@ -469,7 +503,7 @@ const SalaryReport = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             ref={printRef}
-            className="print-area sr-scroll"
+            className="print-area print-container sr-scroll"
             style={{
               background: "#ffffff",
               borderRadius: 12,
@@ -488,13 +522,16 @@ const SalaryReport = () => {
               <div style={{ minWidth: 220 + selected.workers.length * 110 }}>
                 {/* Sheet header */}
                 <div style={{ borderBottom: "2px solid #111827", paddingBottom: 10, marginBottom: 4 }}>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>{COMPANY_NAME}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12.5, color: "#374151", flexWrap: "wrap", gap: 8 }}>
+                  <div className="header-text" style={{ fontSize: 17, fontWeight: 700, color: "#111827" }}>{COMPANY_NAME}</div>
+                  <div className="sub-header" style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12.5, color: "#374151", flexWrap: "wrap", gap: 8 }}>
                     <span><strong>PROJECT:</strong> {selected.project} &nbsp;</span>
-                    {/* <span><strong>{selected.raBill}</strong></span> */}
                     <span>
                       <strong>PERIOD:</strong> ({selected.dates[0]} TO {selected.dates[selected.dates.length - 1]})
                     </span>
+                  </div>
+                  <div className="sub-header" style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 12.5, color: "#374151", flexWrap: "wrap", gap: 8 }}>
+                    <span><strong>WORK ORDER:</strong> {selected.raBill}</span>
+                    <span><strong>TEAM:</strong> {selected.team}</span>
                   </div>
                 </div>
 
@@ -560,29 +597,9 @@ const SalaryReport = () => {
                   </tbody>
                 </table>
 
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 10, fontStyle: "italic" }}>
+                <div className="words-text" style={{ fontSize: 12, color: "#6b7280", marginTop: 10, fontStyle: "italic" }}>
                   Amount chargeable in words: Rupees {numberToWords(selected.grandTotal)} only.
                 </div>
-
-                {/* Signatures */}
-                {/* <div style={{ display: "flex", justifyContent: "space-between", marginTop: 50, padding: "0 20px" }}>
-                  <div style={{ textAlign: "center", flex: 1 }}>
-                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151", margin: "0 auto" }}>
-                      Prepared By
-                    </div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
-                      (HR Department)
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "center", flex: 1 }}>
-                    <div style={{ borderTop: "1px solid #9ca3af", width: 160, paddingTop: 6, fontSize: 12, color: "#374151", margin: "0 auto" }}>
-                      Authorised Signatory
-                    </div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>
-                      (Management)
-                    </div>
-                  </div>
-                </div> */}
               </div>
             )}
           </div>
